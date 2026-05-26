@@ -1,0 +1,43 @@
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr); /* 7 עמודות לשבוע */
+  gap: 5px;
+  padding: 10px;
+}
+
+.cell {
+  padding: 20px;
+  border: 1px solid #ccc;
+  min-height: 100px;
+  border-radius: 8px;
+  background-color: #ffffff; /* ברירת מחדל: לבן */
+}
+
+/* --- מצבי לוח שנה (ימי חסימה) --- */
+.BLOCKED {
+  background-color: #ffcccc; /* אדום חזק לשבת וחג */
+  cursor: not-allowed;
+}
+
+.FORBIDDEN {
+  background-color: #ffe5b4; /* כתום בהיר לימים דפוקים */
+}
+
+/* --- מצבי אירוע (ניהול סטטוסים) --- */
+.CHECKING {
+  background-color: #ffcc99; /* כתום כהה יותר - בבדיקה */
+  border: 2px dashed #e67e22; /* גבול מקווקו לסימון "זמני" */
+}
+
+.OPTION {
+  background-color: #ffff99; /* צהוב - אופציה ללקוח */
+}
+
+.BOOKED {
+  background-color: #a2d2ff; /* כחול בהיר - סגור סופית */
+}
+
+/* ברירת מחדל */
+.AVAILABLE {
+  background-color: #e8f5e9; /* ירוק בהיר - פנוי */
+}
