@@ -65,7 +65,7 @@
   margin-bottom: 6px;
 }
 
-/* גריד אחד לכותרות + ימים */
+/* גריד LTR: שבת col1(שמאל), ראשון col7(ימין) */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -73,9 +73,20 @@
   background-color: #a5f3fc;
   border: 1px solid #93c5fd;
   width: 100%;
+  direction: ltr;
 }
 
-/* תא */
+.week-day-label {
+  text-align: center;
+  font-weight: bold;
+  background-color: #7dd3fc;
+  color: #0369a1;
+  padding: 6px;
+  font-size: 0.9rem;
+  border: 1px solid #bae6fd;
+}
+
+/* תא - RTL פנימי */
 .calendar-cell {
   background: #ffffff;
   min-height: 100px;
@@ -87,6 +98,10 @@
   position: relative;
   cursor: pointer;
   transition: filter 0.1s;
+  overflow: hidden;
+  min-width: 0;
+  box-sizing: border-box;
+  direction: rtl;
 }
 .calendar-cell:hover { filter: brightness(0.96); }
 
@@ -179,4 +194,33 @@
   padding: 40px;
   font-size: 1rem;
   color: #64748b;
+}
+
+/* פרטי ארוע בתא */
+.cell-event {
+  border-radius: 4px;
+  padding: 3px 5px;
+  margin-top: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.event-booked {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.event-option {
+  background-color: #22c55e;
+  color: #ffffff;
+}
+
+.event-name {
+  font-weight: bold;
+  font-size: 0.75rem;
+}
+
+.event-details {
+  font-size: 0.68rem;
+  opacity: 0.9;
 }

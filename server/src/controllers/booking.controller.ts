@@ -13,37 +13,35 @@ export const createBooking = async (req: Request, res: Response) => {
     // חישוב אוטומטי של המחיר הכולל
     const calculatedTotalPrice = data.guestCount * data.finalPricePortion;
 
-    // שמירת ההזמנה במסד הנתונים בענן עם שני הצדדים
+    // מציאת או יצירת EventDate לפי התאריך
+    const eventDate = await prisma.eventDate.upsert({
+      where:  { date: new Date(data.calendarDateId) },
+      update: { status: 'BOOKED' },
+      create: { date: new Date(data.calendarDateId), status: 'BOOKED' }
+    });
+
+    // שמירת ההזמנה במסד הנתונים
     const newBooking = await prisma.booking.create({
       data: {
-        // --- פרטי צד א' (חובה) ---
-        clientAFullName: data.clientAFullName,
-        clientAIdNumber: data.clientAIdNumber,
-        clientAPhone: data.clientAPhone,
-        clientAEmail: data.clientAEmail || null,
-        clientAAddress: data.clientAAddress || null,
-        
-        // --- פרטי צד ב' (רשות) ---
-        clientBFullName: data.clientBFullName || null,
-        clientBIdNumber: data.clientBIdNumber || null,
-        clientBPhone: data.clientBPhone || null,
-        clientBEmail: data.clientBEmail || null,
-        clientBAddress: data.clientBAddress || null,
-
-        // --- פרטי האירוע ותאריכים ---
-        calendarDateId: data.calendarDateId,
-        eventType: data.eventType,
-        guestCount: data.guestCount,
-        finalPricePortion: data.finalPricePortion,
-        totalPrice: calculatedTotalPrice,
-        
-        // --- הערות (מנהל ומזמין) ---
-        managerComments: data.managerComments || null,
-        clientComments: data.clientComments || null,
-        
-        // --- היסטוריה ולוגים ---
-        createdBy: isManager ? "מנהל מערכת" : "נציג מכירות",
-        updatedBy: null
+        clientAFullName:   data.clientAFullName,
+        clientAIdNumber:   data.clientAIdNumber,
+        clientAPhone:      data.clientAPhone,
+        clientAEmail:      data.clientAEmail    || null,
+        clientAAddress:    data.clientAAddress  || null,
+        clientBFullName:   data.clientBFullName || null,
+        clientBIdNumber:   data.clientBIdNumber || null,
+        clientBPhone:      data.clientBPhone    || null,
+        clientBEmail:      data.clientBEmail    || null,
+        clientBAddress:    data.clientBAddress  || null,
+        calendarDateId:    eventDate.id,
+        eventType:         data.eventType,
+        guestCount:        Number(data.guestCount),
+        finalPricePortion: Number(data.finalPricePortion),
+        totalPrice:        calculatedTotalPrice,
+        managerComments:   data.managerComments || null,
+        clientComments:    data.clientComments  || null,
+        createdBy:         data.createdBy || 'נציג מכירות',
+        updatedBy:         null
       }
     });
 
@@ -56,10 +54,10 @@ export const createBooking = async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    console.error("Error creating booking:", error);
+    console.error("Error creating booking:", JSON.stringify(error, Object.getOwnPropertyNames(error)));
     res.status(500).json({ 
       success: false, 
-      message: 'קרתה שגיאה בשרת בעת יצירת ההזמנה.' 
+      message: error instanceof Error ? error.message : 'קרתה שגיאה בשרת בעת יצירת ההזמנה.' 
     });
   }
 };
