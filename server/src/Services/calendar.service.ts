@@ -1,115 +1,117 @@
-import prisma from "../config/prisma"; // נכון! בלי סוגריים מסולסלים
-// טעינת הספריה החדשה שהתקנו
+// server/src/Services/calendar.service.ts
 const { HDate, HebrewCalendar } = require('hebcal');
-import { io } from "../server"; // וודאי שזה מייבא את ה-io מהשרת שלך
+import prisma from "../config/prisma";
+import { io } from "../server";
 
 export enum EventStatus {
-  AVAILABLE = 'AVAILABLE', // פנוי
-  CHECKING = 'CHECKING',   // בבדיקה (העובד נעל את זה)
-  OPTION = 'OPTION',       // לקוח לקח אופציה
-  BOOKED = 'BOOKED' ,
-  BLOCKED = 'BLOCKED'     ,//שבת ויום טוב
-  FORBIDDEN = 'FORBIDDEN'  // לקוח סגר אירוע סופית
+  AVAILABLE = 'AVAILABLE',
+  CHECKING = 'CHECKING',
+  OPTION = 'OPTION',
+  BOOKED = 'BOOKED',
+  BLOCKED = 'BLOCKED',      // שבת ויום טוב (חסום הרמטית)
+  FORBIDDEN = 'FORBIDDEN'   // ימי תעניות, ערבי חגים או ימים בעייתיים באולם
 }
 
 export const calendarService = {
 
-  // --- 1. מנוע החוקים ---
-  getDayStatus(date: Date): { type: EventStatus, reason?: string } {
+  // 1. מנוע החוקים הסטטיים (הלוח העברי/לועזי הקבוע)
+  getDayStaticStatus(date: Date): { type: EventStatus; reason?: string } {
     const hDate = new HDate(date);
-    const jsDay = date.getDay();
+    const jsDay = date.getDay(); // 0 = ראשון, 5 = שישי, 6 = שבת
     const events = HebrewCalendar.getHolidaysOnDate(hDate, false) || [];
 
-    if (hDate.getDay() === 6 || events.some((e: any) => e.getDesc().includes('Yom Tov'))) {
+    // א. חסימת שבתות וימים טובים
+    if (jsDay === 6 || events.some((e: any) => e.getDesc().includes('Yom Tov'))) {
       return { type: EventStatus.BLOCKED, reason: 'שבת או יום טוב' };
     }
 
+    // ב. חסימת ימי שישי וערבי חגים / צומות
     if (jsDay === 5) return { type: EventStatus.FORBIDDEN, reason: 'יום שישי' };
     if (events.some((e: any) => e.getDesc().includes('Erev') || e.getDesc().includes('Fast'))) {
       return { type: EventStatus.FORBIDDEN, reason: 'ערב חג או צום' };
     }
+
+    // ג. בין הזמנים (דוגמה לפי חודש אב - חודש 5 ב-Hebcal תלוי בספירה, מומלץ לבדוק לפי שמות חודשים עבריים)
     if (hDate.getMonth() === 5 && hDate.getDate() >= 17 && hDate.getDate() <= 23) {
       return { type: EventStatus.FORBIDDEN, reason: 'בין הזמנים' };
-    }
-
-    for (let i = 0; i < 7; i++) {
-     const nextDay = new HDate(hDate.abs() + i);
-      const nextDayEvents = HebrewCalendar.getHolidaysOnDate(nextDay, false) || [];
-      if (nextDayEvents.some((e: any) => e.getDesc().includes('Yom Tov'))) {
-        return { type: EventStatus.FORBIDDEN, reason: 'שבוע שבע ברכות בעייתי' };
-      }
     }
 
     return { type: EventStatus.AVAILABLE };
   },
 
-  // --- 2. שליפת נתונים ---
+  // 2. שליפת כל התאריכים בטווח משולב עם ה-DB (יוצר לוח שנה "לנצח")
   async getAllCalendarDates(startDate: Date, endDate: Date) {
-    const dates = await prisma.eventDate.findMany({
+    // א. שליפת כל הרשומות הקיימות ב-DB לטווח הזה (אירועים, אופציות, בדיקות)
+    const dbDates = await prisma.eventDate.findMany({
       where: { date: { gte: startDate, lte: endDate } },
       include: { booking: true }
     });
 
-    return dates.map((d: any) => ({
-      ...d,
-      hebrewDate: new HDate(d.date).render('he'),
-      statusInfo: this.getDayStatus(d.date)
-    }));
+    // יצירת מפה לשליפה מהירה לפי תאריך מיושר (YYYY-MM-DD)
+    const dbMap = new Map(dbDates.map(d => [new Date(d.date).toISOString().split('T')[0], d]));
+
+    const result = [];
+    let current = new Date(startDate);
+
+    // ב. לולאה שרצה יום אחרי יום ומחוללת את הלוח באופן דינמי
+    while (current <= endDate) {
+      const dateKey = current.toISOString().split('T')[0];
+      const hDate = new HDate(current);
+      const staticStatus = this.getDayStaticStatus(current);
+      
+      const dbRecord = dbMap.get(dateKey);
+
+      // קביעת הסטטוס הסופי: אם יש חסימה קבועה (שבת) - היא קובעת. אחרת, מה שיש ב-DB.
+      let finalStatus = staticStatus.type;
+      if (finalStatus === EventStatus.AVAILABLE && dbRecord) {
+        finalStatus = dbRecord.status as EventStatus;
+      }
+
+      result.push({
+        id: dbRecord?.id || null, // יכול להיות null אם היום פנוי לחלוטין ואין שורה ב-DB
+        date: dateKey,
+        dayOfWeek: current.getDay(),
+        hebrewDate: hDate.render('he'),
+        status: finalStatus,
+        reason: staticStatus.reason || null,
+        lockedBy: dbRecord?.lockedBy || null,
+        booking: dbRecord?.booking || null
+      });
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    return result;
   },
 
-  // --- 3. ניהול (עם עדכון בזמן אמת!) ---
-  async lockDateForChecking(dateId: number, employeeName: string) {
-    const existing = await prisma.eventDate.findUnique({ where: { id: dateId } });
-    if (!existing) throw new Error("תאריך לא נמצא");
-    
-    const status = this.getDayStatus(existing.date);
-    if (status.type === EventStatus.BLOCKED) throw new Error("לא ניתן לנעול יום שבת או חג");
-    if (existing.status !== EventStatus.AVAILABLE) throw new Error("התאריך אינו זמין");
+  // 3. עדכון נעילת תאריך לבדיקה (יוצר שורה ב-DB במידת הצורך)
+  async lockDateForChecking(dateStr: string, employeeName: string) {
+    const targetDate = new Date(dateStr);
+    const staticStatus = this.getDayStaticStatus(targetDate);
+    if (staticStatus.type === EventStatus.BLOCKED || staticStatus.type === EventStatus.FORBIDDEN) {
+      throw new Error(`לא ניתן לנעול יום זה: ${staticStatus.reason}`);
+    }
 
-    const updated = await prisma.eventDate.update({
-      where: { id: dateId },
-      data: { status: EventStatus.CHECKING, lockedBy: employeeName }
+    // מציאת הרשומה או יצירתה (Upsert)
+    const updated = await prisma.eventDate.upsert({
+      where: { date: targetDate },
+      update: { status: EventStatus.CHECKING, lockedBy: employeeName },
+      create: { date: targetDate, status: EventStatus.CHECKING, lockedBy: employeeName }
     });
 
-    // שידור לכולם: התאריך ננעל
-    io.emit("date-updated", { dateId, status: EventStatus.CHECKING, lockedBy: employeeName });
-    
+    // תיקון השידור: משדרים אובייקט שמכיל את ה-date כדי שהפרונטאנד יזהה לפי תאריך!
+    io.emit("date-updated", { date: dateStr, status: EventStatus.CHECKING, lockedBy: employeeName, id: updated.id });
     return updated;
   },
 
-  async releaseDate(dateId: number) {
+  async releaseDate(dateStr: string) {
+    const targetDate = new Date(dateStr);
     const updated = await prisma.eventDate.update({
-      where: { id: dateId },
+      where: { date: targetDate },
       data: { status: EventStatus.AVAILABLE, lockedBy: null }
     });
 
-    // שידור לכולם: התאריך שוחרר
-    io.emit("date-updated", { dateId, status: EventStatus.AVAILABLE, lockedBy: null });
-    
-    return updated;
-  },
-
-  async createOption(dateId: number, bookingDetails: any) {
-    const updated = await prisma.eventDate.update({
-      where: { id: dateId },
-      data: { status: EventStatus.OPTION }
-    });
-
-    io.emit("date-updated", { dateId, status: EventStatus.OPTION });
-    return updated;
-  },
-  // הוספה ל-calendarService
-  async bookEventFinal(dateId: number, bookingDetails: any) {
-    const updated = await prisma.eventDate.update({
-      where: { id: dateId },
-      data: { 
-        status: EventStatus.BOOKED,
-        booking: { create: bookingDetails } // כאן את יוצרת את ההזמנה ב-DB
-      }
-    });
-
-    // עדכון בזמן אמת לכל העובדים
-    io.emit("date-updated", { dateId, status: EventStatus.BOOKED });
+    io.emit("date-updated", { date: dateStr, status: EventStatus.AVAILABLE, lockedBy: null, id: updated.id });
     return updated;
   }
 };
