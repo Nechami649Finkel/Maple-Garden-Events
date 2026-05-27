@@ -83,7 +83,12 @@ function getDayStaticStatus(jsDate: Date): { type: EventStatus; reason?: string 
   const hMonth = hDate.getMonth();
   const hDay   = hDate.getDate();
   if ((hMonth === 4 && hDay >= 17) || (hMonth === 5 && hDay <= 9)) {
-    return { type: EventStatus.FORBIDDEN, reason: 'בין המצרים' };
+    return { type: EventStatus.BLOCKED, reason: 'בין המצרים' };
+  }
+
+  // בין הזמנים קיץ (י"ז באב עד כ"ג באב) - ורוד
+  if (hMonth === 5 && hDay >= 17 && hDay <= 23) {
+    return { type: EventStatus.FORBIDDEN, reason: 'בין הזמנים' };
   }
 
   return { type: EventStatus.AVAILABLE };

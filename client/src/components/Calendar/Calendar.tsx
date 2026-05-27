@@ -186,7 +186,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Calendar.css';
-import { EventPopup } from './EventPopup';
+import { EventPopup } from '../EventPopup/EventPopup';
 
 interface DayData {
   id: string | null;
@@ -330,12 +330,15 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
 
             const dayNum = new Date(day.date + 'T12:00:00').getDate();
 
+            const isPast = new Date(day.date + 'T12:00:00') < new Date(new Date().toDateString());
+
             return (
               <div key={day.date} className={cls}
-                style={{ gridColumn: day.col, gridRow: day.row }}
+                style={{ gridColumn: day.col, gridRow: day.row, opacity: isPast && day.isCurrentMonth ? 0.5 : 1 }}
                 onClick={() => {
                   if (!day.isCurrentMonth) return;
                   if (day.status === 'BLOCKED') return;
+                  if (isPast) return;
                   if (day.booking) {
                     setSelectedDay(day);
                   } else {
