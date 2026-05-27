@@ -2,167 +2,167 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './Calendar.css';
 
-interface CalendarProps {
-  onDateSelect: (date: any) => void;
+interface DayData {
+  id: string | null;
+  date: string;
+  dayOfWeek: number;
+  hebrewDate: string;
+  status: string;
+  reason: string | null;
+  candleTime: string | null;
+  lockedBy: string | null;
+  booking: any | null;
+  isCurrentMonth: boolean;
 }
+
+interface CalendarProps {
+  onDateSelect: (day: DayData) => void;
+}
+
+const MONTH_NAMES = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const DAY_NAMES   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
 export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [datesData, setDatesData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [datesData, setDatesData]     = useState<any[]>([]);
+  const [loading, setLoading]         = useState(false);
 
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth(); // 0 - 11
+  const year  = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  // פונקציה שמחשבת את הטווח המדויק שיוצג על המסך כולל ימי שוליים
-  const getCalendarRange = () => {
-    // היום הראשון של החודש
-    const firstDay = new Date(currentYear, currentMonth, 1);
-    // כמה ימי ריפוד צריך מתחילת השבוע (ראשון = 0)
-    const startPadding = firstDay.getDay();
+  const getRange = () => {
+    const firstDay = new Date(year, month, 1);
     const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - startPadding);
+    startDate.setDate(startDate.getDate() - firstDay.getDay()); // ראשון = 0
 
-    // היום האחרון של החודש
-    const lastDay = new Date(currentYear, currentMonth + 1, 0);
-    // כמה ימי ריפוד צריך לסוף השבוע
-    const endPadding = 6 - lastDay.getDay();
+    const lastDay = new Date(year, month + 1, 0);
     const endDate = new Date(lastDay);
-    endDate.setDate(endDate.getDate() + endPadding);
+    endDate.setDate(endDate.getDate() + (6 - lastDay.getDay())); // שבת = 6
 
-    return {
-      startStr: startDate.toISOString().split('T')[0],
-      endStr: endDate.toISOString().split('T')[0],
-      startDate,
-      endDate
-    };
+    return { startDate, endDate };
   };
 
-  const { startStr, endStr, startDate, endDate } = getCalendarRange();
-
-  // משיכת הנתונים המלאים מהבקאנד לפי הטווח המחושב
-  const fetchCalendarDates = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get('http://localhost:5000/api/calendar/dates', {
-        params: { start: startStr, end: endStr }
-      });
-      setDatesData(response.data);
-    } catch (err) {
-      console.error("שגיאה בתקשורת עם השרת:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { startDate, endDate } = getRange();
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr   = endDate.toISOString().split('T')[0];
 
   useEffect(() => {
-    fetchCalendarDates();
-  }, [currentDate]);
+    setLoading(true);
+    axios.get('http://localhost:5000/api/calendar/dates', { params: { start: startStr, end: endStr } })
+      .then(r => setDatesData(r.data))
+      .catch(e => console.error('שגיאה:', e))
+      .finally(() => setLoading(false));
+  }, [startStr, endStr]);
 
-  // בניית מערך הימים לתצוגה מקומית (מיזוג הבקאנד לתוך המבנה הוויזואלי)
-  const buildGridDays = () => {
-    const daysArray = [];
-    let loopDate = new Date(startDate);
+  const buildGrid = (): DayData[] => {
+    const serverMap = new Map(datesData.map((d: any) => [d.date, d]));
+    const days: DayData[] = [];
+    const loop = new Date(startDate);
+    let rowIndex = 2; // שורה 1 = כותרות, ימים מתחילים משורה 2
 
-    while (loopDate <= endDate) {
-      const dateKey = loopDate.toISOString().split('T')[0];
-      const isCurrentMonth = loopDate.getMonth() === currentMonth;
-      
-      // חיפוש האם חזר עליו מידע מהבקאנד
-      const serverMatch = datesData.find(d => d.date === dateKey);
-
-      // לוגיקת שעון שבת/שישי מקומית זמנית לצורך תצוגה מדומה אם השרת ריק
-      const dayOfWeek = loopDate.getDay();
-      let mockTime = "";
-      if (dayOfWeek === 5) {
-        if (loopDate.getDate() === 2) mockTime = "17:42";
-        if (loopDate.getDate() === 9) mockTime = "17:34";
-        if (loopDate.getDate() === 16) mockTime = "17:25";
-        if (loopDate.getDate() === 23) mockTime = "17:18";
-        if (loopDate.getDate() === 30) mockTime = "16:11";
-      }
-
-      daysArray.push({
-        date: dateKey,
-        dayNumber: loopDate.getDate(),
-        isCurrentMonth,
-        status: serverMatch?.status || (dayOfWeek === 6 ? 'BLOCKED' : dayOfWeek === 5 ? 'FORBIDDEN' : 'AVAILABLE'),
-        hebrewDate: serverMatch?.hebrewDate || '', 
-        reason: serverMatch?.reason || (dayOfWeek === 6 ? 'שבת' : dayOfWeek === 5 ? 'יום שישי' : ''),
-        candleTime: mockTime,
-        serverInfo: serverMatch || null
+    while (loop <= endDate) {
+      const key = loop.toISOString().split('T')[0];
+      const srv = serverMap.get(key);
+      const dow = loop.getDay();
+      days.push({
+        id:             srv?.id         ?? null,
+        date:           key,
+        dayOfWeek:      dow,
+        hebrewDate:     srv?.hebrewDate ?? '',
+        status:         srv?.status     ?? 'AVAILABLE',
+        reason:         srv?.reason     ?? null,
+        candleTime:     srv?.candleTime ?? null,
+        lockedBy:       srv?.lockedBy   ?? null,
+        booking:        srv?.booking    ?? null,
+        isCurrentMonth: loop.getMonth() === month,
+        row:            rowIndex,
       });
-
-      loopDate.setDate(loopDate.getDate() + 1);
+      // אחרי שבת (6) עוברים לשורה הבאה
+      if (dow === 6) rowIndex++;
+      loop.setDate(loop.getDate() + 1);
     }
-    return daysArray;
+    return days;
   };
 
-  const gridDays = buildGridDays();
+  const grid = buildGrid();
 
-  const monthNames = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
-  const dayNames = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+  const prevYear  = () => setCurrentDate(new Date(year - 1, month, 1));
+  const nextYear  = () => setCurrentDate(new Date(year + 1, month, 1));
 
   return (
     <div className="calendar-container" style={{ direction: 'rtl' }}>
-      
-      {/* סרגל החודשים העליון - בדיוק כמו ב-Eruit */}
-      <div className="months-bar">
-        {monthNames.map((name, index) => (
-          <div 
-            key={name} 
-            className={`month-tab ${index === currentMonth ? 'active' : ''}`}
-            onClick={() => setCurrentDate(new Date(currentYear, index, 1))}
-          >
-            {name}
-          </div>
-        ))}
-      </div>
 
-      {/* כותרות ימי השבוע */}
-      <div className="week-days-grid">
-        {dayNames.map(day => <div key={day} className="week-day-label">{day}</div>)}
-      </div>
+      {/* ניווט שנה + פס חודשים */}
+      <div className="calendar-nav">
+        <button className="nav-btn year-btn" onClick={nextYear}>»</button>
+        <button className="nav-btn"          onClick={nextMonth}>›</button>
 
-      {/* גריד ימי החודש */}
-      <div className="calendar-grid">
-        {gridDays.map((day) => {
-          const classes = [
-            'calendar-cell',
-            `status-${day.status.toLowerCase()}`,
-            !day.isCurrentMonth ? 'out-of-month' : ''
-          ].join(' ');
-
-          return (
-            <div 
-              key={day.date} 
-              className={classes}
-              onClick={() => day.isCurrentMonth && onDateSelect(day)}
+        <div className="months-bar">
+          {MONTH_NAMES.map((name, i) => (
+            <div
+              key={name}
+              className={`month-tab ${i === month ? 'active' : ''}`}
+              onClick={() => setCurrentDate(new Date(year, i, 1))}
             >
-              {/* שורה עליונה בתא */}
-              <div className="cell-header-row">
-                {/* תאריך עברי קצר בצד ימין */}
-                <span className="hebrew-text">
-                  {day.isCurrentMonth && day.hebrewDate ? day.hebrewDate.split(' ')[0] + ' ' + (day.hebrewDate.split(' ')[1] || '') : ''}
-                </span>
-
-                {/* שעת הדלקת נרות במרכז */}
-                {day.isCurrentMonth && day.candleTime && (
-                  <span className="candle-time">{day.candleTime}</span>
-                )}
-
-                {/* מספר יום לועזי בצד שמאל */}
-                <span className="gregorian-num">{day.dayNumber}</span>
-              </div>
-
-              {/* טקסט סטטוס/סיבה בתחתית */}
-              <div className="cell-status-text">
-                {day.isCurrentMonth ? day.reason : ''}
-              </div>
+              {name}
             </div>
-          );
-        })}
+          ))}
+        </div>
+
+        <button className="nav-btn"          onClick={prevMonth}>‹</button>
+        <button className="nav-btn year-btn" onClick={prevYear}>«</button>
       </div>
+
+      {/* שנה */}
+      <div className="year-display">{year}</div>
+
+      {/* כותרות + גריד בגריד אחד */}
+      {loading ? (
+        <div className="calendar-loading">טוען...</div>
+      ) : (
+        <div className="calendar-grid">
+          {['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'].map(d => (
+            <div key={d} className="week-day-label">{d}</div>
+          ))}
+          {grid.map(day => {
+            const cls = [
+              'calendar-cell',
+              `status-${day.status.toLowerCase()}`,
+              !day.isCurrentMonth ? 'out-of-month' : ''
+            ].filter(Boolean).join(' ');
+
+            const dayNum = new Date(day.date + 'T12:00:00').getDate();
+
+            return (
+              <div
+                key={day.date}
+                className={cls}
+                onClick={() => {
+                  if (!day.isCurrentMonth) return;
+                  if (day.status === 'BLOCKED') return;
+                  onDateSelect(day);
+                }}
+              >
+                <div className="cell-header-row">
+                  <span className="gregorian-num">{dayNum}</span>
+                  {day.isCurrentMonth && day.candleTime && (
+                    <span className="candle-time">{day.candleTime}</span>
+                  )}
+                  <span className="hebrew-text">
+                    {day.isCurrentMonth ? day.hebrewDate : ''}
+                  </span>
+                </div>
+
+                <div className="cell-status-text">
+                  {day.isCurrentMonth ? (day.reason || '') : ''}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

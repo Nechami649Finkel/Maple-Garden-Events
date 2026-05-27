@@ -10,9 +10,19 @@ datasource db {
 }
 
 // הטבלה המרכזית של ההזמנות - גרסה משודרגת עם שני צדדים
+model EventDate {
+  id        String   @id @default(uuid())
+  date      DateTime @unique
+  status    String   @default("AVAILABLE")
+  lockedBy  String?
+  booking   Booking?
+}
+
 model Booking {
-  id                String   @id @default(uuid())
-// --- פרטי צד א' (חובה) ---
+  id                String    @id @default(uuid())
+  eventDate         EventDate @relation(fields: [calendarDateId], references: [id])
+
+  // --- פרטי צד א' (חובה) ---
   clientAFullName   String
   clientAIdNumber   String
   clientAPhone      String
@@ -25,24 +35,25 @@ model Booking {
   clientBPhone      String?
   clientBEmail      String?
   clientBAddress    String?
+
   // --- פרטי האירוע ---
-  calendarDateId    String   // המזהה של התאריך מהיומן של מרימי
-  eventType         String   // סוג האירוע: חתונה, ברית וכו'
-  guestCount        Int      // כמות מוזמנים (נאכוף מינימום 350 בקוד השרת)
-  finalPricePortion Float    // מחיר מנה
+  calendarDateId    String   @unique
+  eventType         String
+  guestCount        Int
+  finalPricePortion Float
 
   // --- הערות ---
-  managerComments   String?  // הערות פנימיות של צוות הגן והמנהל
-  clientComments    String?  // בקשות והערות של המזמין
+  managerComments   String?
+  clientComments    String?
 
-  // --- היסטוריה ולוגים (שמירת שעה ותאריך מדויקים) ---
-  createdAt         DateTime @default(now()) // נשמר אוטומטית ברגע היצירה
-  createdBy         String   // מי העובד שמילא את הפרטים
-  updatedAt         DateTime @updatedAt      // מתעדכן אוטומטית בכל שינוי
-  updatedBy         String?  // מי העובד שערך את השינוי האחרון
+  // --- היסטוריה ---
+  createdAt         DateTime @default(now())
+  createdBy         String
+  updatedAt         DateTime @updatedAt
+  updatedBy         String?
 
   // --- כספים ---
-  totalPrice        Float    // מחושב אוטומטית בשרת (כמות מוזמנים * מחיר מנה)
-  paidAmount        Float    @default(0) // כמה שולם בפועל (מקדמות)
-  paymentStatus     String   @default("pending") // pending, partial, completed
+  totalPrice        Float
+  paidAmount        Float    @default(0)
+  paymentStatus     String   @default("pending")
 }
