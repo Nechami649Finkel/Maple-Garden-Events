@@ -22,6 +22,14 @@ interface CalendarProps {
 const MONTH_NAMES = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const DAY_NAMES   = ['ראשון','שני','שלישי','רביעי','חמישי','שישי','שבת'];
 
+// התיקון שלנו: פונקציית עזר למניעת קפיצת אזור הזמן (Timezone)
+const formatDateLocal = (date: Date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [datesData, setDatesData]     = useState<any[]>([]);
@@ -43,8 +51,10 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   };
 
   const { startDate, endDate } = getRange();
-  const startStr = startDate.toISOString().split('T')[0];
-  const endStr   = endDate.toISOString().split('T')[0];
+  
+  // התיקון: שימוש בפונקציה המקומית במקום ב-toISOString
+  const startStr = formatDateLocal(startDate);
+  const endStr   = formatDateLocal(endDate);
 
   useEffect(() => {
     setLoading(true);
@@ -61,7 +71,8 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     let rowIndex = 2; // שורה 1 = כותרות, ימים מתחילים משורה 2
 
     while (loop <= endDate) {
-      const key = loop.toISOString().split('T')[0];
+      // התיקון: שימוש בפונקציה המקומית במקום ב-toISOString
+      const key = formatDateLocal(loop);
       const srv = serverMap.get(key);
       const dow = loop.getDay();
       days.push({
