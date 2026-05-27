@@ -1,15 +1,44 @@
 import React, { useState } from 'react';
 import styles from './BookingForm.module.css';
 
-const BookingForm = () => {
+const BookingForm = ({ initialDate = '', onSaved }: { initialDate?: string, onSaved?: () => void }) => {
   const [formData, setFormData] = useState({
-    // צד א' (חתן / בעל השמחה)
     clientAFullName: '', clientAIdNumber: '', clientAPhone: '', clientAPhone2: '', clientAEmail: '', clientACity: '', clientAAddress: '',
-    // צד ב' (כלה / ריק אם זה לא חתונה)
     clientBFullName: '', clientBIdNumber: '', clientBPhone: '', clientBPhone2: '', clientBEmail: '', clientBCity: '', clientBAddress: '',
-    // פרטי אירוע
-    calendarDateId: '', eventType: '', timeOfDay: '', guestCount: '', finalPricePortion: '', managerComments: '', clientComments: ''
+    calendarDateId: initialDate, eventType: '', timeOfDay: '', guestCount: '', finalPricePortion: '', managerComments: '', clientComments: ''
   });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<{text: string, ok: boolean} | null>(null);
+
+  const handleSubmit = async () => {
+    if (!formData.calendarDateId || !formData.eventType || !formData.clientAFullName || !formData.clientAPhone) {
+      setMessage({ text: 'נא למלא תאריך, סוג אירוע, שם וטלפון', ok: false });
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          guestCount: Number(formData.guestCount),
+          finalPricePortion: Number(formData.finalPricePortion),
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMessage({ text: 'האירוע נשמר בהצלחה!', ok: true });
+        setTimeout(() => onSaved?.(), 1000);
+      } else {
+        setMessage({ text: data.message || 'שגיאה בשמירה', ok: false });
+      }
+    } catch {
+      setMessage({ text: 'שגיאת תקשורת עם השרת', ok: false });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -194,8 +223,15 @@ const BookingForm = () => {
           </div>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.submitBtn}>
-              שמירת נתוני אירוע והפקת חוזה
+            {message && (
+              <div style={{ padding: '10px', marginBottom: '10px', borderRadius: '6px', textAlign: 'center', fontWeight: 'bold',
+                backgroundColor: message.ok ? '#dcfce7' : '#fee2e2',
+                color: message.ok ? '#166534' : '#991b1b' }}>
+                {message.text}
+              </div>
+            )}
+            <button type="button" onClick={handleSubmit} disabled={saving} className={styles.submitBtn}>
+              {saving ? 'שומר...' : 'שמירת נתוני אירוע והפקת חוזה'}
             </button>
           </div>
 
