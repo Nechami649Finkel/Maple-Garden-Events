@@ -1,0 +1,179 @@
+.container {
+  direction: rtl;
+  font-family: var(--maple-font);
+}
+
+.title {
+  font-size: 1.4rem;
+  color: var(--maple-text);
+  border-bottom: 2px solid var(--maple-green-light);
+  padding-bottom: 12px;
+  margin: 0 0 8px 0;
+}
+
+.emptyMessage {
+  margin-top: 20px;
+  color: #4b5563;
+}
+
+.grid {
+  display: grid;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.card {
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius);
+  padding: 16px 18px;
+  background: var(--maple-surface);
+  box-shadow: var(--maple-shadow-sm);
+  transition: all var(--maple-transition);
+  cursor: pointer;
+}
+
+.card:hover {
+  border-color: var(--maple-green-muted);
+  box-shadow: var(--maple-shadow);
+  transform: translateY(-2px);
+}
+
+.cardContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.eventDateText {
+  margin: 0 0 5px 0;
+  color: #1f2937;
+}
+
+.clientText {
+  margin: 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.expiryText {
+  margin: 5px 0 0 0;
+  color: #dc2626;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 15px;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: opacity 0.2s;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.bumpBtn {
+  background-color: var(--maple-green);
+}
+
+.releaseBtn {
+  background-color: #ef4444;
+}
+
+.loading {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1rem;
+  color: var(--maple-green-dark);
+}
+/* כפתור סגירה סופית - ירוק בולט */
+.finalizeBtn {
+  background-color: #10b981;
+  color: white;
+}
+
+.finalizeBtn:hover {
+  background-color: #059669;
+}
+
+/* popup */
+.popupOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  direction: rtl;
+}
+
+.popupBox {
+  background: #ffffff;
+  border-radius: 8px;
+  width: 480px;
+  max-width: 95vw;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+.popupHeader {
+  background: var(--maple-green-dark);
+  color: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.popupClose {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.popupClose:hover { color: #ef4444; }
+
+.popupBody {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(85vh - 50px);
+  overflow-y: auto;
+}
+
+.popupRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 8px;
+}
+
+.popupRow label {
+  font-weight: bold;
+  color: #475569;
+  font-size: 0.85rem;
+  min-width: 90px;
+}
+
+.popupRow span {
+  color: #1e293b;
+  font-size: 0.9rem;
+}

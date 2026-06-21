@@ -1,0 +1,225 @@
+.menuWrapper {
+  position: relative;
+  max-width: 1100px;
+  margin: 20px auto;
+  background-color: #ffffff;
+  padding: 50px 40px;
+  border-radius: 4px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  direction: rtl;
+  color: #222222;
+}
+
+.menuWrapperModal {
+  margin: 0 auto;
+  box-shadow: none;
+  padding: 24px 20px 40px;
+  border-radius: 0;
+}
+
+.menuCloseBtn {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: block;
+  margin: 0 0 16px auto;
+  background: #fff;
+  color: #C53030;
+  border: 1.5px solid #FC8181;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--maple-font, 'Segoe UI', sans-serif);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transition: background 0.15s ease;
+}
+
+.menuCloseBtn:hover {
+  background: #FFF5F5;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 50px;
+}
+
+/* עיצוב הלוגו האמיתי של מייפל */
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.menuLogo {
+  max-width: 280px; 
+  height: auto;
+  object-fit: contain;
+}
+
+.mainTitle {
+  font-size: 2.5rem;
+  color: #111111;
+  margin: 10px 0;
+  font-weight: 400;
+  letter-spacing: -1px;
+}
+
+.accentLine {
+  height: 2px;
+  width: 120px;
+  background-color: #7BC183;
+  margin-top: 10px;
+}
+
+/* סידור התוכן לקירות תוכן אלגנטיים */
+.menuContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* הדגשת קטגוריות גדולות לרוחב מלא */
+/* הדגשת קטגוריות גדולות או סופיות לרוחב מלא (2 עמודות) */
+.menuContent > .sectionBlock:first-child, /* מתחמי מתאבנים */
+.menuContent > .sectionBlock:nth-child(2), /* בר סלטים */
+.menuContent > .sectionBlock:nth-last-child(3), /* היה שווה לחכות לסוף... */
+.menuContent > .sectionBlock:nth-last-child(2), /* משקאות */
+.menuContent > .sectionBlock:nth-last-child(1)  /* משמחים */ {
+  grid-column: span 2;
+}
+.sectionBlock {
+  background: #ffffff;
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 30px;
+}
+
+.sectionHeader {
+  border-bottom: 2px solid #222222;
+  padding-bottom: 8px;
+  margin-bottom: 25px;
+  text-align: right; /* מוודא שהכותרות מיושרות לימין */
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  color: #000000;
+  margin: 0;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.sectionSubtitle {
+  font-size: 1rem;
+  color: #666666;
+  margin: 4px 0 0 0;
+  font-style: italic;
+}
+
+.subCategoriesWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  text-align: right; /* מבטיח שכל התוכן הפנימי מיושר לימין */
+}
+
+.subCategoryGroup {
+  margin-bottom: 10px;
+}
+
+.subCategoryName {
+  font-size: 1.2rem;
+  color: #000000;
+  margin: 0 0 12px 0;
+  font-weight: bold;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.itemsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* מתיחת הרשימה לכל רוחב הקונטיינר כדי למנוע כיווץ למרכז */
+  align-items: stretch; 
+}
+
+.itemRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%; /* תופס את כל הרוחב */
+  justify-content: flex-start; /* מצמיד את התוכן לימין (ב-RTL) */
+}
+
+.bullet {
+  color: #7BC183;
+  font-size: 0.9rem;
+  margin-top: 3px;
+  flex-shrink: 0; /* מונע מהמעוין להתכווץ */
+}
+
+.itemText {
+  font-size: 1.05rem;
+  margin: 0;
+  line-height: 1.5;
+  color: #333333;
+  text-align: right; /* מבטיח שהטקסט עצמו מיושר לימין */
+  flex-grow: 1; /* נותן לטקסט למלא את המקום הפנוי לימין */
+}
+
+/* כותרת תחתית מעוצבת מילה במילה */
+.footer {
+  margin-top: 60px;
+  padding-top: 30px;
+  border-top: 3px double #222222;
+  text-align: center;
+}
+
+.footerInfo {
+  font-size: 1.1rem;
+  color: #000000;
+  font-weight: bold;
+  margin: 0 0 10px 0;
+  background-color: #f7f7f7;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.footerNote {
+  font-size: 0.95rem;
+  color: #444444;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* רספונסיביות מלאה לטאבלטים וסמארטפונים */
+@media (max-width: 850px) {
+  .menuContent {
+    grid-template-columns: 1fr;
+  }
+  
+  .menuContent > .sectionBlock:first-child,
+  .menuContent > .sectionBlock:nth-child(2) {
+    grid-column: span 1;
+  }
+  
+  .menuWrapper {
+    padding: 25px 20px;
+    margin: 10px;
+  }
+
+  .menuLogo {
+    max-width: 200px; 
+  }
+}

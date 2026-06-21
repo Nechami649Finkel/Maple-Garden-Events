@@ -1,0 +1,239 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Booking {
+  id                  String          @id @default(uuid())
+  clientAFullName     String
+  clientAIdNumber     String
+  clientAPhone        String
+  clientAEmail        String?
+  clientAAddress      String?
+  clientBFullName     String?
+  clientBIdNumber     String?
+  clientBPhone        String?
+  clientBEmail        String?
+  clientBAddress      String?
+  calendarDateId      String
+  eventType           String
+  timeOfDay           String
+  timeSlot            String          @default("evening")
+  guestCount          Int
+  finalPricePortion   Float
+  managerComments     String?
+  clientComments      String?
+  totalPrice          Float
+  hallRentalPrice     Float?          // <--- הנה השדה החדש שהוספנו!
+  paidAmount          Float           @default(0)
+  paymentStatus       String          @default("pending")
+  eventCode           String          @unique
+  hasMusic            Boolean         @default(true)
+  akumApprovalCode    String?
+  advancePaid         Float           @default(0)
+  totalPaid           Float           @default(0)
+  securityCheckStatus String          @default("PENDING")
+  securityCheckUrl    String?
+  isContractSigned    Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  createdBy           String
+  updatedAt           DateTime        @updatedAt
+  updatedBy           String?
+  cancellationReason  String?
+  isOption            Boolean         @default(false)
+  leadSource          String?
+  optionDurationHours Int             @default(48)
+  eventDate           EventDate       @relation(fields: [calendarDateId], references: [id])
+  additions           EventAddition[]
+  eventForm           EventForm?
+  feedbacks           Feedback[]
+  clientSignatureUrl  String?
+  depositCheckUrl     String?
+  depositCheckDetails Json?
+  contractText        String?         @db.Text
+
+  @@unique([calendarDateId, timeSlot])
+}
+model MenuCategory {
+  id     String @id @default(uuid())
+  name   String
+  dishes Dish[]
+}
+
+model Dish {
+  id          String       @id @default(uuid())
+  name        String
+  description String?
+  price       Float?
+  categoryId  String
+  category    MenuCategory @relation(fields: [categoryId], references: [id])
+}
+
+model EventDate {
+  id              String    @id @default(uuid())
+  date            DateTime  @unique
+  status          String
+  lockedBy        String?
+  clientName      String?
+  clientPhone     String?
+  clientEmail     String?
+  optionExpiresAt DateTime?
+  bookings        Booking[]
+}
+
+model EventForm {
+  id                  String          @id @default(uuid())
+  bookingId           String          @unique
+  eventTime           String?
+  receptionType       String?
+  finalGuestCount     Int?
+  seatingType         String?
+  menPercent          Int?
+  womenPercent        Int?
+  honorTableCount     Int?
+  tableclothId        String?
+  napkinId            String?
+  centerpiece         String?
+  bridgeChair         String?
+  hasLighting         Boolean         @default(false)
+  hasSoundSystem      Boolean         @default(false)
+  hasScreens          Boolean         @default(false)
+  hasFireworks        Boolean         @default(false)
+  entertainersBar     Int?
+  entertainersSitting Int?
+  entertainersMen     Int?
+  entertainersWomen   Int?
+  depositCheckUrl     String?
+  depositCheckStatus  Boolean         @default(false)
+  depositCheckDetails Json?
+  akumCode            String?
+  kashrut             String?
+  guestPortionCount   Int?
+  pricePerPortion     Float?
+  kashrutSurcharge    Float?
+  designPrice         Float?
+  extrasJson          String?
+  totalPrice          Float?
+  contractSigned      Boolean         @default(false)
+  contractSentAt      DateTime?
+  notes               String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  booking             Booking         @relation(fields: [bookingId], references: [id])
+  tables              TablePosition[]
+  menuSelections Json?
+  akumPaid Boolean?
+}
+
+model CancellationLog {
+  id         String   @id @default(uuid())
+  reason     String
+  clientName String?
+  createdAt  DateTime @default(now())
+}
+
+model TablePosition {
+  id          String    @id @default(uuid())
+  eventFormId String
+  tableNumber Int
+  positionX   Float
+  positionY   Float
+  section     String?
+  isHonor     Boolean   @default(false)
+  width       Float?
+  height      Float?
+  eventForm   EventForm @relation(fields: [eventFormId], references: [id], onDelete: Cascade)
+
+  @@unique([eventFormId, tableNumber])
+}
+
+model SystemSettings {
+  id                     String   @id @default("global")
+  vatRate                Float    @default(17.0)
+  defaultAdvance         Float    @default(5000.0)
+  optionDurationHours    Int      @default(48)
+  basePricePerPortion    Float    @default(250.0)
+  kashrutSurcharge       Float    @default(30.0)
+  staffPortionPrice      Float    @default(120.0)
+  designBasePrice        Float    @default(4500.0)
+  centerpiecePrice       Float    @default(150.0)
+  bridgeChairPrice       Float    @default(800.0)
+  lightingPrice          Float    @default(2500.0)
+  soundSystemPrice       Float    @default(2000.0)
+  screensPrice           Float    @default(1500.0)
+  fireworksPrice         Float    @default(1000.0)
+  akumFee                Float    @default(350.0)
+  updatedAt              DateTime @updatedAt
+  extraSecurityPrice     Float    @default(650.0)
+  nextEventNumber        Int      @default(0)
+  receptionPrice         Float    @default(2000.0)
+  separateReceptionPrice Float    @default(3000.0)
+  contractText           String?  @db.Text
+  barPortionPrice        Float    @default(60.0)
+}
+
+model ExtraService {
+  id        String   @id @default(uuid())
+  name      String
+  category  String
+  price     Float
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StaffMember {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Feedback {
+  id            String   @id @default(uuid())
+  bookingId     String
+  clientSide    String
+  clientName    String?
+  foodRating    Int?
+  serviceRating Int?
+  venueRating   Int?
+  averageScore  Float?
+  comments      String?
+  token         String   @unique
+  isCompleted   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+
+  @@unique([bookingId, clientSide])
+}
+
+model KashrutCertificate {
+  id                  String    @id @default(uuid())
+  nameKey             String
+  displayName         String
+  imageUrl            String?
+  validUntil          DateTime?
+  updatedAt           DateTime  @updatedAt
+  isGlobalCertificate Boolean   @default(false)
+}
+
+model EventAddition {
+  id            String   @id @default(uuid())
+  bookingId     String
+  description   String
+  cost          Float
+  staffName     String
+  signature     String
+  agreedToTerms Boolean
+  createdAt     DateTime @default(now())
+  booking       Booking  @relation(fields: [bookingId], references: [id])
+}
+model AuthorizedUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}

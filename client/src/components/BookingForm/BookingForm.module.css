@@ -1,0 +1,908 @@
+.container {
+  flex: 1;
+  background: var(--maple-bg);
+  padding: 20px 16px 32px;
+  direction: rtl;
+}
+
+.formCard {
+  background: var(--maple-surface);
+  max-width: 960px;
+  margin: 0 auto;
+  border-radius: var(--maple-radius-lg);
+  border: 1px solid var(--maple-border);
+  box-shadow: var(--maple-shadow);
+  overflow: hidden;
+}
+
+.header {
+  background: linear-gradient(135deg, var(--maple-green) 0%, var(--maple-green-dark) 100%);
+  padding: 22px 28px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.headerLogo {
+  height: 52px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+
+.headerText {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.titleAccent {
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.subtitle {
+  color: rgba(255, 255, 255, 0.88);
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.formBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.metaBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  background: var(--maple-green-light);
+  padding: 16px 18px;
+  border-radius: var(--maple-radius);
+  border: 1px solid var(--maple-green-muted);
+}
+
+.metaBar .inputGroup {
+  margin: 0;
+}
+
+.metaLabel {
+  font-weight: 600;
+  color: var(--maple-text-secondary);
+  font-size: 0.78rem;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.sectionCard {
+  background: var(--maple-surface);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius);
+  padding: 20px;
+}
+
+.sectionHeader {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--maple-text);
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--maple-green-muted);
+}
+
+.clientsSectionWedding {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.clientsSectionSingle {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .clientsSectionWedding {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.clientBlock {
+  background: var(--maple-bg);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  font-size: 0.95rem;
+  color: var(--maple-green-dark);
+  border-bottom: 2px solid var(--maple-green-muted);
+  padding-bottom: 6px;
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.sectionTitlePrimary {
+  font-size: 0.95rem;
+  color: var(--maple-green-dark);
+  border-bottom: 2px solid var(--maple-green-muted);
+  padding-bottom: 6px;
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.sectionTitleSecondary {
+  font-size: 0.95rem;
+  color: var(--maple-text-secondary);
+  border-bottom: 2px solid var(--maple-border-strong);
+  padding-bottom: 6px;
+  margin: 0 0 4px;
+  font-weight: 700;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inputGroup label {
+  font-size: 0.82rem;
+  color: var(--maple-text-secondary);
+  font-weight: 500;
+}
+
+.inputRow {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.splitRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--maple-border-strong);
+  border-radius: var(--maple-radius-sm);
+  padding: 10px 12px;
+  outline: none;
+  background: var(--maple-surface);
+  transition: border-color var(--maple-transition), box-shadow var(--maple-transition);
+  font-size: 0.92rem;
+  font-family: var(--maple-font);
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: var(--maple-green);
+  box-shadow: 0 0 0 3px rgba(140, 191, 142, 0.2);
+}
+
+.selectPlaceholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.selectHasValue {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.metaBar select.input option:not([value=""]) {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.inputReadonly {
+  background: var(--maple-bg) !important;
+  cursor: not-allowed;
+  color: var(--maple-text);
+  font-weight: 600;
+}
+
+.dateReadonly {
+  background: var(--maple-bg) !important;
+  cursor: not-allowed;
+  color: var(--maple-green-dark);
+  font-weight: 700;
+}
+
+.eventDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (min-width: 900px) {
+  .eventDetailsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.timeNote {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  color: var(--maple-warning);
+  margin: -4px 0 0;
+}
+
+.menuLinkBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--maple-green-light);
+  color: var(--maple-green-dark);
+  cursor: pointer;
+  font-weight: 600;
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-sm);
+  padding: 10px 12px;
+  transition: background var(--maple-transition);
+}
+
+.menuLinkBtn:hover {
+  background: var(--maple-green-muted);
+}
+
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.menuModal {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.menuCloseBtn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: white;
+  color: #ef4444;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 8px 20px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.menuCloseBtn:hover {
+  background: #fef2f2;
+}
+
+.menuModalContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 56px 16px 24px;
+}
+
+.upgradesGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (min-width: 600px) {
+  .upgradesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.upgradeLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--maple-text-secondary);
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--maple-border);
+  background: var(--maple-bg);
+  transition: border-color var(--maple-transition);
+}
+
+.upgradeLabel:hover {
+  border-color: var(--maple-green-muted);
+}
+
+.upgradeLabelDisabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.paymentGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  background: var(--maple-bg);
+  padding: 14px;
+  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--maple-border);
+  margin-bottom: 16px;
+}
+
+.paymentGrid .inputGroup {
+  margin: 0;
+}
+
+.vatRow {
+  grid-column: 1 / -1;
+}
+
+.radioGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--maple-text-secondary);
+}
+
+.depositOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.depositHighlight {
+  color: var(--maple-green-dark);
+  font-weight: 600;
+}
+
+.fileUploadBox {
+  margin-bottom: 14px;
+  padding: 12px;
+  background: var(--maple-bg);
+  border: 1px dashed var(--maple-border-strong);
+  border-radius: var(--maple-radius-sm);
+}
+
+.fileUploadBoxCapture {
+  border-color: var(--maple-green-muted);
+  background: var(--maple-green-light);
+}
+
+.contractBox {
+  background: var(--maple-green-light);
+  padding: 14px;
+  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--maple-green-muted);
+  margin-top: 14px;
+}
+
+.contractLabel {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: var(--maple-text);
+}
+
+.contractLabel input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.contractOptional {
+  color: var(--maple-warning);
+  font-weight: 400;
+}
+
+.totalsBox {
+  margin-top: 18px;
+  text-align: center;
+  background: var(--maple-green-light);
+  padding: 18px;
+  border-radius: var(--maple-radius);
+  border: 1px solid var(--maple-green-muted);
+}
+
+.totalsTitle {
+  margin: 0;
+  color: var(--maple-green-dark);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.totalsBreakdown {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--maple-text-secondary);
+  margin-top: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--maple-green-muted);
+}
+
+.discountLine {
+  color: var(--maple-danger);
+}
+
+.totalsFinal {
+  margin: 10px 0 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--maple-green-deep);
+}
+
+.totalsNote {
+  font-size: 0.85rem;
+  color: var(--maple-text-muted);
+  margin: 6px 0 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid var(--maple-border);
+}
+
+.submitBtn {
+  background: var(--maple-green-dark);
+  color: #fff;
+  padding: 13px 36px;
+  border-radius: var(--maple-radius-sm);
+  border: none;
+  box-shadow: var(--maple-shadow-sm);
+  cursor: pointer;
+  transition: all var(--maple-transition);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: var(--maple-font);
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: var(--maple-green-deep);
+  transform: translateY(-1px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.inputError {
+  border-color: var(--maple-danger) !important;
+}
+
+.errorMsg {
+  color: var(--maple-danger);
+  font-size: 0.75rem;
+}
+
+.emailSuggestions {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  background: var(--maple-surface);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+  box-shadow: var(--maple-shadow);
+  z-index: 10;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.emailSuggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: right;
+  font-size: 0.88rem;
+  border-bottom: 1px solid var(--maple-border);
+}
+
+.emailSuggestions li:hover {
+  background: var(--maple-green-light);
+}
+
+.emailWrap {
+  position: relative;
+}
+
+.loadingText {
+  text-align: center;
+  padding: 48px;
+  color: var(--maple-text-muted);
+}
+
+.slotHint {
+  font-size: 0.8rem;
+  color: var(--maple-warning);
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .container { padding: 12px 10px 24px; }
+  .formBody { padding: 16px; gap: 16px; }
+  .header { padding: 16px; flex-direction: column; align-items: flex-start; }
+  .headerLogo { height: 42px; }
+  .inputRow, .splitRow, .eventDetailsGrid, .upgradesGrid, .paymentGrid {
+    grid-template-columns: 1fr;
+  }
+  .metaBar { grid-template-columns: 1fr; }
+}
+/* Acum Alert Box Styling */
+.akumAlertBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 15px;
+  margin-top: 10px;
+  text-align: right;
+}
+
+.akumAlertTitle {
+  display: block;
+  font-weight: bold;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.akumAlertText {
+  font-size: 0.95rem;
+  color: #475569;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.akumAlertLink {
+  color: #2563eb;
+  font-weight: bold;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.akumAlertLink:hover {
+  color: #1d4ed8;
+}
+
+/* תאריכי אופציה — סרגל עליון דביק */
+.optionDatesBar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #fffbeb;
+  border: 2px solid #fbbf24;
+  border-radius: var(--maple-radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.optionDatesBarHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.optionDatesBarHead strong {
+  font-size: 1.05rem;
+  color: #92400e;
+}
+
+.optionDatesBarHint {
+  font-size: 0.85rem;
+  color: #b45309;
+}
+
+.optionDatesChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.optionDateChip {
+  display: flex;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  overflow: hidden;
+  min-width: 200px;
+}
+
+.optionDateChipMain {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  flex: 1;
+}
+
+.optionDateChipIndex {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #d97706;
+}
+
+.optionDateChipGreg {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  direction: ltr;
+  text-align: right;
+}
+
+.optionDateChipDow,
+.optionDateChipHeb {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.optionDateChipRemove {
+  border: none;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.optionAddDateBtn {
+  align-self: flex-start;
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.optionAddDateBtn:hover {
+  background: #d97706;
+}
+
+.optionDatesMaxMsg {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #92400e;
+}
+
+.optionDatesAddSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.optionDatesAddRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.optionDatesOr {
+  font-size: 0.9rem;
+  color: #92400e;
+}
+
+.optionManualInput {
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 0.95rem;
+  min-width: 160px;
+  direction: ltr;
+}
+
+.optionManualAddBtn {
+  background: #fff;
+  color: #92400e;
+  border: 2px solid #f59e0b;
+  border-radius: 8px;
+  padding: 9px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.optionManualAddBtn:hover:not(:disabled) {
+  background: #fffbeb;
+}
+
+.optionManualAddBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.optionManualError {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #dc2626;
+}
+
+.optionPickerManual {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.optionPickerManualLabel {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.optionPickerOr {
+  margin: 0 0 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.optionPickerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.optionPickerModal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 380px;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.optionPickerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.optionPickerHeader h4 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.optionPickerClose {
+  border: none;
+  background: transparent;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.optionPickerNav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.optionPickerNav button {
+  border: 1px solid var(--maple-border);
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+
+.optionPickerWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.optionPickerGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.optionPickerDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f0fdf4;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.optionPickerDay:hover:not(:disabled) {
+  border-color: #22c55e;
+  background: #dcfce7;
+}
+
+.optionPickerDayDisabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.optionPickerDayNum {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.optionPickerDayHeb {
+  font-size: 0.65rem;
+  color: #64748b;
+}
+
+.optionPickerDayEmpty {
+  min-height: 52px;
+}
+
+.optionPickerLoading {
+  text-align: center;
+  padding: 24px;
+  color: #64748b;
+}

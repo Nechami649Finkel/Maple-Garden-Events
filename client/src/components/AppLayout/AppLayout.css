@@ -1,0 +1,28 @@
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  direction: rtl;
+  font-family: var(--maple-font);
+  background: var(--maple-bg);
+  color: var(--maple-text);
+}
+
+.app-layout-full {
+  min-height: 100vh;
+}
+
+.app-layout-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  padding: 24px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}

@@ -10,10 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
+    "@sentry/react": "^10.59.0",
+    "@tanstack/react-query": "^5.101.0",
     "axios": "^1.16.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-draggable": "^4.6.0",
     "react-router-dom": "^7.15.1",
+    "react-signature-canvas": "^1.1.0-alpha.2",
+    "react-webcam": "^7.2.0",
+    "react-zoom-pan-pinch": "^4.0.3",
+    "recharts": "^3.8.1",
+    "socket.io-client": "^4.8.3",
+    "tesseract.js": "^7.0.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -21,6 +31,7 @@
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/react-signature-canvas": "^1.0.7",
     "@vitejs/plugin-react": "^6.0.1",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",

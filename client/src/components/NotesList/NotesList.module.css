@@ -1,0 +1,90 @@
+.notesContainer {
+  margin-bottom: 0;
+}
+
+.notesList {
+  background: var(--maple-surface, white);
+  border: 1px solid var(--maple-border, #e0e0e0);
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.noteItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.noteItem:last-child {
+  border-bottom: none;
+}
+
+.noteNumber {
+  font-weight: 600;
+  color: var(--maple-green, #5a8f6b);
+  min-width: 24px;
+}
+
+.noteText {
+  flex: 1;
+  font-size: 14px;
+  color: var(--maple-text, #333);
+}
+
+.removeNoteBtn {
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.removeNoteBtn:hover {
+  color: #f44336;
+}
+
+.addNoteRow {
+  display: flex;
+  gap: 8px;
+}
+
+.noteInput {
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.noteInput:focus {
+  outline: none;
+  border-color: var(--maple-green, #5a8f6b);
+  box-shadow: 0 0 0 3px rgba(90, 143, 107, 0.12);
+}
+
+.addNoteBtn {
+  padding: 10px 16px;
+  background: var(--maple-green, #4caf50);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.addNoteBtn:hover {
+  background: var(--maple-green-dark, #4a7c59);
+}
+
+.emptyText {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--maple-text-secondary, #888);
+}

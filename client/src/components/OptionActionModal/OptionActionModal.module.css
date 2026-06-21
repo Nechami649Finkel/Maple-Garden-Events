@@ -1,0 +1,214 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  direction: rtl;
+}
+
+.modal {
+  background: #ffffff;
+  border-radius: 8px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+}
+
+.header {
+  background: #1e293b;
+  color: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.closeBtn:hover { color: #ef4444; }
+
+.body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.infoBox {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.infoRow {
+  display: flex;
+  gap: 10px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 6px;
+}
+.infoRow:last-child { border-bottom: none; padding-bottom: 0; }
+
+.infoRow label {
+  font-weight: bold;
+  color: #475569;
+  min-width: 90px;
+  font-size: 0.85rem;
+}
+
+.infoRow span {
+  color: #1e293b;
+}
+
+.question {
+  font-weight: bold;
+  color: #374151;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.actionButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.finalizeBtn {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.finalizeBtn:hover { background: #059669; }
+
+.cancelOptionBtn {
+  background: #fff;
+  color: #ef4444;
+  border: 2px solid #ef4444;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.cancelOptionBtn:hover { background: #ef4444; color: #fff; }
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.inputLabel {
+  font-weight: bold;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.input {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  outline: none;
+  direction: rtl;
+}
+.input:focus { border-color: #1e293b; }
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  gap: 10px;
+}
+
+.backBtn {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.backBtn:hover { background: #cbd5e1; }
+
+.submitBtn {
+  background: #1e293b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.submitBtn:hover { background: #334155; }
+.submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+/* Acum Alert Box Styling */
+.akumAlertBox {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 15px;
+  margin-top: 10px;
+  text-align: right;
+}
+
+.akumAlertTitle {
+  display: block;
+  font-weight: bold;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.akumAlertText {
+  font-size: 0.95rem;
+  color: #475569;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.akumAlertLink {
+  color: #2563eb;
+  font-weight: bold;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.akumAlertLink:hover {
+  color: #1d4ed8;
+}

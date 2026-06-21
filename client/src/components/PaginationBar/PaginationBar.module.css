@@ -1,0 +1,28 @@
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--maple-border, #e0e0e0);
+}
+
+.btn {
+  padding: 8px 16px;
+  border: 1px solid var(--maple-border-strong, #ccc);
+  border-radius: var(--maple-radius-sm, 8px);
+  background: var(--maple-surface, #fff);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.info {
+  font-size: 0.9rem;
+  color: var(--maple-text-secondary, #666);
+}

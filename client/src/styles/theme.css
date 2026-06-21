@@ -1,0 +1,30 @@
+:root {
+  /* ירוק מיפל — מתאים ללוגו המקורי */
+  --maple-green: #8CBF8E;
+  --maple-green-dark: #6BA86E;
+  --maple-green-deep: #4F8F52;
+  --maple-green-light: #EDF7EE;
+  --maple-green-muted: #C5E4C7;
+
+  --maple-bg: #F7F8F6;
+  --maple-surface: #FFFFFF;
+  --maple-text: #2D3748;
+  --maple-text-secondary: #4A5568;
+  --maple-text-muted: #718096;
+  --maple-border: #E4E8E4;
+  --maple-border-strong: #CDD5CD;
+
+  --maple-radius: 10px;
+  --maple-radius-lg: 14px;
+  --maple-radius-sm: 6px;
+  --maple-shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.06);
+  --maple-shadow: 0 4px 12px rgba(45, 55, 72, 0.08);
+  --maple-shadow-lg: 0 8px 24px rgba(45, 55, 72, 0.12);
+
+  --maple-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --maple-transition: 0.18s ease;
+
+  --maple-danger: #E53E3E;
+  --maple-warning: #DD6B20;
+  --maple-info: #4A6FA5;
+}

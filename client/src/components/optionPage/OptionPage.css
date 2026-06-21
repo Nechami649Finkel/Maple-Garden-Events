@@ -1,0 +1,32 @@
+.option-page-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 32px;
+  direction: rtl;
+  font-family: var(--maple-font);
+  background: var(--maple-surface);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-lg);
+  box-shadow: var(--maple-shadow);
+  text-align: center;
+}
+
+.option-page-container h3 {
+  color: var(--maple-text);
+  margin-bottom: 16px;
+}
+
+.option-page-container button {
+  background: var(--maple-green);
+  color: white;
+  border: none;
+  border-radius: var(--maple-radius-sm);
+  padding: 10px 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--maple-transition);
+}
+
+.option-page-container button:hover {
+  background: var(--maple-green-dark);
+}

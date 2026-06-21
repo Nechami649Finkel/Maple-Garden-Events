@@ -1,0 +1,116 @@
+/* src/components/Login/Login.css */
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f4f7f6; /* רקע אפרפר-כחלחל עדין */
+  direction: rtl; /* יישור לימין עבור עברית */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login-form {
+  background: white;
+  padding: 3rem 2.5rem;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+.login-form h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.form-group input {
+  padding: 0.85rem 1rem;
+  border: 1px solid #dcdde1;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #fdfdfd;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3498db; /* צבע כחול להדגשה בעת לחיצה */
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+  background-color: #ffffff;
+}
+
+.login-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.1s;
+  margin-top: 1rem;
+  box-shadow: 0 4px 6px rgba(52, 152, 219, 0.2);
+}
+
+.login-button:hover {
+  background-color: #2980b9;
+}
+
+.login-button:active {
+  transform: translateY(2px); /* אפקט לחיצה קטן */
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.2);
+}
+
+.error-message {
+  background-color: #fdf3f2;
+  color: #e74c3c;
+  padding: 0.85rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid #fadbd8;
+  animation: shake 0.4s ease-in-out;
+}
+
+/* אנימציה חמודה לכניסה של הטופס */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* אנימציית רטט קלה כשיש שגיאת התחברות */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+}
