@@ -199,6 +199,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [isOption, setIsOption] = useState(isOptionMode);
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
+  const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
 
   const [formData, setFormData] = useState({
     createdBy: '', clientAFirstName: '', clientALastName: '', clientAFullName: '', clientAIdNumber: '', clientAPhone: '', clientAPhone2: '', clientAEmail: '', clientACity: '', clientAAddress: '',
@@ -281,6 +282,28 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       setFormData(prev => ({ ...prev, calendarDateId: firstDate || '' }));
     }
   }, [selectedDatesDisplay]);
+
+  useEffect(() => {
+    if (!isOption || selectedDatesDisplay.length === 0) {
+      setOptionDatesSlotWarning('');
+      return;
+    }
+    const slot = normalizeTimeSlot(formData.timeOfDay as string);
+    if (!slot) {
+      setOptionDatesSlotWarning('יש לבחור זמן ביום לפני הוספת תאריכים.');
+      return;
+    }
+    let cancelled = false;
+    verifyAllOptionDates(
+      selectedDatesDisplay.map(normalizeOptionDate),
+      formData.eventType || 'חתונה',
+      slot,
+    ).then((verify) => {
+      if (cancelled) return;
+      setOptionDatesSlotWarning(verify.ok ? '' : verify.error);
+    });
+    return () => { cancelled = true; };
+  }, [isOption, formData.timeOfDay, formData.eventType, selectedDatesDisplay]);
 
   useEffect(() => {
     if (isEditMode && convertFromOption) return;
@@ -774,9 +797,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
     let datesForSubmit = selectedDatesDisplay;
     if (isOption && selectedDatesDisplay.length > 0) {
-      const slot = normalizeTimeSlot(formData.timeOfDay as string) || getDefaultTimeSlot(availableSlots);
+      const slot = normalizeTimeSlot(formData.timeOfDay as string);
       if (!slot) {
         alert('חובה לבחור זמן ביום (בוקר / צהריים / ערב).');
+        return;
+      }
+      if (optionDatesSlotWarning) {
+        alert(`לא ניתן לשמור — התאריך כבר לא זמין:\n${optionDatesSlotWarning}`);
         return;
       }
       const verify = await verifyAllOptionDates(
@@ -935,6 +962,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
               selectedDates={selectedDatesDisplay}
               onChange={setSelectedDatesDisplay}
               eventType={formData.eventType || 'חתונה'}
+              timeSlot={formData.timeOfDay}
+              slotWarning={optionDatesSlotWarning}
             />
           )}
 

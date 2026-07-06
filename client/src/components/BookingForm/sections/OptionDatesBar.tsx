@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import styles from '../BookingForm.module.css';
-import { type TimeSlot, DEFAULT_TIME_SLOT, normalizeTimeSlot } from '../../../utils/timeSlot';
+import { type TimeSlot, SLOT_LABELS, normalizeTimeSlot } from '../../../utils/timeSlot';
 import { validateOptionDateSelection } from '../../../utils/optionDateValidation';
 import {
   type OptionDateItem,
@@ -44,7 +44,7 @@ interface OptionDatePickerModalProps {
   onSelect: (item: OptionDateItem) => void;
   excludeDates: string[];
   eventType: string;
-  timeSlot: TimeSlot;
+  timeSlot?: TimeSlot;
 }
 
 export const OptionDatePickerModal = ({
@@ -111,7 +111,9 @@ export const OptionDatePickerModal = ({
   for (let day = 1; day <= daysInMonth; day++) {
     const date = formatDateLocal(new Date(year, month, day));
     const srv = serverMap.get(date);
-    const validationError = validateOptionDateSelection(date, srv, timeSlot, excludeDates);
+    const validationError = timeSlot
+      ? validateOptionDateSelection(date, srv, timeSlot, excludeDates)
+      : 'יש לבחור זמן ביום לפני בחירת תאריך.';
     const disabled = !!validationError;
     cells.push({
       date,
@@ -231,17 +233,19 @@ interface OptionDatesBarProps {
   onChange: (dates: OptionDateItem[]) => void;
   eventType: string;
   timeSlot?: TimeSlot | string;
+  slotWarning?: string;
 }
 
-const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlotProp }: OptionDatesBarProps) => {
-  const resolvedSlot: TimeSlot = normalizeTimeSlot(timeSlotProp as string) || DEFAULT_TIME_SLOT;
+const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlotProp, slotWarning }: OptionDatesBarProps) => {
+  const resolvedSlot = normalizeTimeSlot(timeSlotProp as string);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manualDate, setManualDate] = useState('');
   const [manualError, setManualError] = useState('');
   const [manualAdding, setManualAdding] = useState(false);
   const normalized = selectedDates.map(normalizeOptionDate);
-  const canAdd = normalized.length < MAX_OPTION_DATES;
+  const canAdd = normalized.length < MAX_OPTION_DATES && !!resolvedSlot;
   const todayStr = formatDateLocal(new Date());
+  const slotLabel = resolvedSlot ? SLOT_LABELS[resolvedSlot] : '';
 
   const removeDate = (date: string) => {
     if (normalized.length <= 1) {
@@ -280,7 +284,11 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
       <div className={styles.optionDatesBar}>
         <div className={styles.optionDatesBarHead}>
           <strong>תאריכי האופציה ({normalized.length}/{MAX_OPTION_DATES})</strong>
-          <span className={styles.optionDatesBarHint}>ניתן לשמור עד 3 תאריכים חלופיים</span>
+          <span className={styles.optionDatesBarHint}>
+            {resolvedSlot
+              ? `ניתן לשמור עד 3 תאריכים · משבצת ${slotLabel}`
+              : 'יש לבחור זמן ביום (בוקר / צהריים / ערב) לפני הוספת תאריכים'}
+          </span>
         </div>
 
         <div className={styles.optionDatesChips}>
@@ -300,6 +308,8 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
             </div>
           ))}
         </div>
+
+        {slotWarning && <p className={styles.optionManualError}>{slotWarning}</p>}
 
         {canAdd ? (
           <div className={styles.optionDatesAddSection}>
@@ -329,8 +339,10 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
             </div>
             {manualError && <p className={styles.optionManualError}>{manualError}</p>}
           </div>
-        ) : (
+        ) : normalized.length >= MAX_OPTION_DATES ? (
           <p className={styles.optionDatesMaxMsg}>נבחרו 3 תאריכים — מקסימום לאופציה.</p>
+        ) : (
+          <p className={styles.optionDatesMaxMsg}>בחרי משבצת זמן ביום לפני הוספת תאריך.</p>
         )}
       </div>
 
@@ -340,7 +352,7 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
         onSelect={addDate}
         excludeDates={normalized.map(d => d.date)}
         eventType={eventType}
-        timeSlot={resolvedSlot}
+        timeSlot={resolvedSlot ?? undefined}
       />
     </>
   );
