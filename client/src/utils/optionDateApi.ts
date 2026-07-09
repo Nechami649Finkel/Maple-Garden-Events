@@ -1,6 +1,6 @@
 import { apiFetch } from '../services/api';
 import { API_URL } from '../config/api';
-import { type TimeSlot } from './timeSlot';
+import { type TimeSlot, normalizeTimeSlot } from './timeSlot';
 import { validateOptionDateSelection } from './optionDateValidation';
 
 export type OptionDateItem = { date: string; hebrewDate?: string };
@@ -36,9 +36,14 @@ export async function resolveOptionDate(
   date: string,
   eventType: string,
   excludeDates: string[],
-  timeSlot: TimeSlot
+  timeSlot: TimeSlot | string | null | undefined
 ): Promise<{ ok: true; item: OptionDateItem } | { ok: false; error: string }> {
-  const localError = validateOptionDateSelection(date, undefined, timeSlot, excludeDates);
+  const slot = normalizeTimeSlot(typeof timeSlot === 'string' ? timeSlot : null);
+  if (!slot) {
+    return { ok: false, error: 'יש לבחור זמן ביום (בוקר / צהריים / ערב) לפני הוספת תאריך.' };
+  }
+
+  const localError = validateOptionDateSelection(date, undefined, slot, excludeDates);
   if (localError) return { ok: false, error: localError };
 
   try {
@@ -51,7 +56,7 @@ export async function resolveOptionDate(
     }
     const data = await res.json();
     const day = data?.[0];
-    const serverError = validateOptionDateSelection(date, day, timeSlot, excludeDates);
+    const serverError = validateOptionDateSelection(date, day, slot, excludeDates);
     if (serverError) return { ok: false, error: serverError };
     return {
       ok: true,
@@ -65,12 +70,17 @@ export async function resolveOptionDate(
 export async function verifyAllOptionDates(
   dates: OptionDateItem[],
   eventType: string,
-  timeSlot: TimeSlot
+  timeSlot: TimeSlot | string | null | undefined
 ): Promise<{ ok: true; dates: OptionDateItem[] } | { ok: false; error: string }> {
+  const slot = normalizeTimeSlot(typeof timeSlot === 'string' ? timeSlot : null);
+  if (!slot) {
+    return { ok: false, error: 'יש לבחור זמן ביום (בוקר / צהריים / ערב).' };
+  }
+
   const verified: OptionDateItem[] = [];
   for (const item of dates) {
     const exclude = dates.filter(d => d.date !== item.date).map(d => d.date);
-    const result = await resolveOptionDate(item.date, eventType, exclude, timeSlot);
+    const result = await resolveOptionDate(item.date, eventType, exclude, slot);
     if (!result.ok) {
       return { ok: false, error: `${item.date.split('-').reverse().join('/')}: ${result.error}` };
     }

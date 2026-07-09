@@ -1,10 +1,16 @@
 import {
   type TimeSlot,
-  DEFAULT_TIME_SLOT,
   SLOT_LABELS,
   getTakenSlots,
   getBlockedSlotsForDate,
+  getBookableSlotsForDate,
+  normalizeTimeSlot,
 } from './timeSlot';
+
+type OptionDayBooking = {
+  timeOfDay?: string | null;
+  isOption?: boolean;
+};
 
 function formatDateLocal(date: Date): string {
   const yyyy = date.getFullYear();
@@ -28,11 +34,21 @@ function validateSlotOnDate(dateStr: string, slot: TimeSlot): string | null {
   return null;
 }
 
+function slotConflictMessage(slot: TimeSlot, bookings: OptionDayBooking[]): string {
+  const optionHeld = bookings.some(
+    (b) => b.isOption && normalizeTimeSlot(b.timeOfDay) === slot,
+  );
+  if (optionHeld) {
+    return `משבצת ${SLOT_LABELS[slot]} תפוסה על ידי אופציה. לחצי "סגירת אירוע במקום האופציה" בלוח השנה.`;
+  }
+  return `משבצת ${SLOT_LABELS[slot]} תפוסה בתאריך זה (אירוע מאושר).`;
+}
+
 export function validateOptionDateSelection(
   dateStr: string,
-  dayData: { status?: string; bookings?: { timeOfDay?: string | null }[]; reason?: string | null } | undefined,
-  slot: TimeSlot = DEFAULT_TIME_SLOT,
-  excludeDates: string[] = []
+  dayData: { status?: string; bookings?: OptionDayBooking[]; reason?: string | null } | undefined,
+  slot: TimeSlot,
+  excludeDates: string[] = [],
 ): string | null {
   const todayStr = formatDateLocal(new Date());
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
@@ -52,10 +68,19 @@ export function validateOptionDateSelection(
   const slotError = validateSlotOnDate(dateStr, slot);
   if (slotError) return slotError;
 
-  const bookings = dayData?.bookings ?? [];
-  const taken = getTakenSlots(bookings);
-  if (taken.has(slot)) {
-    return `משבצת ${SLOT_LABELS[slot]} תפוסה בתאריך זה.`;
+  if (dayData) {
+    const bookings = dayData.bookings ?? [];
+    const bookable = getBookableSlotsForDate(dateStr, bookings);
+    if (bookable.length === 0) {
+      return 'התאריך מלא — אין משבצות זמן פנויות.';
+    }
+    if (!bookable.includes(slot)) {
+      const taken = getTakenSlots(bookings);
+      if (taken.has(slot)) {
+        return slotConflictMessage(slot, bookings);
+      }
+      return `משבצת ${SLOT_LABELS[slot]} אינה זמינה בתאריך זה.`;
+    }
   }
 
   return null;
