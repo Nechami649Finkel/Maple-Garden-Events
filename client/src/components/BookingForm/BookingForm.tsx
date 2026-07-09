@@ -359,7 +359,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       clientALastName: nameParts.last,
       clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
       clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
-      calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: parsedTime.timeOfDay, startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
+      calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
       guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
       akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
       hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',
@@ -470,6 +470,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       );
     } else if (!current && free.length > 0) {
       const next = getDefaultTimeSlot(free);
+      if (!next) return;
       const hours = getSlotHours(next);
       setFormData((prev) => ({ ...prev, timeOfDay: next, startTime: hours.start, endTime: hours.end }));
     }
@@ -823,7 +824,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       setSelectedDatesDisplay(verify.dates);
     }
 
-    const selectedSlot = normalizeTimeSlot(formData.timeOfDay, formData.startTime, formData.endTime);
+    const selectedSlot = normalizeTimeSlot(formData.timeOfDay, formData.startTime);
     if (
       !isOption
       && !convertFromOption
