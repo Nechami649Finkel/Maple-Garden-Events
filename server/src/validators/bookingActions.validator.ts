@@ -45,3 +45,10 @@ export const finalizeBookingSchema = z.object({
     tables: z.array(z.unknown()).optional(),
   }),
 });
+
+export const reissueEasyCountSchema = z.object({
+  params: z.object({ id: z.string().uuid() }),
+  body: z.object({
+    force: z.boolean().optional(),
+  }).optional(),
+});

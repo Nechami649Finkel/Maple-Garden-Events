@@ -2,7 +2,7 @@
 import hebcal from 'hebcal';
 import prisma from "../config/prisma";
 import { emitDateUpdated } from "../utils/realtime";
-import { normalizeTimeSlot, getTakenSlots, SLOT_LABELS, formatStoredTimeOfDay, getBlockedSlotsForDate, isDateFullyBooked, validateSlotOnDate, parseDateLocal, toLocalDateKey } from '../utils/timeSlot';
+import { normalizeTimeSlot, getTakenSlots, SLOT_LABELS, formatStoredTimeOfDay, getBlockedSlotsForDate, validateSlotOnDate, parseDateLocal, toLocalDateKey, isDateFullyBooked } from '../utils/timeSlot';
 import { validateSlotAvailability, resolveBookingSlot } from '../utils/bookingDateValidation';
 import { allocateEventCode } from '../utils/eventCode';
 
@@ -206,18 +206,15 @@ export const calendarService = {
           ? EventStatus.OPTION
           : record?.status;
       const hasBookingStatus = dbStatus === EventStatus.OPTION || dbStatus === EventStatus.BOOKED;
-      const fullyBooked = isDateFullyBooked(current, bookings);
 
       result.push({
         id: record?.id || null,
         date: dateKey,
         dayOfWeek: current.getDay(),
         hebrewDate: formatHebrewDate(hDate),
-        status: fullyBooked
-          ? EventStatus.BLOCKED
-          : hasBookingStatus
-            ? dbStatus
-            : staticSt.type,
+        status: hasBookingStatus
+          ? dbStatus
+          : staticSt.type,
         reason: staticSt.reason || null,
         blockedSlots,
         bookings: bookings 

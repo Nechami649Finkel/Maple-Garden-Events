@@ -1,0 +1,4 @@
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "depositMethod" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "easycountDocId" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "easycountDocUrl" TEXT;
+ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "easycountStatus" TEXT;

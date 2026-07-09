@@ -37,6 +37,90 @@ import {
 import { isHallOnlyBooking, HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
 import { neonTransactionOptions, withDbRetry } from '../utils/dbRetry';
 import { isSlotUniqueViolation, slotUniqueConflictError } from '../utils/bookingSlotGuard';
+import { getEasyCountMeta, issueAdvanceReceipt } from '../Services/easycount.service';
+import {
+  formatEasyCountUserMessage,
+  canIssueEasyCountReceipt,
+} from '../utils/easycountHelpers';
+
+export type EasyCountBookingResult = {
+  issued: boolean;
+  status: string | null;
+  message: string;
+  docId: string | null;
+  docUrl: string | null;
+};
+
+async function issueEasyCountReceiptForBooking(
+  bookingId: string,
+  options?: { force?: boolean },
+): Promise<EasyCountBookingResult | null> {
+  const booking = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { eventDate: true },
+  });
+
+  if (!booking || booking.isOption || booking.advancePaid <= 0) {
+    return null;
+  }
+
+  const force = options?.force === true;
+  const alreadyIssued =
+    booking.easycountStatus === 'ISSUED'
+    || (!force && booking.easycountStatus === 'SIMULATED' && !!booking.easycountDocId);
+
+  if (alreadyIssued && !force) {
+    return {
+      issued: false,
+      status: booking.easycountStatus,
+      message: 'קבלה כבר הופקה עבור מקדמה זו.',
+      docId: booking.easycountDocId,
+      docUrl: booking.easycountDocUrl,
+    };
+  }
+
+  if (!force && !canIssueEasyCountReceipt(booking)) {
+    return null;
+  }
+
+  const settings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+  const result = await issueAdvanceReceipt({
+    eventCode: booking.eventCode,
+    clientName: booking.clientAFullName,
+    clientIdNumber: booking.clientAIdNumber,
+    clientEmail: booking.clientAEmail || booking.clientBEmail,
+    amount: booking.advancePaid,
+    depositMethod: booking.depositMethod,
+    eventType: booking.eventType,
+    vatRate: settings?.vatRate ?? 17,
+    vatType: booking.vatType,
+    eventDate: booking.eventDate?.date ?? null,
+  });
+
+  if (result.status === 'SKIPPED') return null;
+
+  const message = formatEasyCountUserMessage(result, getEasyCountMeta().mode);
+
+  await prisma.booking.update({
+    where: { id: bookingId },
+    data: {
+      easycountDocId: result.docId,
+      easycountDocUrl: result.docUrl,
+      easycountStatus: result.status,
+      easycountError: result.status === 'FAILED' ? (result.error || message) : null,
+    },
+  });
+
+  emitBookingUpdated(bookingId);
+
+  return {
+    issued: result.status === 'ISSUED' || result.status === 'SIMULATED',
+    status: result.status,
+    message,
+    docId: result.docId,
+    docUrl: result.docUrl,
+  };
+}
 
 function canEditBookingDate(eventDate: Date): boolean {
   const today = new Date();
@@ -423,8 +507,28 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           hallRentalPrice: data.hallRentalPrice ? Number(data.hallRentalPrice) : null, // 🔥 התיקון: שמירת מחיר אולם
           hasMusic: data.hasMusic !== undefined ? data.hasMusic : true,
           akumApprovalCode: data.akumApprovalCode || null,
-          advancePaid: 0,
-          totalPaid: 0,
+          advancePaid: (() => {
+            if (newStatus === 'OPTION') return 0;
+            const paid = Number(data.advancePaid) || 0;
+            return paid > 0 ? paid : 0;
+          })(),
+          paidAmount: (() => {
+            if (newStatus === 'OPTION') return 0;
+            const paid = Number(data.advancePaid) || 0;
+            return paid > 0 ? paid : 0;
+          })(),
+          totalPaid: (() => {
+            if (newStatus === 'OPTION') return 0;
+            const paid = Number(data.advancePaid) || 0;
+            return paid > 0 ? paid : 0;
+          })(),
+          paymentStatus: (() => {
+            if (newStatus === 'OPTION') return 'pending';
+            const paid = Number(data.advancePaid) || 0;
+            return paid > 0 ? 'PARTIAL' : 'pending';
+          })(),
+          depositMethod: data.depositMethod || null,
+          vatType: data.vatType === 'not_included' ? 'not_included' : 'included',
           securityCheckStatus: 'PENDING',
           isContractSigned: !!(data.contractSigned && data.clientSignature),
           clientSignatureUrl: data.clientSignature || null,
@@ -503,10 +607,31 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
     }
   }
 
+  let easycountResult: EasyCountBookingResult | null = null;
+  for (const savedBooking of createdBookings) {
+    if (!savedBooking.isOption && savedBooking.advancePaid > 0) {
+      try {
+        easycountResult = await issueEasyCountReceiptForBooking(savedBooking.id);
+      } catch (easycountError) {
+        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      }
+    }
+  }
+
+  let responseData: typeof createdBookings = createdBookings;
+  if (createdBookings.length > 0 && easycountResult) {
+    const refreshed = await prisma.booking.findUnique({
+      where: { id: createdBookings[0].id },
+      include: { eventDate: true },
+    });
+    if (refreshed) responseData = [refreshed];
+  }
+
   res.status(201).json({
     success: true,
     message: newStatus === 'OPTION' ? 'האופציות נשמרו והצעת המחיר נשלחה במייל!' : 'האירוע נשמר והחוזה נשלח!',
-    data: createdBookings
+    data: responseData,
+    easycount: easycountResult,
   });
 });
 
@@ -522,6 +647,42 @@ export const getBookingById = catchAsync(async (req: Request, res: Response) => 
   }
 
   res.status(200).json({ success: true, data: booking });
+});
+
+export const reissueEasyCountReceipt = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const force = req.body?.force === true;
+
+  const booking = await prisma.booking.findUnique({ where: { id } });
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
+  }
+  if (booking.isOption) {
+    return res.status(400).json({ success: false, message: 'לא ניתן להפיק קבלה לאופציה.' });
+  }
+  if (booking.advancePaid <= 0) {
+    return res.status(400).json({ success: false, message: 'יש להזין מקדמה לפני הפקת קבלה.' });
+  }
+
+  const result = await issueEasyCountReceiptForBooking(id, { force });
+  if (!result) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן להפיק קבלה — בדקי שהמערכת מוגדרת ושטרם הופקה קבלה.',
+    });
+  }
+
+  const refreshed = await prisma.booking.findUnique({
+    where: { id },
+    include: { eventDate: true },
+  });
+
+  return res.status(result.issued ? 200 : 502).json({
+    success: result.issued,
+    message: result.message,
+    data: refreshed,
+    easycount: result,
+  });
 });
 
 export const getRelatedOptionBookings = catchAsync(async (req: Request, res: Response) => {
@@ -693,6 +854,12 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
       paymentTermsText: data.paymentTermsText !== undefined
         ? (data.paymentTermsText?.trim() || null)
         : (booking as { paymentTermsText?: string | null }).paymentTermsText,
+      depositMethod: data.depositMethod !== undefined
+        ? (data.depositMethod || null)
+        : (booking as { depositMethod?: string | null }).depositMethod,
+      vatType: data.vatType !== undefined
+        ? (data.vatType === 'not_included' ? 'not_included' : 'included')
+        : (booking as { vatType?: string | null }).vatType || 'included',
       updatedBy: 'מערכת',
     };
 
@@ -704,8 +871,15 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
         const paid = Number(data.advancePaid) || 0;
         updateData.advancePaid = paid;
         updateData.paidAmount = paid;
+        updateData.totalPaid = paid;
         updateData.paymentStatus = paid > 0 ? 'PARTIAL' : 'pending';
       }
+    } else if (!booking.isOption && data.advancePaid !== undefined) {
+      const paid = Number(data.advancePaid) || 0;
+      updateData.advancePaid = paid;
+      updateData.paidAmount = paid;
+      updateData.totalPaid = paid;
+      updateData.paymentStatus = paid > 0 ? 'PARTIAL' : 'pending';
     }
 
     let updatedBooking;
@@ -803,16 +977,50 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
       }
     }
 
+    let easycountResult: EasyCountBookingResult | null = null;
+    if (updated.advancePaid > 0) {
+      try {
+        easycountResult = await issueEasyCountReceiptForBooking(updated.id);
+      } catch (easycountError) {
+        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      }
+    }
+
+    const refreshed = await prisma.booking.findUnique({
+      where: { id: updated.id },
+      include: { eventDate: true },
+    });
+
     return res.status(200).json({
       success: true,
       message: 'האירוע נסגר ונשמר בהצלחה!',
-      data: updated,
+      data: refreshed ?? updated,
+      easycount: easycountResult,
     });
   }
 
   emitDateUpdated({ dateId: booking.eventDate.id, status: booking.eventDate.status });
   emitBookingUpdated(id);
-  res.status(200).json({ success: true, message: 'ההזמנה עודכנה בהצלחה.', data: updated });
+
+  let easycountResult: EasyCountBookingResult | null = null;
+  if (!booking.isOption && updated.advancePaid > 0) {
+    try {
+      easycountResult = await issueEasyCountReceiptForBooking(updated.id);
+    } catch (easycountError) {
+      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+    }
+  }
+
+  const responseBooking = easycountResult
+    ? await prisma.booking.findUnique({ where: { id }, include: { eventDate: true } })
+    : updated;
+
+  res.status(200).json({
+    success: true,
+    message: 'ההזמנה עודכנה בהצלחה.',
+    data: responseBooking ?? updated,
+    easycount: easycountResult,
+  });
 });
 
 export const getContractTemplate = catchAsync(async (_req: Request, res: Response) => {
@@ -1051,9 +1259,28 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
     }
   }
 
+  let easycountResult: EasyCountBookingResult | null = null;
+  if (Number(advancePaid) > 0) {
+    try {
+      easycountResult = await issueEasyCountReceiptForBooking(bookingId);
+    } catch (easycountError) {
+      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+    }
+  }
+
+  const refreshed = await prisma.booking.findUnique({
+    where: { id: bookingId },
+    include: { eventDate: true, eventForm: true },
+  });
+
   emitDateUpdated({ dateId: booking.eventDate.id, status: 'BOOKED' });
   emitBookingUpdated(bookingId);
-  res.status(200).json({ success: true, message: 'האירוע נסגר והחוזה נחתם בהצלחה!', data: updated });
+  res.status(200).json({
+    success: true,
+    message: 'האירוע נסגר והחוזה נחתם בהצלחה!',
+    data: refreshed ?? updated,
+    easycount: easycountResult,
+  });
 });
 
 export const getAllBookings = catchAsync(async (req: Request, res: Response) => {

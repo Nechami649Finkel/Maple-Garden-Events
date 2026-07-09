@@ -6,6 +6,7 @@ import { startCronJobs } from './utils/cronJobs';
 import { initOrderSequence } from './utils/eventCode';
 import { logger } from './utils/logger';
 import { verifyEmailConnection } from './utils/mailer';
+import { getEasyCountMeta } from './Services/easycount.service';
 import app from './app';
 import { getCorsOrigins } from './config/corsOrigins';
 
@@ -32,6 +33,8 @@ const PORT = Number(process.env.PORT) || 5000;
 initOrderSequence()
   .then(async () => {
     await verifyEmailConnection();
+    const easycount = getEasyCountMeta();
+    logger.info(`EZCount mode: ${easycount.mode} — ${easycount.label}`);
     httpServer.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
   })
   .catch((err) => {

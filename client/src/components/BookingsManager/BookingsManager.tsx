@@ -187,7 +187,11 @@ const BookingsManager = () => {
       )}
 
       {selected && (
-        <BookingDetailsModal booking={selected} onClose={closeSelected} />
+        <BookingDetailsModal
+          booking={selected}
+          onClose={closeSelected}
+          onBookingUpdated={setSelected}
+        />
       )}
     </div>
   );

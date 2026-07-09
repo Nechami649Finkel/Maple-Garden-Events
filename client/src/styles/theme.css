@@ -102,6 +102,24 @@
   --maple-z-panel: 500;
   --maple-z-modal: 1000;
   --maple-z-modal-top: 1100;
+
+  /* ── Event form section accents ── */
+  --maple-section-time: #B8956A;
+  --maple-section-guests: #4F7F52;
+  --maple-section-design: #96784F;
+  --maple-section-equip: #3D6B9E;
+  --maple-section-ent: #7B6B9E;
+  --maple-section-pay: #96784F;
+  --maple-section-menu-bg: #EEF4EF;
+  --maple-section-notes: #6B7280;
+
+  /* ── Event form density ── */
+  --maple-form-section-pad: clamp(8px, 1vw, 14px);
+  --maple-form-label-size: clamp(0.68rem, 0.65rem + 0.15vw, 0.76rem);
+  --maple-form-input-pad: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 12px);
+  --maple-form-input-size: clamp(0.8rem, 0.78rem + 0.1vw, 0.88rem);
+  --maple-form-input-height: clamp(30px, 4vw, 34px);
+  --maple-form-header-height: clamp(52px, 8vh, 64px);
 }
 
 /* ── Global utilities ── */

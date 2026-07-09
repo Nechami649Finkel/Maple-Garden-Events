@@ -236,6 +236,8 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
               const dayNum = new Date(day.date + 'T12:00:00').getDate();
 
               const bookingCount = day.bookings?.length ?? 0;
+              const isHardBlocked = day.status === 'BLOCKED' && bookingCount === 0;
+              const isCellDisabled = !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || isPast;
               const ariaLabel = day.isCurrentMonth
                 ? `${dayNum} ${day.hebrewDate || ''}, ${bookingCount} אירועים${day.reason ? `, ${day.reason}` : ''}`
                 : `${dayNum}`;
@@ -247,9 +249,9 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
                   className={cls}
                   style={{ gridColumn: day.col, gridRow: day.row }}
                   aria-label={ariaLabel}
-                  disabled={!day.isCurrentMonth || day.status === 'BLOCKED' || day.status === 'FORBIDDEN' || isPast}
+                  disabled={isCellDisabled}
                   onClick={() => {
-                  if (!day.isCurrentMonth || day.status === 'BLOCKED' || day.status === 'FORBIDDEN' || isPast) return;
+                  if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || isPast) return;
                   
                   if (day.bookings.length > 0) { setSelectedDay(day); return; }
                   setSelectedDateForAction(day.date); setIsActionModalOpen(true);

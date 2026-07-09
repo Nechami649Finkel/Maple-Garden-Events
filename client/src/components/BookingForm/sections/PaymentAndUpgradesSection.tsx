@@ -57,6 +57,11 @@ interface PaymentAndUpgradesSectionProps {
   paymentTermsText: string;
   onPaymentTermsTextChange: (text: string) => void;
   eventDate?: string | null;
+  easycountMeta?: {
+    mode?: string;
+    label?: string;
+    canIssueRealDocuments?: boolean;
+  } | null;
 }
 
 const externalLinkStyle: React.CSSProperties = {
@@ -98,6 +103,7 @@ const PaymentAndUpgradesSection = ({
   paymentTermsText,
   onPaymentTermsTextChange,
   eventDate,
+  easycountMeta,
 }: PaymentAndUpgradesSectionProps) => {
   const [editingCustomPayment, setEditingCustomPayment] = useState(false);
   const [customDraft, setCustomDraft] = useState('');
@@ -172,6 +178,45 @@ const PaymentAndUpgradesSection = ({
 
       <div className={styles.sectionCard}>
         <h3 className={styles.sectionHeader}>סיכום, פיקדון ותשלום</h3>
+
+        {!isOption && easycountMeta && (
+          <div
+            style={{
+              marginBottom: '16px',
+              padding: '12px 14px',
+              borderRadius: '8px',
+              background: easycountMeta.canIssueRealDocuments ? '#ecfdf5' : '#fffbeb',
+              border: `1px solid ${easycountMeta.canIssueRealDocuments ? '#bbf7d0' : '#fde68a'}`,
+              color: easycountMeta.canIssueRealDocuments ? '#166534' : '#92400e',
+              fontSize: '0.92rem',
+              lineHeight: 1.5,
+            }}
+          >
+            <strong>EZCount:</strong> {easycountMeta.label || 'סימולציה — לא מופקות קבלות אמיתיות'}
+            {!easycountMeta.canIssueRealDocuments && (
+              <span> · ניתן להזין מקדמה לתיעוד במערכת, בלי הפקת מסמך מס אמיתי.</span>
+            )}
+          </div>
+        )}
+
+        {!isOption && (
+          <div className={styles.inputGroup} style={{ marginBottom: '16px' }}>
+            <label style={{ fontWeight: 600 }}>סכום מקדמה שנגבתה (₪)</label>
+            <input
+              type="number"
+              name="advancePaid"
+              value={formData.advancePaid ?? ''}
+              onChange={handleChange}
+              className={styles.input}
+              placeholder="0"
+              min={0}
+              step="any"
+            />
+            <span style={{ display: 'block', marginTop: '6px', fontSize: '0.85rem', color: '#64748b' }}>
+              אם הוזן סכום — המערכת תייצר קבלה (בסימולציה עד חיבור EZCount).
+            </span>
+          </div>
+        )}
 
         {isHallOnly && (
           <div className={styles.inputGroup} style={{ backgroundColor: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '20px' }}>

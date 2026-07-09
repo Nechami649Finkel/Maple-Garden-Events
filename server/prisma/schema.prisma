@@ -59,6 +59,12 @@ model Booking {
   clientSignatureUrl  String?
   depositCheckUrl     String?
   depositCheckDetails Json?
+  depositMethod       String?
+  easycountDocId      String?
+  easycountDocUrl     String?
+  easycountStatus     String?
+  easycountError      String?
+  vatType             String          @default("included")
   contractText        String?         @db.Text
   paymentTemplateId   String?
   paymentTermsText    String?         @db.Text

@@ -215,19 +215,301 @@
   flex-direction: column;
   background: var(--maple-bg);
   overflow: hidden;
+  max-height: 100%;
 }
 
 .formHeader {
   flex-shrink: 0;
-  padding: var(--maple-space-4) var(--maple-space-6);
+  padding: 6px 12px;
   background: var(--maple-panel-header-bg);
   color: var(--maple-panel-header-text);
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: var(--maple-space-3) var(--maple-space-4);
-  border-bottom: 3px solid var(--maple-gold);
+  flex-wrap: nowrap;
+  gap: var(--maple-space-2) var(--maple-space-3);
+  border-bottom: 2px solid var(--maple-gold);
+  min-height: 0;
 }
+
+.formHeaderMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--maple-space-3);
+  flex-wrap: wrap;
+}
+
+.formHeaderProgress {
+  display: flex;
+  align-items: center;
+  gap: var(--maple-space-2);
+  flex: 0 1 200px;
+  min-width: 120px;
+}
+
+.progressTrack {
+  flex: 1;
+  height: 6px;
+  background: rgba(61, 99, 64, 0.12);
+  border-radius: var(--maple-radius-full);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--maple-accent-gradient);
+  border-radius: var(--maple-radius-full);
+  transition: width 320ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progressLabel {
+  font-size: var(--maple-text-xs);
+  font-weight: 700;
+  color: var(--maple-green-deep);
+  white-space: nowrap;
+}
+
+.sectionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.sectionIcon svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.sectionHeaderTitle {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--maple-space-2);
+  color: var(--maple-charcoal);
+  font-size: var(--maple-text-sm);
+  font-weight: 700;
+}
+
+.containerFormMode .sectionHeader h4.sectionHeaderTitle::before {
+  display: none;
+}
+
+.containerFormMode .sectionHeader h4.sectionHeaderTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--maple-space-2);
+}
+
+.containerFormMode .sectionAccentBar {
+  width: 3px;
+  height: 14px;
+  background: var(--section-accent, var(--maple-gold));
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.segmentedControl {
+  display: inline-flex;
+  padding: 2px;
+  background: var(--maple-bg);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+  gap: 2px;
+}
+
+.segmentedBtn {
+  padding: 5px 12px;
+  border: none;
+  background: transparent;
+  color: var(--maple-text-muted);
+  font-size: var(--maple-form-label-size);
+  font-weight: 600;
+  font-family: var(--maple-font);
+  border-radius: calc(var(--maple-radius-sm) - 2px);
+  cursor: pointer;
+  transition: background var(--maple-transition), color var(--maple-transition), box-shadow var(--maple-transition);
+  white-space: nowrap;
+}
+
+.segmentedBtn:hover {
+  color: var(--maple-text);
+}
+
+.segmentedBtnActive {
+  background: var(--maple-surface);
+  color: var(--maple-green-deep);
+  box-shadow: var(--maple-shadow-sm);
+}
+
+.fieldSegmented {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.payStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maple-space-2);
+  margin-bottom: var(--maple-space-2);
+}
+
+.payStatusOk,
+.payStatusWarn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--maple-radius-full);
+  font-size: var(--maple-text-xs);
+  font-weight: 700;
+}
+
+.payStatusOk {
+  background: var(--maple-green-light);
+  color: var(--maple-green-deep);
+  border: 1px solid var(--maple-green-muted);
+}
+
+.payStatusWarn {
+  background: #FEF3E8;
+  color: var(--maple-warning);
+  border: 1px solid rgba(192, 86, 33, 0.25);
+}
+
+.portionBilling {
+  margin-top: var(--maple-space-2);
+  padding: var(--maple-space-3) var(--maple-space-4);
+  background: var(--maple-green-light);
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-sm);
+}
+
+.portionStrip {
+  margin-top: auto;
+  padding: 6px 10px;
+  background: var(--maple-green-light);
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-sm);
+  font-size: var(--maple-text-xs);
+  color: var(--maple-green-deep);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.35;
+}
+
+.portionStripLabel {
+  color: var(--maple-text-muted);
+  font-weight: 600;
+}
+
+.portionStripStrong {
+  font-weight: 700;
+  color: var(--maple-green-deep);
+}
+
+.portionBillingTitle {
+  margin: 0 0 var(--maple-space-2);
+  color: var(--maple-green-deep);
+  font-size: var(--maple-text-sm);
+  font-weight: 700;
+}
+
+.portionBillingLine {
+  margin: 2px 0;
+  font-size: var(--maple-form-input-size);
+  color: var(--maple-text-secondary);
+}
+
+.portionBillingTotal {
+  margin: var(--maple-space-2) 0 0;
+  font-size: var(--maple-text-sm);
+  color: var(--maple-green-deep);
+  font-weight: 700;
+}
+
+.portionBillingHint {
+  margin: var(--maple-space-2) 0 0;
+  font-size: var(--maple-text-xs);
+  color: var(--maple-text-muted);
+}
+
+.menuSummary {
+  font-size: var(--maple-text-xs);
+  color: var(--maple-text-muted);
+  margin-top: 2px;
+}
+
+.formTip {
+  flex-shrink: 0;
+  margin: 0;
+  padding: var(--maple-space-2) var(--maple-space-5);
+  font-size: var(--maple-text-xs);
+  font-weight: 600;
+  color: var(--maple-text-muted);
+  text-align: right;
+  background: var(--maple-surface-raised);
+  border-top: 1px solid var(--maple-border);
+}
+
+.formFooterInner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--maple-space-2) var(--maple-space-3);
+  width: 100%;
+}
+
+.formFooterSecondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--maple-space-2);
+  margin-inline-start: auto;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.chartLoading {
+  height: 120px;
+  display: grid;
+  place-items: center;
+  font-size: var(--maple-text-sm);
+  color: var(--maple-text-muted);
+}
+
+.statsTabWrap {
+  margin-top: var(--maple-space-5);
+}
+
+.boardTime { --section-accent: var(--maple-section-time); }
+.boardGuests { --section-accent: var(--maple-section-guests); }
+.boardDesign { --section-accent: var(--maple-section-design); }
+.boardEquip { --section-accent: var(--maple-section-equip); }
+.boardEnt { --section-accent: var(--maple-section-ent); }
+.boardPay { --section-accent: var(--maple-section-pay); }
+.boardMenu { --section-accent: var(--maple-section-guests); background: var(--maple-section-menu-bg); }
+.boardNotes { --section-accent: var(--maple-section-notes); }
+
+.boardTime .sectionIcon { color: var(--maple-section-time); }
+.boardGuests .sectionIcon { color: var(--maple-section-guests); }
+.boardDesign .sectionIcon { color: var(--maple-section-design); }
+.boardEquip .sectionIcon { color: var(--maple-section-equip); }
+.boardEnt .sectionIcon { color: var(--maple-section-ent); }
+.boardPay .sectionIcon { color: var(--maple-section-pay); }
+.boardMenu .sectionIcon { color: var(--maple-section-guests); }
+.boardNotes .sectionIcon { color: var(--maple-section-notes); }
 
 .formHeaderText {
   flex: 1 1 200px;
@@ -235,15 +517,17 @@
 }
 
 .formHeader h3 {
-  margin: 0 0 4px;
-  font-size: 1.15rem;
-  font-weight: 600;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 
 .formHeader p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.75rem;
   opacity: 0.9;
+  line-height: 1.25;
 }
 
 .closeBtn {
@@ -584,10 +868,13 @@
 .formBoard {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto auto auto auto;
   grid-template-areas:
     "time    guests  design"
     "equip   ent     pay"
-    "menu    menu    notes";
+    "menu    menu    menu"
+    "notes   notes   notes";
+  align-items: stretch;
   background: var(--maple-surface);
   border: 1px solid var(--maple-border);
   border-radius: var(--maple-radius-lg);
@@ -722,7 +1009,7 @@
 .containerFormMode .formBody {
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 10px 14px;
+  padding: 6px 8px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -730,23 +1017,33 @@
 }
 
 .containerFormMode .formBoard {
-  flex: none;
+  flex: 0 1 auto;
   min-height: 0;
-  align-content: start;
+  align-content: stretch;
+  align-items: stretch;
   overflow: visible;
 }
 
 .containerFormMode .section {
-  padding: 12px 14px;
+  padding: 8px 10px;
   border-radius: 0;
   box-shadow: none;
   border: none;
   border-inline-start: 1px solid var(--maple-border);
   border-bottom: 1px solid var(--maple-border);
-  min-height: auto;
+  min-height: 0;
   height: auto;
   overflow: visible;
   background: var(--maple-surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.containerFormMode .boardMenu,
+.containerFormMode .boardNotes {
+  border-bottom: none;
+  height: auto;
+  overflow: visible;
 }
 
 .containerFormMode .section:nth-child(even) {
@@ -757,15 +1054,25 @@
   border-inline-start: none;
 }
 
-.containerFormMode .boardMenu,
-.containerFormMode .boardNotes {
-  border-bottom: none;
+.containerFormMode .sectionInner {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: visible;
+}
+
+.containerFormMode .boardMenu .sectionInner,
+.containerFormMode .boardNotes .sectionInner {
+  overflow: visible;
 }
 
 .containerFormMode .sectionHeader {
-  margin-bottom: 10px;
-  padding-bottom: 8px;
+  margin-bottom: 4px;
+  padding-bottom: 4px;
   border-bottom: 1px solid var(--maple-border);
+  flex-shrink: 0;
 }
 
 .containerFormMode .sectionHeader h4 {
@@ -781,14 +1088,23 @@
   content: '';
   width: 3px;
   height: 14px;
-  background: var(--maple-gold);
+  background: var(--section-accent, var(--maple-gold));
   border-radius: 2px;
   flex-shrink: 0;
 }
 
+.containerFormMode .boardMenu.section {
+  background: var(--maple-section-menu-bg);
+}
+
+.containerFormMode .checkboxPill:has(input:checked) {
+  border-color: var(--section-accent, var(--maple-gold));
+  background: linear-gradient(135deg, var(--maple-gold-light) 0%, var(--maple-green-light) 100%);
+}
+
 .containerFormMode .row {
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
 .containerFormMode .row:last-child {
@@ -796,16 +1112,16 @@
 }
 
 .containerFormMode .field label {
-  font-size: 0.76rem;
+  font-size: var(--maple-form-label-size);
   font-weight: 600;
   color: var(--maple-text-muted);
 }
 
 .containerFormMode .field input,
 .containerFormMode .field select {
-  padding: 7px 10px;
-  font-size: 0.86rem;
-  min-height: 34px;
+  padding: var(--maple-form-input-pad);
+  font-size: var(--maple-form-input-size);
+  min-height: var(--maple-form-input-height);
 }
 
 .containerFormMode .kashrutRow select {
@@ -815,16 +1131,16 @@
 }
 
 .containerFormMode .formHeader {
-  padding: 10px 16px;
-  gap: 8px 12px;
+  padding: 6px 12px;
+  gap: 6px 10px;
 }
 
 .containerFormMode .formHeader h3 {
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .containerFormMode .formHeader p {
-  font-size: 0.8rem;
+  font-size: 0.72rem;
 }
 
 .containerFormMode .closeBtn {
@@ -844,13 +1160,25 @@
   font-size: 0.78rem;
 }
 
+.containerFormMode .tableLayoutPreviewBlock {
+  margin-top: 4px;
+}
+
+.containerFormMode .tableLayoutPreviewImg {
+  max-height: 64px;
+}
+
 .containerFormMode .notesList {
-  max-height: 52px;
-  margin-bottom: 6px;
+  max-height: 48px;
+  margin-bottom: 4px;
 }
 
 .containerFormMode .noteItem {
   padding: 4px 8px;
+}
+
+.containerFormMode .chartContainer {
+  display: none;
 }
 
 .containerFormMode .noteInput {
@@ -882,7 +1210,58 @@
   font-size: 0.82rem;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1279px) and (min-width: 768px) {
+  .formBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+    grid-template-areas:
+      "time guests"
+      "design equip"
+      "ent pay"
+      "menu menu"
+      "notes notes";
+  }
+}
+
+@media (max-width: 767px) {
+  .formBoard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "time equip"
+      "design ent"
+      "guests guests"
+      "pay pay"
+      "menu menu"
+      "notes notes";
+  }
+
+  .boardGuests,
+  .boardPay,
+  .boardMenu,
+  .boardNotes {
+    grid-column: 1 / -1;
+  }
+
+  .containerFormMode .formBody {
+    overflow-y: auto;
+  }
+
+  .containerFormMode .section {
+    border-inline-start: none;
+  }
+
+  .formHeaderProgress {
+    max-width: none;
+    width: 100%;
+  }
+
+  .formFooterSecondary {
+    margin-inline-start: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 400px) {
   .formBoard {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -896,12 +1275,11 @@
       "notes";
   }
 
-  .containerFormMode .formBody {
-    overflow-y: auto;
-  }
-
-  .containerFormMode .section {
-    border-inline-start: none;
+  .boardGuests,
+  .boardPay,
+  .boardMenu,
+  .boardNotes {
+    grid-column: auto;
   }
 }
 
@@ -1415,15 +1793,14 @@
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--maple-space-2);
   justify-content: flex-start;
-  padding: 14px 24px;
-  border-top: 1px solid var(--maple-border);
+  align-items: center;
+  padding: var(--maple-space-3) var(--maple-space-5);
+  border-top: none;
   background: var(--maple-surface);
-  position: sticky;
-  bottom: 0;
   z-index: 10;
-  box-shadow: 0 -4px 12px rgba(45, 55, 72, 0.06);
+  box-shadow: 0 -4px 16px rgba(28, 31, 35, 0.06);
 }
 
 .cancelBtn,
@@ -1533,9 +1910,19 @@
   }
 
   .formHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .formHeaderMain {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    width: 100%;
+  }
+
+  .formHeaderProgress {
+    flex: 1 1 100%;
+    max-width: none;
   }
 
   .formHeaderMeta {
@@ -1557,7 +1944,15 @@
     align-items: stretch;
   }
 
+  .formFooterInner,
+  .formFooterSecondary {
+    flex-direction: column;
+    width: 100%;
+  }
+
   .formFooter button,
+  .formFooterInner button,
+  .formFooterSecondary button,
   .containerFormMode .cancelBtn,
   .containerFormMode .saveBtn,
   .containerFormMode .downloadBtn,

@@ -71,10 +71,14 @@ const Dashboard = () => {
     }).length;
   }, [bookedData]);
 
-  const openOptionsCount = useMemo(
-    () => (optionsData?.data ?? []).filter((b: any) => b.isOption !== false).length,
-    [optionsData],
-  );
+  const openOptionsCount = useMemo(() => {
+    const today = startOfDay(new Date());
+    return (optionsData?.data ?? []).filter((b: any) => {
+      if (b.isOption === false) return false;
+      const day = getEventDay(b);
+      return day !== null && day >= today;
+    }).length;
+  }, [optionsData]);
 
   const eventsThisMonth = useMemo(() => {
     if (!Array.isArray(calendarData)) return 0;

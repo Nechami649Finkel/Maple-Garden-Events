@@ -1,19 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { canEditBooking } from '../../utils/bookingEdit';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { parseNotes, parseNotesBundle } from '../../utils/notesStorage';
 import { openContractPdf, printContract } from '../../utils/contractPrint';
+import {
+  canForceReissueEasyCountReceipt,
+  canRetryEasyCountReceipt,
+  formatEasyCountStatusLabel,
+} from '../../utils/easycount';
+import { apiFetch } from '../../services/api';
+import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
 import styles from './BookingsManager.module.css';
 
 interface BookingDetailsModalProps {
   booking: any;
   onClose: () => void;
+  onBookingUpdated?: (booking: any) => void;
 }
 
-const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => {
+const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDetailsModalProps) => {
   const navigate = useNavigate();
+  const [issuingReceipt, setIssuingReceipt] = useState(false);
 
   const eventDateStr = booking.eventDate?.date
     ? new Date(booking.eventDate.date).toISOString().split('T')[0]
@@ -26,10 +35,32 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
   const isHallOnly = booking.eventType === 'השכרת אולם בלי אוכל';
   const clientNotes = parseNotesBundle(booking.clientComments);
   const managerNotes = parseNotes(booking.managerComments);
+  const showRetry = canRetryEasyCountReceipt(booking);
+  const showForceReissue = canForceReissueEasyCountReceipt(booking);
 
   const handleEdit = () => {
     onClose();
     navigate(`/booking/edit/${booking.id}`);
+  };
+
+  const handleIssueReceipt = async (force = false) => {
+    setIssuingReceipt(true);
+    try {
+      const res = await apiFetch(`${API_URL}/bookings/${booking.id}/easycount-receipt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
+      const json = await res.json();
+      alert(json.message || (json.success ? 'קבלה הופקה בהצלחה' : 'שגיאה בהפקת קבלה'));
+      if (json.success && json.data && onBookingUpdated) {
+        onBookingUpdated(json.data);
+      }
+    } catch {
+      alert('שגיאת תקשורת עם השרת');
+    } finally {
+      setIssuingReceipt(false);
+    }
   };
 
   return (
@@ -123,6 +154,74 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
               <div className={styles.popupRow}><label>סה"כ שולם:</label><span>₪{booking.totalPaid?.toLocaleString()}</span></div>
             )}
             <div className={styles.popupRow}><label>סטטוס תשלום:</label><span>{booking.paymentStatus || '—'}</span></div>
+            {booking.depositMethod && (
+              <div className={styles.popupRow}>
+                <label>אמצעי תשלום מקדמה:</label>
+                <span>
+                  {booking.depositMethod === 'credit_card'
+                    ? 'אשראי / מזומן'
+                    : booking.depositMethod === 'check_capture'
+                      ? "צ'ק (צילום)"
+                      : booking.depositMethod === 'check_upload'
+                        ? "צ'ק (העלאה)"
+                        : booking.depositMethod}
+                </span>
+              </div>
+            )}
+            {(booking.advancePaid ?? 0) > 0 && (
+              <div className={styles.popupRow}>
+                <label>EZCount:</label>
+                <span>{formatEasyCountStatusLabel(booking.easycountStatus)}</span>
+              </div>
+            )}
+            {booking.easycountDocId && (
+              <div className={styles.popupRow}>
+                <label>מזהה קבלה:</label>
+                <span>{booking.easycountDocId}</span>
+              </div>
+            )}
+            {booking.easycountError && (
+              <div className={styles.popupRow}>
+                <label>שגיאת EZCount:</label>
+                <span style={{ color: '#b91c1c' }}>{booking.easycountError}</span>
+              </div>
+            )}
+            {booking.easycountDocUrl && (
+              <div className={styles.popupRow}>
+                <label>קישור קבלה:</label>
+                <span>
+                  <a href={booking.easycountDocUrl} target="_blank" rel="noreferrer">פתיחת PDF</a>
+                </span>
+              </div>
+            )}
+            {(showRetry || showForceReissue) && (
+              <div className={styles.popupRow} style={{ marginTop: '8px', gap: '8px', flexWrap: 'wrap' }}>
+                {showRetry && (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    disabled={issuingReceipt}
+                    onClick={() => handleIssueReceipt(false)}
+                  >
+                    {issuingReceipt ? 'מפיקה קבלה...' : 'הפק/י קבלה מחדש'}
+                  </button>
+                )}
+                {showForceReissue && (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    disabled={issuingReceipt}
+                    onClick={() => {
+                      if (window.confirm('להפיק קבלה חדשה? פעולה זו מתאימה למעבר מסימולציה ל-EZCount אמיתי.')) {
+                        handleIssueReceipt(true);
+                      }
+                    }}
+                  >
+                    הפקה מחדש (Force)
+                  </button>
+                )}
+              </div>
+            )}
             <div className={styles.popupRow}><label>מוזיקה:</label><span>{booking.hasMusic ? 'כן' : 'לא'}</span></div>
             {booking.akumApprovalCode && (
               <div className={styles.popupRow}><label>קוד ע.ח:</label><span>{booking.akumApprovalCode}</span></div>

@@ -163,13 +163,14 @@ export function AccessibilityWidget() {
         aria-label={open ? 'סגירת כלי נגישות' : 'פתיחת כלי נגישות'}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
-          <path
-            fill="currentColor"
-            d="M12 2c1.5 3.1 4.3 5.3 7.7 5.8-.4 4.8-2.7 9.2-6.4 12.1L12 22l-1.3-1.1C7 17.9 4.7 13.5 4.3 8.8 7.7 8.3 10.5 6.1 12 2zm0 4.2C10.8 8.9 9.1 10.5 7 11.2 7.4 14.5 9 17.4 12 19.5c3-2.1 4.6-5 5-8.3-2.1-.7-3.8-2.3-5-5z"
-          />
-          <circle cx="12" cy="9" r="1.6" fill="currentColor" />
-        </svg>
+        <img
+          src="/accessibility-wheelchair.png?v=2"
+          alt=""
+          className={styles.toggleIcon}
+          width={52}
+          height={52}
+          draggable={false}
+        />
       </button>
     </div>
   );

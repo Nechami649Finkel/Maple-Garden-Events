@@ -40,7 +40,6 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
   const availableSlotsLabel = formatAvailableSlotsLabelForDate(day.date, bookings);
   const hasFreeSlots =
     !isPast
-    && day.status !== 'BLOCKED'
     && day.status !== 'FORBIDDEN'
     && canAddMoreEventsForDate(day.date, bookings);
   const showAddEvent = hasFreeSlots && !!onAddEvent;

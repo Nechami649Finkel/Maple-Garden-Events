@@ -2,6 +2,7 @@
   "name": "maple-events",
   "private": true,
   "scripts": {
+    "dev": "start cmd /k \"cd server && npm run dev\" && start cmd /k \"cd client && npm run dev\"",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

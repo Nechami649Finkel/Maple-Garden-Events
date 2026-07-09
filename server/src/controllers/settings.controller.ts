@@ -4,6 +4,7 @@ import { catchAsync } from '../middlewares/errorHandler';
 import { DEFAULT_CONTRACT_TEXT } from '../utils/defaultContractText';
 import { emitSettingsUpdated } from '../utils/realtime';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
+import { getEasyCountMeta } from '../Services/easycount.service';
 
 export const settingsController = {
   // =========================================
@@ -26,6 +27,7 @@ export const settingsController = {
       contractText: settings.contractText?.trim() || DEFAULT_CONTRACT_TEXT,
       paymentTemplates: paymentMeta.templates,
       defaultPaymentTemplateId: paymentMeta.defaultTemplateId,
+      easycount: getEasyCountMeta(),
     });
   }),
 

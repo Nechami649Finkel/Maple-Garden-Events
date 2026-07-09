@@ -207,6 +207,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     guestCount: '', minimumGuestCount: '', optionalGuestCount: '', finalPricePortion: '200', discountPercent: '', discountAmount: '', vatType: DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: '', clientSignatureUrl: '',
    
     akumApprovalCode: '', hasMusic: false, hallRentalPrice: '',
+    advancePaid: '',
     depositCheckUrl: '', depositCheckDetails: null as DepositCheckDetails | null,
   });
 
@@ -336,14 +337,17 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
       clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
       calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: parsedTime.timeOfDay, startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
-      guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
+      guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
       akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
       hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',
+      advancePaid: b.advancePaid ? String(b.advancePaid) : '',
       depositCheckUrl: b.depositCheckUrl || '',
       depositCheckDetails: (b.depositCheckDetails as DepositCheckDetails | null) || null,
     });
     if (b.depositCheckUrl) {
       setDepositMethod(b.depositCheckUrl.startsWith('data:') ? 'check_capture' : 'check_upload');
+    } else if (b.depositMethod) {
+      setDepositMethod(b.depositMethod);
     }
     const notesBundle = parseNotesBundle(b.clientComments || '');
     setMenuNotesList(notesBundle.menu);
@@ -812,6 +816,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     setIsSubmitting(true);
     
     try {
+      const advanceAmount = Number(formData.advancePaid) || 0;
+      if (!isOption && advanceAmount > 0 && !depositMethod) {
+        alert('כשמזינים מקדמה — יש לבחור אמצעי תשלום (אשראי/מזומן, צ\'ק וכו\').');
+        setIsSubmitting(false);
+        return;
+      }
+
       const clientAFullName = isOption
         ? `${formData.clientAFirstName.trim()} ${formData.clientALastName.trim()}`.trim()
         : formData.clientAFullName;
@@ -878,7 +889,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             : isOption
               ? `האופציה נשמרה בהצלחה!${savedCode ? `\nמספר אופציה: ${savedCode}` : ''}`
               : `האירוע נסגר ונשמר בהצלחה!${savedCode ? `\nמספר הזמנה: ${savedCode}` : ''}`;
-        alert(successMsg);
+        const easycountMsg = resData.easycount?.message;
+        alert(easycountMsg ? `${successMsg}\n\n${easycountMsg}` : successMsg);
         if ((!isOption || convertFromOption) && contractSigned && savedId) {
           await promptPrintAfterClose(savedId);
         }
@@ -963,7 +975,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             </div>
 
             <div className={styles.formColumn}>
-              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} upgrades={upgrades} handleUpgradeChange={handleUpgradeChange} upgradesPricing={upgradesPricing} upgradeDisplayOrder={visibleUpgradeKeys} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} styles={styles} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={setPaymentTermsCustom} paymentTermsText={paymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} />
+              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} upgrades={upgrades} handleUpgradeChange={handleUpgradeChange} upgradesPricing={upgradesPricing} upgradeDisplayOrder={visibleUpgradeKeys} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} styles={styles} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={setPaymentTermsCustom} paymentTermsText={paymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} easycountMeta={(globalSettings as { easycount?: { mode?: string; label?: string; canIssueRealDocuments?: boolean } } | undefined)?.easycount} />
             </div>
           </div>
 

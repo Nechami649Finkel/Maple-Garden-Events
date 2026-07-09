@@ -1,9 +1,0 @@
-Add to existing מיפל Hebrew RTL web admin (maple green #8CBF8E):
-
-1. FEEDBACK MANAGER — Admin table: תאריך אירוע, לקוח, star ratings for אוכל/שירות/אולם (1-5), הערות, button "שלח קישור משוב".
-
-2. PUBLIC FEEDBACK PAGE — Customer-facing (NO admin header/nav). Logo, "נשמח לשמוע מכם", three star rating groups (אוכל, שירות, אולם), comment textarea, green "שליחה" button. Clean minimal layout.
-
-3. GREETING BLAST — Checkbox list of booking recipients, rich message editor, file attachment upload, toggle schedule send vs immediate "שליחה מיידית".
-
-Hebrew RTL throughout.

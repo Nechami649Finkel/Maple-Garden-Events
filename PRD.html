@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מסמך אפיון מערכת — מיפל גן אירועים בעיר</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #8CBF8E;
+      --green-dark: #6BA86E;
+      --green-deep: #4F8F52;
+      --bg: #F7F8F6;
+      --surface: #FFFFFF;
+      --text: #2D3748;
+      --text-secondary: #4A5568;
+      --text-muted: #718096;
+      --danger: #E53E3E;
+      --warning: #DD6B20;
+      --info: #4A6FA5;
+      --border: #E2E8F0;
+      --shadow: 0 4px 24px rgba(45, 55, 72, 0.08);
+      --radius: 12px;
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Heebo', 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-dark) 60%, var(--green) 100%);
+      color: #fff;
+      padding: 1.25rem 2rem;
+      box-shadow: 0 2px 16px rgba(79, 143, 82, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+
+    .brand-icon {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .brand h1 { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+    .brand p { font-size: 0.85rem; opacity: 0.85; font-weight: 300; }
+
+    .meta-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .badge {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .layout {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 80px);
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar h2 {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .toc { list-style: none; }
+    .toc li { margin-bottom: 0.15rem; }
+
+    .toc a {
+      display: block;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: background 0.15s, color 0.15s;
+      border-right: 3px solid transparent;
+    }
+
+    .toc a:hover, .toc a.active {
+      background: #EDF7ED;
+      color: var(--green-deep);
+      border-right-color: var(--green);
+      font-weight: 600;
+    }
+
+    .toc .toc-h1 a { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+    .toc .toc-h2 a { padding-right: 1.2rem; }
+    .toc .toc-h3 a { padding-right: 2rem; font-size: 0.8rem; color: var(--text-muted); }
+
+    .content { flex: 1; padding: 2.5rem 3rem 4rem; min-width: 0; }
+
+    h1 {
+      font-size: 2rem; font-weight: 700; color: var(--green-deep);
+      margin: 2.5rem 0 1rem; padding: 1.25rem 1.5rem;
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); border-right: 5px solid var(--green);
+      scroll-margin-top: 90px;
+    }
+
+    h1:first-of-type { margin-top: 0; }
+
+    h2 {
+      font-size: 1.45rem; font-weight: 600; color: var(--green-dark);
+      margin: 2rem 0 0.75rem; scroll-margin-top: 90px;
+    }
+
+    h3 {
+      font-size: 1.15rem; font-weight: 600; color: var(--text);
+      margin: 1.5rem 0 0.5rem; scroll-margin-top: 90px;
+    }
+
+    p { margin: 0.75rem 0; }
+    strong { font-weight: 600; }
+
+    hr { border: none; border-top: 2px solid var(--border); margin: 2rem 0; }
+
+    ul, ol { margin: 0.75rem 0 0.75rem 1.5rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .table-wrap {
+      overflow-x: auto; margin: 1.25rem 0;
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: var(--surface); }
+
+    thead tr { background: linear-gradient(135deg, var(--green-deep), var(--green-dark)); color: #fff; }
+    th { padding: 0.75rem 1rem; text-align: right; font-weight: 600; white-space: nowrap; }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-secondary); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #F0FAF0; }
+    tbody tr:nth-child(even) td { background: #FAFBFA; }
+
+    code {
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 0.85em; background: #EDF2F7; color: var(--green-deep);
+      padding: 0.15em 0.45em; border-radius: 5px; direction: ltr; display: inline-block;
+    }
+
+    pre {
+      background: #1A202C; color: #E2E8F0;
+      padding: 1.25rem 1.5rem; border-radius: var(--radius);
+      overflow-x: auto; margin: 1.25rem 0; box-shadow: var(--shadow);
+      direction: ltr; text-align: left; font-size: 0.85rem; line-height: 1.6;
+    }
+
+    pre code { background: none; color: inherit; padding: 0; }
+
+    blockquote {
+      background: linear-gradient(to left, #FFF8F0, #FFFAF5);
+      border-right: 4px solid var(--warning);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem; margin: 1.25rem 0; color: var(--text-secondary);
+    }
+
+    blockquote p { margin: 0; }
+
+    .site-footer {
+      text-align: center; padding: 2rem; color: var(--text-muted);
+      font-size: 0.85rem; border-top: 1px solid var(--border); background: var(--surface);
+    }
+
+    @media print {
+      .sidebar, .site-header { display: none; }
+      .content { padding: 1rem; }
+      .layout { display: block; }
+    }
+
+    @media (max-width: 900px) {
+      .layout { flex-direction: column; }
+      .sidebar { position: static; width: 100%; height: auto; border-left: none; border-bottom: 1px solid var(--border); }
+      .content { padding: 1.5rem 1.25rem 3rem; }
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--green); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-icon">🍁</div>
+      <div>
+        <h1>מיפל — גן אירועים בעיר</h1>
+        <p>מסמך אפיון מערכת (PRD) · Maple Garden Events</p>
+      </div>
+    </div>
+    <div class="meta-badges">
+      <span class="badge">גרסה 1.1</span>
+      <span class="badge">8 ביולי 2026</span>
+      <span class="badge">מאושר תפעולית</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <h2>תוכן עניינים</h2>
+      <ul class="toc" id="toc"></ul>
+    </nav>
+    <main class="content" id="content">
+      <h1>מסמך אפיון מערכת (PRD)</h1>
+<h2>מיפל — גן אירועים בעיר (Maple Garden Events)</h2>
+<p><strong>גרסה:</strong> 1.1</p>
+<p><strong>תאריך:</strong> 8 ביולי 2026</p>
+<p><strong>סטטוס:</strong> מעודכן — החלטות תפעוליות ואישור דרישות (RBAC, EasyCount, WhatsApp, AWS)</p>
+<hr>
+<h2>פרטי פרויקט (מסגרת)</h2>
+<table><thead><tr><th>שדה</th><th>תוכן</th></tr></thead><tbody><tr><td><strong>תיאור הפרויקט</strong></td><td>מערכת ניהול מקיפה לאולם אירועים כשר בישראל, המאפשרת ניהול לוח שנה, אופציות, הזמנות, חוזים, תשלומים, הפקת אירועים, קבלה LIVE, משוב לקוחות ותקשורת אוטומטית — הכל מממשק אדמין אחד בעברית ו-RTL.</td></tr><tr><td><strong>קהל יעד</strong></td><td>צוות האולם (מנהלים, מזכירות, הפקה), לקוחות קצה (דף משוב ציבורי בלבד)</td></tr><tr><td><strong>טכנולוגיות ליבה</strong></td><td>React 19 + TypeScript + Vite, Node.js + Express 5, PostgreSQL (AWS RDS) + Prisma, Socket.io, Google OAuth + RBAC, TanStack Query, AWS ECS/App Runner + S3 (SSE), EasyCount (חשבוניות), Puppeteer (PDF), Tesseract (OCR צ'ק), Nodemailer, WhatsApp API (Green API / Twilio), Sentry, Playwright</td></tr></tbody></table>
+<hr>
+<h1>1. סיכום מנהלים (Executive Summary)</h1>
+<h2>1.1 מטרת הפרויקט</h2>
+<p>לבנות <strong>מערכת ניהול אירועים מרכזית</strong> עבור "מיפל — גן אירועים בעיר", שתחליף תהליכים ידניים (Excel, WhatsApp, ניירת) בזרימת עבודה דיגיטלית אחודה: מרגע שמירת אופציה בלוח השנה, דרך סגירת הזמנה וחתימה דיגיטלית, ועד הפקת האירוע, קבלת לקוח בזמן אמת, גביית תשלומים ומשוב לאחר האירוע.</p>
+<h2>1.2 הבעיה שהמערכת פותרת</h2>
+<p>אולמות אירועים בישראל מתמודדים עם:</p>
+<ul>
+<li><strong>כפילויות וחפיפות</strong> — הזמנת אותו תאריך/משבצת פעמיים</li>
+<li><strong>פיזור מידע</strong> — פרטי לקוח, תפריט, תשלומים וחוזה במקומות שונים</li>
+<li><strong>עומס תפעולי</strong> — מעקב אחר אופציות שפגו, צ'קי ביטחון, טפסי הפקה ותזכורות ידניות</li>
+<li><strong>חוסר שקיפות</strong> — קשה לדעת מה קורה "עכשיו" באירוע LIVE</li>
+<li><strong>משוב לא מסודר</strong> — אין מנגנון מובנה לשליחת סקרים וניתוח שביעות רצון</li>
+</ul>
+<h2>1.3 ערך עסקי צפוי</h2>
+<table><thead><tr><th>יעד</th><th>מדד הצלחה (KPI)</th></tr></thead><tbody><tr><td>מניעת כפילויות</td><td>0 אירועים כפולים באותה משבצת (אילוץ DB ייחודי)</td></tr><tr><td>קיצור זמן סגירת הזמנה</td><td>מ-< 2 שעות ידני ל-< 30 דקות דיגיטלי</td></tr><tr><td>שיפור גבייה</td><td>ירידה בצ'קי ביטחון חסרים (התראות אוטומטיות)</td></tr><tr><td>שביעות רצון לקוחות</td><td>> 60% מילוי משוב תוך 7 ימים</td></tr><tr><td>יעילות צוות</td><td>גישה מיידית לכל מידע האירוע מלוח בקרה אחד</td></tr></tbody></table>
+<h2>1.4 היקף (Scope)</h2>
+<p><strong>בהיקף (In Scope):</strong></p>
+<ul>
+<li>לוח שנה דו-תאריכי (עברי + לועזי)</li>
+<li>ניהול אופציות והזמנות</li>
+<li>טפסי הפקה + תוכנית ישיבה</li>
+<li>קבלה LIVE באירוע</li>
+<li>הגדרות מתחם (תמחור, שירותים, כשרות, משתמשים)</li>
+<li>משוב לקוחות + סטטיסטיקות</li>
+<li>שליחת ברכות (מיידית / מתוזמנת)</li>
+<li>אינטגרציות: Google Auth, EasyCount (3 סוגי מסמכים), אימייל, WhatsApp API רשמי, S3</li>
+<li>RBAC — 4 תפקידים מוגדרים (Manager, Staff, Production, Floor Staff)</li>
+<li>מיגרציית נתונים היסטוריים מ-Excel (2026–2027)</li>
+</ul>
+<p><strong>מחוץ להיקף (Out of Scope — שלב ראשון):</strong></p>
+<ul>
+<li>אפליקציית מובייל Native</li>
+<li>פורטל לקוח מלא (צפייה בחוזה / תשלום עצמאי)</li>
+<li>סליקת אשראי מקוונת (Cardcom / Tranzila) — תשלומים ידניים בלבד</li>
+<li>CRM חיצוני / ERP</li>
+<li>ניהול מלאי מטבח בזמן אמת</li>
+</ul>
+<hr>
+<h1>2. פרסונות משתמשים והרשאות (User Personas & Permissions)</h1>
+<h2>2.1 פרסונות</h2>
+<h3>פרסונה 1: מנהל/ת האולם (Manager)</h3>
+<ul>
+<li><strong>תיאור:</strong> בעל/ת העסק או מנהל/ת תפעולי/ת עם גישה מלאה</li>
+<li><strong>מטרות:</strong> פיקוח על לוח שנה, אישור הזמנות, מעקב כספי, ניהול הגדרות</li>
+<li><strong>כאבים:</strong> חוסר תמונה מלאה, תזכורות ידניות ללקוחות</li>
+<li><strong>תדירות שימוש:</strong> יומיומית</li>
+</ul>
+<h3>פרסונה 2: מזכירות / נציג מכירות (Staff)</h3>
+<ul>
+<li><strong>תיאור:</strong> עובד/ת שסוגר אופציות והזמנות, מתקשר עם לקוחות</li>
+<li><strong>מטרות:</strong> שמירת אופציה מהירה, שליחת הודעות, סגירת הזמנה</li>
+<li><strong>כאבים:</strong> טעויות בהזנת נתונים, חיפוש הזמנות ישן</li>
+<li><strong>תדירות שימוש:</strong> יומיומית</li>
+</ul>
+<h3>פרסונה 3: מפיק/ת אירועים (Production)</h3>
+<ul>
+<li><strong>תיאור:</strong> אחראי/ת על טופס הפקה, תפריט, סידורי ישיבה, כשרות</li>
+<li><strong>מטרות:</strong> השלמת טופס הפקה לפני האירוע, ייצוא תוכנית ישיבה</li>
+<li><strong>כאבים:</strong> שינויים אחרונים שלא מתועדים</li>
+<li><strong>תדירות שימוש:</strong> לפי אירוע</li>
+</ul>
+<h3>פרסונה 4: צוות קבלה / אולם (Floor Staff)</h3>
+<ul>
+<li><strong>תיאור:</strong> מבצע קבלת לקוח בזמן האירוע (LIVE)</li>
+<li><strong>מטרות:</strong> עדכון מנות בפועל, תוספות LIVE, חתימת לקוח</li>
+<li><strong>כאבים:</strong> טפסים ניירתיים, חוסר סנכרון עם ההזמנה</li>
+<li><strong>תדירות שימוש:</strong> ביום האירוע</li>
+</ul>
+<h3>פרסונה 5: לקוח קצה (Customer — Guest)</h3>
+<ul>
+<li><strong>תיאור:</strong> זוג/משפחה שהשלימו אירוע</li>
+<li><strong>מטרות:</strong> מילוי משוב קצר (אוכל / שירות / אולם)</li>
+<li><strong>גישה:</strong> דף ציבורי בלבד (<code>/feedback/:token</code>), ללא התחברות</li>
+<li><strong>תדירות שימוש:</strong> חד-פעמית</li>
+</ul>
+<h2>2.2 מודל הרשאות (RBAC)</h2>
+<p>המערכת מיישמת <strong>בקרת גישה מבוססת תפקידים (Role-Based Access Control)</strong> עם 4 תפקידים פנימיים ותפקיד חיצוני אחד. כל משתמש פנימי מאומת באמצעות Google OAuth ומשויך לרשומה בטבלת <code>AuthorizedUser</code> עם שדה <code>role</code> ייעודי.</p>
+<table><thead><tr><th>תפקיד</th><th>תיאור</th><th>אימות</th><th>הרשאות עיקריות</th></tr></thead><tbody><tr><td><strong>Manager</strong> (מנהל/ת)</td><td>בעל/ת העסק או מנהל/ת תפעולי/ת</td><td>Google OAuth + <code>AuthorizedUser</code></td><td>גישה מלאה לכל המערכת: הגדרות, מחיקות, נתונים כספיים, ניהול משתמשים, הפעלת LIVE</td></tr><tr><td><strong>Staff</strong> (מזכירות / מכירות)</td><td>עובד/ת קבלה ומכירות</td><td>Google OAuth + <code>AuthorizedUser</code></td><td>צפייה בלוח שנה, יצירת אופציות, המרה להזמנות, שליחת הודעות. <strong>ללא</strong> הגדרות מערכת ו<strong>ללא</strong> מחיקות</td></tr><tr><td><strong>Production</strong> (הפקה)</td><td>מפיק/ת אירועים</td><td>Google OAuth + <code>AuthorizedUser</code></td><td>עריכת טפסי הפקה, תוכנית ישיבה, ניהול תפריט, גלריה. <strong>ללא</strong> גישה להזמנות, הגדרות או נתונים כספיים</td></tr><tr><td><strong>Floor Staff</strong> (צוות קבלה)</td><td>עובד/ת אולם ביום האירוע</td><td>Google OAuth + <code>AuthorizedUser</code></td><td>גישה <strong>אך ורק</strong> למסך קבלה LIVE ביום האירוע</td></tr><tr><td><strong>Customer</strong> (לקוח קצה)</td><td>ממלא משוב לאחר אירוע</td><td>Token חד-פעמי (<code>/feedback/:token</code>)</td><td>שליחת משוב בלבד</td></tr><tr><td><strong>לא מורשה</strong></td><td>—</td><td>—</td><td>נחסם בכניסה</td></tr></tbody></table>
+<p><strong>יישום טכני:</strong></p>
+<ul>
+<li>שדה <code>role</code> ב-JWT ובטבלת <code>AuthorizedUser</code> (ערכים: <code>manager</code>, <code>staff</code>, <code>production</code>, <code>floor_staff</code>)</li>
+<li>Middleware <code>requireRole(...)</code> בצד השרת לכל endpoint רגיש</li>
+<li>סינון פריטי תפריט ניווט (<code>navConfig</code>) ונתיבי Router בצד הלקוח לפי תפקיד</li>
+<li>רק <strong>Manager</strong> רשאי לנהל משתמשים מורשים ולהקצות תפקידים</li>
+</ul>
+<h2>2.3 מטריצת הרשאות לפי מודול</h2>
+<table><thead><tr><th>מודול</th><th>Manager</th><th>Staff</th><th>Production</th><th>Floor Staff</th><th>Customer</th></tr></thead><tbody><tr><td>לוח בקרה</td><td>CRUD</td><td>R</td><td>—</td><td>—</td><td>—</td></tr><tr><td>לוח שנה</td><td>CRUD</td><td>R + Create Option</td><td>R</td><td>—</td><td>—</td></tr><tr><td>ניהול אופציות</td><td>CRUD</td><td>RU (ללא מחיקה)</td><td>—</td><td>—</td><td>—</td></tr><tr><td>ניהול הזמנות</td><td>CRUD</td><td>RU (ללא מחיקה)</td><td>—</td><td>—</td><td>—</td></tr><tr><td>טופס הפקה</td><td>CRUD</td><td>R</td><td>CRU</td><td>—</td><td>—</td></tr><tr><td>תוכנית ישיבה</td><td>CRUD</td><td>—</td><td>CRU</td><td>—</td><td>—</td></tr><tr><td>ניהול תפריט</td><td>CRUD</td><td>—</td><td>CRU</td><td>—</td><td>—</td></tr><tr><td>קבלה LIVE</td><td>CRUD + הפעלה</td><td>R</td><td>R</td><td>CRU (ביום האירוע בלבד)</td><td>—</td></tr><tr><td>הגדרות מתחם</td><td>CRUD</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>ניהול משתמשים / תפקידים</td><td>CRUD</td><td>—</td><td>—</td><td>—</td><td>—</td></tr><tr><td>נתונים כספיים / EasyCount</td><td>CRUD</td><td>R (ללא הפקת מסמכים)</td><td>—</td><td>—</td><td>—</td></tr><tr><td>משוב / סטטיסטיקות</td><td>CRUD</td><td>R + שליחת קישור</td><td>—</td><td>—</td><td>Submit only</td></tr><tr><td>שליחת ברכה</td><td>CRUD</td><td>R + Send</td><td>—</td><td>—</td><td>—</td></tr><tr><td>גלריה</td><td>CRUD</td><td>R</td><td>CRU (העלאה)</td><td>R</td><td>—</td></tr></tbody></table>
+<hr>
+<h1>3. דרישות פונקציונליות (Functional Requirements)</h1>
+<h2>3.1 מפת מסכים וניווט</h2>
+<pre><code>התחברות (Google)
+    └── לוח בקרה (Dashboard)
+            ├── לוח שנה (Calendar) ──► פופאפ יום ──► אופציה / הזמנה / LIVE
+            ├── הגדרות מתחם (Settings)
+            ├── ניהול אופציות (Options Manager)
+            ├── ניהול הזמנות (Bookings Manager)
+            ├── משובי לקוחות (Feedback Manager)
+            ├── סטטיסטיקות וחישובים (Feedback Stats)
+            ├── שליחת ברכה (Greeting Blast)
+            ├── טופס הפקת אירוע (Event Form Manager)
+            └── גלריה (Gallery)
+
+דף ציבורי: משוב לקוח (/feedback/:token)</code></pre>
+<p><strong>תפריט צד (RTL):</strong> מגירה נפתחת מימין, כותרת אחידה בכל מסכי האדמין.</p>
+<hr>
+<h2>3.2 מודול 1: התחברות ואבטחה</h2>
+<h3>FR-AUTH-01: התחברות Google</h3>
+<ul>
+<li>כפתור "התחברות עם Google" במסך מרכזי</li>
+<li>בדיקה מול טבלת <code>AuthorizedUser</code> — רק אימיילים מורשים</li>
+<li>JWT ב-cookie (Access 1 שעה, Refresh 7 ימים) + CSRF protection</li>
+</ul>
+<h3>FR-AUTH-02: ניהול משתמשים מורשים ותפקידים</h3>
+<ul>
+<li>הוספה/מחיקה של אימיילי Google בהגדרות מתחם</li>
+<li>הקצאת תפקיד RBAC (<code>manager</code> / <code>staff</code> / <code>production</code> / <code>floor_staff</code>) לכל משתמש</li>
+<li>רק <strong>Manager</strong> רשאי לנהל משתמשים ולשנות תפקידים</li>
+</ul>
+<h3>FR-AUTH-03: התנתקות</h3>
+<ul>
+<li>ניקוי session + redirect למסך התחברות</li>
+</ul>
+<hr>
+<h2>3.3 מודול 2: לוח בקרה (Dashboard)</h2>
+<h3>FR-DASH-01: תצוגת KPI</h3>
+<ul>
+<li>מספר הזמנות פעילות, אופציות פתוחות, אירועים קרובים</li>
+<li>ממוצע משוב חודשי (אוכל / שירות / אולם)</li>
+</ul>
+<h3>FR-DASH-02: אירועים קרובים</h3>
+<ul>
+<li>רשימת 5–10 אירועים הבאים עם סוג, תאריך, מספר אורחים, סטטוס LIVE</li>
+</ul>
+<h3>FR-DASH-03: מיני-לוח שנה</h3>
+<ul>
+<li>תצוגה חודשית מקוצרת עם ניווט מהיר ללוח המלא</li>
+</ul>
+<hr>
+<h2>3.4 מודול 3: לוח שנה (Calendar)</h2>
+<h3>FR-CAL-01: תצוגת חודש RTL</h3>
+<ul>
+<li>עמודות: שבת → ראשון</li>
+<li>תאריך עברי + לועזי בכל תא</li>
+<li>ניווט חודשים, סינון לפי סוג אירוע</li>
+</ul>
+<h3>FR-CAL-02: קידוד צבעים למשבצות זמן</h3>
+<table><thead><tr><th>משבצת</th><th>צבע</th></tr></thead><tbody><tr><td>בוקר</td><td>ירוק בהיר</td></tr><tr><td>צהריים</td><td>כחול</td></tr><tr><td>ערב</td><td>סגול</td></tr><tr><td>לילה</td><td>כהה</td></tr></tbody></table>
+<h3>FR-CAL-03: סטטוסים בלוח</h3>
+<ul>
+<li><strong>OPTION</strong> — אופציה (עם תאריך תפוגה)</li>
+<li><strong>BOOKED</strong> — הזמנה סגורה</li>
+<li><strong>TODAY</strong> — באנר "אירוע היום" (זיהוי אוטומטי לפי תאריך)</li>
+<li><strong>LIVE</strong> — אירוע פעיל בקבלה (תג פועם; נפתח ידנית על ידי Manager)</li>
+<li><strong>BLOCKED</strong> — משבצת חסומה</li>
+</ul>
+<h3>FR-CAL-04: פופאפ יום (Day Modal)</h3>
+<ul>
+<li>רשימת אירועים ליום הנבחר</li>
+<li>פעולות (לפי RBAC): שמירת אופציה, סגירת הזמנה, <strong>"פתח אירוע LIVE"</strong> (Manager בלבד), טופס קבלה באולם, צפייה בחוזה</li>
+</ul>
+<h3>FR-CAL-05: סנכרון בזמן אמת</h3>
+<ul>
+<li>עדכון לוח השנה ב-Socket.io בעת שינוי הזמנה/אופציה</li>
+</ul>
+<hr>
+<h2>3.5 מודול 4: שמירת אופציה (Option)</h2>
+<h3>FR-OPT-01: טופס אופציה קצר</h3>
+<ul>
+<li>תאריך (ממולא מראש), סוג אירוע, שמות לקוח א/ב, טלפון, הערות</li>
+<li>בחירת משבצת זמן</li>
+<li>משך תפוגה (ברירת מחדל: 48 שעות — מ-<code>SystemSettings</code>)</li>
+</ul>
+<h3>FR-OPT-02: ניהול אופציות (Options Manager)</h3>
+<ul>
+<li>טבלה: תאריך, שמות, סוג, משבצת, תפוגה, פעולות</li>
+<li>חיפוש וסינון</li>
+<li>פעולות (לפי RBAC): הודעה ללקוח (WhatsApp/Email), סגירה להזמנה; <strong>מחיקה — Manager בלבד</strong></li>
+</ul>
+<h3>FR-OPT-03: הודעת אופציה</h3>
+<ul>
+<li>מודל עם תבנית הודעה מותאמת</li>
+<li>שליחה בערוץ נבחר: <strong>WhatsApp API רשמי</strong> (Green API / Twilio) או Email</li>
+<li>מעקב סטטוס משלוח (נשלח / נכשל) ורישום בלוג</li>
+</ul>
+<h3>FR-OPT-04: מדיניות תפוגה</h3>
+<ul>
+<li>אופציה שפגה <strong>נשארת על הלוח</strong> עד סגירת אירוע אמיתי או שחרור ידני (<code>POST /api/bookings/release</code>)</li>
+</ul>
+<hr>
+<h2>3.6 מודול 5: הזמנה (Booking Form)</h2>
+<h3>FR-BOOK-01: MetaBar</h3>
+<ul>
+<li>קוד אירוע ייחודי (<code>eventCode</code>), סטטוס, תאריך</li>
+</ul>
+<h3>FR-BOOK-02: פרטי לקוח א' ו-ב'</h3>
+<ul>
+<li>שם מלא, ת.ז., טלפון, אימייל, כתובת</li>
+</ul>
+<h3>FR-BOOK-03: הגדרות אירוע</h3>
+<ul>
+<li>סוג: חתונה / אירוסין / בר מצווה / אחר</li>
+<li>תאריך + תאריך עברי (Hebcal)</li>
+<li>משבצת זמן, מספר אורחים, מינימום אורחים, כשרות, מוזיקה, קוד עוקב</li>
+</ul>
+<h3>FR-BOOK-04: תשלומים (רישום ידני)</h3>
+<blockquote><p><strong>הבהרה:</strong> בשלב זה <strong>אין</strong> אינטגרציה לסליקת אשראי מקוונת. כל התשלומים מנוהלים ונרשמים ידנית במערכת.</p></blockquote>
+<ul>
+<li>מחיר בסיס לאורח, מע"מ (17–18%), תוספות אולם, תוספות חיצוניות</li>
+<li>אמצעי תשלום נתמכים: <strong>מזומן / העברה בנקאית / צ'ק בלבד</strong></li>
+<li><strong>סריקת צ'ק (OCR):</strong> מצלמה + Tesseract לזיהוי מספר צ'ק, בנק, סניף, תאריך</li>
+<li>תבניות תנאי תשלום (<code>paymentTemplates</code>)</li>
+<li>רישום סכומים ששולמו (<code>paidAmount</code>, <code>advancePaid</code>, <code>totalPaid</code>) ללא חיוב אוטומטי</li>
+</ul>
+<h3>FR-BOOK-04a: אינטגרציית EasyCount (הפקת מסמכים)</h3>
+<p><strong>מצב הפעלה:</strong></p>
+<table><thead><tr><th>סביבה</th><th>ערך <code>EASYCOUNT_MODE</code></th><th>תיאור</th></tr></thead><tbody><tr><td>פיתוח / UAT</td><td><code>simulation</code> (ברירת מחדל)</td><td>הפקת מסמכים מדומה, ללא קריאה ל-API חי</td></tr><tr><td>פרודקשן</td><td><code>live</code> (מתג <code>.env</code>)</td><td>הפקה אמיתית מול EasyCount API</td></tr></tbody></table>
+<p><strong>3 סוגי מסמכים נתמכים:</strong></p>
+<table><thead><tr><th>סוג מסמך</th><th>EasyCount Doc Type</th><th>מתי מופק</th><th>מי מפיק</th></tr></thead><tbody><tr><td><strong>הצעת מחיר</strong> (Price Quote)</td><td>לפני חתימת חוזה</td><td>בעת הכנת הצעה ללקוח</td><td>Staff / Manager</td></tr><tr><td><strong>חשבונית-קבלה</strong> (Invoice-Receipt)</td><td>405</td><td>בעת קבלת מקדמה / תשלום</td><td>Manager</td></tr><tr><td><strong>חשבונית חיוב</strong> (Debit Invoice)</td><td>בסיום LIVE</td><td>עבור תוספות LIVE (<code>EventAddition</code>)</td><td>Manager (אוטומטי בסגירת LIVE)</td></tr></tbody></table>
+<ul>
+<li>שמירת <code>easycountDocId</code>, <code>easycountDocUrl</code>, <code>easycountStatus</code> ב-Booking</li>
+<li>במצב כשל: סטטוס <code>FAILED</code> + המשך תפעול מקומי</li>
+</ul>
+<h3>FR-BOOK-05: חוזה</h3>
+<ul>
+<li>טקסט חוזה דינמי מ-<code>SystemSettings.contractText</code></li>
+<li>לוח חתימה דיגיטלי (<code>react-signature-canvas</code>)</li>
+<li>שמירת חתימה ב-S3</li>
+</ul>
+<h3>FR-BOOK-06: שמירה וסגירה</h3>
+<ul>
+<li>כפתור "שמור וסגור הזמנה"</li>
+<li>אילוץ ייחודיות: תאריך + משבצת (מניעת double booking)</li>
+<li>יצירת PDF חוזה (Puppeteer)</li>
+</ul>
+<h3>FR-BOOK-07: עריכה</h3>
+<ul>
+<li>נתיב <code>/booking/edit/:id</code> — עריכת הזמנה קיימת</li>
+<li>נתיב <code>/booking/close-option/:optionId</code> — המרת אופציה להזמנה</li>
+</ul>
+<hr>
+<h2>3.7 מודול 6: ניהול הזמנות (Bookings Manager)</h2>
+<h3>FR-BM-01: טבלת הזמנות</h3>
+<ul>
+<li>עמודות: קוד, תאריך, לקוח, סוג, אורחים, סטטוס תשלום</li>
+<li>חיפוש לפי קוד / שם / טלפון</li>
+<li>עימוד (pagination)</li>
+</ul>
+<h3>FR-BM-02: מודל פרטי הזמנה</h3>
+<ul>
+<li>צפייה מלאה בפרטים</li>
+<li>כפתורים: עריכה, PDF, מעבר לטופס הפקה</li>
+</ul>
+<h3>FR-BM-03: ביטול הזמנה</h3>
+<ul>
+<li>רישום ב-<code>CancellationLog</code> עם סיבה</li>
+</ul>
+<hr>
+<h2>3.8 מודול 7: טופס הפקת אירוע (Event Production Form)</h2>
+<h3>FR-PROD-01: בחירת הזמנה</h3>
+<ul>
+<li>בורר הזמנה פעילה (BOOKED)</li>
+</ul>
+<h3>FR-PROD-02: פרטי הפקה</h3>
+<ul>
+<li>מספר אורחים סופי, סוג קבלה, חלוקת ישיבה (גברים/נשים %)</li>
+<li>שולחן כבוד, מפות, מרכזי שולחן, כיסא גשר</li>
+</ul>
+<h3>FR-PROD-03: תפריט</h3>
+<ul>
+<li>בחירת מנות לפי קטגוריות (<code>MenuCategory</code> / <code>Dish</code>)</li>
+<li>הערות אלרגיות</li>
+<li>תצוגת תפריט (<code>/menu</code>)</li>
+</ul>
+<h3>FR-PROD-04: כשרות</h3>
+<ul>
+<li>בחירת תעודות כשרות (<code>KashrutCertificate</code>) — גלובליות + ספציפיות</li>
+</ul>
+<h3>FR-PROD-05: בידור וצוות</h3>
+<ul>
+<li>מספר מנות לבר, ישיבה, גברים/נשים</li>
+<li>DJ, צלם, מפיק</li>
+</ul>
+<h3>FR-PROD-06: תוכנית ישיבה (Floor Plan)</h3>
+<ul>
+<li>קנבס עם שולחנות עגולים/מלבניים (גרירה — <code>react-draggable</code>)</li>
+<li>שמירת מיקומים ב-<code>TablePosition</code></li>
+<li>ייצוא תמונת תוכנית (<code>tableLayoutImageUrl</code>)</li>
+<li><strong>אופטימיזציה מלאה לטאבלט (iPad):</strong> zoom/pan, גרירה במגע, יעדי מגע מינימליים 44px</li>
+</ul>
+<h3>FR-PROD-07: תוספות ומחיר</h3>
+<ul>
+<li>חישוב אוטומטי: מחיר מנה, תוספת כשרות, עיצוב, שירותים נוספים</li>
+<li>שדות מחיר מוסתרים (<code>hiddenPriceFields</code>)</li>
+</ul>
+<hr>
+<h2>3.9 מודול 8: קבלה LIVE (Event Check-In)</h2>
+<h3>FR-LIVE-01: זיהוי אירוע ביום האירוע (טריגר היברידי)</h3>
+<p>המערכת מיישמת מודל טריגר <strong>אוטומטי + ידני</strong>:</p>
+<table><thead><tr><th>שלב</th><th>התנהגות</th><th>מי מפעיל</th></tr></thead><tbody><tr><td><strong>זיהוי אוטומטי</strong></td><td>ביום תאריך האירוע — תצוגת באנר <strong>"אירוע היום"</strong> בלוח השנה ובפופאפ היום</td><td>המערכת (Cron / בדיקת תאריך)</td></tr><tr><td><strong>הפעלת LIVE</strong></td><td>מעבר לסטטוס <strong>LIVE</strong> ופתיחת טופס קבלה דיגיטלי</td><td><strong>Manager בלבד</strong> — כפתור <strong>"פתח אירוע LIVE"</strong></td></tr><tr><td><strong>סגירת LIVE</strong></td><td>מעבר למצב "נסגר" + הפקת חשבונית חיוב</td><td>Manager</td></tr></tbody></table>
+<ul>
+<li>תג <strong>LIVE</strong> (פועם) מוצג רק לאחר הפעלה ידנית</li>
+<li>באנר בטופס: "אירוע LIVE — ניתן לעריכה"</li>
+<li><strong>Floor Staff</strong> רואה את מסך הקבלה רק לאחר שה-Manager פתח את ה-LIVE</li>
+</ul>
+<h3>FR-LIVE-02: טופס קבלה</h3>
+<ul>
+<li>שדות ממולאים מההזמנה: מנות מוזמנות, משפחות, הערות</li>
+<li>טבלת תוספות LIVE (<code>EventAddition</code>): תיאור, עלות, שם עובד, חתימה, אישור תנאים</li>
+<li>חתימת לקוח נדרשת</li>
+<li><strong>אופטימיזציה מלאה לטאבלט (iPad)</strong> — ממשק מגע, שדות גדולים, חתימה על מסך מגע</li>
+</ul>
+<h3>FR-LIVE-02a: מנגנון Fallback (מצב Offline חלקי)</h3>
+<ul>
+<li>שמירת נתוני קבלה ב-<code>localStorage</code> בדפדפן בעת אובדן קישוריות</li>
+<li>תצוגת אינדיקטור "מצב לא מקוון — הנתונים יסונכרנו"</li>
+<li>סנכרון אוטומטי לשרת (<code>POST /api/check-in</code>) עם שחזור קישוריות</li>
+<li>מניעת אובדן נתונים במהלך תקלות אינטרנט מקומיות באולם</li>
+</ul>
+<h3>FR-LIVE-03: מצב סגור</h3>
+<ul>
+<li>לאחר סיום האירוע: שדות read-only + תג "נסגר"</li>
+<li>עדכון <code>liveAdditionsTotal</code> בהזמנה</li>
+<li>הפקה אוטומטית של <strong>חשבונית חיוב</strong> (Debit Invoice) ב-EasyCount עבור תוספות LIVE</li>
+</ul>
+<hr>
+<h2>3.10 מודול 9: הגדרות מתחם (Settings)</h2>
+<h3>טאב תמחור</h3>
+<ul>
+<li>מחיר לאורח, מע"מ, עלות כשרות, מקדמה, מחירי בר/צוות/עיצוב</li>
+<li>תבניות תנאי תשלום</li>
+</ul>
+<h3>טאב שירותים נוספים</h3>
+<ul>
+<li>רשימת <code>ExtraService</code> (שם + מחיר + קטגוריה) — CRUD</li>
+</ul>
+<h3>טאב כשרות</h3>
+<ul>
+<li>ניהול תעודות כשרות + תמונות</li>
+</ul>
+<h3>טאב משתמשים מורשים</h3>
+<ul>
+<li>רשימת אימיילי Google מורשים</li>
+<li>הקצאת תפקיד RBAC לכל משתמש (Manager / Staff / Production / Floor Staff)</li>
+<li>ניהול — <strong>Manager בלבד</strong></li>
+</ul>
+<h3>טאב צוות (<code>StaffMember</code>)</h3>
+<ul>
+<li>רשימת שמות עובדים לשימוש בתוספות LIVE</li>
+</ul>
+<h3>טאב חוזה</h3>
+<ul>
+<li>עריכת טקסט חוזה ברירת מחדל</li>
+</ul>
+<hr>
+<h2>3.11 מודול 10: משוב לקוחות (Feedback)</h2>
+<h3>FR-FB-01: ניהול משוב (אדמין)</h3>
+<ul>
+<li>טבלה: תאריך אירוע, לקוח, דירוגים (אוכל/שירות/אולם 1–5), הערות</li>
+<li>כפתור "שלח קישור משוב" — <strong>WhatsApp API רשמי</strong> (Green API / Twilio) או Email</li>
+<li>מעקב סטטוס שליחה (<code>lastWhatsappSent</code>, <code>lastEmailSent</code>)</li>
+<li>תמיכה בשני צדדים (לקוח א' / ב') — <code>clientSide</code></li>
+</ul>
+<h3>FR-FB-04: אוטומציה</h3>
+<ul>
+<li>Cron: שליחת קישורי משוב אוטומטית לאחר סיום אירוע</li>
+<li>שליחה דרך <strong>WhatsApp API רשמי</strong> לאמינות ומסירה אוטומטית</li>
+<li>התראה למנהל במייל על משוב חדש</li>
+</ul>
+<h3>FR-FB-02: דף משוב ציבורי</h3>
+<ul>
+<li>נתיב: <code>/feedback/:token</code></li>
+<li>ללא ניווט אדמין</li>
+<li>3 קבוצות כוכבים + שדה הערות + שליחה</li>
+<li>Token חד-פעמי, מסומן <code>isCompleted</code> לאחר מילוי</li>
+</ul>
+<h3>FR-FB-03: סטטיסטיקות (<code>/feedback-stats</code>)</h3>
+<ul>
+<li>גרפים (Recharts): ממוצעים חודשיים/שנתיים, מגמות</li>
+<li>סינון לפי שנה/חודש</li>
+</ul>
+<hr>
+<h2>3.12 מודול 11: שליחת ברכה (Greeting Blast)</h2>
+<h3>FR-GR-01: בחירת נמענים</h3>
+<ul>
+<li>רשימת checkbox מהזמנות פעילות</li>
+</ul>
+<h3>FR-GR-02: עורך הודעה</h3>
+<ul>
+<li>נושא, גוף הודעה, צירוף קובץ</li>
+</ul>
+<h3>FR-GR-03: שליחה</h3>
+<ul>
+<li>מיידית או מתוזמנת (<code>ScheduledGreeting</code>)</li>
+<li>Cron לעיבוד ברכות שתוזמנו (<code>processDueScheduledGreetings</code>)</li>
+<li>סטטוס: PENDING / SENT / FAILED + <code>sendStats</code></li>
+</ul>
+<hr>
+<h2>3.13 מודול 12: גלריה (Gallery)</h2>
+<h3>FR-GAL-01: מטרת הגלריה</h3>
+<p>הגלריה משמשת כ<strong>מאגר ויזואלי תפעולי</strong> לצוות ההפקה — תמונות מאירועים שבוצעו (לוגיסטיקה, סידורי שולחנות, עיצובים) לשימוש כ<strong>התייחסות ויזואלית</strong> בעת ייעוץ ללקוחות עתידיים.</p>
+<h3>FR-GAL-02: סוגי תוכן</h3>
+<ul>
+<li>תמונות סידורי שולחנות ותוכניות ישיבה</li>
+<li>תמונות עיצוב אולם (פרחים, תאורה, מרכזי שולחן)</li>
+<li>תמונות לוגיסטיקה (הקמה, מטבח, קבלה)</li>
+</ul>
+<h3>FR-GAL-03: הרשאות והעלאה</h3>
+<table><thead><tr><th>פעולה</th><th>Manager</th><th>Production</th><th>Staff</th><th>Floor Staff</th></tr></thead><tbody><tr><td>העלאת תמונות</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr><tr><td>צפייה</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr><tr><td>מחיקה</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr></tbody></table>
+<ul>
+<li>אחסון ב-S3 עם הצפנה (SSE)</li>
+<li>תיוג לפי סוג אירוע / תאריך (אופציונלי)</li>
+</ul>
+<hr>
+<h2>3.14 מודול 13: נגישות (Accessibility)</h2>
+<h3>FR-ACC-01</h3>
+<ul>
+<li>וידג'ט נגישות צף (<code>AccessibilityWidget</code>)</li>
+<li>הגדרות: גודל טקסט, ניגודיות, הדגשת קישורים</li>
+<li>שמירה ב-<code>AccessibilityContext</code> + localStorage</li>
+</ul>
+<hr>
+<h2>3.15 זרימות משתמש מרכזיות (User Flows)</h2>
+<h3>זרימה 1: אופציה → הזמנה</h3>
+<pre><code>לוח שנה → בחירת תאריך → פופאפ יום → "שמירת אופציה"
+→ מילוי טופס קצר → שמירה (סטטוס OPTION)
+→ [תפוגה / המשך] → "סגור להזמנה" → טופס הזמנה מלא
+→ תשלום + חתימה → שמירה (סטטוס BOOKED)</code></pre>
+<h3>זרימה 2: הזמנה → הפקה → LIVE</h3>
+<pre><code>ניהול הזמנות → בחירת הזמנה → טופס הפקה
+→ תפריט + תוכנית ישיבה → שמירה
+→ [יום האירוע] → באנר אוטומטי "אירוע היום"
+→ Manager לוחץ "פתח אירוע LIVE"
+→ Floor Staff / Manager: טופס קבלה (עם Fallback Offline)
+→ תוספות LIVE + חתימה → סגירה → חשבונית חיוב (EasyCount)</code></pre>
+<h3>זרימה 3: אירוע → משוב</h3>
+<pre><code>[Cron: סיום אירוע] → יצירת Feedback + Token
+→ שליחת קישור ללקוח → מילוי דף ציבורי
+→ עדכון סטטיסטיקות + התראה למנהל</code></pre>
+<hr>
+<h1>4. דרישות לא-פונקציונליות (Non-Functional Requirements)</h1>
+<h2>4.1 ביצועים (Performance)</h2>
+<table><thead><tr><th>מדד</th><th>יעד</th></tr></thead><tbody><tr><td>טעינת לוח שנה (חודש)</td><td>< 2 שניות</td></tr><tr><td>שמירת הזמנה</td><td>< 3 שניות</td></tr><tr><td>עדכון real-time</td><td>< 500ms latency</td></tr><tr><td>יצירת PDF</td><td>< 10 שניות</td></tr><tr><td>עומס מקבילי</td><td>עד 10 משתמשים בו-זמנית (אולם בינוני)</td></tr></tbody></table>
+<p><strong>המלצות:</strong></p>
+<ul>
+<li>Lazy loading לרכיבי React (<code>React.lazy</code>)</li>
+<li>TanStack Query עם cache invalidation מבוקר</li>
+<li>אינדקסים ב-DB על <code>EventDate.date</code>, <code>Booking.eventCode</code>, <code>Feedback.token</code></li>
+</ul>
+<h2>4.2 אבטחה (Security)</h2>
+<table><thead><tr><th>דרישה</th><th>מימוש</th></tr></thead><tbody><tr><td>אימות</td><td>Google OAuth + JWT ב-HttpOnly cookies</td></tr><tr><td>הרשאות</td><td>RBAC — 4 תפקידים + רשימת <code>AuthorizedUser</code></td></tr><tr><td>CSRF</td><td>middleware <code>csrfProtection</code></td></tr><tr><td>Rate limiting</td><td>500 req/15min API, 150 write, 20 login</td></tr><tr><td>Headers</td><td>Helmet.js</td></tr><tr><td>CORS</td><td>רשימת origins מורשים בלבד</td></tr><tr><td>קלט</td><td>Validation עם Zod בכל endpoint</td></tr><tr><td>קבצים</td><td>Multer + S3 (SSE), בדיקת סוג קובץ</td></tr><tr><td>הצפנת אחסון</td><td>כל קבצים רגישים (חוזים, צ'קים, חתימות) ב-S3 עם <strong>Server-Side Encryption (SSE-S3 / SSE-KMS)</strong></td></tr><tr><td>גישה לקבצים</td><td><strong>Presigned URLs</strong> מוגבלות בזמן, מופקות ע"י השרת למשתמשים מאומתים ומורשים בלבד — ללא גישה ישירה ל-bucket</td></tr><tr><td>פרטיות נתונים</td><td>עמידה בעקרונות חוק הגנת הפרטיות הישראלי; מינימום גישה ל-PII לפי RBAC</td></tr><tr><td>לוגים</td><td>Winston + daily rotate, ללא PII רגיש</td></tr><tr><td>ניטור</td><td>Sentry (client + server)</td></tr></tbody></table>
+<h2>4.3 זמינות, אמינות ופריסה (Availability & Hosting)</h2>
+<h3>תשתית ענן (AWS)</h3>
+<table><thead><tr><th>רכיב</th><th>שירות AWS</th><th>תיאור</th></tr></thead><tbody><tr><td>אפליקציה (Server + Client)</td><td><strong>ECS</strong> או <strong>App Runner</strong></td><td>פריסת Node.js + הגשת React build</td></tr><tr><td>מסד נתונים</td><td><strong>RDS PostgreSQL</strong> (Managed)</td><td>Multi-AZ מומלץ לפרודקשן</td></tr><tr><td>אחסון קבצים</td><td><strong>S3</strong></td><td>חוזים, צ'קים, חתימות, תמונות גלריה</td></tr><tr><td>גיבויים</td><td>RDS Automated Backups + S3 versioning</td><td>RPO < 24 שעות</td></tr></tbody></table>
+<table><thead><tr><th>דרישה</th><th>יעד</th></tr></thead><tbody><tr><td>Uptime</td><td>99.5% (שעות עסקים)</td></tr><tr><td>גיבוי DB</td><td>RDS Automated Backup + Cron יומי (03:00) — <code>BACKUP_ENABLED=true</code></td></tr><tr><td>שחזור</td><td>RPO < 24 שעות, RTO < 4 שעות</td></tr><tr><td>Graceful shutdown</td><td>ניתוק Socket.io נקי</td></tr></tbody></table>
+<h3>המשכיות תפעולית (Operational Continuity / SLA)</h3>
+<table><thead><tr><th>תרחיש</th><th>מנגנון מיטיגציה</th></tr></thead><tbody><tr><td>תקלת אינטרנט מקומית באולם</td><td><strong>Fallback Offline</strong> — שמירת נתוני קבלה LIVE ב-<code>localStorage</code>, סנכרון אוטומטי עם שחזור קישוריות</td></tr><tr><td>תקלת שרת AWS</td><td>RDS failover אוטומטי; ECS/App Runner health checks + restart</td></tr><tr><td>תקלת EasyCount</td><td>המשך תפעול מקומי + סטטוס <code>FAILED</code> + הפקה ידנית מאוחרת</td></tr><tr><td>תקלת WhatsApp API</td><td>retry + fallback לאימייל; רישום בלוג</td></tr></tbody></table>
+<h2>4.4 תאימות מכשירים ודפדפנים</h2>
+<table><thead><tr><th>פלטפורמה</th><th>תמיכה</th></tr></thead><tbody><tr><td>Desktop</td><td>עדיפות ראשונה (Chrome, Edge, Firefox) — מסכי אדמין, לוח שנה, הזמנות</td></tr><tr><td><strong>Tablet (iPad)</strong></td><td><strong>אופטימיזציה מלאה</strong> למסכי <strong>קבלה LIVE</strong> ו<strong>תוכנית ישיבה</strong> — ממשק מגע, גרירת שולחנות, חתימה דיגיטלית</td></tr><tr><td>Mobile</td><td>תצוגה responsive לשאר המסכים; לא Native</td></tr><tr><td>RTL</td><td>מלא — כל הממשק בעברית</td></tr><tr><td>נגישות</td><td>WCAG 2.1 רמה AA (יעד)</td></tr></tbody></table>
+<p><strong>דרישות אופטימיזציה לטאבלט (iPad):</strong></p>
+<ul>
+<li>מסך קבלה LIVE: שדות קלט גדולים (min 44px touch target), מקלדת מספרית לסכומים</li>
+<li>תוכנית ישיבה: גרירה חלקה של שולחנות, zoom/pan (<code>react-zoom-pan-pinch</code>)</li>
+<li>תמיכה ב-Safari iOS (דפדפן ברירת מחדל ב-iPad)</li>
+<li>בדיקות QA ייעודיות על iPad לפני כל release</li>
+</ul>
+<h2>4.5 אינטגרציות חיצוניות</h2>
+<table><thead><tr><th>שירות</th><th>שימוש</th><th>מצב כשל</th></tr></thead><tbody><tr><td>Google OAuth</td><td>התחברות</td><td>חסימת כניסה</td></tr><tr><td><strong>EasyCount</strong></td><td>3 סוגי מסמכים: הצעת מחיר, חשבונית-קבלה, חשבונית חיוב. ברירת מחדל: <code>simulation</code>; פרודקשן: <code>live</code> (<code>.env</code>)</td><td>שמירה מקומית + סטטוס <code>FAILED</code> + המשך תפעול</td></tr><tr><td>AWS S3 (SSE)</td><td>חתימות, צ'קים, תמונות גלריה — Presigned URLs בלבד</td><td>retry + הודעת שגיאה</td></tr><tr><td>AWS RDS</td><td>PostgreSQL מנוהל</td><td>Failover אוטומטי</td></tr><tr><td>Nodemailer</td><td>אימיילים, תזכורות, ברכות</td><td>לוג + המשך תפעול</td></tr><tr><td><strong>WhatsApp API</strong> (Green API / Twilio)</td><td>תזכורות אופציה, קישורי משוב, התראות — <strong>מסירה אוטומטית אמינה</strong></td><td>retry (3 ניסיונות) + fallback לאימייל + רישום בלוג</td></tr><tr><td>Hebcal</td><td>תאריכים עבריים</td><td>fallback לתאריך לועזי</td></tr></tbody></table>
+<h2>4.6 תחזוקה ותפעול</h2>
+<ul>
+<li>משתני סביבה מאומתים ב-<code>validateEnv()</code> בהפעלה</li>
+<li>לוגים מובנים (Winston) + Sentry לאירועי שגיאה</li>
+<li>בדיקות E2E (Playwright) — Golden Path להזמנה</li>
+<li>סקריפטים: <code>verify-no-double-booking</code>, <code>migrate-legacy-event-codes</code>, <strong><code>db:import-legacy</code></strong></li>
+<li>פריסה: AWS ECS / App Runner + RDS PostgreSQL</li>
+</ul>
+<hr>
+<h1>5. מודל נתונים וארכיטקטורה (Data Model & Architecture)</h1>
+<h2>5.1 דיאגרמת ישויות (ER — תמציתי)</h2>
+<pre><code>EventDate (1) ──────&lt; Booking (N)
+                         │
+         ┌───────────────┼───────────────┬──────────────┐
+         │               │               │              │
+    EventForm (1)   EventCheckIn (1)  Feedback (N)  EventAddition (N)
+         │
+    TablePosition (N)
+
+MenuCategory (1) ──&lt; Dish (N)
+SystemSettings (1) — singleton
+ExtraService (N)
+KashrutCertificate (N)
+AuthorizedUser (N) — כולל שדה role (RBAC)
+StaffMember (N)
+ScheduledGreeting (N)
+CancellationLog (N)</code></pre>
+<h2>5.2 ישויות מרכזיות</h2>
+<h3>Booking (הזמנה / אופציה)</h3>
+<ul>
+<li>ישות מרכזית — מכילה פרטי לקוח, תשלום, חוזה, קוד אירוע</li>
+<li><code>isOption: true</code> = אופציה, <code>false</code> = הזמנה סגורה</li>
+<li>אילוץ: <code>@@unique([calendarDateId, timeSlot])</code> — מניעת כפילות</li>
+</ul>
+<h3>EventDate (תאריך בלוח)</h3>
+<ul>
+<li>תאריך ייחודי, סטטוס (OPTION / BOOKED / BLOCKED)</li>
+<li><code>optionExpiresAt</code> לתפוגת אופציה</li>
+</ul>
+<h3>EventForm (הפקה)</h3>
+<ul>
+<li>פרטי הפקה, תפריט (JSON), תוכנית שולחנות</li>
+<li>קשור 1:1 ל-Booking</li>
+</ul>
+<h3>EventCheckIn (קבלה LIVE)</h3>
+<ul>
+<li>נתוני קבלה בפועל, חתימת לקוח</li>
+<li>קשור 1:1 ל-Booking</li>
+</ul>
+<h3>Feedback</h3>
+<ul>
+<li>Token ייחודי, דירוגים, <code>clientSide</code> (A/B)</li>
+<li>אילוץ: <code>@@unique([bookingId, clientSide])</code></li>
+</ul>
+<h3>SystemSettings</h3>
+<ul>
+<li>singleton (<code>id: "global"</code>) — כל הגדרות התמחור והחוזה</li>
+</ul>
+<h3>AuthorizedUser</h3>
+<ul>
+<li>רשימת אימיילי Google מורשים + שדה <code>role</code> (RBAC: <code>manager</code> / <code>staff</code> / <code>production</code> / <code>floor_staff</code>)</li>
+<li>ניהול והקצאת תפקידים — Manager בלבד</li>
+</ul>
+<h2>5.3 ארכיטקטורת מערכת (AWS)</h2>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│              Client (React + Vite — CDN / S3)            │
+│  Router │ TanStack Query │ Socket.io │ LocalStorage     │
+│  (Fallback Offline — LIVE Check-In)                      │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTPS / WSS
+┌────────────────────────▼────────────────────────────────┐
+│           AWS ECS / App Runner (Node.js + Express)         │
+│  Routes → Controllers → Services → Prisma ORM           │
+│  Middlewares: Auth, RBAC, CSRF, RateLimit, Helmet        │
+│  Cron Jobs │ Socket.io │ Puppeteer (PDF) │ Presigned URL│
+└─────┬──────────┬──────────┬──────────┬──────────────────┘
+      │          │          │          │
+  AWS RDS     AWS S3     EasyCount   WhatsApp API
+ (PostgreSQL)  (SSE)        API     (Green API / Twilio)
+                              │
+                          Nodemailer</code></pre>
+<h2>5.4 מחסנית טכנולוגית (Tech Stack)</h2>
+<table><thead><tr><th>שכבה</th><th>טכנולוגיה</th></tr></thead><tbody><tr><td>Frontend</td><td>React 19, TypeScript, Vite 8, React Router 7</td></tr><tr><td>State</td><td>TanStack Query 5, Zustand</td></tr><tr><td>UI</td><td>CSS Modules, רכיבי UI פנימיים</td></tr><tr><td>Backend</td><td>Node.js, Express 5, TypeScript</td></tr><tr><td>ORM</td><td>Prisma 6</td></tr><tr><td>DB</td><td>PostgreSQL (AWS RDS — Managed)</td></tr><tr><td>Hosting</td><td>AWS ECS / App Runner</td></tr><tr><td>Auth</td><td>Google OAuth, JWT, RBAC (4 roles)</td></tr><tr><td>Real-time</td><td>Socket.io 4</td></tr><tr><td>Storage</td><td>AWS S3 (SSE + Presigned URLs)</td></tr><tr><td>PDF</td><td>Puppeteer</td></tr><tr><td>OCR</td><td>Tesseract.js + react-webcam</td></tr><tr><td>Charts</td><td>Recharts</td></tr><tr><td>Email</td><td>Nodemailer</td></tr><tr><td>Monitoring</td><td>Sentry</td></tr><tr><td>Testing</td><td>Playwright</td></tr><tr><td>Scheduling</td><td>node-cron</td></tr></tbody></table>
+<h2>5.5 API — קבוצות Endpoints עיקריות</h2>
+<table><thead><tr><th>קבוצה</th><th>נתיב בסיס</th><th>תיאור</th></tr></thead><tbody><tr><td>Auth</td><td><code>/api/auth</code></td><td>login, refresh, authorized-users</td></tr><tr><td>Calendar</td><td><code>/api/calendar</code></td><td>תאריכים, חסימות</td></tr><tr><td>Bookings</td><td><code>/api/bookings</code></td><td>CRUD, אופציות, תוספות LIVE</td></tr><tr><td>Event Form</td><td><code>/api/event-form</code></td><td>הפקה, שולחנות</td></tr><tr><td>Settings</td><td><code>/api/settings</code></td><td>תמחור, שירותים, צוות</td></tr><tr><td>Feedback</td><td><code>/api/feedback</code></td><td>admin + public submit</td></tr><tr><td>Check-In</td><td><code>/api/check-in</code></td><td>קבלה LIVE</td></tr><tr><td>Menu</td><td><code>/api/menu</code></td><td>קטגוריות ומנות</td></tr><tr><td>Kashrut</td><td><code>/api/kashrut</code></td><td>תעודות</td></tr></tbody></table>
+<hr>
+<h1>6. הנחיות UI/UX (UI/UX Guidelines)</h1>
+<h2>6.1 עקרונות עיצוב</h2>
+<ul>
+<li><strong>סגנון:</strong> כלי אדמין מקצועי, רגוע, עסקי-פנימי</li>
+<li><strong>כיוון:</strong> RTL מלא — כל הטקסטים, טבלאות, מגירות מימין</li>
+<li><strong>שפה:</strong> עברית בלבד בממשק האדמין</li>
+<li><strong>Desktop-first:</strong> responsive לטאבלט; <strong>אופטימיזציה מלאה ל-iPad</strong> במסכי LIVE ותוכנית ישיבה</li>
+</ul>
+<h2>6.2 מערכת עיצוב (Design System)</h2>
+<table><thead><tr><th>אלמנט</th><th>ערך</th></tr></thead><tbody><tr><td>Primary Green</td><td><code>#8CBF8E</code></td></tr><tr><td>Green Dark</td><td><code>#6BA86E</code></td></tr><tr><td>Green Deep</td><td><code>#4F8F52</code></td></tr><tr><td>Background</td><td><code>#F7F8F6</code></td></tr><tr><td>Surface/Cards</td><td><code>#FFFFFF</code></td></tr><tr><td>Text Primary</td><td><code>#2D3748</code></td></tr><tr><td>Text Secondary</td><td><code>#4A5568</code></td></tr><tr><td>Text Muted</td><td><code>#718096</code></td></tr><tr><td>Danger</td><td><code>#E53E3E</code></td></tr><tr><td>Warning</td><td><code>#DD6B20</code></td></tr><tr><td>Info</td><td><code>#4A6FA5</code></td></tr><tr><td>Font</td><td>Segoe UI</td></tr><tr><td>Border Radius</td><td>10–14px</td></tr><tr><td>Shadows</td><td>רכות, עדינות</td></tr></tbody></table>
+<h2>6.3 רכיבי UI סטנדרטיים</h2>
+<ul>
+<li><strong>כותרת אחידה</strong> (<code>AppHeader</code>) — המבורגר, לוגו מיפל (עלה + "מיפל"), כותרת עמוד</li>
+<li><strong>מגירת ניווט</strong> (<code>AppSidebar</code>) — slide מימין</li>
+<li><strong>כרטיסים</strong> (<code>Card</code>) — קיבוץ תוכן בטפסים</li>
+<li><strong>טבלאות</strong> (<code>DataTable</code>) — עם חיפוש, עימוד, מיון</li>
+<li><strong>מודלים</strong> — פופאפי יום, פרטי הזמנה, חוזה</li>
+<li><strong>Badges</strong> — סטטוס "אירוע היום", LIVE (פועם), OPTION, BOOKED</li>
+<li><strong>Skeleton</strong> — טעינה מדורגת</li>
+<li><strong>EmptyState</strong> — מצבים ריקים עם הנחיה</li>
+</ul>
+<h2>6.4 אנימציות ואינטראקציות</h2>
+<table><thead><tr><th>אלמנט</th><th>אנימציה</th></tr></thead><tbody><tr><td>תג LIVE</td><td>Pulse / glow עדין</td></tr><tr><td>מגירת ניווט</td><td>Slide-in מימין, 300ms ease</td></tr><tr><td>מודלים</td><td>Fade overlay + scale-in</td></tr><tr><td>כפתורי CTA</td><td>Hover: darken + shadow</td></tr><tr><td>טעינה</td><td>Skeleton shimmer</td></tr><tr><td>Toast הצלחה/שגיאה</td><td>Slide-down מלמעלה</td></tr></tbody></table>
+<h2>6.5 הנחיות טפסים</h2>
+<ul>
+<li>חלוקה לסקשנים בכרטיסים (<code>MetaBar</code>, <code>EventSettings</code>, <code>Payment</code>, <code>Contract</code>)</li>
+<li>שדות חובה מסומנים ב-<code>*</code></li>
+<li>ולידציה inline + הודעות שגיאה בעברית</li>
+<li>לוח חתימה: אזור גדול, כפתור "נקה" ו-"אישור"</li>
+</ul>
+<h2>6.6 לוח שנה — UX</h2>
+<ul>
+<li>תא "היום" מודגש</li>
+<li>צבעי משבצות ברורים עם מקרא (Legend)</li>
+<li>Hover על תא: tooltip עם סיכום אירועים</li>
+<li>לחיצה על תא תפוס: פופאפ (לא ניווט ישיר)</li>
+<li>תאריך עברי בגופן קטן יותר מתחת ללועזי</li>
+</ul>
+<h2>6.7 דף משוב ציבורי</h2>
+<ul>
+<li>מינימליסטי, ללא ניווט אדמין</li>
+<li>לוגו מרכזי + "נשמח לשמוע מכם"</li>
+<li>כוכבים גדולים ונגישים (tap-friendly)</li>
+<li>CTA ירוק בולט: "שליחה"</li>
+<li>מסך תודה לאחר שליחה</li>
+</ul>
+<h2>6.8 נגישות</h2>
+<ul>
+<li>וידג'ט נגישות צף בכל העמודים</li>
+<li><code>role</code>, <code>aria-label</code> ברכיבים אינטראקטיביים</li>
+<li>ניגודיות מינימלית 4.5:1</li>
+<li>ניווט מקלדת בטפסים ומודלים</li>
+</ul>
+<hr>
+<h1>7. נספחים</h1>
+<h2>7.1 נתוני דוגמה (Seed Data)</h2>
+<table><thead><tr><th>אירוע</th><th>פרטים</th></tr></thead><tbody><tr><td>חתונה כהן-לוי</td><td>15.08.2026, ערב, 350 אורחים, <strong>LIVE</strong></td></tr><tr><td>אופציה — אירוסין שמש-ברק</td><td>22.09.2026, צהריים</td></tr><tr><td>בר מצווה משפחת אברהם</td><td>03.07.2026, בוקר</td></tr><tr><td>טלפון אולם</td><td>03-6777772</td></tr><tr><td>מחיר בסיס</td><td>₪280 לאורח</td></tr></tbody></table>
+<h2>7.2 Cron Jobs מתוכננים</h2>
+<table><thead><tr><th>תזמון</th><th>משימה</th></tr></thead><tbody><tr><td>09:00 יומי</td><td>תזכורות צ'ק ביטחון, טופס הפקה, בחירת תפריט</td></tr><tr><td>לאחר אירוע</td><td>יצירת משוב + שליחת קישור</td></tr><tr><td>03:00 יומי</td><td>גיבוי מסד נתונים</td></tr><tr><td>לפי תזמון</td><td>שליחת ברכות מתוזמנות</td></tr></tbody></table>
+<h2>7.3 סיכונים ומיטיגציה</h2>
+<table><thead><tr><th>סיכון</th><th>מיטיגציה</th></tr></thead><tbody><tr><td>Double booking</td><td>אילוץ DB + בדיקת שרת + מיגרציית Excel לפני go-live</td></tr><tr><td>אובדן חתימה/צ'ק</td><td>S3 (SSE) + גיבוי RDS + Presigned URLs</td></tr><tr><td>כשל EasyCount</td><td>סטטוס <code>FAILED</code> + מצב <code>simulation</code> ב-UAT + המשך תפעול</td></tr><tr><td>גישה לא מורשית</td><td>RBAC + רשימת אימיילים + JWT</td></tr><tr><td>תקלת אינטרנט באולם</td><td>Fallback Offline (localStorage) במסך LIVE</td></tr><tr><td>כשל WhatsApp API</td><td>retry + fallback לאימייל</td></tr></tbody></table>
+<h2>7.4 מיגרציית נתונים היסטוריים (Data Migration)</h2>
+<h3>DR-MIG-01: ייבוא אירועים מ-Excel</h3>
+<p><strong>מטרה:</strong> ייבוא הזמנות קיימות לשנים 2026–2027 מקובץ Excel מרכזי, כדי למנוע double-booking של תאריכים שכבר תפוסים במערכת הישנה.</p>
+<p><strong>פקודת הרצה:</strong></p>
+<pre><code>npm run db:import-legacy -- --file=./data/legacy-bookings-2026-2027.xlsx</code></pre>
+<p><strong>דרישות הסקריפט:</strong></p>
+<table><thead><tr><th>דרישה</th><th>תיאור</th></tr></thead><tbody><tr><td>קלט</td><td>קובץ Excel מאסטר (<code>legacy-bookings-2026-2027.xlsx</code>) עם עמודות: תאריך, משבצת, סוג אירוע, שמות לקוח, טלפון, מספר אורחים, קוד אירוע (אופציונלי)</td></tr><tr><td>ולידציה</td><td>בדיקת כפילויות לפני ייבוא; דילוג על שורות שגויות עם דוח שגיאות</td></tr><tr><td>מיפוי</td><td>יצירת <code>EventDate</code> + <code>Booking</code> (סטטוס <code>BOOKED</code>, <code>isOption: false</code>)</td></tr><tr><td>אילוץ</td><td>שמירה על <code>@@unique([calendarDateId, timeSlot])</code> — עצירה והתראה במקרה של התנגשות</td></tr><tr><td>דוח</td><td>סיכום: יובאו / דולגו / נכשלו; קובץ לוג <code>import-legacy-report.json</code></td></tr><tr><td>הרצה</td><td>חד-פעמית לפני go-live; ניתן להרצה חוזרת במצב idempotent (דילוג על קיימים)</td></tr></tbody></table>
+<p><strong>תלות:</strong> יש להשלים את המיגרציה <strong>לפני</strong> הפעלת המערכת בפרודקשן, כדי שהלוח שנה ישקף את כל האירועים התפוסים.</p>
+<h2>7.5 יומן החלטות (Decision Log)</h2>
+<table><thead><tr><th>#</th><th>נושא</th><th>החלטה</th><th>תאריך</th></tr></thead><tbody><tr><td>1</td><td>הרשאות</td><td>RBAC — 4 תפקידים (Manager, Staff, Production, Floor Staff)</td><td>08.07.2026</td></tr><tr><td>2</td><td>EasyCount</td><td><code>simulation</code> בפיתוח/UAT; <code>live</code> בפרודקשן; 3 סוגי מסמכים</td><td>08.07.2026</td></tr><tr><td>3</td><td>WhatsApp</td><td>API רשמי (Green API / Twilio)</td><td>08.07.2026</td></tr><tr><td>4</td><td>גלריה</td><td>תמונות הפקה כהתייחסות ויזואלית; העלאה: Manager + Production</td><td>08.07.2026</td></tr><tr><td>5</td><td>LIVE Trigger</td><td>באנר אוטומטי "אירוע היום"; הפעלת LIVE ידנית ע"י Manager</td><td>08.07.2026</td></tr><tr><td>6</td><td>תשלומים</td><td>ללא סליקת אשראי; רישום ידני (מזומן/העברה/צ'ק + OCR)</td><td>08.07.2026</td></tr><tr><td>7</td><td>Hosting</td><td>AWS ECS/App Runner + RDS PostgreSQL; S3 SSE + Presigned URLs</td><td>08.07.2026</td></tr><tr><td>8</td><td>SLA</td><td>Fallback Offline (localStorage) במסך LIVE</td><td>08.07.2026</td></tr><tr><td>9</td><td>מכשירים</td><td>אופטימיזציה מלאה ל-iPad — LIVE + תוכנית ישיבה</td><td>08.07.2026</td></tr><tr><td>10</td><td>מיגרציה</td><td><code>npm run db:import-legacy</code> — Excel 2026–2027</td><td>08.07.2026</td></tr></tbody></table>
+<hr>
+<p><em>מסמך זה נכתב על בסיס הקוד הקיים בפרויקט <code>Maple-Garden-Events</code> ומפרט העיצוב ב-<code>STITCH-SPEC.md</code>. גרסה 1.1 — מעודכן עם החלטות תפעוליות.</em></p>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    מסמך זה נכתב על בסיס הקוד הקיים בפרויקט Maple-Garden-Events ומפרט העיצוב ב-STITCH-SPEC.md · גרסה 1.1
+  </footer>
+
+  <script>
+    document.querySelectorAll('#content table').forEach(t => {
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+
+    const toc = document.getElementById('toc');
+    document.querySelectorAll('#content h1, #content h2, #content h3').forEach((h, i) => {
+      if (!h.id) h.id = 'section-' + i;
+      const li = document.createElement('li');
+      li.className = 'toc-' + h.tagName.toLowerCase();
+      const a = document.createElement('a');
+      a.href = '#' + h.id;
+      a.textContent = h.textContent;
+      li.appendChild(a);
+      toc.appendChild(li);
+    });
+
+    const links = [...toc.querySelectorAll('a')];
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove('active'));
+          const active = toc.querySelector('a[href="#' + e.target.id + '"]');
+          if (active) active.classList.add('active');
+        }
+      });
+    }, { rootMargin: '-90px 0px -60% 0px' });
+    document.querySelectorAll('#content h1, #content h2, #content h3').forEach(h => observer.observe(h));
+  </script>
+</body>
+</html>

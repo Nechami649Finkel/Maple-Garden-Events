@@ -1,7 +1,0 @@
-Add to existing מיפל Hebrew RTL web admin (maple green #8CBF8E):
-
-1. EVENT PRODUCTION FORM — Select booking, final guest count, seating split % (גברים/נשים), menu picker, kashrut certificates, entertainers/DJ/photographer, floor plan builder canvas with draggable round and rectangular tables, "ייצוא תוכנית ישיבה" button.
-
-2. LIVE CHECK-IN MODAL — Banner "אירוע LIVE — ניתן לעריכה", pre-filled guest count and notes from booking, live additions table (service, quantity, price), required signature pad "חתימת לקוח". Also show closed state: disabled fields + badge "נסגר".
-
-Same design system, Hebrew RTL, admin header.

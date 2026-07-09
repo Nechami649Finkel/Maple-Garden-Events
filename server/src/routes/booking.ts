@@ -8,6 +8,7 @@ import {
   finalizeBookingSchema,
   notifyOptionInterestSchema,
   releaseOptionsSchema,
+  reissueEasyCountSchema,
 } from '../validators/bookingActions.validator';
 import { sendGreetingSchema } from '../validators/greeting.validator';
 import { requireAuth } from '../middlewares/auth';
@@ -28,6 +29,7 @@ import {
   addEventAddition,
   getNextEventCode,
   getContractTemplate,
+  reissueEasyCountReceipt,
 } from '../controllers/booking';
 import { sendGreeting, getScheduledGreetings, cancelScheduledGreetingHandler } from '../controllers/greeting';
 import { generateEventFormPDF } from '../utils/pdfGenerator';
@@ -94,6 +96,7 @@ router.post('/release', validate(releaseOptionsSchema), releaseOptions);
 router.post('/bump', validate(bumpOptionSchema), bumpOption);
 router.post('/notify-option-interest', validate(notifyOptionInterestSchema), notifyOptionInterest);
 router.post('/finalize', validate(finalizeBookingSchema), finalizeBooking);
+router.post('/:id/easycount-receipt', validate(reissueEasyCountSchema), reissueEasyCountReceipt);
 router.post('/send-greeting', upload.single('attachment'), validate(sendGreetingSchema), sendGreeting);
 
 // --- ראוט לתוספות אירוע ---

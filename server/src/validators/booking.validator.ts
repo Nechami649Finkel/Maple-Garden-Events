@@ -187,6 +187,7 @@ export const updateBookingSchema = z.object({
       kosherType: z.string().optional(),
       upgrades: z.unknown().optional(),
       depositMethod: z.string().optional(),
+      vatType: z.enum(['included', 'not_included']).optional(),
       overrideOptionDateId: z.string().uuid().optional(),
       isOption: z.boolean().optional(),
       allSelectedDates: z.array(z.unknown()).optional(),
