@@ -29,6 +29,7 @@ import MetaBar from './sections/MetaBar';
 import OptionDatesBar, { normalizeOptionDate } from './sections/OptionDatesBar';
 import FinalizeOptionDatesBar from './sections/FinalizeOptionDatesBar';
 import { verifyAllOptionDates } from '../../utils/optionDateApi';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
 import MenuDisplay from '../MenuDisplay/MenuDisplay';
@@ -340,7 +341,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     const phoneB = parseCombinedPhone(b.clientBPhone);
     const addrA = parseAddress(b.clientAAddress);
     const addrB = parseAddress(b.clientBAddress);
-    const eventDateStr = b.eventDate?.date ? new Date(b.eventDate.date).toISOString().split('T')[0] : '';
+    const eventDateStr = b.eventDate?.date ? calendarKeyFromDbDate(new Date(b.eventDate.date)) : '';
     if (!convertFromOption) {
       setIsOption(b.eventDate?.status === 'OPTION');
       setOrderNumber(b.eventCode || b.id.slice(0, 8));
@@ -442,7 +443,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     if (!selected) return;
     setActiveBookingId(bookingId);
     const eventDateStr = selected.eventDate?.date
-      ? new Date(selected.eventDate.date).toISOString().split('T')[0]
+      ? calendarKeyFromDbDate(new Date(selected.eventDate.date))
       : '';
     if (eventDateStr) {
       setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: selected.eventDate?.hebrewDate || '' }]);

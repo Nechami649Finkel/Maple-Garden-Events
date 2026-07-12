@@ -18,6 +18,13 @@ import {
   emitDateUpdatedMany,
 } from '../utils/realtime';
 import {
+  toCalendarDateKey,
+  calendarDateForStorage,
+  prismaCalendarDayWhere,
+  localStartOfDay,
+  parseCalendarDate,
+} from '../utils/dateLocal';
+import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
   getTakenSlots,
@@ -39,10 +46,8 @@ import { neonTransactionOptions, withDbRetry } from '../utils/dbRetry';
 import { isSlotUniqueViolation, slotUniqueConflictError } from '../utils/bookingSlotGuard';
 
 function canEditBookingDate(eventDate: Date): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDay = new Date(eventDate);
-  eventDay.setHours(0, 0, 0, 0);
+  const today = localStartOfDay(new Date());
+  const eventDay = localStartOfDay(eventDate);
   return today < eventDay;
 }
 
@@ -273,12 +278,17 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     for (const dateItem of datesToProcess) {
       const dateString = typeof dateItem === 'object' && dateItem !== null ? dateItem.date : dateItem;
-      const possibleDate = new Date(dateString);
-      
-      if (isNaN(possibleDate.getTime())) continue;
+      let calendarKey: string;
+      try {
+        calendarKey = toCalendarDateKey(String(dateString));
+      } catch {
+        const err: any = new Error('תאריך לא תקין.');
+        err.statusCode = 400;
+        throw err;
+      }
 
       let eventDate = await tx.eventDate.findFirst({
-        where: { date: possibleDate },
+        where: prismaCalendarDayWhere(calendarKey),
         include: { bookings: true },
       });
 
@@ -322,7 +332,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         throw err;
       }
 
-      const slotError = validateSlotOnDate(parseDateLocal(possibleDate), slot);
+      const slotError = validateSlotOnDate(parseDateLocal(calendarKey), slot);
       if (slotError) {
         const err: any = new Error(slotError);
         err.statusCode = 400;
@@ -331,7 +341,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
       if (!eventDate) {
         eventDate = await tx.eventDate.create({
-          data: { date: possibleDate, status: newStatus, optionExpiresAt: expiryDate },
+          data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate },
           include: { bookings: true },
         });
       } else if (!isOverrideTarget) {
@@ -368,12 +378,12 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       }
 
       const existingBookings = eventDate.bookings || [];
-      const bookableSlots = getBookableSlotsForDate(parseDateLocal(possibleDate), existingBookings);
+      const bookableSlots = getBookableSlotsForDate(parseDateLocal(calendarKey), existingBookings);
       if (!bookableSlots.includes(slot)) {
         const taken = getTakenSlots(existingBookings);
         const message = taken.has(slot)
           ? slotConflictMessage(slot, existingBookings)
-          : (validateSlotOnDate(parseDateLocal(possibleDate), slot) || 'התאריך מלא — אין משבצות זמן פנויות.');
+          : (validateSlotOnDate(parseDateLocal(calendarKey), slot) || 'התאריך מלא — אין משבצות זמן פנויות.');
         const err: any = new Error(message);
         err.statusCode = 400;
         throw err;
@@ -478,7 +488,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         clientBIdNumber: savedBooking.clientBIdNumber || undefined,
         clientBPhone: savedBooking.clientBPhone || undefined,
         clientBEmail: savedBooking.clientBEmail || undefined,
-        eventDate: new Date(firstDateString).toString(),
+        eventDate: parseCalendarDate(toCalendarDateKey(String(firstDateString))).toString(),
         guestCount: savedBooking.guestCount,
         minimumGuestCount: savedBooking.minimumGuestCount ?? savedBooking.guestCount,
         eventType: savedBooking.eventType,
@@ -494,7 +504,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         await sendPDFToClient(
           clientEmail, 
           savedBooking.clientAFullName, 
-          new Date(firstDateString).toString(), 
+          parseCalendarDate(toCalendarDateKey(String(firstDateString))).toString(), 
           contractPdfBuffer
         );
       }
