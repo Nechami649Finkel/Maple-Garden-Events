@@ -44,7 +44,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
     && canAddMoreEventsForDate(day.date, bookings);
   const showAddEvent = hasFreeSlots && !!onAddEvent;
   const showAddOption = hasFreeSlots && !!onAddOption;
-  const showOverrideOption = isOptionDay && !!onOverrideOptionBook && !hasFreeSlots;
+  const showOverrideOption = isOptionDay && !!onOverrideOptionBook && !hasFreeSlots && !isPast;
 
   const handleEdit = (bookingId: string) => {
     onClose();
@@ -139,7 +139,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                       </span>
                     </div>
                     <div className="event-actions">
-                      {isOptionBooking && booking.id && (
+                      {isOptionBooking && booking.id && !isPast && (
                         <button
                           type="button"
                           className="edit-btn notify-option-btn"
@@ -148,7 +148,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                           הקפץ הודעה ללקוח
                         </button>
                       )}
-                      {isOptionBooking && booking.id && (
+                      {isOptionBooking && booking.id && !isPast && (
                         <button
                           type="button"
                           className="edit-btn finalize-option-btn"
@@ -166,12 +166,12 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                       >
                         עריכת פרטים
                       </button>
-                      {booking.isContractSigned && booking.id && (
+                      {booking.id && (
                         <>
                           <button
                             type="button"
                             className="edit-btn"
-                            onClick={() => openContractPdf(booking.id)}
+                            onClick={() => void openContractPdf(booking.id)}
                           >
                             צפייה בחוזה
                           </button>
@@ -181,14 +181,19 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                             onClick={async () => {
                               try {
                                 await printContract(booking.id);
-                              } catch {
-                                alert('לא הצלחנו להדפיס את החוזה.');
+                              } catch (e) {
+                                alert(e instanceof Error ? e.message : 'לא הצלחנו להדפיס את החוזה.');
                               }
                             }}
                           >
                             הדפסת חוזה
                           </button>
                         </>
+                      )}
+                      {booking.isContractSigned && !booking.clientSignatureUrl && (
+                        <span className="contract-missing-msg">
+                          החוזה מסומן כחתום, אך תמונת החתימה חסרה. יש לחתום מחדש בעריכת ההזמנה.
+                        </span>
                       )}
                       {showCheckIn && booking.id && (
                         <button
@@ -202,7 +207,10 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                           טופס קבלת אולם
                         </button>
                       )}
-                      {!editable && (
+                      {isOptionBooking && isPast && (
+                        <span className="edit-blocked-msg">תאריך זה עבר — לא ניתן לסגור כהזמנה</span>
+                      )}
+                      {!editable && !isOptionBooking && (
                         <span className="edit-blocked-msg">לא ניתן לערוך ביום האירוע או לאחריו</span>
                       )}
                     </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import '../../styles/bootstrap-maple-forms.css';
 import styles from './BookingForm.module.css';
 import { type TimeSlot, TIME_SLOTS, SLOT_LABELS, normalizeTimeSlot, getBlockedSlotsForDate, SLOT_HOURS, getSlotHours, getDefaultTimeSlot } from '../../utils/timeSlot';
 import { parseNotesBundle, serializeNotesBundle } from '../../utils/notesStorage';
-import { apiFetch } from '../../services/api';
+import { apiFetch, getAuthUser } from '../../services/api';
 import { useGlobalSettingsQuery } from '../../hooks/queries';
 import {
   DEFAULT_PAYMENT_TEMPLATES,
@@ -13,8 +14,8 @@ import {
   type PaymentTermsTemplate,
 } from '../../utils/paymentTerms';
 import {
-  buildExtrasLineItems,
   resolveFullContractText,
+  parseStoredUpgrades,
 } from '../../utils/contractSections';
 import { promptPrintAfterClose } from '../../utils/contractPrint';
 import { getSignatureDataUrl } from '../../utils/signature';
@@ -23,6 +24,8 @@ import SignatureCanvas from 'react-signature-canvas';
 
 import ClientsSection from './sections/ClientsSection';
 import EventSettingsSection from './sections/EventSettingsSection';
+import UpgradesSection from './sections/UpgradesSection';
+import UpgradeTablesPanel from '../Contract/UpgradeTablesPanel';
 import PaymentAndUpgradesSection from './sections/PaymentAndUpgradesSection';
 import ContractModal from './sections/ContractModal';
 import MetaBar from './sections/MetaBar';
@@ -32,6 +35,12 @@ import { verifyAllOptionDates } from '../../utils/optionDateApi';
 import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
 import MenuDisplay from '../MenuDisplay/MenuDisplay';
+import {
+  clearBookingDraft,
+  loadBookingDraft,
+  saveBookingDraft,
+  type BookingDraftSnapshot,
+} from '../../utils/bookingDraft';
 
 export const KOSHER_PRICING: Record<string, { label: string, extra: number }> = {
   machpud: { label: 'הרב מחפוד', extra: 0 },
@@ -58,7 +67,19 @@ import {
   filterUpgradeDisplayOrder,
   HALL_UPGRADE_KEYS,
   EXTERNAL_UPGRADE_KEYS,
+  type UpgradeKey,
 } from '../../utils/pricing';
+
+const DEFAULT_UPGRADES: Record<UpgradeKey, boolean> = {
+  baseDesign: true,
+  amplification: false,
+  lighting: false,
+  screens: false,
+  reception: false,
+  separateReception: false,
+  extraSecurity: false,
+  fireworks: false,
+};
 
 /** קישורי דמה לתשלום לספקים חיצוניים — יוחלפו בקישורים אמיתיים */
 export const EXTERNAL_SUPPLIER_LINKS: Record<string, string> = {
@@ -185,6 +206,9 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [relatedOptions, setRelatedOptions] = useState<any[]>([]);
   const [activeBookingId, setActiveBookingId] = useState(activeEditId || '');
+  const [bookingUpdatedAt, setBookingUpdatedAt] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   let datesToProcess: any[] = [];
   if (initialDates && initialDates.length > 0) datesToProcess = initialDates;
@@ -216,9 +240,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [internalNotesList, setInternalNotesList] = useState<string[]>([]);
   const [servingStyle, setServingStyle] = useState(DEFAULT_SERVING_STYLE);
   const [kosherType, setKosherType] = useState(DEFAULT_KOSHER_TYPE);
-  const [upgrades, setUpgrades] = useState({
-    baseDesign: true, amplification: false, lighting: false, screens: false, reception: false, separateReception: false, extraSecurity: false, fireworks: false,
-  });
+  const [upgrades, setUpgrades] = useState({ ...DEFAULT_UPGRADES });
+  const [addingUpgradeKey, setAddingUpgradeKey] = useState<string | null>(null);
   const [depositMethod, setDepositMethod] = useState('');
   const [checkScanning, setCheckScanning] = useState(false);
   const [contractSigned, setContractSigned] = useState(false);
@@ -245,6 +268,84 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   useEffect(() => {
     if (globalSettings?.vatRate != null) setVatRate(Number(globalSettings.vatRate));
   }, [globalSettings]);
+
+  useEffect(() => {
+    getAuthUser().then((user) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isEditMode || !userEmail || draftRestored) return;
+    const draft = loadBookingDraft(userEmail);
+    if (!draft) {
+      setDraftRestored(true);
+      return;
+    }
+    const restore = window.confirm('נמצאה טיוטת הזמנה שלא נשמרה. לשחזר אותה?');
+    if (restore) {
+      setFormData((prev) => ({ ...prev, ...(draft.formData as typeof prev) }));
+      setMenuNotesList(draft.menuNotesList);
+      setInternalNotesList(draft.internalNotesList);
+      setServingStyle(draft.servingStyle);
+      setKosherType(draft.kosherType);
+      setUpgrades(draft.upgrades);
+      setDepositMethod(draft.depositMethod);
+      setContractSigned(draft.contractSigned);
+      setSelectedDatesDisplay(draft.selectedDatesDisplay as typeof selectedDatesDisplay);
+      setIsOption(draft.isOption);
+      setOptionDurationHours(draft.optionDurationHours);
+      setPaymentTemplateId(draft.paymentTemplateId);
+      setPaymentTermsCustom(draft.paymentTermsCustom);
+      setPaymentTermsText(draft.paymentTermsText);
+    } else {
+      clearBookingDraft();
+    }
+    setDraftRestored(true);
+  }, [isEditMode, userEmail, draftRestored]);
+
+  const buildDraftSnapshot = (): BookingDraftSnapshot => ({
+    formData: { ...formData },
+    menuNotesList,
+    internalNotesList,
+    servingStyle,
+    kosherType,
+    upgrades,
+    depositMethod,
+    contractSigned,
+    selectedDatesDisplay,
+    isOption,
+    optionDurationHours,
+    paymentTemplateId,
+    paymentTermsCustom,
+    paymentTermsText,
+  });
+
+  useEffect(() => {
+    if (isEditMode || !userEmail || !draftRestored) return;
+    const timer = setTimeout(() => {
+      saveBookingDraft(userEmail, buildDraftSnapshot());
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [
+    isEditMode,
+    userEmail,
+    draftRestored,
+    formData,
+    menuNotesList,
+    internalNotesList,
+    servingStyle,
+    kosherType,
+    upgrades,
+    depositMethod,
+    contractSigned,
+    selectedDatesDisplay,
+    isOption,
+    optionDurationHours,
+    paymentTemplateId,
+    paymentTermsCustom,
+    paymentTermsText,
+  ]);
 
   useEffect(() => {
     apiFetch(`${API_URL}/bookings/contract-template`)
@@ -389,7 +490,12 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     } else if (b.paymentTermsText) {
       setPaymentTermsCustom(true);
     }
-    if (b.hasMusic !== undefined) setUpgrades(prev => ({ ...prev, amplification: b.hasMusic }));
+    if (b.upgrades && typeof b.upgrades === 'object') {
+      setUpgrades({ ...DEFAULT_UPGRADES, ...parseStoredUpgrades(b.upgrades) });
+    } else if (b.hasMusic !== undefined) {
+      setUpgrades((prev) => ({ ...prev, amplification: !!b.hasMusic }));
+    }
+    if (b.kosherType) setKosherType(b.kosherType);
   };
 
   useEffect(() => {
@@ -412,6 +518,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         }
         applyBookingToForm(b);
         setActiveBookingId(b.id);
+        if (b.updatedAt) setBookingUpdatedAt(b.updatedAt);
         setIsOption(false);
 
         if (convertFromOption) {
@@ -524,6 +631,30 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const handleUpgradeChange = (key: keyof typeof upgrades) => {
     if (key === 'baseDesign') return;
     setUpgrades((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const handleAddUpgrade = async (key: UpgradeKey) => {
+    setAddingUpgradeKey(key);
+    try {
+      if (editId) {
+        const res = await apiFetch(`${API_URL}/bookings/${editId}/upgrades`, {
+          method: 'PATCH',
+          body: JSON.stringify({ upgradeKey: key }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          alert(json.message || 'לא ניתן להוסיף את השדרוג לחוזה');
+          return;
+        }
+        setUpgrades((prev) => ({ ...prev, [key]: true }));
+        if (json.data?.contractText) setContractText(json.data.contractText);
+        if (json.data?.paymentTermsText) setPaymentTermsText(json.data.paymentTermsText);
+        return;
+      }
+      setUpgrades((prev) => ({ ...prev, [key]: true }));
+    } finally {
+      setAddingUpgradeKey(null);
+    }
   };
 
   const processCheckImage = async (imageSrc: string) => {
@@ -681,18 +812,19 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
   useEffect(() => {
     if (!contractBaseText) return;
-    const extras = buildExtrasLineItems({
+    const lineItemOptions = {
       upgrades,
       kosherType,
       guestCount: Number(formData.guestCount) || 0,
       isHallOnly,
       isFoodRelevant,
       upgradesPricing,
-    });
+      upgradeKeys: visibleUpgradeKeys,
+    };
     setContractText(resolveFullContractText({
       baseContract: contractBaseText,
       paymentTerms: paymentTermsText,
-      extras,
+      lineItemOptions,
       menuNotes: menuNotesList,
     }));
   }, [
@@ -705,6 +837,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     isFoodRelevant,
     menuNotesList,
     upgradesPricing,
+    visibleUpgradeKeys,
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -899,6 +1032,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         delete payload.hallRentalPrice;
       }
 
+      if (isEditMode && bookingUpdatedAt) {
+        payload.expectedUpdatedAt = bookingUpdatedAt;
+      }
+
       const submitId = convertFromOption ? activeBookingId : editId;
       const url = isEditMode ? `${API_URL}/bookings/${submitId}` : `${API_URL}/bookings`;
       const method = isEditMode ? 'PUT' : 'POST';
@@ -907,6 +1044,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       const resData = await response.json();
 
       if (response.ok) {
+        clearBookingDraft();
         const savedBooking = Array.isArray(resData.data) ? resData.data[0] : resData.data;
         const savedCode = savedBooking?.eventCode;
         const savedId = savedBooking?.id || submitId;
@@ -923,6 +1061,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           await promptPrintAfterClose(savedId);
         }
         navigate('/calendar');
+      } else if (response.status === 409 && resData.conflict) {
+        const updatedBy = resData.updatedBy ? ` (${resData.updatedBy})` : '';
+        alert(`ההזמנה עודכנה על ידי משתמש אחר${updatedBy}. רענני את העמוד ונסי שוב.`);
+        setIsSubmitting(false);
       } else {
         const fieldErrors = Array.isArray(resData.errors)
           ? resData.errors.map((e: { message?: string }) => e.message).filter(Boolean).join('\n')
@@ -936,37 +1078,39 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
   };
 
-  if (loadingBooking) return <div className={styles.container}><p className={styles.loadingText}>טוען...</p></div>;
+  if (loadingBooking) return (
+    <div className="maple-bs-form maple-page-wrap">
+      <p className="maple-loading">טוען...</p>
+    </div>
+  );
 
   return (
-    <div className={styles.container}>
-      <div className={styles.formCard}>
-        <div className={styles.header}>
-          <div className={styles.headerText}>
-            <h2 className={styles.title}>
-              {convertFromOption
-                ? 'סגירת הזמנה מאופציה'
-                : overrideOptionDateId
-                  ? 'סגירת אירוע במקום אופציה'
-                : isEditMode
-                  ? (isOption ? 'עריכת אופציה' : 'עריכת הזמנה')
-                  : (isOption ? 'שמירת אופציה לאירוע' : 'סגירת הזמנת אירוע')}
-            </h2>
-            <p className={styles.subtitle}>
-              {isOption
-                ? 'מילוי פרטי לקוח, תאריכי אופציה ושמירה'
-                : 'מילוי פרטי הזמנה, תשלום וחתימה על חוזה'}
-            </p>
-          </div>
+    <div className="maple-bs-form maple-page-wrap">
+      <div className="card shadow-sm maple-form-card">
+        <div className="card-header">
+          <h2 className="h4 mb-1">
+            {convertFromOption
+              ? 'סגירת הזמנה מאופציה'
+              : overrideOptionDateId
+                ? 'סגירת אירוע במקום אופציה'
+              : isEditMode
+                ? (isOption ? 'עריכת אופציה' : 'עריכת הזמנה')
+                : (isOption ? 'שמירת אופציה לאירוע' : 'סגירת הזמנת אירוע')}
+          </h2>
+          <p className="maple-subtitle">
+            {isOption
+              ? 'מילוי פרטי לקוח, תאריכי אופציה ושמירה'
+              : 'מילוי פרטי הזמנה, תשלום וחתימה על חוזה'}
+          </p>
         </div>
 
         {overrideOptionDateId && (
-          <div className={styles.overrideOptionBanner}>
+          <div className="alert alert-warning rounded-0 mb-0">
             האופציה{overrideOptionClientName ? ` של ${overrideOptionClientName}` : ''} תשוחרר ותוחלף באירוע החדש בעת השמירה.
           </div>
         )}
 
-        <form className={styles.formWrapper} onSubmit={handleSubmit} style={{ direction: 'rtl' }}>
+        <form className="card-body" onSubmit={handleSubmit}>
           <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} />
           {convertFromOption && relatedOptions.length > 1 && (
             <FinalizeOptionDatesBar
@@ -985,106 +1129,144 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             />
           )}
 
-          <div className={styles.formGrid}>
-            <div className={styles.formColumn}>
-              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} setErrors={setErrors} isWedding={isWedding} isOption={isOption} styles={styles} />
-            </div>
+          <div className="row g-3 maple-form-columns">
+            <div className="col-lg-4">
+              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} setErrors={setErrors} isWedding={isWedding} isOption={isOption} />
+              <UpgradesSection
+                upgrades={upgrades}
+                handleUpgradeChange={handleUpgradeChange}
+                upgradesPricing={upgradesPricing}
+                upgradeDisplayOrder={visibleUpgradeKeys}
+                isHallOnly={isHallOnly}
+              />
+              <UpgradeTablesPanel
+                upgrades={upgrades}
+                onAddUpgrade={handleAddUpgrade}
+                upgradesPricing={upgradesPricing}
+                kosherType={kosherType}
+                guestCount={Number(formData.guestCount) || 0}
+                isHallOnly={isHallOnly}
+                isFoodRelevant={isFoodRelevant}
+                upgradeDisplayOrder={visibleUpgradeKeys}
+                addingKey={addingUpgradeKey}
+              />
+              {!isOption && (
+                <div className="card border-info mb-3">
+                  <div className="card-body">
+                    <span className="fw-semibold d-block mb-2">🎵 הסדרת רישיון אקו&quot;ם</span>
 
-            <div className={styles.formColumn}>
-              <EventSettingsSection formData={formData} handleChange={handleChange} isOption={isOption} availableSlots={availableSlots} takenSlots={takenSlots} isEditMode={isEditMode} servingStyle={servingStyle} setServingStyle={setServingStyle} kosherType={kosherType} setKosherType={setKosherType} isFoodRelevant={isFoodRelevant} selectedDatesDisplay={selectedDatesDisplay} setIsMenuViewOpen={setIsMenuViewOpen} styles={styles} />
-              {isFoodRelevant && (
-                <div className={`${styles.sectionCard} ${styles.compactNotesWrap}`}>
-                  <h3 className={styles.sectionHeader}>הערות לתפריט</h3>
-                  <NotesList notes={menuNotesList} onChange={setMenuNotesList} placeholder="לדוגמה: אלרגיות..." />
+                    {!isWedding && (
+                      <div className="form-check mb-2">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          id="has-music"
+                          checked={formData.hasMusic}
+                          onChange={(e) => setFormData(prev => ({ ...prev, hasMusic: e.target.checked }))}
+                        />
+                        <label className="form-check-label" htmlFor="has-music">
+                          יש מוזיקה באירוע (דורש תשלום לאקו&quot;ם)
+                        </label>
+                      </div>
+                    )}
+
+                    {(isWedding || formData.hasMusic) && (
+                      <>
+                        <p className="small text-secondary mb-2">
+                          {isWedding ? 'חובה להסדיר רישיון השמעת מוזיקה מול אקו"ם.' : 'חובה להסדיר רישיון מול אקו"ם.'}
+                        </p>
+                        <a
+                          href="https://apps.acum.org.il/licenses/family-event/register-payment?action=payFamilyEvent"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-sm btn-outline-primary mb-3"
+                        >
+                          לתשלום והפקת הרישיון לאקו&quot;ם
+                        </a>
+                        <div>
+                          <label className="form-label">קוד אישור אקו&quot;ם:</label>
+                          <input
+                            type="text"
+                            name="akumApprovalCode"
+                            value={formData.akumApprovalCode}
+                            onChange={handleChange}
+                            className="form-control"
+                            placeholder="מספר אישור לאחר התשלום..."
+                          />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
-              <div className={`${styles.sectionCard} ${styles.compactNotesWrap}`}>
-                <h3 className={styles.sectionHeader}>הערות פנימיות</h3>
-                <NotesList notes={internalNotesList} onChange={setInternalNotesList} placeholder="הוסף הערה פנימית..." />
+            </div>
+
+            <div className="col-lg-4">
+              <EventSettingsSection formData={formData} handleChange={handleChange} isOption={isOption} availableSlots={availableSlots} takenSlots={takenSlots} isEditMode={isEditMode} servingStyle={servingStyle} setServingStyle={setServingStyle} kosherType={kosherType} setKosherType={setKosherType} isFoodRelevant={isFoodRelevant} selectedDatesDisplay={selectedDatesDisplay} setIsMenuViewOpen={setIsMenuViewOpen} />
+              {isFoodRelevant && (
+                <div className="card mb-3">
+                  <div className="card-header maple-section-header">הערות לתפריט</div>
+                  <div className="card-body py-2">
+                    <NotesList notes={menuNotesList} onChange={setMenuNotesList} placeholder="לדוגמה: אלרגיות..." />
+                  </div>
+                </div>
+              )}
+              <div className="card mb-3">
+                <div className="card-header maple-section-header">הערות פנימיות</div>
+                <div className="card-body py-2">
+                  <NotesList notes={internalNotesList} onChange={setInternalNotesList} placeholder="הוסף הערה פנימית..." />
+                </div>
               </div>
             </div>
 
-            <div className={styles.formColumn}>
-              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} upgrades={upgrades} handleUpgradeChange={handleUpgradeChange} upgradesPricing={upgradesPricing} upgradeDisplayOrder={visibleUpgradeKeys} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} styles={styles} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={setPaymentTermsCustom} paymentTermsText={paymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} easycountMeta={(globalSettings as { easycount?: { mode?: string; label?: string; canIssueRealDocuments?: boolean } } | undefined)?.easycount} />
+            <div className="col-lg-4">
+              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={setPaymentTermsCustom} paymentTermsText={paymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} easycountMeta={(globalSettings as { easycount?: { mode?: string; label?: string; canIssueRealDocuments?: boolean } } | undefined)?.easycount} />
             </div>
           </div>
 
           {(!isOption || convertFromOption) && (
-          <div className={styles.formBottomRow}>
+          <div className="row g-3 mt-2">
             {((!isEditMode && !isOption) || convertFromOption) && (
-              <div className={styles.contractBox}>
-                <label className={styles.contractCheckLabel}>
-                  <input
-                    type="checkbox"
-                    checked={contractSigned}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setIsContractModalOpen(true);
-                      } else {
-                        setContractSigned(false);
-                        setSavedSignature(null);
-                        sigCanvas.current?.clear();
-                      }
-                    }}
-                  />
-                  קראתי את החוזה, מאשר את התנאים וחותם
-                </label>
-                <div className={styles.contractLink} onClick={() => setIsContractModalOpen(true)} role="button" tabIndex={0} onKeyDown={(e) => e.key === 'Enter' && setIsContractModalOpen(true)}>
-                  לחץ לקריאת החוזה ולחתימה דיגיטלית
+              <div className="col-12">
+                <div className="maple-contract-box p-3">
+                  <div className="form-check mb-2">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      id="contract-signed"
+                      checked={contractSigned}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setIsContractModalOpen(true);
+                        } else {
+                          setContractSigned(false);
+                          setSavedSignature(null);
+                          sigCanvas.current?.clear();
+                        }
+                      }}
+                    />
+                    <label className="form-check-label" htmlFor="contract-signed">
+                      קראתי את החוזה, מאשר את התנאים וחותם
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-link p-0"
+                    onClick={() => setIsContractModalOpen(true)}
+                  >
+                    לחץ לקריאת החוזה ולחתימה דיגיטלית
+                  </button>
                 </div>
               </div>
             )}
 
-            {!isOption && (
-              <div className={styles.akumBox}>
-                <span className={styles.akumTitle}>🎵 הסדרת רישיון אקו&quot;ם</span>
-
-                {!isWedding && (
-                  <label className={styles.akumCheckLabel}>
-                    <input
-                      type="checkbox"
-                      checked={formData.hasMusic}
-                      onChange={(e) => setFormData(prev => ({ ...prev, hasMusic: e.target.checked }))}
-                    />
-                    יש מוזיקה באירוע (דורש תשלום לאקו&quot;ם)
-                  </label>
-                )}
-
-                {(isWedding || formData.hasMusic) && (
-                  <>
-                    <span className={styles.akumText}>
-                      {isWedding ? 'חובה להסדיר רישיון השמעת מוזיקה מול אקו"ם.' : 'חובה להסדיר רישיון מול אקו"ם.'}
-                    </span>
-                    <a
-                      href="https://apps.acum.org.il/licenses/family-event/register-payment?action=payFamilyEvent"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={styles.akumLink}
-                    >
-                      לתשלום והפקת הרישיון לאקו&quot;ם
-                    </a>
-                    <div className={styles.inputGroup}>
-                      <label className={styles.akumInputLabel}>קוד אישור אקו&quot;ם:</label>
-                      <input
-                        type="text"
-                        name="akumApprovalCode"
-                        value={formData.akumApprovalCode}
-                        onChange={handleChange}
-                        className={`${styles.input} ${styles.akumInput}`}
-                        placeholder="מספר אישור לאחר התשלום..."
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
           </div>
           )}
 
-          <div className={styles.formFooter}>
+          <div className="card-footer maple-form-footer d-flex gap-2">
             <button
               type="submit"
-              className={styles.submitBtn}
+              className="btn btn-primary"
               disabled={isSubmitting || ((convertFromOption || (!isOption && !isEditMode)) && !contractSigned)}
             >
               {isSubmitting
@@ -1099,7 +1281,17 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         </form>
       </div>
 
-      <ContractModal isOpen={isContractModalOpen} onClose={() => setIsContractModalOpen(false)} isOption={isOption && !convertFromOption} sigCanvas={sigCanvas} setContractSigned={setContractSigned} onSignatureSaved={setSavedSignature} contractText={contractText} onContractTextChange={setContractText} />
+      <ContractModal
+        isOpen={isContractModalOpen}
+        onClose={() => setIsContractModalOpen(false)}
+        isOption={isOption && !convertFromOption}
+        sigCanvas={sigCanvas}
+        setContractSigned={setContractSigned}
+        onSignatureSaved={setSavedSignature}
+        contractText={contractText}
+        onContractTextChange={setContractText}
+        bookingId={editId}
+      />
 
       {isMenuViewOpen && (
          <div className={styles.menuOverlay}><div className={styles.menuModal}><button type="button" className={styles.menuCloseBtn} onClick={() => setIsMenuViewOpen(false)}>✕ סגור</button><div className={styles.menuModalContent}><MenuDisplay /></div></div></div>

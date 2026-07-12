@@ -94,6 +94,13 @@
   font-size: 1rem;
 }
 
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .editBtn {
   background: var(--maple-green-light);
   color: var(--maple-green-deep);

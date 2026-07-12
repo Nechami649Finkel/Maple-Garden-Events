@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import floorPlanImg from '../../assets/floor-plan.png';
 import {
   DEFAULT_TABLE_LAYOUT,
@@ -12,6 +12,12 @@ import {
 } from '../../constants/defaultTableLayout';
 import type { TableData, TableSection } from '../../constants/defaultTableLayout';
 import { exportFloorPlanAsImage, renderFloorPlanToDataUrl } from '../../utils/exportFloorPlan';
+import { getAuthUser } from '../../services/api';
+import {
+  clearFloorPlanDraft,
+  loadFloorPlanDraft,
+  saveFloorPlanDraft,
+} from '../../utils/floorPlanDraft';
 import './FloorPlanBuilder.css';
 
 export type { TableData };
@@ -147,6 +153,7 @@ interface Props {
   onSave: (tables: TableData[], imageDataUrl: string) => void;
   onClose?: () => void;
   downloadFileName?: string;
+  draftEventId?: string;
 }
 
 export const FloorPlanBuilder: React.FC<Props> = ({
@@ -159,6 +166,7 @@ export const FloorPlanBuilder: React.FC<Props> = ({
   onSave,
   onClose,
   downloadFileName,
+  draftEventId,
 }) => {
   const layoutConfig = useMemo<LayoutConfig>(() => ({
     guestCount,
@@ -168,12 +176,39 @@ export const FloorPlanBuilder: React.FC<Props> = ({
     includeHonorTables,
   }), [guestCount, seatingType, menPercent, womenPercent, includeHonorTables]);
 
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+
   const [tables, setTables] = useState<TableData[]>(() => resolveInitialTables(initialTables, layoutConfig));
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [layoutKey, setLayoutKey] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [saving, setSaving] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    getAuthUser().then((user) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!draftEventId || !userEmail || draftLoaded) return;
+    const draft = loadFloorPlanDraft(draftEventId, userEmail);
+    if (draft && draft.length > 0) {
+      setTables(draft.map(clampToSection));
+      setLayoutKey((k) => k + 1);
+    }
+    setDraftLoaded(true);
+  }, [draftEventId, userEmail, draftLoaded]);
+
+  useEffect(() => {
+    if (!draftEventId || !userEmail || !draftLoaded) return;
+    const timer = setTimeout(() => {
+      saveFloorPlanDraft(draftEventId, userEmail, tables);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [draftEventId, userEmail, draftLoaded, tables]);
 
   const handleMove = useCallback((id: number, x: number, y: number) => {
     setTables(prev =>
@@ -249,6 +284,7 @@ export const FloorPlanBuilder: React.FC<Props> = ({
     setSaving(true);
     try {
       const imageDataUrl = await renderFloorPlanToDataUrl(tables, floorPlanImg);
+      if (draftEventId) clearFloorPlanDraft(draftEventId);
       onSave(tables, imageDataUrl);
     } catch {
       alert('שגיאה בשמירת הסקיצה');

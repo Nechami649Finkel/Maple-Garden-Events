@@ -35,6 +35,13 @@ export const addEventAdditionSchema = z.object({
   }),
 });
 
+export const addBookingUpgradeSchema = z.object({
+  params: z.object({ id: z.string().uuid() }),
+  body: z.object({
+    upgradeKey: z.string().trim().min(1),
+  }),
+});
+
 export const finalizeBookingSchema = z.object({
   body: z.object({
     bookingId: z.string().uuid(),

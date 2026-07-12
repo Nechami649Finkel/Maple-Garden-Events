@@ -1,4 +1,5 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { loadUiPrefs, saveUiPrefs } from '../utils/uiPrefs';
 
 interface SidebarContextValue {
   isOpen: boolean;
@@ -10,7 +11,12 @@ interface SidebarContextValue {
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(() => loadUiPrefs().sidebarOpen ?? false);
+
+  useEffect(() => {
+    saveUiPrefs({ sidebarOpen: isOpen });
+  }, [isOpen]);
+
   const value = useMemo(
     () => ({
       isOpen,

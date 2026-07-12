@@ -1,25 +1,13 @@
 import React, { useState } from 'react';
-import {
-  UPGRADE_DISPLAY_ORDER,
-  UPGRADE_LABELS,
-  HALL_UPGRADE_KEYS,
-  type UpgradeKey,
-} from '../../../utils/pricing';
-import { EXTERNAL_SUPPLIER_LINKS } from '../BookingForm';
 import CheckCamera from '../../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../../CheckDetailsForm/CheckDetailsForm';
 import type { DepositCheckDetails } from '../../../utils/checkOcr';
 import { openContractPdf, printContract } from '../../../utils/contractPrint';
-
 import type { PaymentTermsTemplate } from '../../../utils/paymentTerms';
 
 interface PaymentAndUpgradesSectionProps {
   formData: any;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  upgrades: Record<string, boolean>;
-  handleUpgradeChange: (key: string) => void;
-  upgradesPricing: Record<string, number>;
-  upgradeDisplayOrder?: readonly UpgradeKey[];
   isHallOnly: boolean;
   isOption?: boolean;
   depositMethod: string;
@@ -48,7 +36,6 @@ interface PaymentAndUpgradesSectionProps {
   editId?: string;
   errors?: Record<string, string>;
   vatRate?: number;
-  styles: Record<string, string>;
   paymentTemplates: PaymentTermsTemplate[];
   paymentTemplateId: string;
   onPaymentTemplateChange: (templateId: string) => void;
@@ -64,20 +51,9 @@ interface PaymentAndUpgradesSectionProps {
   } | null;
 }
 
-const externalLinkStyle: React.CSSProperties = {
-  fontSize: '0.85rem',
-  color: '#1d4ed8',
-  marginRight: '8px',
-  textDecoration: 'underline',
-};
-
 const PaymentAndUpgradesSection = ({
   formData,
   handleChange,
-  upgrades,
-  handleUpgradeChange,
-  upgradesPricing,
-  upgradeDisplayOrder = UPGRADE_DISPLAY_ORDER,
   isHallOnly,
   isOption = false,
   depositMethod,
@@ -89,12 +65,10 @@ const PaymentAndUpgradesSection = ({
   onCheckDetailsChange,
   totals,
   isFoodRelevant,
-  kosherType,
   isEditMode,
   editId,
   errors,
   vatRate = 17,
-  styles,
   paymentTemplates,
   paymentTemplateId,
   onPaymentTemplateChange,
@@ -131,393 +105,267 @@ const PaymentAndUpgradesSection = ({
 
   const isCheckDeposit = depositMethod === 'check_upload' || depositMethod === 'check_capture';
   const hasCheckImage = !!formData.depositCheckUrl;
-  const isHallUpgrade = (key: string) => (HALL_UPGRADE_KEYS as readonly string[]).includes(key);
-
-  const renderUpgrade = (key: UpgradeKey) => {
-    const disabled = key === 'baseDesign' && isHallOnly;
-    const checked = disabled ? false : upgrades[key];
-    const isExternal = !isHallUpgrade(key);
-
-    return (
-      <label key={key} className={`${styles.upgradeLabel} ${disabled ? styles.upgradeLabelDisabled : ''}`}>
-        <input
-          type="checkbox"
-          checked={checked}
-          readOnly={key === 'baseDesign'}
-          disabled={disabled}
-          onChange={() => !disabled && handleUpgradeChange(key)}
-        />
-        <span>
-          {UPGRADE_LABELS[key]}
-          {key === 'baseDesign' && !isHallOnly ? ' (חובה)' : ''}
-          {' - '}{(upgradesPricing[key] ?? 0).toLocaleString()} ₪
-        </span>
-        {isExternal && checked && !disabled && (
-          <a
-            href={EXTERNAL_SUPPLIER_LINKS[key]}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={externalLinkStyle}
-            onClick={(e) => e.stopPropagation()}
-          >
-            תשלום לספק ↗
-          </a>
-        )}
-      </label>
-    );
-  };
 
   return (
-    <>
-      <div className={styles.sectionCard}>
-        <h3 className={styles.sectionHeader}>חבילת תוספות ושדרוגים</h3>
-        <div className={styles.upgradesGrid}>
-          {upgradeDisplayOrder.map(renderUpgrade)}
+    <div className="card mb-3">
+      <div className="card-header maple-section-header">סיכום, פיקדון ותשלום</div>
+      <div className="card-body">
+          {!isOption && easycountMeta && (
+            <div className={`alert ${easycountMeta.canIssueRealDocuments ? 'alert-success' : 'alert-warning'} mb-3`}>
+              <strong>EZCount:</strong> {easycountMeta.label || 'סימולציה — לא מופקות קבלות אמיתיות'}
+              {!easycountMeta.canIssueRealDocuments && (
+                <span> · ניתן להזין מקדמה לתיעוד במערכת, בלי הפקת מסמך מס אמיתי.</span>
+              )}
+            </div>
+          )}
+
+          {!isOption && (
+            <div className="mb-3">
+              <label className="form-label fw-semibold">סכום מקדמה שנגבתה (₪)</label>
+              <input
+                type="number"
+                name="advancePaid"
+                value={formData.advancePaid ?? ''}
+                onChange={handleChange}
+                className="form-control"
+                placeholder="0"
+                min={0}
+                step="any"
+              />
+              <div className="form-text">אם הוזן סכום — המערכת תייצר קבלה (בסימולציה עד חיבור EZCount).</div>
+            </div>
+          )}
+
+          {isHallOnly && (
+            <div className="p-3 mb-3 rounded border border-success bg-success-subtle">
+              <label className="form-label fw-bold text-success">מחיר השכרת אולם (₪){!isOption ? ' *' : ''}</label>
+              <input
+                type="number"
+                name="hallRentalPrice"
+                value={formData.hallRentalPrice || ''}
+                onChange={handleChange}
+                className={`form-control form-control-lg fw-bold ${errors?.hallRentalPrice ? 'is-invalid' : ''}`}
+                placeholder="הזן סכום לשכירות האולם (ללא אוכל)..."
+                required={isHallOnly && !isOption}
+                min={1}
+                step="any"
+              />
+              {errors?.hallRentalPrice && (
+                <div className="invalid-feedback">{errors.hallRentalPrice}</div>
+              )}
+            </div>
+          )}
+
+          <div className="row g-3 mb-3">
+            <div className="col-md-4">
+              <label className="form-label">הנחה כוללת (%)</label>
+              <input type="number" name="discountPercent" value={formData.discountPercent} onChange={handleChange} className="form-control" placeholder="0" />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">הנחה בשקלים (₪)</label>
+              <input type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} className="form-control" placeholder="0" />
+            </div>
+            <div className="col-md-4">
+              <label className="form-label">הגדרת מע&quot;מ ({vatRate}%)</label>
+              <div className="d-flex flex-wrap gap-3 mt-1">
+                <div className="form-check">
+                  <input type="radio" className="form-check-input" name="vatType" id="vat-not-included" value="not_included" checked={formData.vatType === 'not_included'} onChange={handleChange} />
+                  <label className="form-check-label" htmlFor="vat-not-included">לא כולל מע&quot;מ</label>
+                </div>
+                <div className="form-check">
+                  <input type="radio" className="form-check-input" name="vatType" id="vat-included" value="included" checked={formData.vatType === 'included'} onChange={handleChange} />
+                  <label className="form-check-label" htmlFor="vat-included">כולל מע&quot;מ</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="d-flex flex-wrap gap-3 mb-3">
+            <div className="form-check">
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-credit" value="credit_card" checked={depositMethod === 'credit_card'} onChange={(e) => setDepositMethod(e.target.value)} />
+              <label className="form-check-label" htmlFor="deposit-credit">תשלום באשראי / מזומן</label>
+            </div>
+            <div className="form-check">
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-upload" value="check_upload" checked={depositMethod === 'check_upload'} onChange={(e) => setDepositMethod(e.target.value)} />
+              <label className="form-check-label" htmlFor="deposit-upload">העלאת צילום צ&apos;ק פיקדון</label>
+            </div>
+            <div className="form-check">
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-capture" value="check_capture" checked={depositMethod === 'check_capture'} onChange={(e) => setDepositMethod(e.target.value)} />
+              <label className="form-check-label fw-semibold" htmlFor="deposit-capture">📸 צילום צ&apos;ק כעת</label>
+            </div>
+          </div>
+
+          {isCheckDeposit && (
+            <div className="border rounded p-3 mb-3">
+              <label className="form-label fw-semibold">תמונת צ&apos;ק פיקדון</label>
+
+              {depositMethod === 'check_capture' && !hasCheckImage && (
+                <CheckCamera
+                  disabled={checkScanning}
+                  onCapture={onCheckCapture}
+                  onRetake={onDeleteCheck}
+                />
+              )}
+
+              {(depositMethod === 'check_upload' || hasCheckImage) && (
+                <div className={depositMethod === 'check_capture' && hasCheckImage ? 'mt-3' : ''}>
+                  {depositMethod === 'check_upload' && !hasCheckImage && (
+                    <input type="file" accept="image/*" onChange={onCheckFileUpload} className="form-control" />
+                  )}
+                  {hasCheckImage && (
+                    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+                      <span className="text-success fw-semibold">✓ צ&apos;ק צולם/צורף בהצלחה</span>
+                      <button type="button" onClick={onDeleteCheck} className="btn btn-sm btn-outline-danger">
+                        🗑️ מחק
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {(hasCheckImage || formData.depositCheckDetails) && (
+                <CheckDetailsForm
+                  details={formData.depositCheckDetails || {}}
+                  imageUrl={formData.depositCheckUrl || undefined}
+                  scanning={checkScanning}
+                  onChange={onCheckDetailsChange}
+                />
+              )}
+            </div>
+          )}
+
+          <div className="mb-3">
+            <label className="form-label fw-bold">תנאי תשלום לחוזה</label>
+            <select
+              className="form-select"
+              value={paymentTemplateId}
+              onChange={(e) => {
+                onPaymentTermsCustomChange(false);
+                setEditingCustomPayment(false);
+                onPaymentTemplateChange(e.target.value);
+              }}
+            >
+              {paymentTemplates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+
+            <div className="d-flex align-items-center gap-2 flex-wrap mt-2">
+              <span className="text-secondary">נוסח מותאם אישית לאירוע זה</span>
+              <button
+                type="button"
+                onClick={openCustomEditor}
+                title="עריכת נוסח מותאם לאירוע זה"
+                aria-label="עריכת נוסח מותאם לאירוע זה"
+                className={`btn btn-sm ${paymentTermsCustom ? 'btn-primary' : 'btn-outline-primary'}`}
+              >
+                ✏️
+              </button>
+              {paymentTermsCustom && (
+                <span className="badge text-bg-success">נוסח מותאם שמור לאירוע זה</span>
+              )}
+            </div>
+
+            {editingCustomPayment && (
+              <div className="border border-primary rounded p-3 mt-2 bg-white">
+                <label className="form-label fw-semibold">
+                  הקלידי נוסח תשלום ייחודי — יישמר רק לאירוע זה
+                </label>
+                <textarea
+                  className="form-control"
+                  rows={4}
+                  value={customDraft}
+                  onChange={(e) => setCustomDraft(e.target.value)}
+                  placeholder="לדוגמה: 70% עד שבוע לפני האירוע, 30% בצ'ק לאחר האירוע..."
+                  autoFocus
+                />
+                <div className="d-flex gap-2 mt-2">
+                  <button type="button" onClick={saveCustomPayment} className="btn btn-primary btn-sm">
+                    שמירה לאירוע זה
+                  </button>
+                  <button type="button" onClick={cancelCustomEditor} className="btn btn-outline-secondary btn-sm">
+                    ביטול
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={`p-3 mt-2 rounded border ${paymentTermsCustom ? 'border-success bg-success-subtle text-success' : 'border-info bg-info-subtle text-info-emphasis'}`}>
+              <strong className="d-block mb-1">
+                {paymentTermsCustom ? 'נוסח שיופיע בחוזה (מותאם):' : 'תצוגה מקדימה — יופיע בחוזה:'}
+              </strong>
+              {paymentTermsText || 'בחרי תבנית או לחצי על העיפרון לנוסח מותאם'}
+              {eventDate && !paymentTermsCustom && (
+                <div className="small mt-1">מחושב לפי תאריך האירוע: {eventDate}</div>
+              )}
+            </div>
+          </div>
+
+          {isEditMode && editId && (
+            <div className="d-flex gap-2 flex-wrap mb-3">
+              <button type="button" onClick={() => void openContractPdf(editId)} className="btn btn-success">
+                צפייה בחוזה
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await printContract(editId);
+                  } catch (e) {
+                    alert(e instanceof Error ? e.message : 'לא הצלחנו להדפיס את החוזה. ודאי שמדפסת מחוברת ונסי שוב.');
+                  }
+                }}
+                className="btn btn-primary"
+              >
+                הדפסת חוזה
+              </button>
+            </div>
+          )}
+
+          <div className="maple-price-summary p-3">
+            <h5 className="mb-3">סיכום תשלומים</h5>
+
+            <div className="mb-3">
+              <strong className="d-block mb-1">תשלום בסיסי (אירוע)</strong>
+              <div className="d-flex flex-column gap-1 small">
+                <span>ביניים: ₪{totals.mainBase.toLocaleString()}</span>
+                {totals.discountVal > 0 && <span className="text-danger">הנחות: -₪{totals.discountVal.toLocaleString()}</span>}
+                {totals.mainVat > 0 && <span>מע&quot;מ: ₪{totals.mainVat.toLocaleString()}</span>}
+                <span className="fw-bold">₪{totals.baseTotal.toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <strong className="d-block mb-1">תשלום תוספות (לאולם)</strong>
+              <div className="d-flex flex-column gap-1 small">
+                <span>כשרות + קבלת פנים + מאבטח: ₪{totals.hallExtrasBase.toLocaleString()}</span>
+                {totals.hallExtrasVat > 0 && <span>מע&quot;מ: ₪{totals.hallExtrasVat.toLocaleString()}</span>}
+                <span className="fw-bold">₪{totals.hallExtrasTotal.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {totals.externalExtrasBase > 0 && (
+              <div className="mb-3">
+                <strong className="d-block mb-1">תשלום לספקים חיצוניים</strong>
+                <div className="d-flex flex-column gap-1 small">
+                  <span>שדרוגים: ₪{totals.externalExtrasBase.toLocaleString()}</span>
+                  {totals.externalExtrasVat > 0 && <span>מע&quot;מ: ₪{totals.externalExtrasVat.toLocaleString()}</span>}
+                  <span className="fw-bold">₪{totals.externalExtrasTotal.toLocaleString()}</span>
+                  <span className="text-muted">תשלום ישיר לספק — לא כולל בצ&apos;ק לאולם</span>
+                </div>
+              </div>
+            )}
+
+            <p className="fs-5 fw-bold mb-1">סה&quot;כ הצעה: ₪ {totals.finalTotal.toLocaleString()}</p>
+            {isFoodRelevant && formData.guestCount && (
+              <p className="small text-muted mb-0">
+                {formData.guestCount} מנות בתשלום
+                {formData.optionalGuestCount ? ` + ${formData.optionalGuestCount} רזרבה (ללא חיוב)` : ''}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-
-      <div className={styles.sectionCard}>
-        <h3 className={styles.sectionHeader}>סיכום, פיקדון ותשלום</h3>
-
-        {!isOption && easycountMeta && (
-          <div
-            style={{
-              marginBottom: '16px',
-              padding: '12px 14px',
-              borderRadius: '8px',
-              background: easycountMeta.canIssueRealDocuments ? '#ecfdf5' : '#fffbeb',
-              border: `1px solid ${easycountMeta.canIssueRealDocuments ? '#bbf7d0' : '#fde68a'}`,
-              color: easycountMeta.canIssueRealDocuments ? '#166534' : '#92400e',
-              fontSize: '0.92rem',
-              lineHeight: 1.5,
-            }}
-          >
-            <strong>EZCount:</strong> {easycountMeta.label || 'סימולציה — לא מופקות קבלות אמיתיות'}
-            {!easycountMeta.canIssueRealDocuments && (
-              <span> · ניתן להזין מקדמה לתיעוד במערכת, בלי הפקת מסמך מס אמיתי.</span>
-            )}
-          </div>
-        )}
-
-        {!isOption && (
-          <div className={styles.inputGroup} style={{ marginBottom: '16px' }}>
-            <label style={{ fontWeight: 600 }}>סכום מקדמה שנגבתה (₪)</label>
-            <input
-              type="number"
-              name="advancePaid"
-              value={formData.advancePaid ?? ''}
-              onChange={handleChange}
-              className={styles.input}
-              placeholder="0"
-              min={0}
-              step="any"
-            />
-            <span style={{ display: 'block', marginTop: '6px', fontSize: '0.85rem', color: '#64748b' }}>
-              אם הוזן סכום — המערכת תייצר קבלה (בסימולציה עד חיבור EZCount).
-            </span>
-          </div>
-        )}
-
-        {isHallOnly && (
-          <div className={styles.inputGroup} style={{ backgroundColor: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '20px' }}>
-            <label style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#166534' }}>מחיר השכרת אולם (₪){!isOption ? ' *' : ''}</label>
-            <input
-              type="number"
-              name="hallRentalPrice"
-              value={formData.hallRentalPrice || ''}
-              onChange={handleChange}
-              className={`${styles.input} ${errors?.hallRentalPrice ? styles.inputError : ''}`}
-              placeholder="הזן סכום לשכירות האולם (ללא אוכל)..."
-              required={isHallOnly && !isOption}
-              min={1}
-              step="any"
-              style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
-            />
-            {errors?.hallRentalPrice && (
-              <span className={styles.errorMsg}>{errors.hallRentalPrice}</span>
-            )}
-          </div>
-        )}
-
-        <div className={styles.paymentGrid}>
-          <div className={styles.inputGroup}>
-            <label>הנחה כוללת (%)</label>
-            <input type="number" name="discountPercent" value={formData.discountPercent} onChange={handleChange} className={styles.input} placeholder="0" />
-          </div>
-          <div className={styles.inputGroup}>
-            <label>הנחה בשקלים (₪)</label>
-            <input type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} className={styles.input} placeholder="0" />
-          </div>
-          <div className={`${styles.inputGroup} ${styles.vatRow}`}>
-            <label>הגדרת מע"מ ({vatRate}%)</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input type="radio" name="vatType" value="not_included" checked={formData.vatType === 'not_included'} onChange={handleChange} />
-                לא כולל מע"מ
-              </label>
-              <label className={styles.radioLabel}>
-                <input type="radio" name="vatType" value="included" checked={formData.vatType === 'included'} onChange={handleChange} />
-                כולל מע"מ
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.depositOptions}>
-          <label className={styles.radioLabel}>
-            <input type="radio" name="deposit" value="credit_card" checked={depositMethod === 'credit_card'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>תשלום באשראי / מזומן</span>
-          </label>
-          <label className={styles.radioLabel}>
-            <input type="radio" name="deposit" value="check_upload" checked={depositMethod === 'check_upload'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>העלאת צילום צ'ק פיקדון</span>
-          </label>
-          <label className={`${styles.radioLabel} ${styles.depositHighlight}`}>
-            <input type="radio" name="deposit" value="check_capture" checked={depositMethod === 'check_capture'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>📸 צילום צ'ק כעת</span>
-          </label>
-        </div>
-
-        {isCheckDeposit && (
-          <div className={styles.fileUploadBox} style={{ marginTop: '16px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '10px' }}>תמונת צ'ק פיקדון</label>
-
-            {depositMethod === 'check_capture' && !hasCheckImage && (
-              <CheckCamera
-                disabled={checkScanning}
-                onCapture={onCheckCapture}
-                onRetake={onDeleteCheck}
-              />
-            )}
-
-            {(depositMethod === 'check_upload' || hasCheckImage) && (
-              <div style={{ marginTop: depositMethod === 'check_capture' && hasCheckImage ? '12px' : 0 }}>
-                {depositMethod === 'check_upload' && !hasCheckImage && (
-                  <input type="file" accept="image/*" onChange={onCheckFileUpload} className={styles.input} />
-                )}
-                {hasCheckImage && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ צ'ק צולם/צורף בהצלחה</span>
-                    <button type="button" onClick={onDeleteCheck} style={{ padding: '6px 12px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
-                      🗑️ מחק
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {(hasCheckImage || formData.depositCheckDetails) && (
-              <CheckDetailsForm
-                details={formData.depositCheckDetails || {}}
-                imageUrl={formData.depositCheckUrl || undefined}
-                scanning={checkScanning}
-                onChange={onCheckDetailsChange}
-                styles={styles}
-              />
-            )}
-          </div>
-        )}
-
-        <div className={styles.inputGroup} style={{ marginTop: '16px' }}>
-          <label style={{ fontWeight: 700 }}>תנאי תשלום לחוזה</label>
-          <select
-            className={styles.input}
-            value={paymentTemplateId}
-            onChange={(e) => {
-              onPaymentTermsCustomChange(false);
-              setEditingCustomPayment(false);
-              onPaymentTemplateChange(e.target.value);
-            }}
-          >
-            {paymentTemplates.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              marginTop: '10px',
-              flexWrap: 'wrap',
-            }}
-          >
-            <span style={{ fontSize: '0.95rem', color: '#334155' }}>
-              נוסח מותאם אישית לאירוע זה
-            </span>
-            <button
-              type="button"
-              onClick={openCustomEditor}
-              title="עריכת נוסח מותאם לאירוע זה"
-              aria-label="עריכת נוסח מותאם לאירוע זה"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '36px',
-                height: '36px',
-                border: '1px solid #bfdbfe',
-                borderRadius: '8px',
-                background: paymentTermsCustom ? '#dbeafe' : '#eff6ff',
-                color: '#1d4ed8',
-                cursor: 'pointer',
-                fontSize: '1rem',
-              }}
-            >
-              ✏️
-            </button>
-            {paymentTermsCustom && (
-              <span style={{ fontSize: '12px', color: '#059669', fontWeight: 600 }}>
-                נוסח מותאם שמור לאירוע זה
-              </span>
-            )}
-          </div>
-
-          {editingCustomPayment && (
-            <div
-              style={{
-                marginTop: '10px',
-                padding: '12px',
-                border: '2px solid #2563eb',
-                borderRadius: '8px',
-                background: '#fff',
-              }}
-            >
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '8px' }}>
-                הקלידי נוסח תשלום ייחודי — יישמר רק לאירוע זה
-              </label>
-              <textarea
-                className={styles.input}
-                rows={4}
-                value={customDraft}
-                onChange={(e) => setCustomDraft(e.target.value)}
-                placeholder="לדוגמה: 70% עד שבוע לפני האירוע, 30% בצ'ק לאחר האירוע..."
-                autoFocus
-              />
-              <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                <button
-                  type="button"
-                  onClick={saveCustomPayment}
-                  style={{
-                    background: '#059669',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                    fontWeight: 600,
-                  }}
-                >
-                  שמירה לאירוע זה
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelCustomEditor}
-                  style={{
-                    background: '#fff',
-                    color: '#64748b',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    padding: '8px 16px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ביטול
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div
-            style={{
-              marginTop: '10px',
-              padding: '12px 14px',
-              background: paymentTermsCustom ? '#ecfdf5' : '#f0f9ff',
-              border: paymentTermsCustom ? '1px solid #86efac' : '1px solid #bae6fd',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              lineHeight: 1.7,
-              color: paymentTermsCustom ? '#065f46' : '#0c4a6e',
-            }}
-          >
-            <strong style={{ display: 'block', marginBottom: '6px' }}>
-              {paymentTermsCustom ? 'נוסח שיופיע בחוזה (מותאם):' : 'תצוגה מקדימה — יופיע בחוזה:'}
-            </strong>
-            {paymentTermsText || 'בחרי תבנית או לחצי על העיפרון לנוסח מותאם'}
-            {eventDate && !paymentTermsCustom && (
-              <div style={{ fontSize: '12px', color: '#0369a1', marginTop: '6px' }}>
-                מחושב לפי תאריך האירוע: {eventDate}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {isEditMode && formData.clientSignatureUrl && editId && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-            <button
-              type="button"
-              onClick={() => openContractPdf(editId)}
-              className={styles.viewContractBtn}
-              style={{ backgroundColor: '#059669', color: 'white', padding: '10px 14px', borderRadius: '5px', border: 'none', cursor: 'pointer' }}
-            >
-              צפייה בחוזה החתום
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await printContract(editId);
-                } catch {
-                  alert('לא הצלחנו להדפיס את החוזה. ודאי שמדפסת מחוברת ונסי שוב.');
-                }
-              }}
-              className={styles.viewContractBtn}
-              style={{ backgroundColor: '#1d4ed8', color: 'white', padding: '10px 14px', borderRadius: '5px', border: 'none', cursor: 'pointer' }}
-            >
-              הדפסת חוזה
-            </button>
-          </div>
-        )}
-
-        <div className={styles.totalsBox}>
-          <h4 className={styles.totalsTitle}>סיכום תשלומים</h4>
-
-          <div className={styles.totalsBreakdown} style={{ marginBottom: '12px' }}>
-            <strong>תשלום בסיסי (אירוע)</strong>
-            <span>ביניים: ₪{totals.mainBase.toLocaleString()}</span>
-            {totals.discountVal > 0 && <span className={styles.discountLine}>הנחות: -₪{totals.discountVal.toLocaleString()}</span>}
-            {totals.mainVat > 0 && <span>מע"מ: ₪{totals.mainVat.toLocaleString()}</span>}
-            <span style={{ fontWeight: 700 }}>₪{totals.baseTotal.toLocaleString()}</span>
-          </div>
-
-          <div className={styles.totalsBreakdown} style={{ marginBottom: '12px' }}>
-            <strong>תשלום תוספות (לאולם)</strong>
-            <span>כשרות + קבלת פנים + מאבטח: ₪{totals.hallExtrasBase.toLocaleString()}</span>
-            {totals.hallExtrasVat > 0 && <span>מע"מ: ₪{totals.hallExtrasVat.toLocaleString()}</span>}
-            <span style={{ fontWeight: 700 }}>₪{totals.hallExtrasTotal.toLocaleString()}</span>
-          </div>
-
-          {totals.externalExtrasBase > 0 && (
-            <div className={styles.totalsBreakdown} style={{ marginBottom: '12px' }}>
-              <strong>תשלום לספקים חיצוניים</strong>
-              <span>שדרוגים: ₪{totals.externalExtrasBase.toLocaleString()}</span>
-              {totals.externalExtrasVat > 0 && <span>מע"מ: ₪{totals.externalExtrasVat.toLocaleString()}</span>}
-              <span style={{ fontWeight: 700 }}>₪{totals.externalExtrasTotal.toLocaleString()}</span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>תשלום ישיר לספק — לא כולל בצ'ק לאולם</span>
-            </div>
-          )}
-
-          <p className={styles.totalsFinal}>סה"כ הצעה: ₪ {totals.finalTotal.toLocaleString()}</p>
-          {isFoodRelevant && formData.guestCount && (
-            <p className={styles.totalsNote}>
-              {formData.guestCount} מנות בתשלום
-              {formData.optionalGuestCount ? ` + ${formData.optionalGuestCount} רזרבה (ללא חיוב)` : ''}
-            </p>
-          )}
-        </div>
-      </div>
-    </>
   );
 };
 

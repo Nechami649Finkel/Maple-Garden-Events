@@ -1,8 +1,9 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
-import { generateEventFormPDF } from '../utils/pdfGenerator';
+import { buildBookingPdfData, generateEventProductionPDF } from '../utils/pdfGenerator';
 import { sendEventFormEmailIfAllowed } from '../utils/eventFormEmail';
-import { emitEventFormsUpdated } from '../utils/realtime';
+import { emitEventFormsUpdated, emitBookingUpdated } from '../utils/realtime';
+import { refreshBookingUpgradesAndContract } from '../utils/bookingUpgradesSync';
 
 function mapTableCreate(table: {
   id: number;
@@ -116,6 +117,28 @@ export const eventFormController = {
           } : undefined
         }
       });
+
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: { eventDate: true },
+      });
+
+      if (booking) {
+        const refreshed = await refreshBookingUpgradesAndContract(booking, form);
+        await prisma.booking.update({
+          where: { id: bookingId },
+          data: {
+            upgrades: refreshed.upgrades,
+            extrasPrice: refreshed.extrasPrice,
+            externalExtrasPrice: refreshed.externalExtrasPrice,
+            totalPrice: refreshed.totalPrice,
+            paymentTermsText: refreshed.paymentTermsText,
+            contractText: refreshed.contractText,
+            updatedBy: 'מערכת',
+          },
+        });
+        emitBookingUpdated(bookingId);
+      }
 
       let emailSent = false;
       let emailSkipped = false;
@@ -231,23 +254,7 @@ export const eventFormController = {
         return res.status(404).json({ error: 'הזמנה או טופס לא נמצאו' });
       }
 
-      const pdfData = {
-        eventCode: booking.eventCode,
-        clientAFullName: booking.clientAFullName,
-        clientAIdNumber: booking.clientAIdNumber,
-        clientBFullName: booking.clientBFullName || undefined,
-        clientBIdNumber: booking.clientBIdNumber || undefined,
-        eventDate: booking.eventDate.date.toString(),
-        guestCount: booking.guestCount,
-        minimumGuestCount: booking.minimumGuestCount ?? booking.guestCount,
-        eventType: booking.eventType,
-        timeOfDay: booking.timeOfDay || undefined,
-        clientSignatureUrl: booking.clientSignatureUrl,
-        contractText: booking.contractText,
-        eventForm: booking.eventForm,
-      };
-
-      const pdfBuffer = await generateEventFormPDF(pdfData);
+      const pdfBuffer = await generateEventProductionPDF(buildBookingPdfData(booking));
 
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="event-form-${booking.clientAFullName}.pdf"`);

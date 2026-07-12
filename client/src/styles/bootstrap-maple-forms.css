@@ -1,0 +1,437 @@
+@import 'bootstrap/dist/css/bootstrap.rtl.min.css';
+
+/* Maple Bootstrap theme overrides */
+:root {
+  --bs-primary: #4F7F52;
+  --bs-primary-rgb: 79, 127, 82;
+  --bs-secondary: #B8956A;
+  --bs-secondary-rgb: 184, 149, 106;
+  --bs-success: #4F7F52;
+  --bs-success-rgb: 79, 127, 82;
+  --bs-danger: #C53030;
+  --bs-danger-rgb: 197, 48, 48;
+  --bs-warning: #C05621;
+  --bs-warning-rgb: 192, 86, 33;
+  --bs-info: #3D6B9E;
+  --bs-info-rgb: 61, 107, 158;
+  --bs-body-font-family: var(--maple-font);
+  --bs-body-bg: var(--maple-bg);
+  --bs-body-color: var(--maple-text);
+  --bs-border-color: var(--maple-border);
+  --bs-border-radius: var(--maple-radius);
+  --bs-border-radius-sm: var(--maple-radius-sm);
+  --bs-border-radius-lg: var(--maple-radius-lg);
+  --bs-link-color: var(--maple-green-dark);
+  --bs-link-hover-color: var(--maple-green-deep);
+  --bs-focus-ring-color: rgba(184, 149, 106, 0.45);
+}
+
+.maple-bs-form {
+  direction: rtl;
+  font-family: var(--maple-font);
+  color: var(--maple-text);
+}
+
+.maple-bs-form .card {
+  border-color: var(--maple-border);
+  border-radius: var(--maple-radius-lg);
+  box-shadow: var(--maple-shadow);
+}
+
+.maple-bs-form .card-header {
+  background: var(--maple-panel-header-bg);
+  color: var(--maple-panel-header-text);
+  border-bottom-color: var(--maple-border);
+  font-weight: 600;
+}
+
+.maple-bs-form .card-header.maple-section-header {
+  padding: 0.65rem 1rem;
+  font-size: var(--maple-text-base);
+}
+
+.maple-bs-form .card-footer.maple-form-footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: var(--maple-surface);
+  border-top: 1px solid var(--maple-border);
+  box-shadow: 0 -2px 12px rgba(28, 31, 35, 0.06);
+}
+
+.maple-bs-form .form-control:focus,
+.maple-bs-form .form-select:focus {
+  border-color: var(--maple-green);
+  box-shadow: 0 0 0 0.2rem rgba(79, 127, 82, 0.2);
+}
+
+.maple-bs-form .btn-primary {
+  --bs-btn-bg: var(--maple-green-dark);
+  --bs-btn-border-color: var(--maple-green-dark);
+  --bs-btn-hover-bg: var(--maple-green-deep);
+  --bs-btn-hover-border-color: var(--maple-green-deep);
+  --bs-btn-active-bg: var(--maple-green-deep);
+  --bs-btn-active-border-color: var(--maple-green-deep);
+  --bs-btn-disabled-bg: var(--maple-green-dark);
+  --bs-btn-disabled-border-color: var(--maple-green-dark);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-opacity: 0.65;
+}
+
+.maple-bs-form .btn-outline-primary {
+  --bs-btn-color: var(--maple-green-dark);
+  --bs-btn-border-color: var(--maple-green-muted);
+  --bs-btn-hover-bg: var(--maple-green-light);
+  --bs-btn-hover-border-color: var(--maple-green);
+  --bs-btn-hover-color: var(--maple-green-deep);
+  --bs-btn-active-bg: var(--maple-green-light);
+  --bs-btn-active-border-color: var(--maple-green);
+  --bs-btn-active-color: var(--maple-green-deep);
+}
+
+.maple-bs-form .btn-outline-secondary {
+  --bs-btn-color: var(--maple-gold-deep);
+  --bs-btn-border-color: var(--maple-gold);
+  --bs-btn-hover-bg: var(--maple-gold-light);
+  --bs-btn-hover-border-color: var(--maple-gold-deep);
+  --bs-btn-hover-color: var(--maple-gold-deep);
+}
+
+.maple-bs-form .bg-success-subtle {
+  background-color: var(--maple-green-light) !important;
+  color: var(--maple-green-deep) !important;
+}
+
+.maple-bs-form .form-text,
+.maple-bs-form .maple-hint {
+  color: var(--maple-text-muted);
+  font-size: var(--maple-text-xs);
+}
+
+.maple-bs-form .maple-contract-box {
+  background: var(--maple-green-light);
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-sm);
+}
+
+.maple-bs-form .maple-price-summary {
+  background: var(--maple-surface-raised);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+}
+
+.maple-bs-form .maple-email-suggestions {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  z-index: 20;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  background: var(--maple-surface);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+  box-shadow: var(--maple-shadow);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.maple-bs-form .maple-email-suggestions li {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: var(--maple-text-sm);
+}
+
+.maple-bs-form .maple-email-suggestions li:hover {
+  background: var(--maple-green-light);
+}
+
+.maple-bs-form .maple-menu-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--maple-green-light);
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-sm);
+  color: var(--maple-green-deep);
+  cursor: pointer;
+  font-size: var(--maple-text-sm);
+  transition: background var(--maple-transition);
+}
+
+.maple-bs-form .maple-menu-link-btn:hover {
+  background: var(--maple-green-muted);
+}
+
+.maple-bs-form .maple-upgrade-row {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--maple-border);
+}
+
+.maple-bs-form .maple-upgrade-row:last-child {
+  border-bottom: none;
+}
+
+.maple-bs-form .maple-upgrade-disabled {
+  opacity: 0.5;
+}
+
+.maple-bs-form .maple-segmented .btn-check:checked + .btn {
+  background-color: var(--maple-green-dark);
+  border-color: var(--maple-green-dark);
+  color: #fff;
+}
+
+.maple-bs-form .maple-progress-header .progress {
+  height: 8px;
+  background: var(--maple-border);
+}
+
+.maple-bs-form .maple-progress-header .progress-bar {
+  background: var(--maple-green-dark);
+}
+
+.maple-bs-form .maple-meta-chip {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  background: var(--maple-surface-raised);
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-full);
+  font-size: var(--maple-text-xs);
+  color: var(--maple-text-secondary);
+}
+
+.maple-bs-form .maple-section-icon {
+  margin-left: 0.35rem;
+}
+
+.maple-bs-form .maple-form-board {
+  display: flex;
+  align-items: flex-start;
+  flex: 0 1 auto;
+  min-height: auto;
+  overflow: visible;
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-lg);
+  background: var(--maple-surface);
+  box-shadow: var(--maple-shadow);
+}
+
+.maple-bs-form .maple-form-board > .maple-form-col,
+.maple-bs-form .maple-form-board > [class*="boardColumn"] {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-inline-start: 1px solid var(--maple-border);
+}
+
+.maple-bs-form .maple-form-board > .maple-form-col:first-child,
+.maple-bs-form .maple-form-board > [class*="boardColumn"]:first-child {
+  border-inline-start: none;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col > .card,
+.maple-bs-form .maple-form-board [class*="boardColumn"] > .card {
+  margin-bottom: 0 !important;
+  border-radius: 0;
+  border: none;
+  border-inline-start: none;
+  border-bottom: 1px solid var(--maple-border);
+  height: auto;
+  display: block;
+  overflow: visible;
+  box-shadow: none;
+  flex: 0 0 auto;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col > .card:last-child,
+.maple-bs-form .maple-form-board [class*="boardColumn"] > .card:last-child {
+  border-bottom: none;
+}
+
+.maple-bs-form .maple-form-board > .card {
+  margin-bottom: 0 !important;
+  border-radius: 0;
+  border: none;
+  border-inline-start: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--maple-border);
+  min-height: 0;
+  height: auto;
+  display: block;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col .card .card-header.maple-section-header,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .card-header.maple-section-header,
+.maple-bs-form .maple-form-board > .card .card-header.maple-section-header {
+  padding: 0.45rem 0.65rem;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col .card .card-body,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .card-body,
+.maple-bs-form .maple-form-board > .card .card-body {
+  padding: 0.5rem 0.65rem;
+  overflow: visible;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col .card .form-label,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .form-label,
+.maple-bs-form .maple-form-board > .card .form-label {
+  font-size: var(--maple-form-label-size);
+  margin-bottom: 0.2rem;
+}
+
+.maple-bs-form .maple-form-board .maple-form-col .card .form-control,
+.maple-bs-form .maple-form-board .maple-form-col .card .form-select,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .form-control,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .form-select,
+.maple-bs-form .maple-form-board > .card .form-control,
+.maple-bs-form .maple-form-board > .card .form-select {
+  padding: var(--maple-form-input-pad);
+  font-size: var(--maple-form-input-size);
+  min-height: var(--maple-form-input-height);
+}
+
+.maple-bs-form .maple-form-board .maple-form-col .card .row,
+.maple-bs-form .maple-form-board [class*="boardColumn"] .card .row,
+.maple-bs-form .maple-form-board > .card .row {
+  --bs-gutter-y: 0.35rem;
+  --bs-gutter-x: 0.35rem;
+}
+
+@media (max-width: 1279px) and (min-width: 768px) {
+  .maple-bs-form .maple-form-board {
+    flex-wrap: wrap;
+  }
+
+  .maple-bs-form .maple-form-board > .maple-form-col,
+  .maple-bs-form .maple-form-board > [class*="boardColumn"] {
+    flex: 1 1 calc(50% - 1px);
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 767px) {
+  .maple-bs-form .maple-form-board {
+    flex-direction: column;
+  }
+
+  .maple-bs-form .maple-form-board > .maple-form-col,
+  .maple-bs-form .maple-form-board > [class*="boardColumn"] {
+    border-inline-start: none;
+    border-bottom: 1px solid var(--maple-border);
+  }
+
+  .maple-bs-form .maple-form-board > .maple-form-col:last-child,
+  .maple-bs-form .maple-form-board > [class*="boardColumn"]:last-child {
+    border-bottom: none;
+  }
+}
+
+.maple-bs-form .maple-loading {
+  padding: 2rem;
+  text-align: center;
+  color: var(--maple-text-muted);
+}
+
+.maple-bs-form.maple-page-wrap {
+  flex: 1 0 auto;
+  background: var(--maple-bg);
+  padding: 20px 16px 32px;
+  min-height: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.maple-bs-form .maple-subtitle {
+  color: var(--maple-text-muted);
+  font-size: var(--maple-text-sm);
+  margin-bottom: 0;
+}
+
+.maple-bs-form .maple-client-block-title {
+  font-size: var(--maple-text-sm);
+  font-weight: 600;
+  color: var(--maple-green-deep);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--maple-border);
+}
+
+.maple-bs-form .maple-time-note {
+  font-size: var(--maple-text-xs);
+  color: var(--maple-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.maple-bs-form .maple-external-link {
+  font-size: 0.85rem;
+  color: var(--maple-info);
+  margin-right: 8px;
+  text-decoration: underline;
+}
+
+.maple-bs-form .maple-easycount-banner {
+  padding: 0.75rem;
+  background: var(--maple-gold-light);
+  border: 1px solid var(--maple-gold);
+  border-radius: var(--maple-radius-sm);
+  font-size: var(--maple-text-sm);
+}
+
+.maple-bs-form .maple-signature-wrap {
+  border: 1px solid var(--maple-border);
+  border-radius: var(--maple-radius-sm);
+  background: #fff;
+  overflow: hidden;
+}
+
+.maple-bs-form .maple-option-date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  background: var(--maple-green-light);
+  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--maple-radius-full);
+  font-size: var(--maple-text-sm);
+}
+
+.maple-bs-form .card-header.maple-progress-header {
+  position: relative;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.maple-bs-form.maple-form-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.maple-bs-form .maple-form-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 992px) {
+  .maple-bs-form .maple-form-columns {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .maple-bs-form .maple-form-columns > .col-lg-4 {
+    flex: 1;
+    min-width: 0;
+  }
+}

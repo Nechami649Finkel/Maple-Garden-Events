@@ -95,12 +95,12 @@ function getJwtSecret(): string {
   return secret;
 }
 
-export function signAccessToken(email: string, name: string): string {
-  return jwt.sign({ email, role: 'manager', name, type: 'access' }, getJwtSecret(), { expiresIn: '1h' });
+export function signAccessToken(email: string, name: string, role: string): string {
+  return jwt.sign({ email, role, name, type: 'access' }, getJwtSecret(), { expiresIn: '1h' });
 }
 
-export function signRefreshToken(email: string, name: string): string {
-  return jwt.sign({ email, role: 'manager', name, type: 'refresh' }, getJwtSecret(), { expiresIn: '7d' });
+export function signRefreshToken(email: string, name: string, role: string): string {
+  return jwt.sign({ email, role, name, type: 'refresh' }, getJwtSecret(), { expiresIn: '7d' });
 }
 
 export function verifyAuthToken(token: string): AuthUser {

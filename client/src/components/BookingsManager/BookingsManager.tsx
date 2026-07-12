@@ -3,6 +3,7 @@ import styles from './BookingsManager.module.css';
 import BookingDetailsModal from './BookingDetailsModal';
 import { useBookingsQuery } from '../../hooks/queries';
 import { PageLoader } from '../PageLoader/PageLoader';
+import { loadTablePrefs, saveTablePrefs } from '../../utils/tablePrefs';
 import {
   PageHeader,
   Input,
@@ -43,10 +44,14 @@ const toEventCard = (b: any, status: 'confirmed' | 'past'): EventCardData => ({
   statusLabel: status === 'confirmed' ? 'מאושר' : 'עבר',
 });
 
+const TABLE_ID = 'bookings-manager';
+
 const BookingsManager = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selected, setSelected] = useState<any>(null);
+  const [sortKey, setSortKey] = useState(() => loadTablePrefs(TABLE_ID).sortColumn ?? 'date');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(() => loadTablePrefs(TABLE_ID).sortDir ?? 'asc');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -54,6 +59,49 @@ const BookingsManager = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    saveTablePrefs(TABLE_ID, { sortColumn: sortKey, sortDir });
+  }, [sortKey, sortDir]);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const sortBookings = (bookings: any[]) => {
+    const sorted = [...bookings];
+    sorted.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'code':
+          cmp = String(a.eventCode ?? '').localeCompare(String(b.eventCode ?? ''), 'he');
+          break;
+        case 'client':
+          cmp = String(a.clientAFullName ?? '').localeCompare(String(b.clientAFullName ?? ''), 'he');
+          break;
+        case 'type':
+          cmp = String(a.eventType ?? '').localeCompare(String(b.eventType ?? ''), 'he');
+          break;
+        case 'guests':
+          cmp = (Number(a.guestCount) || 0) - (Number(b.guestCount) || 0);
+          break;
+        case 'date':
+        default: {
+          const dayA = getEventDay(a)?.getTime() ?? 0;
+          const dayB = getEventDay(b)?.getTime() ?? 0;
+          cmp = dayA - dayB;
+          break;
+        }
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return sorted;
+  };
 
   const { data, isLoading } = useBookingsQuery({
     status: 'BOOKED',
@@ -66,33 +114,36 @@ const BookingsManager = () => {
     const today = startOfDay(new Date());
     const bookings = (data?.data ?? []).filter((b: any) => !b.isOption);
 
-    const upcoming = bookings
+    const upcoming = sortBookings(
+      bookings
       .filter((b: any) => {
         const day = getEventDay(b);
         return day !== null && day >= today;
       })
-      .sort((a: any, b: any) => getEventDay(a)!.getTime() - getEventDay(b)!.getTime());
+    );
 
-    const past = bookings
+    const past = sortBookings(
+      bookings
       .filter((b: any) => {
         const day = getEventDay(b);
         return day !== null && day < today;
       })
-      .sort((a: any, b: any) => getEventDay(b)!.getTime() - getEventDay(a)!.getTime());
+    );
 
     return { upcomingBookings: upcoming, pastBookings: past };
-  }, [data]);
+  }, [data, sortKey, sortDir]);
 
   const closeSelected = () => setSelected(null);
 
   const columns: DataTableColumn<any>[] = [
-    { key: 'date', header: 'תאריך', render: (b) => dateStr(b) },
-    { key: 'code', header: 'קוד', render: (b) => (b.eventCode ? `#${b.eventCode}` : '—') },
-    { key: 'client', header: 'לקוח', render: (b) => b.clientAFullName },
-    { key: 'type', header: 'סוג', render: (b) => b.eventType },
+    { key: 'date', header: 'תאריך', sortable: true, render: (b) => dateStr(b) },
+    { key: 'code', header: 'קוד', sortable: true, render: (b) => (b.eventCode ? `#${b.eventCode}` : '—') },
+    { key: 'client', header: 'לקוח', sortable: true, render: (b) => b.clientAFullName },
+    { key: 'type', header: 'סוג', sortable: true, render: (b) => b.eventType },
     {
       key: 'guests',
       header: 'מוזמנים',
+      sortable: true,
       render: (b) =>
         b.eventType === 'השכרת אולם בלי אוכל' ? '—' : (b.guestCount ?? '—'),
     },
@@ -142,6 +193,9 @@ const BookingsManager = () => {
           data={bookings}
           rowKey={(b) => b.id}
           onRowClick={(b) => setSelected(b)}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSort={handleSort}
         />
       </div>
       <div className={styles.cardsWrap}>

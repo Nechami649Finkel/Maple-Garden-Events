@@ -5,6 +5,7 @@ import { createBookingSchema, updateBookingSchema } from '../validators/booking.
 import {
   addEventAdditionSchema,
   bumpOptionSchema,
+  addBookingUpgradeSchema,
   finalizeBookingSchema,
   notifyOptionInterestSchema,
   releaseOptionsSchema,
@@ -30,9 +31,11 @@ import {
   getNextEventCode,
   getContractTemplate,
   reissueEasyCountReceipt,
+  addBookingUpgrade,
 } from '../controllers/booking';
 import { sendGreeting, getScheduledGreetings, cancelScheduledGreetingHandler } from '../controllers/greeting';
-import { generateEventFormPDF } from '../utils/pdfGenerator';
+import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
+import { buildUpgradesPricingFromSettings } from '../utils/pricing';
 
 const router = Router();
 router.use(requireAuth);
@@ -49,34 +52,23 @@ router.get('/:id/contract-pdf', catchAsync(async (req: Request, res: Response) =
     include: { eventDate: true, eventForm: true }
   }) as any;
 
-  if (!booking || !booking.clientSignatureUrl) {
-    return res.status(404).json({ success: false, message: 'חוזה חתום לא נמצא.' });
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
   }
-  
-  // ... שאר הקוד נשאר בדיוק כפי שהיה ...
+  try {
+    const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+    const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
+    const pdfBuffer = await generateContractPDF(buildBookingPdfData(booking, { upgradesPricing }));
 
-  // פונקציית עזר להמרת כל ערך למחרוזת בטוחה
-  const toStr = (val: unknown): string => (val ? String(val) : '');
-
-  // יצירת ה-PDF
-  const pdfBuffer = await generateEventFormPDF({
-    eventCode: toStr(booking.eventCode),
-    clientAFullName: toStr(booking.clientAFullName),
-    clientAIdNumber: toStr(booking.clientAIdNumber),
-    clientAPhone: booking.clientAPhone ? toStr(booking.clientAPhone) : undefined,
-    clientAEmail: booking.clientAEmail ? toStr(booking.clientAEmail) : undefined,
-    eventDate: booking.eventDate?.date ? booking.eventDate.date.toISOString() : new Date().toISOString(),
-    guestCount: Number(booking.guestCount || 0),
-    minimumGuestCount: booking.minimumGuestCount ?? Number(booking.guestCount || 0),
-    eventType: toStr(booking.eventType),
-    clientSignatureUrl: booking.clientSignatureUrl,
-    contractText: booking.contractText,
-    eventForm: booking.eventForm || {}
-  });
-
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="contract_${booking.eventCode || booking.id}.pdf"`);
-  res.send(pdfBuffer);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="contract_${booking.eventCode || booking.id}.pdf"`);
+    res.send(pdfBuffer);
+  } catch {
+    return res.status(500).json({
+      success: false,
+      message: 'שגיאה ביצירת קובץ החוזה. ודאי ש-Chrome מותקן או הגדר PUPPETEER_EXECUTABLE_PATH.',
+    });
+  }
 }));
 
 // --- ראוטים סטטיסטיקה וקודים ---
@@ -92,6 +84,7 @@ router.get('/', getAllBookings);
 router.get('/:id/related-options', getRelatedOptionBookings);
 router.get('/:id', getBookingById);
 router.put('/:id', validate(updateBookingSchema), updateBooking);
+router.patch('/:id/upgrades', validate(addBookingUpgradeSchema), addBookingUpgrade);
 router.post('/release', validate(releaseOptionsSchema), releaseOptions);
 router.post('/bump', validate(bumpOptionSchema), bumpOption);
 router.post('/notify-option-interest', validate(notifyOptionInterestSchema), notifyOptionInterest);

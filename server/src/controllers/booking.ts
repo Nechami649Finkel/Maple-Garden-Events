@@ -5,9 +5,11 @@ import { mailFailureMessage, sendBumpEmail, sendOptionInterestEmail } from '../u
 import { sendBumpWhatsApp, sendOptionInterestWhatsApp } from '../utils/whatsapp';
 import { catchAsync } from '../middlewares/errorHandler';
 import { AuthRequest } from '../middlewares/auth';
-import { generateEventFormPDF } from '../utils/pdfGenerator';
+import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
 import { getContractText, resolveContractWithPaymentTerms, resolveDefaultPaymentTermsText } from '../utils/getContractText';
-import { buildExtrasLineItems } from '../utils/contractSections';
+import { resolveEffectiveUpgrades } from '../utils/contractSections';
+import { refreshBookingUpgradesAndContract } from '../utils/bookingUpgradesSync';
+import { UPGRADE_DISPLAY_ORDER } from '../utils/pricing';
 import { buildUpgradesPricingFromSettings } from '../utils/pricing';
 import { parseNotesBundle } from '../utils/notesStorage';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
@@ -42,6 +44,7 @@ import {
   formatEasyCountUserMessage,
   canIssueEasyCountReceipt,
 } from '../utils/easycountHelpers';
+import { syncContractFields } from '../utils/contractFields';
 
 export type EasyCountBookingResult = {
   issued: boolean;
@@ -128,6 +131,14 @@ function canEditBookingDate(eventDate: Date): boolean {
   const eventDay = new Date(eventDate);
   eventDay.setHours(0, 0, 0, 0);
   return today < eventDay;
+}
+
+function isPastCalendarDate(eventDate: Date): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const eventDay = new Date(eventDate);
+  eventDay.setHours(0, 0, 0, 0);
+  return eventDay < today;
 }
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -321,24 +332,22 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   const hallOnly = isHallOnlyBooking(data);
   const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
   const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
-  const extras = buildExtrasLineItems({
-    upgrades: typeof data.upgrades === 'object' && data.upgrades !== null
-      ? (data.upgrades as Record<string, boolean>)
-      : {},
+  const lineItemOptions = {
+    upgrades: resolveEffectiveUpgrades(data.upgrades),
     kosherType: data.kosherType,
     guestCount: Number(data.guestCount) || 0,
     isHallOnly: hallOnly,
     isFoodRelevant: !hallOnly,
     upgradesPricing,
-  });
+  };
 
   const resolvedContractText = data.contractText?.trim()
     || await resolveContractWithPaymentTerms({
       paymentTermsText: data.paymentTermsText,
       total: prices.totalPrice,
       eventDate: typeof datesToProcess[0] === 'object' ? datesToProcess[0]?.date : datesToProcess[0],
-      extras,
       menuNotes,
+      lineItemOptions,
     });
   const paymentTermsText = data.paymentTermsText?.trim()
     || await resolveDefaultPaymentTermsText(
@@ -346,6 +355,15 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       typeof datesToProcess[0] === 'object' ? datesToProcess[0]?.date : datesToProcess[0],
     );
   const overrideOptionDateId: string | undefined = data.overrideOptionDateId;
+
+  if (!isOption && data.contractSigned && !data.clientSignature?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לסמן חוזה כחתום ללא חתימת לקוח.',
+    });
+  }
+
+  const contractFields = syncContractFields(data.contractSigned, data.clientSignature);
 
   let createdBookings: any[] = [];
   let eventsToEmit: { dateId: string, status: string }[] = [];
@@ -357,9 +375,15 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     for (const dateItem of datesToProcess) {
       const dateString = typeof dateItem === 'object' && dateItem !== null ? dateItem.date : dateItem;
-      const possibleDate = new Date(dateString);
+      const possibleDate = parseDateLocal(dateString);
       
       if (isNaN(possibleDate.getTime())) continue;
+
+      if (isPastCalendarDate(possibleDate)) {
+        const err: any = new Error('לא ניתן לקבוע אירוע או אופציה בתאריך שעבר.');
+        err.statusCode = 400;
+        throw err;
+      }
 
       let eventDate = await tx.eventDate.findFirst({
         where: { date: possibleDate },
@@ -530,8 +554,8 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           depositMethod: data.depositMethod || null,
           vatType: data.vatType === 'not_included' ? 'not_included' : 'included',
           securityCheckStatus: 'PENDING',
-          isContractSigned: !!(data.contractSigned && data.clientSignature),
-          clientSignatureUrl: data.clientSignature || null,
+          isContractSigned: contractFields.isContractSigned,
+          clientSignatureUrl: contractFields.clientSignatureUrl,
           isOption: newStatus === 'OPTION',
           managerComments: data.managerComments || null,
           clientComments: data.clientComments || null,
@@ -542,6 +566,8 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           contractText: resolvedContractText,
           paymentTemplateId: data.paymentTemplateId || null,
           paymentTermsText: paymentTermsText || null,
+          upgrades: lineItemOptions.upgrades,
+          kosherType: data.kosherType || null,
         }
       });
       } catch (createErr) {
@@ -571,27 +597,16 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       const firstDateItem = datesToProcess[0];
       const firstDateString = typeof firstDateItem === 'object' && firstDateItem !== null ? firstDateItem.date : firstDateItem;
 
-      const pdfData = {
-        eventCode: savedBooking.eventCode,
-        isOption: newStatus === 'OPTION',
-        clientAFullName: savedBooking.clientAFullName,
-        clientAIdNumber: savedBooking.clientAIdNumber,
-        clientAPhone: savedBooking.clientAPhone || undefined,
-        clientAEmail: savedBooking.clientAEmail || undefined,
-        clientBFullName: savedBooking.clientBFullName || undefined,
-        clientBIdNumber: savedBooking.clientBIdNumber || undefined,
-        clientBPhone: savedBooking.clientBPhone || undefined,
-        clientBEmail: savedBooking.clientBEmail || undefined,
-        eventDate: new Date(firstDateString).toString(),
-        guestCount: savedBooking.guestCount,
-        minimumGuestCount: savedBooking.minimumGuestCount ?? savedBooking.guestCount,
-        eventType: savedBooking.eventType,
-        timeOfDay: savedBooking.timeOfDay || undefined,
-        clientSignatureUrl: data.clientSignature,
-        eventForm: {} 
-      };
-
-      const contractPdfBuffer = await generateEventFormPDF(pdfData);
+      const contractPdfBuffer = await generateContractPDF(
+        buildBookingPdfData(
+          { ...savedBooking, eventDate: { date: new Date(firstDateString) } },
+          {
+            isOption: newStatus === 'OPTION',
+            clientSignatureUrl: data.clientSignature,
+            eventForm: {},
+          },
+        ),
+      );
       const clientEmail = savedBooking.clientAEmail || savedBooking.clientBEmail;
       
       if (clientEmail) {
@@ -716,7 +731,7 @@ export const getRelatedOptionBookings = catchAsync(async (req: Request, res: Res
   res.status(200).json({ success: true, data: related });
 });
 
-export const updateBooking = catchAsync(async (req: Request, res: Response) => {
+export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) => {
   const id = req.params.id as string;
   const data = req.body;
 
@@ -731,6 +746,19 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
 
   if (!canEditBookingDate(booking.eventDate.date)) {
     return res.status(403).json({ success: false, message: 'לא ניתן לערוך ביום האירוע או לאחריו.' });
+  }
+
+  if (data.expectedUpdatedAt) {
+    const expected = new Date(data.expectedUpdatedAt as string);
+    if (!Number.isNaN(expected.getTime()) && booking.updatedAt.getTime() !== expected.getTime()) {
+      return res.status(409).json({
+        success: false,
+        conflict: true,
+        message: 'ההזמנה עודכנה על ידי משתמש אחר. רענני את העמוד ונסי שוב.',
+        currentUpdatedAt: booking.updatedAt.toISOString(),
+        updatedBy: booking.updatedBy,
+      });
+    }
   }
 
   if (!booking.isOption && !data.convertFromOption) {
@@ -801,6 +829,19 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
   const finalSignature = data.clientSignature ?? booking.clientSignatureUrl;
   let convertedEventCode: string | null = null;
 
+  if (data.contractSigned && !finalSignature?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לסמן חוזה כחתום ללא חתימת לקוח.',
+    });
+  }
+
+  const contractFields = data.clientSignature !== undefined
+    ? syncContractFields(data.contractSigned, data.clientSignature)
+    : isConverting
+      ? syncContractFields(data.contractSigned ?? true, finalSignature)
+      : syncContractFields(booking.isContractSigned, booking.clientSignatureUrl);
+
   if (isConverting) {
     convertedEventCode = convertOptionCodeToEventCode(booking.eventCode);
     if (!convertedEventCode) {
@@ -839,10 +880,8 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
       managerComments: data.managerComments || null,
       clientComments: data.clientComments || null,
       createdBy: data.createdBy || booking.createdBy,
-      isContractSigned: data.clientSignature !== undefined
-        ? !!(data.contractSigned && data.clientSignature)
-        : isConverting ? !!finalSignature : booking.isContractSigned,
-      clientSignatureUrl: data.clientSignature !== undefined ? data.clientSignature : booking.clientSignatureUrl,
+      isContractSigned: contractFields.isContractSigned,
+      clientSignatureUrl: contractFields.clientSignatureUrl,
       depositCheckUrl: data.depositCheckUrl !== undefined ? data.depositCheckUrl || null : (booking as { depositCheckUrl?: string | null }).depositCheckUrl,
       depositCheckDetails: data.depositCheckDetails !== undefined ? data.depositCheckDetails || null : (booking as { depositCheckDetails?: unknown }).depositCheckDetails,
       contractText: data.contractText !== undefined
@@ -854,19 +893,25 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
       paymentTermsText: data.paymentTermsText !== undefined
         ? (data.paymentTermsText?.trim() || null)
         : (booking as { paymentTermsText?: string | null }).paymentTermsText,
+      upgrades: data.upgrades !== undefined && typeof data.upgrades === 'object' && data.upgrades !== null
+        ? (data.upgrades as Record<string, boolean>)
+        : (booking as { upgrades?: unknown }).upgrades ?? undefined,
+      kosherType: data.kosherType !== undefined
+        ? (data.kosherType || null)
+        : (booking as { kosherType?: string | null }).kosherType,
       depositMethod: data.depositMethod !== undefined
         ? (data.depositMethod || null)
         : (booking as { depositMethod?: string | null }).depositMethod,
       vatType: data.vatType !== undefined
         ? (data.vatType === 'not_included' ? 'not_included' : 'included')
         : (booking as { vatType?: string | null }).vatType || 'included',
-      updatedBy: 'מערכת',
+      updatedBy: req.user?.email || 'מערכת',
     };
 
     if (isConverting) {
       updateData.isOption = false;
       updateData.eventCode = convertedEventCode;
-      updateData.clientSignatureUrl = finalSignature;
+      updateData.clientSignatureUrl = contractFields.clientSignatureUrl;
       if (data.advancePaid !== undefined) {
         const paid = Number(data.advancePaid) || 0;
         updateData.advancePaid = paid;
@@ -943,26 +988,17 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
 
     if (finalSignature && data.contractSigned) {
       try {
-        const pdfData = {
-          eventCode: updated.eventCode,
-          isOption: false,
-          clientAFullName: updated.clientAFullName,
-          clientAIdNumber: updated.clientAIdNumber,
-          clientAPhone: updated.clientAPhone || undefined,
-          clientAEmail: updated.clientAEmail || undefined,
-          clientBFullName: updated.clientBFullName || undefined,
-          clientBIdNumber: updated.clientBIdNumber || undefined,
-          clientBPhone: updated.clientBPhone || undefined,
-          clientBEmail: updated.clientBEmail || undefined,
-          eventDate: booking.eventDate.date.toString(),
-          guestCount: updated.guestCount,
-          minimumGuestCount: updated.minimumGuestCount ?? updated.guestCount,
-          eventType: updated.eventType,
-          timeOfDay: updated.timeOfDay || undefined,
-          clientSignatureUrl: finalSignature,
-          eventForm: {},
-        };
-        const contractPdfBuffer = await generateEventFormPDF(pdfData);
+        const contractPdfBuffer = await generateContractPDF(
+          buildBookingPdfData(
+            { ...updated, eventDate: booking.eventDate },
+            {
+              isOption: false,
+              clientSignatureUrl: finalSignature,
+              contractText: updated.contractText,
+              eventForm: {},
+            },
+          ),
+        );
         const clientEmail = updated.clientAEmail || updated.clientBEmail;
         if (clientEmail) {
           await sendPDFToClient(
@@ -1020,6 +1056,52 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
     message: 'ההזמנה עודכנה בהצלחה.',
     data: responseBooking ?? updated,
     easycount: easycountResult,
+  });
+});
+
+export const addBookingUpgrade = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const upgradeKey = String(req.body.upgradeKey || '').trim();
+
+  if (!UPGRADE_DISPLAY_ORDER.includes(upgradeKey as (typeof UPGRADE_DISPLAY_ORDER)[number])) {
+    return res.status(400).json({ success: false, message: 'שדרוג לא תקין.' });
+  }
+
+  const booking = await prisma.booking.findUnique({
+    where: { id },
+    include: { eventDate: true, eventForm: true },
+  });
+
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
+  }
+
+  if (!canEditBookingDate(booking.eventDate.date)) {
+    return res.status(403).json({ success: false, message: 'לא ניתן לערוך ביום האירוע או לאחריו.' });
+  }
+
+  const refreshed = await refreshBookingUpgradesAndContract(booking, booking.eventForm, upgradeKey);
+
+  const updated = await prisma.booking.update({
+    where: { id },
+    data: {
+      upgrades: refreshed.upgrades,
+      extrasPrice: refreshed.extrasPrice,
+      externalExtrasPrice: refreshed.externalExtrasPrice,
+      totalPrice: refreshed.totalPrice,
+      paymentTermsText: refreshed.paymentTermsText,
+      contractText: refreshed.contractText,
+      updatedBy: 'מערכת',
+    },
+    include: { eventDate: true },
+  });
+
+  emitBookingUpdated(id);
+
+  res.status(200).json({
+    success: true,
+    message: 'השדרוג נוסף לחוזה והמסמך עודכן.',
+    data: updated,
   });
 });
 
@@ -1170,6 +1252,14 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
   }
 
   const finalSignature = clientSignature || booking.clientSignatureUrl;
+  const contractFields = syncContractFields(true, finalSignature);
+
+  if (!contractFields.clientSignatureUrl) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לסגור הזמנה ללא חתימת לקוח.',
+    });
+  }
 
   const updated = await prisma.$transaction(async (tx) => {
     const updatedBooking = await tx.booking.update({
@@ -1182,8 +1272,8 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
         paymentStatus: 'PARTIAL',
         isOption: false,
         eventCode,
-        isContractSigned: !!finalSignature,
-        clientSignatureUrl: finalSignature 
+        isContractSigned: contractFields.isContractSigned,
+        clientSignatureUrl: contractFields.clientSignatureUrl,
       }
     });
 
@@ -1223,27 +1313,12 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
 
   if (finalSignature) {
     try {
-      const pdfData = {
-        eventCode: updated.eventCode,
-        isOption: false,
-        clientAFullName: updated.clientAFullName,
-        clientAIdNumber: updated.clientAIdNumber,
-        clientAPhone: updated.clientAPhone || undefined,
-        clientAEmail: updated.clientAEmail || undefined,
-        clientBFullName: updated.clientBFullName || undefined,
-        clientBIdNumber: updated.clientBIdNumber || undefined,
-        clientBPhone: updated.clientBPhone || undefined,
-        clientBEmail: updated.clientBEmail || undefined,
-        eventDate: booking.eventDate.date.toString(),
-        guestCount: updated.guestCount,
-        minimumGuestCount: updated.minimumGuestCount ?? updated.guestCount,
-        eventType: updated.eventType,
-        timeOfDay: updated.timeOfDay || undefined,
-        clientSignatureUrl: finalSignature,
-        eventForm: booking.eventForm || {} 
-      };
-
-      const contractPdfBuffer = await generateEventFormPDF(pdfData);
+      const contractPdfBuffer = await generateContractPDF(
+        buildBookingPdfData(
+          { ...updated, eventDate: booking.eventDate, eventForm: booking.eventForm },
+          { clientSignatureUrl: finalSignature },
+        ),
+      );
       
       const clientEmail = updated.clientAEmail || updated.clientBEmail;
       if (clientEmail) {

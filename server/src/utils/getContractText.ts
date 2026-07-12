@@ -50,6 +50,7 @@ export async function resolveContractWithPaymentTerms(options?: {
   eventDate?: Date | string | null;
   extras?: ExtrasLineItem[];
   menuNotes?: string[];
+  lineItemOptions?: Parameters<typeof import('./contractSections').buildSelectedLineItems>[0];
 }): Promise<string> {
   const base = await getContractText();
   const paymentParagraph =
@@ -58,7 +59,8 @@ export async function resolveContractWithPaymentTerms(options?: {
   return resolveFullContractText({
     baseContract: base,
     paymentTerms: paymentParagraph,
-    extras: options?.extras ?? [],
+    extras: options?.extras,
     menuNotes: options?.menuNotes ?? [],
+    lineItemOptions: options?.lineItemOptions,
   });
 }

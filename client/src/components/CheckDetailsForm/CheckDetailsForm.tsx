@@ -6,7 +6,6 @@ interface CheckDetailsFormProps {
   imageUrl?: string;
   scanning?: boolean;
   onChange: (details: DepositCheckDetails) => void;
-  styles?: Record<string, string>;
 }
 
 const FIELDS: { key: keyof DepositCheckDetails; label: string; type?: string }[] = [
@@ -26,15 +25,14 @@ const CheckDetailsForm: React.FC<CheckDetailsFormProps> = ({
   imageUrl,
   scanning,
   onChange,
-  styles = {},
 }) => {
   const update = (key: keyof DepositCheckDetails, value: string) => {
     onChange({ ...details, [key]: value || undefined });
   };
 
   return (
-    <div style={{ marginTop: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-      <h5 style={{ margin: '0 0 12px 0', color: '#1e293b' }}>פרטי הצ&apos;ק {scanning ? '(סורק...)' : ''}</h5>
+    <div className={`border rounded p-3 mt-3 bg-light`}>
+      <h5 className="mb-2">פרטי הצ&apos;ק {scanning ? '(סורק...)' : ''}</h5>
       <p style={{ margin: '0 0 12px 0', color: '#64748b', fontSize: '13px' }}>
         סריקה לצ&apos;ק ביטחון ריק — מזהה בנק, סניף, חשבון ומספר שיק מכל הבנקים בישראל.
         שדות לפקודת/סכום/תאריך יישארו ריקים.
@@ -72,23 +70,15 @@ const CheckDetailsForm: React.FC<CheckDetailsFormProps> = ({
         />
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+      <div className="row g-3">
         {FIELDS.map(({ key, label, type }) => (
-          <div key={key}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: '#475569' }}>{label}</label>
+          <div key={key} className="col-md-6 col-lg-4">
+            <label className="form-label">{label}</label>
             <input
               type={type || 'text'}
               value={details[key] ?? ''}
               onChange={e => update(key, e.target.value)}
-              className={styles.input}
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                fontSize: '14px',
-                boxSizing: 'border-box',
-              }}
+              className="form-control"
               disabled={scanning}
             />
           </div>

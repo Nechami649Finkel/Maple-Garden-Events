@@ -68,6 +68,8 @@ model Booking {
   contractText        String?         @db.Text
   paymentTemplateId   String?
   paymentTermsText    String?         @db.Text
+  upgrades            Json?
+  kosherType          String?
 
   @@unique([calendarDateId, timeSlot])
 }
@@ -272,6 +274,7 @@ model EventAddition {
 model AuthorizedUser {
   id        String   @id @default(uuid())
   email     String   @unique
+  role      String   @default("manager")
   createdAt DateTime @default(now())
 }
 

@@ -35,6 +35,10 @@ export async function refreshSession(): Promise<boolean> {
   return refreshInFlight;
 }
 
+function shouldSkipAuthRedirect(): boolean {
+  return import.meta.env.DEV && window.location.pathname.startsWith('/__design__/');
+}
+
 export async function secureFetch(url: string, options: RequestInit = {}, retried = false): Promise<Response> {
   const method = (options.method || 'GET').toUpperCase();
   const headers = new Headers(options.headers || {});
@@ -63,7 +67,7 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       if (refreshed) {
         return secureFetch(url, options, true);
       }
-      if (!url.includes('/api/auth/me')) {
+      if (!url.includes('/api/auth/me') && !shouldSkipAuthRedirect()) {
         window.location.href = '/';
       }
     }
@@ -100,10 +104,36 @@ export const apiFetch = async (url: string, options: RequestInit = {}) => {
 
 export async function logoutManager(): Promise<void> {
   disconnectSocket();
+  clearUserCache();
   await secureFetch(`${API_BASE}/api/auth/logout`, { method: 'POST' });
 }
 
-export async function checkAuthSession(): Promise<boolean> {
+export type AuthUserInfo = { email: string; name: string; role: string };
+
+const USER_CACHE_KEY = 'maple-user-cache';
+
+function loadUserCache(): AuthUserInfo | null {
+  try {
+    const raw = sessionStorage.getItem(USER_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as AuthUserInfo) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveUserCache(user: AuthUserInfo): void {
+  try {
+    sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(user));
+  } catch {
+    // ignore
+  }
+}
+
+export function clearUserCache(): void {
+  sessionStorage.removeItem(USER_CACHE_KEY);
+}
+
+export async function getAuthUser(): Promise<AuthUserInfo | null> {
   try {
     let response = await secureFetch(`${API_BASE}/api/auth/me`);
     if (response.status === 401) {
@@ -112,8 +142,19 @@ export async function checkAuthSession(): Promise<boolean> {
         response = await secureFetch(`${API_BASE}/api/auth/me`);
       }
     }
-    return response.ok;
+    if (!response.ok) return loadUserCache();
+    const json = await response.json();
+    if (json.user) {
+      saveUserCache(json.user);
+      return json.user as AuthUserInfo;
+    }
+    return null;
   } catch {
-    return false;
+    return loadUserCache();
   }
+}
+
+export async function checkAuthSession(): Promise<boolean> {
+  const user = await getAuthUser();
+  return user !== null;
 }

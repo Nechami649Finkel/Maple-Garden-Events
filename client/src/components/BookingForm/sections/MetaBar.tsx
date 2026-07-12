@@ -1,5 +1,3 @@
-import React from 'react';
-import styles from '../BookingForm.module.css';
 import { useStaffQuery } from '../../../hooks/queries';
 
 const eventTypesList = ['חתונה', 'אירוסין', 'בר מצווה', 'בת מצווה', 'ברית', 'בריתה', 'חינה', 'הרמת כוסית', 'כנס מקצועי', 'אירוע חברה/עסקי', 'השכרת אולם בלי אוכל'];
@@ -12,20 +10,20 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
   });
 
   return (
-    <div className={styles.metaBar}>
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>מספר {isOption ? 'אופציה' : 'הזמנה'}</label>
-        <input type="text" value={orderNumber} readOnly className={`${styles.input} ${styles.inputReadonly}`} />
+    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3">
+      <div className="col">
+        <label className="form-label">מספר {isOption ? 'אופציה' : 'הזמנה'}</label>
+        <input type="text" value={orderNumber} readOnly className="form-control bg-light" />
       </div>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>{isOption ? 'מי סגר את האופציה *' : 'שם הנציג / סוכן '}</label>
+      <div className="col">
+        <label className="form-label">{isOption ? 'מי סגר את האופציה *' : 'שם הנציג / סוכן '}</label>
         <select
           name="createdBy"
           required
           value={formData.createdBy}
           onChange={handleChange}
-          className={`${styles.input} ${formData.createdBy ? styles.selectHasValue : styles.selectPlaceholder}`}
+          className="form-select"
         >
           <option value="" disabled hidden>
             {isOption ? 'בחרי מי סגר את האופציה' : 'בחרי נציג מהרשימה'}
@@ -36,14 +34,14 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
         </select>
       </div>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>סוג אירוע{isOption ? '' : ' '}</label>
+      <div className="col">
+        <label className="form-label">סוג אירוע{isOption ? '' : ' '}</label>
         <select
           name="eventType"
           required={!isOption}
           value={formData.eventType}
           onChange={handleChange}
-          className={`${styles.input} ${formData.eventType ? styles.selectHasValue : styles.selectPlaceholder}`}
+          className="form-select"
         >
           <option value="" disabled hidden>
             {isOption ? 'בחירה (אופציונלי)' : 'בחרי מסוגי האירועים'}
@@ -53,15 +51,15 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
       </div>
 
       {isOption && (
-        <div className={styles.inputGroup}>
-          <label className={styles.metaLabel}>תוקף אופציה (בשעות)</label>
-          <input type="number" value={optionDurationHours} onChange={(e) => setOptionDurationHours(Number(e.target.value))} className={styles.input} />
+        <div className="col">
+          <label className="form-label">תוקף אופציה (בשעות)</label>
+          <input type="number" value={optionDurationHours} onChange={(e) => setOptionDurationHours(Number(e.target.value))} className="form-control" />
         </div>
       )}
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>תאריך {isOption ? 'פתיחת האופציה' : 'סגירת האירוע'}</label>
-        <input type="text" value={currentDateDisplay} readOnly className={`${styles.input} ${styles.inputReadonly}`} style={{ direction: 'ltr', textAlign: 'right' }} />
+      <div className="col">
+        <label className="form-label">תאריך {isOption ? 'פתיחת האופציה' : 'סגירת האירוע'}</label>
+        <input type="text" value={currentDateDisplay} readOnly className="form-control bg-light" style={{ direction: 'ltr', textAlign: 'right' }} />
       </div>
     </div>
   );

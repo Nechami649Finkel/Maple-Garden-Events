@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNavigationOverride } from '../../context/NavigationContext';
+import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../CheckDetailsForm/CheckDetailsForm';
@@ -119,12 +120,12 @@ interface SegmentedControlProps {
 }
 
 const SegmentedControl = ({ value, options, onChange, ariaLabel }: SegmentedControlProps) => (
-  <div className={styles.segmentedControl} role="group" aria-label={ariaLabel}>
+  <div className="btn-group maple-segmented w-100" role="group" aria-label={ariaLabel}>
     {options.map((opt) => (
       <button
         key={opt.value}
         type="button"
-        className={`${styles.segmentedBtn} ${value === opt.value ? styles.segmentedBtnActive : ''}`}
+        className={`btn btn-outline-primary ${value === opt.value ? 'active' : ''}`}
         onClick={() => onChange(opt.value)}
         aria-pressed={value === opt.value}
       >
@@ -135,7 +136,7 @@ const SegmentedControl = ({ value, options, onChange, ariaLabel }: SegmentedCont
 );
 
 const SectionIcon = ({ children }: { children: React.ReactNode }) => (
-  <span className={styles.sectionIcon} aria-hidden="true">{children}</span>
+  <span className="maple-section-icon" aria-hidden="true">{children}</span>
 );
 
 const SEPARATE_MIXED_OPTIONS = [
@@ -529,7 +530,7 @@ const EventFormManager = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `event-form-${selected.clientAFullName}-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `production-form-${selected.clientAFullName}-${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -891,319 +892,193 @@ const EventFormManager = () => {
           )}
         </>
       ) : (
-        <div className={styles.formContainer}>
-          <div className={styles.formHeader}>
-            <div className={styles.formHeaderMain}>
-              <div className={styles.formHeaderText}>
-                <h3>{selected.clientAFullName} {selected.clientBFullName ? `+ ${selected.clientBFullName}` : ''}</h3>
-                <p>{dateStr(selected)} · {selected.eventType} · {selected.timeOfDay} · {selected.guestCount} מוזמנים</p>
+        <div className="maple-bs-form maple-form-container card shadow-sm h-100">
+          <div className="card-header maple-progress-header">
+            <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
+              <div>
+                <h3 className="h5 mb-1">{selected.clientAFullName} {selected.clientBFullName ? `+ ${selected.clientBFullName}` : ''}</h3>
+                <p className="maple-subtitle mb-0">{dateStr(selected)} · {selected.eventType} · {selected.timeOfDay} · {selected.guestCount} מוזמנים</p>
               </div>
-              <div className={styles.formHeaderProgress}>
-                <div className={styles.progressTrack} role="progressbar" aria-valuenow={formProgress} aria-valuemin={0} aria-valuemax={100} aria-label="התקדמות מילוי הטופס">
-                  <div className={styles.progressFill} style={{ width: `${formProgress}%` }} />
+              <div className="flex-grow-1" style={{ maxWidth: 280 }}>
+                <div className="progress" role="progressbar" aria-valuenow={formProgress} aria-valuemin={0} aria-valuemax={100} aria-label="התקדמות מילוי הטופס">
+                  <div className="progress-bar" style={{ width: `${formProgress}%` }} />
                 </div>
-                <span className={styles.progressLabel}>{formProgress}% מוכן</span>
+                <span className="small text-muted">{formProgress}% מוכן</span>
               </div>
             </div>
-            <div className={styles.formHeaderMeta}>
-              <span className={styles.headerMetaChip}>סופי: {formData.finalGuestCount || '—'}</span>
-              <span className={styles.headerMetaChip}>כשרות: {formData.kashrut || '—'}</span>
+            <div className="d-flex flex-wrap gap-2 mt-2">
+              <span className="maple-meta-chip">סופי: {formData.finalGuestCount || '—'}</span>
+              <span className="maple-meta-chip">כשרות: {formData.kashrut || '—'}</span>
             </div>
-            <button type="button" onClick={() => setSelected(null)} className={styles.closeBtn}>✕ סגור</button>
+            <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ סגור</button>
           </div>
 
-          <div className={styles.formBody}>
-            <div className={styles.formBoard}>
-            {/* שעה וקבלת פנים */}
-            <div className={`${styles.section} ${styles.boardTime}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
-                  <SectionIcon>
-                    <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 11h4v-2h-3V7h-2v6z"/></svg>
-                  </SectionIcon>
-                  שעה וקבלת פנים
-                </h4>
-              </div>
-              <div className={styles.sectionInner}>
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>שעת קבלת פנים</label>
-                  <input
-                    type="time"
-                    value={formData.eventTime || ''}
-                    onChange={e => handleInputChange('eventTime', e.target.value)}
-                  />
+          <div className="maple-form-body card-body">
+            <div className="maple-form-board">
+            <div className={styles.boardColumn}>
+            {/* שעה + עיצוב + ציוד טכני — מאוחד */}
+            <div className={`card mb-0 ${styles.boardBasics}`}>
+              <div className="card-body">
+                <div className={styles.boardSubSection}>
+                  <div className={styles.boardSubTitle}>
+                    <span className={styles.boardSubTitleMain}>
+                      <SectionIcon>
+                        <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 11h4v-2h-3V7h-2v6z"/></svg>
+                      </SectionIcon>
+                      שעה וקבלת פנים
+                    </span>
+                  </div>
+                  <div className="row g-2">
+                    <div className="col-12">
+                      <label className="form-label">שעת קבלת פנים</label>
+                      <input
+                        type="time"
+                        className="form-control"
+                        value={formData.eventTime || ''}
+                        onChange={e => handleInputChange('eventTime', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-12">
+                      <label className="form-label">סוג קבלת פנים</label>
+                      <SegmentedControl
+                        value={formData.receptionType || 'separate'}
+                        options={SEPARATE_MIXED_OPTIONS}
+                        onChange={(v) => handleInputChange('receptionType', v)}
+                        ariaLabel="סוג קבלת פנים"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.fieldSegmented}>
-                  <label>סוג קבלת פנים</label>
-                  <SegmentedControl
-                    value={formData.receptionType || 'separate'}
-                    options={SEPARATE_MIXED_OPTIONS}
-                    onChange={(v) => handleInputChange('receptionType', v)}
-                    ariaLabel="סוג קבלת פנים"
-                  />
+
+                <div className={`${styles.boardSubSection} ${styles.boardSubSectionDesign}`}>
+                  <div className={styles.boardSubTitle}>
+                    <span className={styles.boardSubTitleMain}>
+                      <SectionIcon>
+                        <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.8L20 8l-3.6 3.5.85 5L12 14.8 6.75 16.5 7.6 11.5 4 8l5.6-1.2L12 2z"/></svg>
+                      </SectionIcon>
+                      עיצוב
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/gallery')}
+                      className="btn btn-sm btn-outline-secondary"
+                    >
+                      גלריה
+                    </button>
+                  </div>
+                  <div className="row g-2">
+                    <div className="col-6">
+                      <label className="form-label">מפות</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="מפה..."
+                        value={formData.tableclothId || ''}
+                        onChange={e => handleInputChange('tableclothId', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label">מפיות</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="מפית..."
+                        value={formData.napkinId || ''}
+                        onChange={e => handleInputChange('napkinId', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label">מרכזי שולחן</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="מרכז..."
+                        value={formData.centerpiece || ''}
+                        onChange={e => handleInputChange('centerpiece', e.target.value)}
+                      />
+                    </div>
+                    <div className="col-6">
+                      <label className="form-label">כסא כלה</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="כסא..."
+                        value={formData.bridgeChair || ''}
+                        onChange={e => handleInputChange('bridgeChair', e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                <div className={`${styles.boardSubSection} ${styles.boardSubSectionEquip}`}>
+                  <div className={styles.boardSubTitle}>
+                    <span className={styles.boardSubTitleMain}>
+                      <SectionIcon>
+                        <svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03z"/></svg>
+                      </SectionIcon>
+                      ציוד טכני
+                    </span>
+                  </div>
+                  <div className="d-flex flex-wrap gap-2">
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="has-lighting"
+                        checked={formData.hasLighting || false}
+                        onChange={e => handleCheckboxChange('hasLighting', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="has-lighting">תאורה</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="has-sound"
+                        checked={formData.hasSoundSystem || false}
+                        onChange={e => handleCheckboxChange('hasSoundSystem', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="has-sound">הגברה</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="has-screens"
+                        checked={formData.hasScreens || false}
+                        onChange={e => handleCheckboxChange('hasScreens', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="has-screens">מסכים</label>
+                    </div>
+                    <div className="form-check">
+                      <input
+                        type="checkbox"
+                        className="form-check-input"
+                        id="has-fireworks"
+                        checked={formData.hasFireworks || false}
+                        onChange={e => handleCheckboxChange('hasFireworks', e.target.checked)}
+                      />
+                      <label className="form-check-label" htmlFor="has-fireworks">זיקוקים</label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* מוזמנים וישיבה */}
-            <div className={`${styles.section} ${styles.boardGuests}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
-                  <SectionIcon>
-                    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-                  </SectionIcon>
-                  מוזמנים וישיבה
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => setIsTableLayoutOpen(true)}
-                  className={savedTables?.length ? styles.btnSecondary : styles.btnPrimary}
-                >
-                  {savedTables?.length ? `${savedTables.length} שולחנות` : 'סידור שולחנות'}
-                </button>
-              </div>
-              <div className={styles.sectionInner}>
-              <div className={`${styles.row} ${styles.rowThree}`}>
-                <div className={styles.field}>
-                  <label>כמות מוזמנים סופית</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.finalGuestCount || ''}
-                    onChange={e => handleInputChange('finalGuestCount', parseInt(e.target.value))}
-                  />
-                </div>
-                <div className={styles.fieldSegmented}>
-                  <label>סוג ישיבה</label>
-                  <SegmentedControl
-                    value={formData.seatingType || 'separate'}
-                    options={SEPARATE_MIXED_OPTIONS}
-                    onChange={(v) => handleInputChange('seatingType', v)}
-                    ariaLabel="סוג ישיבה"
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label>שולחן כבוד</label>
-                  <select
-                    value={hasHonorTable === null ? '' : hasHonorTable ? 'yes' : 'no'}
-                    onChange={e => {
-                      if (e.target.value === '') {
-                        setHasHonorTable(null);
-                        handleInputChange('honorTableCount', undefined);
-                        return;
-                      }
-                      const yes = e.target.value === 'yes';
-                      setHasHonorTable(yes);
-                      if (!yes) handleInputChange('honorTableCount', undefined);
-                    }}
-                  >
-                    <option value="">—</option>
-                    <option value="yes">כן</option>
-                    <option value="no">לא</option>
-                  </select>
-                </div>
-              </div>
-              {hasHonorTable && (
-                <div className={styles.row}>
-                  <div className={styles.field}>
-                    <label>כמות בשולחן כבוד</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={formData.honorTableCount ?? ''}
-                      onChange={e => handleInputChange(
-                        'honorTableCount',
-                        e.target.value === '' ? undefined : parseInt(e.target.value, 10)
-                      )}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {tableLayoutImageUrl && (
-                <div className={styles.tableLayoutPreviewBlock}>
-                  <img
-                    src={tableLayoutImageUrl}
-                    alt="סקיצת סידור שולחנות"
-                    className={styles.tableLayoutPreviewImg}
-                  />
-                </div>
-              )}
-
-              {formData.seatingType === 'separate' && (
-                <div className={`${styles.row} ${styles.rowThree}`}>
-                  <div className={styles.field}>
-                    <label>כמות גברים</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.menCount ?? ''}
-                      onChange={e => handleInputChange('menCount', e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.field}>
-                    <label>כמות נשים</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formData.womenCount ?? ''}
-                      onChange={e => handleInputChange('womenCount', e.target.value)}
-                    />
-                  </div>
-                  <div className={styles.field}>
-                    <label>חלוקה (אחוזים)</label>
-                    {formData.menPercent != null && formData.womenPercent != null ? (
-                      <div className={styles.splitBadge}>
-                        <span className={styles.splitMen}>ג {formData.menPercent}%</span>
-                        <span className={styles.splitWomen}>נ {formData.womenPercent}%</span>
-                      </div>
-                    ) : (
-                      <div className={styles.splitBadgeEmpty}>—</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {portionBilling && (
-                <div
-                  className={styles.portionStrip}
-                  title={
-                    portionBilling.seatingType === 'separate'
-                      ? `גברים: ${portionBilling.menCount} → ${portionBilling.menBillablePortions} מנות · נשים: ${portionBilling.womenCount} → ${portionBilling.womenBillablePortions} מנות`
-                      : `מוזמנים: ${formData.finalGuestCount} → ${portionBilling.totalBillablePortions} מנות`
-                  }
-                >
-                  <span className={styles.portionStripLabel}>מנות לחיוב:</span>
-                  <span className={styles.portionStripStrong}>
-                    {portionBilling.totalBillablePortions} × {portionBilling.pricePerPortion} ₪ = {portionBilling.totalAmount.toLocaleString('he-IL')} ₪
-                  </span>
-                </div>
-              )}
-              </div>
-            </div>
-
-            {/* עיצוב */}
-            <div className={`${styles.section} ${styles.boardDesign}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
-                  <SectionIcon>
-                    <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.8L20 8l-3.6 3.5.85 5L12 14.8 6.75 16.5 7.6 11.5 4 8l5.6-1.2L12 2z"/></svg>
-                  </SectionIcon>
-                  עיצוב
-                </h4>
-                <button
-                  type="button"
-                  onClick={() => navigate('/gallery')}
-                  className={styles.btnOutline}
-                >
-                  גלריה
-                </button>
-              </div>
-              <div className={styles.sectionInner}>
-              <div className={`${styles.row} ${styles.rowFour}`}>
-                <div className={styles.field}>
-                  <label>מפות</label>
-                  <input
-                    type="text"
-                    placeholder="מפה..."
-                    value={formData.tableclothId || ''}
-                    onChange={e => handleInputChange('tableclothId', e.target.value)}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label>מפיות</label>
-                  <input
-                    type="text"
-                    placeholder="מפית..."
-                    value={formData.napkinId || ''}
-                    onChange={e => handleInputChange('napkinId', e.target.value)}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label>מרכזי שולחן</label>
-                  <input
-                    type="text"
-                    placeholder="מרכז..."
-                    value={formData.centerpiece || ''}
-                    onChange={e => handleInputChange('centerpiece', e.target.value)}
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label>כסא כלה</label>
-                  <input
-                    type="text"
-                    placeholder="כסא..."
-                    value={formData.bridgeChair || ''}
-                    onChange={e => handleInputChange('bridgeChair', e.target.value)}
-                  />
-                </div>
-              </div>
-              </div>
-            </div>
-
-            {/* ציוד טכני */}
-            <div className={`${styles.section} ${styles.boardEquip}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
-                  <SectionIcon>
-                    <svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03z"/></svg>
-                  </SectionIcon>
-                  ציוד טכני
-                </h4>
-              </div>
-              <div className={styles.sectionInner}>
-              <div className={styles.checkboxInlineRow}>
-                <label className={styles.checkboxPill}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasLighting || false}
-                    onChange={e => handleCheckboxChange('hasLighting', e.target.checked)}
-                  />
-                  תאורה
-                </label>
-                <label className={styles.checkboxPill}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasSoundSystem || false}
-                    onChange={e => handleCheckboxChange('hasSoundSystem', e.target.checked)}
-                  />
-                  הגברה
-                </label>
-                <label className={styles.checkboxPill}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasScreens || false}
-                    onChange={e => handleCheckboxChange('hasScreens', e.target.checked)}
-                  />
-                  מסכים
-                </label>
-                <label className={styles.checkboxPill}>
-                  <input
-                    type="checkbox"
-                    checked={formData.hasFireworks || false}
-                    onChange={e => handleCheckboxChange('hasFireworks', e.target.checked)}
-                  />
-                  זיקוקים
-                </label>
-              </div>
-              </div>
-            </div>
-
-            <div className={`${styles.section} ${styles.boardEnt}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
+            <div className={`card mb-0 ${styles.boardEnt}`}>
+              <div className="card-header maple-section-header">
+                <h4 className="h6 mb-0 d-flex align-items-center">
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
                   </SectionIcon>
                   משמחים
                 </h4>
               </div>
-              <div className={styles.sectionInner}>
-              <div className={styles.field}>
-                <label>האם יש משמחים?</label>
+              <div className="card-body">
+              <div className="mb-3">
+                <label className="form-label">האם יש משמחים?</label>
                 <select
+                  className="form-select"
                   value={hasEntertainers === null ? '' : hasEntertainers ? 'yes' : 'no'}
                   onChange={e => {
                     if (e.target.value === '') {
@@ -1232,10 +1107,11 @@ const EventFormManager = () => {
 
               {hasEntertainers === true && (
               <>
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <label>סוג משמחים</label>
+              <div className="row g-2">
+                <div className="col-12">
+                  <label className="form-label">סוג משמחים</label>
                   <select
+                    className="form-select"
                     value={
                       formData.entertainersBar !== undefined ? 'bar' :
                       formData.entertainersSitting !== undefined ? 'sitting' : ''
@@ -1268,11 +1144,12 @@ const EventFormManager = () => {
                 const currentTotal = isBar ? (formData.entertainersBar || 0) : (formData.entertainersSitting || 0);
                 return (
                   <>
-                    <div className={`${styles.row} ${styles.rowThree}`}>
-                      <div className={styles.field}>
-                        <label>סה&quot;כ משתתפים</label>
+                    <div className="row g-2">
+                      <div className="col-6">
+                        <label className="form-label">סה&quot;כ משתתפים</label>
                         <input
                           type="number"
+                          className="form-control"
                           min="0"
                           value={currentTotal || ''}
                           onChange={e => {
@@ -1283,10 +1160,11 @@ const EventFormManager = () => {
                           }}
                         />
                       </div>
-                      <div className={styles.field}>
-                        <label>גברים</label>
+                      <div className="col-6">
+                        <label className="form-label">גברים</label>
                         <input
                           type="number"
+                          className="form-control"
                           min="0"
                           value={formData.entertainersMen || ''}
                           onChange={e => {
@@ -1296,14 +1174,14 @@ const EventFormManager = () => {
                           }}
                         />
                       </div>
-                      <div className={styles.field}>
-                        <label>נשים</label>
+                      <div className="col-6">
+                        <label className="form-label">נשים</label>
                         <input
                           type="number"
+                          className="form-control bg-light"
                           min="0"
                           value={formData.entertainersWomen || ''}
                           readOnly
-                          className={styles.inputAuto}
                         />
                       </div>
                     </div>
@@ -1327,11 +1205,189 @@ const EventFormManager = () => {
               )}
               </div>
             </div>
+            </div>
 
+            <div className={styles.boardColumn}>
+            {/* מוזמנים וישיבה */}
+            <div className={`card mb-0 ${styles.boardGuests}`}>
+              <div className="card-header maple-section-header d-flex justify-content-between align-items-center">
+                <h4 className="h6 mb-0 d-flex align-items-center">
+                  <SectionIcon>
+                    <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                  </SectionIcon>
+                  מוזמנים וישיבה
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setIsTableLayoutOpen(true)}
+                  className={`btn btn-sm ${savedTables?.length ? 'btn-outline-primary' : 'btn-primary'}`}
+                >
+                  {savedTables?.length ? `${savedTables.length} שולחנות` : 'סידור שולחנות'}
+                </button>
+              </div>
+              <div className="card-body">
+              <div className="row g-2">
+                <div className="col-6">
+                  <label className="form-label">כמות מוזמנים סופית</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    min="0"
+                    value={formData.finalGuestCount || ''}
+                    onChange={e => handleInputChange('finalGuestCount', parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label">סוג ישיבה</label>
+                  <SegmentedControl
+                    value={formData.seatingType || 'separate'}
+                    options={SEPARATE_MIXED_OPTIONS}
+                    onChange={(v) => handleInputChange('seatingType', v)}
+                    ariaLabel="סוג ישיבה"
+                  />
+                </div>
+                <div className="col-6">
+                  <label className="form-label">שולחן כבוד</label>
+                  <select
+                    className="form-select"
+                    value={hasHonorTable === null ? '' : hasHonorTable ? 'yes' : 'no'}
+                    onChange={e => {
+                      if (e.target.value === '') {
+                        setHasHonorTable(null);
+                        handleInputChange('honorTableCount', undefined);
+                        return;
+                      }
+                      const yes = e.target.value === 'yes';
+                      setHasHonorTable(yes);
+                      if (!yes) handleInputChange('honorTableCount', undefined);
+                    }}
+                  >
+                    <option value="">—</option>
+                    <option value="yes">כן</option>
+                    <option value="no">לא</option>
+                  </select>
+                </div>
+              </div>
+              {hasHonorTable && (
+                <div className="row g-2">
+                  <div className="col-6">
+                    <label className="form-label">כמות בשולחן כבוד</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min="1"
+                      value={formData.honorTableCount ?? ''}
+                      onChange={e => handleInputChange(
+                        'honorTableCount',
+                        e.target.value === '' ? undefined : parseInt(e.target.value, 10)
+                      )}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {tableLayoutImageUrl && (
+                <div className={styles.tableLayoutPreviewBlock}>
+                  <img
+                    src={tableLayoutImageUrl}
+                    alt="סקיצת סידור שולחנות"
+                    className={styles.tableLayoutPreviewImg}
+                  />
+                </div>
+              )}
+
+              {formData.seatingType === 'separate' && (
+                <div className="row g-2">
+                  <div className="col-6">
+                    <label className="form-label">כמות גברים</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min="0"
+                      value={formData.menCount ?? ''}
+                      onChange={e => handleInputChange('menCount', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-6">
+                    <label className="form-label">כמות נשים</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      min="0"
+                      value={formData.womenCount ?? ''}
+                      onChange={e => handleInputChange('womenCount', e.target.value)}
+                    />
+                  </div>
+                  <div className="col-12">
+                    <label className="form-label">חלוקה (אחוזים)</label>
+                    {formData.menPercent != null && formData.womenPercent != null ? (
+                      <div className={styles.splitBadge}>
+                        <span className={styles.splitMen}>ג {formData.menPercent}%</span>
+                        <span className={styles.splitWomen}>נ {formData.womenPercent}%</span>
+                      </div>
+                    ) : (
+                      <div className={styles.splitBadgeEmpty}>—</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {portionBilling && (
+                <div
+                  className={styles.portionStrip}
+                  title={
+                    portionBilling.seatingType === 'separate'
+                      ? `גברים: ${portionBilling.menCount} → ${portionBilling.menBillablePortions} מנות · נשים: ${portionBilling.womenCount} → ${portionBilling.womenBillablePortions} מנות`
+                      : `מוזמנים: ${formData.finalGuestCount} → ${portionBilling.totalBillablePortions} מנות`
+                  }
+                >
+                  <span className={styles.portionStripLabel}>מנות לחיוב:</span>
+                  <span className={styles.portionStripStrong}>
+                    {portionBilling.totalBillablePortions} × {portionBilling.pricePerPortion} ₪ = {portionBilling.totalAmount.toLocaleString('he-IL')} ₪
+                  </span>
+                </div>
+              )}
+              </div>
+            </div>
+
+            <div className={`card mb-0 ${styles.boardMenu}`}>
+              <div className="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                  <h4 className="h6 mb-1 d-flex align-items-center">
+                    <SectionIcon>
+                      <svg viewBox="0 0 24 24"><path d="M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 0 0 0 5.66l4.19 4.18zm6.78-1.81a11.044 11.044 0 0 1-2.83 2.83l2.83 2.83 2.83-2.83-2.83-2.83zM20.49 19.63l-1.41-1.41-2.83 2.83 2.83 2.83 1.41-1.41-2.83-2.83 2.83-2.82z"/></svg>
+                    </SectionIcon>
+                    תפריט האירוע
+                  </h4>
+                  {selectedMenu ? (
+                    <>
+                      <span className="badge text-bg-success">✓ תפריט נבחר</span>
+                      {menuStats && (
+                        <p className="small text-muted mb-0 mt-1">
+                          {menuStats.categories} קטגוריות · {menuStats.items} מנות
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <span className="badge text-bg-warning">טרם נבחר תפריט</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen(true)}
+                  className={`btn ${selectedMenu ? 'btn-outline-primary' : 'btn-primary'}`}
+                >
+                  {selectedMenu ? 'ערוך תפריט' : 'בחירת תפריט'}
+                </button>
+              </div>
+            </div>
+            </div>
+
+            <div className={styles.boardColumn}>
             {/* תשלומים וכשרות */}
-            <div className={`${styles.section} ${styles.boardPay}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
+            <div className={`card mb-0 ${styles.boardPay}`}>
+              <div className="card-header maple-section-header">
+                <h4 className="h6 mb-0 d-flex align-items-center">
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V6h16v12zM4 10h16v2H4v-2z"/></svg>
                   </SectionIcon>
@@ -1339,9 +1395,9 @@ const EventFormManager = () => {
                 </h4>
               </div>
 
-              <div className={styles.sectionInner}>
+              <div className="card-body">
               <div className={styles.payGrid}>
-                <div className={styles.payStatusRow}>
+                <div className="d-flex flex-wrap gap-2 mb-3">
                   {(depositCheckFile || formData.depositCheckUrl) ? (
                     <span className={styles.payStatusOk}>✓ צ&apos;ק צורף</span>
                   ) : (
@@ -1353,18 +1409,18 @@ const EventFormManager = () => {
                     <span className={styles.payStatusWarn}>⚠ יש לבחור כשרות</span>
                   )}
                 </div>
-                <div className={styles.payActions}>
-                  <button type="button" className={styles.btnOutline} onClick={() => setShowCamera(true)}>
+                <div className="d-flex flex-wrap gap-2 mb-3">
+                  <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowCamera(true)}>
                     צלם
                   </button>
-                  <button type="button" className={styles.uploadBtn} onClick={() => document.getElementById('fileInput')?.click()}>
+                  <button type="button" className="btn btn-sm btn-primary" onClick={() => document.getElementById('fileInput')?.click()}>
                     העלה
                   </button>
-                  <input type="file" id="fileInput" accept="image/*" onChange={handleFileChange} className={styles.hiddenInput} />
-                  <label className={styles.checkboxInline}>
-                    <input type="checkbox" checked={formData.depositCheckStatus || false} onChange={e => handleCheckboxChange('depositCheckStatus', e.target.checked)} />
-                    צ&apos;ק קיבל
-                  </label>
+                  <input type="file" id="fileInput" accept="image/*" onChange={handleFileChange} className="d-none" />
+                  <div className="form-check">
+                    <input type="checkbox" className="form-check-input" id="deposit-received" checked={formData.depositCheckStatus || false} onChange={e => handleCheckboxChange('depositCheckStatus', e.target.checked)} />
+                    <label className="form-check-label" htmlFor="deposit-received">צ&apos;ק קיבל</label>
+                  </div>
                 </div>
 
                 {(formData.depositCheckUrl || formData.depositCheckDetails) && (
@@ -1373,19 +1429,18 @@ const EventFormManager = () => {
                     imageUrl={formData.depositCheckUrl}
                     scanning={checkScanning}
                     onChange={details => handleInputChange('depositCheckDetails', details)}
-                    styles={styles}
                   />
                 )}
 
-                <div className={styles.row}>
-                  <div className={styles.field}>
-                    <label>קוד אקו"ם</label>
-                    <input type="text" readOnly value={selected.akumApprovalCode || 'לא הוזן'} className={selected.akumApprovalCode ? styles.inputReadonlyOk : styles.inputReadonlyEmpty} />
+                <div className="row g-2">
+                  <div className="col-6">
+                    <label className="form-label">קוד אקו&quot;ם</label>
+                    <input type="text" readOnly value={selected.akumApprovalCode || 'לא הוזן'} className={`form-control bg-light ${selected.akumApprovalCode ? 'text-success' : 'text-muted'}`} />
                   </div>
-                  <div className={styles.field}>
-                    <label>כשרות</label>
+                  <div className="col-6">
+                    <label className="form-label">כשרות</label>
                     <div className={styles.kashrutRow}>
-                      <select value={formData.kashrut || ''} onChange={(e) => handleInputChange('kashrut', e.target.value)}>
+                      <select className="form-select" value={formData.kashrut || ''} onChange={(e) => handleInputChange('kashrut', e.target.value)}>
                         <option value="">בחר...</option>
                         {KASHRUT_LIST.map((kName, idx) => (
                           <option key={idx} value={kName}>{kName}</option>
@@ -1402,16 +1457,16 @@ const EventFormManager = () => {
                   </div>
                 </div>
 
-                <div className={styles.payFooter}>
-                  <label className={styles.checkboxInline}>
-                    <input type="checkbox" checked={formData.akumPaid || !!selected.akumApprovalCode} onChange={e => handleCheckboxChange('akumPaid', e.target.checked)} />
-                    שילם לאקו"ם
-                  </label>
+                <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
+                  <div className="form-check">
+                    <input type="checkbox" className="form-check-input" id="akum-paid" checked={formData.akumPaid || !!selected.akumApprovalCode} onChange={e => handleCheckboxChange('akumPaid', e.target.checked)} />
+                    <label className="form-check-label" htmlFor="akum-paid">שילם לאקו&quot;ם</label>
+                  </div>
                   {selected.clientSignatureUrl && (
                     <img src={selected.clientSignatureUrl} alt="חוזה" className={styles.signatureThumb} title="חוזה חתום" />
                   )}
                   {(depositCheckFile || formData.depositCheckUrl) && (
-                    <button onClick={handleDeleteCheckImage} className={styles.deleteBtn}>מחק צ'ק</button>
+                    <button onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">מחק צ&apos;ק</button>
                   )}
                 </div>
               </div>
@@ -1426,74 +1481,41 @@ const EventFormManager = () => {
               )}
             </div>
 
-            <div className={`${styles.section} ${styles.boardMenu}`}>
-              <div className={styles.menuRow}>
-                <div>
-                  <h4 className={styles.inlineTitle}>
-                    <span className={styles.sectionHeaderTitle}>
-                      <SectionIcon>
-                        <svg viewBox="0 0 24 24"><path d="M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 0 0 0 5.66l4.19 4.18zm6.78-1.81a11.044 11.044 0 0 1-2.83 2.83l2.83 2.83 2.83-2.83-2.83-2.83zM20.49 19.63l-1.41-1.41-2.83 2.83 2.83 2.83 1.41-1.41-2.83-2.83 2.83-2.82z"/></svg>
-                      </SectionIcon>
-                      תפריט האירוע
-                    </span>
-                  </h4>
-                  {selectedMenu ? (
-                    <>
-                      <span className={styles.statusOk}>✓ תפריט נבחר</span>
-                      {menuStats && (
-                        <p className={styles.menuSummary}>
-                          {menuStats.categories} קטגוריות · {menuStats.items} מנות
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <span className={styles.statusPending}>טרם נבחר תפריט</span>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsMenuOpen(true)}
-                  className={selectedMenu ? styles.btnSecondary : styles.btnPrimary}
-                >
-                  {selectedMenu ? 'ערוך תפריט' : 'בחירת תפריט'}
-                </button>
-              </div>
-            </div>
-
-            <div className={`${styles.section} ${styles.boardNotes}`}>
-              <div className={styles.sectionHeader}>
-                <h4 className={styles.sectionHeaderTitle}>
+            <div className={`card mb-0 ${styles.boardNotes}`}>
+              <div className="card-header maple-section-header d-flex justify-content-between align-items-center">
+                <h4 className="h6 mb-0 d-flex align-items-center">
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                   </SectionIcon>
                   הערות
                 </h4>
-                {notesList.length > 0 && <span className={styles.notesBadge}>{notesList.length}</span>}
+                {notesList.length > 0 && <span className="badge text-bg-secondary">{notesList.length}</span>}
               </div>
-              <div className={styles.sectionInner}>
+              <div className="card-body">
               {notesList.length > 0 && (
-                <div className={styles.notesList}>
+                <div className={styles.notesScroll}>
                   {notesList.map((note, idx) => (
-                    <div key={idx} className={styles.noteItem}>
-                      <span className={styles.noteNumber}>{idx + 1}.</span>
-                      <span className={styles.noteText}>{note}</span>
-                      <button onClick={() => removeNote(idx)} className={styles.removeNoteBtn}>✕</button>
+                    <div key={idx} className="d-flex align-items-start gap-2 mb-2">
+                      <span className="text-muted">{idx + 1}.</span>
+                      <span className="flex-grow-1">{note}</span>
+                      <button onClick={() => removeNote(idx)} className="btn btn-sm btn-outline-danger">✕</button>
                     </div>
                   ))}
                 </div>
               )}
-              <div className={styles.addNoteRow}>
+              <div className="input-group">
                 <input
                   type="text"
                   placeholder="הוסף הערה..."
                   value={newNote}
                   onChange={e => setNewNote(e.target.value)}
                   onKeyPress={e => e.key === 'Enter' && addNote()}
-                  className={styles.noteInput}
+                  className="form-control"
                 />
-                <button onClick={addNote} className={styles.addNoteBtn}>+</button>
+                <button onClick={addNote} className="btn btn-outline-primary">+</button>
               </div>
               </div>
+            </div>
             </div>
             </div>
 
@@ -1549,6 +1571,7 @@ const EventFormManager = () => {
                     <FloorPlanBuilder
                       key={`${selected.id}-${savedTables?.length ?? 0}-${layoutGuestCount}`}
                       initialTables={savedTables}
+                      draftEventId={selected.id}
                       guestCount={layoutGuestCount}
                       seatingType={formData.seatingType || 'separate'}
                       menPercent={formData.menPercent}
@@ -1565,30 +1588,29 @@ const EventFormManager = () => {
 
           </div>
 
-            <p className={styles.formTip}>
+            <p className="small text-muted px-3 mb-0">
               * המחיר אינו כולל טיפ כמקובל במקום
             </p>
 
-            <div className={styles.formFooter}>
-              <div className={styles.formFooterInner}>
-                <button onClick={() => setSelected(null)} className={styles.cancelBtn}>ביטול</button>
+            <div className="card-footer maple-form-footer d-flex flex-wrap gap-2 justify-content-between">
+                <button onClick={() => setSelected(null)} className="btn btn-outline-secondary">ביטול</button>
 
                 <button
                   onClick={handleSaveForm}
-                  className={styles.saveBtn}
+                  className="btn btn-primary"
                   disabled={actionBusy}
                 >
                   {submitting ? 'שומר...' : 'שמירת טופס'}
                 </button>
 
-                <div className={styles.formFooterSecondary}>
+                <div className="d-flex flex-wrap gap-2">
                   <button
                     onClick={handleSaveAndDownloadPDF}
                     disabled={actionBusy}
-                    className={styles.downloadBtn}
-                    title="שמור והורד PDF"
+                    className="btn btn-outline-primary"
+                    title="שמור והורד טופס הפקה"
                   >
-                    {submitting ? 'שומר...' : 'הורד PDF'}
+                    {submitting ? 'שומר...' : 'הורד טופס הפקה'}
                   </button>
 
                   <button
@@ -1597,27 +1619,20 @@ const EventFormManager = () => {
                       const textMsg = `שלום, מצורף עדכון לגבי טופס הפקת אירוע - משפחת ${clientName} בתאריך ${dateStr(selected)}.\nמוזמנים: ${formData.finalGuestCount || 'לא צוין'}.`;
                       window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
                     }}
-                    className={styles.whatsappBtn}
+                    className="btn btn-success"
                     title={!isFormValid() ? 'יש למלא טופס לפני שיתוף' : 'שלח לווצאפ'}
                   >
-                    <svg className={styles.btnIcon} fill="currentColor" viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7.9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"></path>
-                    </svg>
                     שלח ווצאפ
                   </button>
                   <button
                     onClick={handleSendEmail}
                     disabled={actionBusy}
-                    className={styles.emailBtn}
+                    className="btn btn-outline-secondary"
                     title="שמור ושלח למייל"
                   >
-                    <svg className={styles.btnIcon} fill="currentColor" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M48 64C21.5 64 0 85.5 0 112c0 15.1 7.1 29.3 19.2 38.4L236.8 313.6c11.4 8.5 27 8.5 38.4 0L492.8 150.4c12.1-9.1 19.2-23.3 19.2-38.4c0-26.5-21.5-48-48-48H48zM0 176V384c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V176L294.4 339.2c-22.8 17.1-54 17.1-76.8 0L0 176z"></path>
-                    </svg>
                     {emailSending ? 'שולח...' : 'שלח למייל'}
                   </button>
                 </div>
-              </div>
             </div>
           </div>
       )}

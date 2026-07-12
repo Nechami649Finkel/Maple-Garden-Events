@@ -108,7 +108,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
     const serverMap = new Map<string, any>(datesList.map((d: any) => [d.date, d]));
     const days: (DayData & { col: number; row: number })[] = [];
     const loop = new Date(startDate);
-    let row = 2;
+    let row = 1;
     while (loop <= endDate) {
       const key = formatDateLocal(loop);
       const srv = serverMap.get(key);
@@ -134,7 +134,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
   };
 
   const grid = buildGrid();
-  const weekRowCount = grid.length > 0 ? Math.max(...grid.map((d) => d.row)) - 1 : 5;
+  const weekRowCount = grid.length > 0 ? Math.max(...grid.map((d) => d.row)) : 5;
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
@@ -198,48 +198,56 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
         </div>
       </div>
 
-      <div className="calendar-nav" style={{ direction: 'rtl' }}>
-        <button className="nav-btn year-btn" onClick={nextYear}>»</button>
-        <button className="nav-btn" onClick={nextMonth}>›</button>
-        <div className="months-bar">
-          {MONTH_NAMES.map((name, i) => (
-            <div key={name} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{name}</div>
-          ))}
+      <div className="calendar-header-nav">
+        <div className="year-nav" style={{ direction: 'rtl' }}>
+          <button className="nav-btn year-btn" onClick={nextYear} aria-label="שנה הבאה">»</button>
+          <span className="year-display">{year}</span>
+          <button className="nav-btn year-btn" onClick={prevYear} aria-label="שנה קודמת">«</button>
         </div>
-        <button className="nav-btn" onClick={prevMonth}>‹</button>
-        <button className="nav-btn year-btn" onClick={prevYear}>«</button>
-      </div>
 
-      <div className="year-display">{year}</div>
+        <div className="calendar-nav" style={{ direction: 'rtl' }}>
+          <button className="nav-btn" onClick={nextMonth} aria-label="חודש הבא">›</button>
+          <div className="months-bar">
+            {MONTH_NAMES.map((name, i) => (
+              <div key={name} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{name}</div>
+            ))}
+          </div>
+          <button className="nav-btn" onClick={prevMonth} aria-label="חודש קודם">‹</button>
+        </div>
+      </div>
 
       {loading ? <div className="calendar-loading">טוען נתונים...</div> : isError ? (
         <div className="calendar-loading">שגיאה בטעינת לוח השנה — ודאי שהשרת רץ על פורט 5000</div>
       ) : (
         <div className="calendar-grid-wrapper">
+          <div className="calendar-weekdays-bar">
+            {COL_HEADERS.map((d) => <div key={d} className="week-day-label">{d}</div>)}
+          </div>
           <div
             className="calendar-grid calendar-grid-uniform"
             style={{ ['--calendar-week-rows' as string]: weekRowCount } as React.CSSProperties}
           >
-            {COL_HEADERS.map((d, i) => <div key={d} className="week-day-label" style={{ gridColumn: i + 1, gridRow: 1 }}>{d}</div>)}
             {grid.map(day => {
               const isToday = day.date === todayStr;
               const isPast = day.date < todayStr;
               
+              const dayNum = new Date(day.date + 'T12:00:00').getDate();
+
+              const bookingCount = day.bookings?.length ?? 0;
               const cls = [
                 'calendar-cell',
                 `status-${day.status.toLowerCase()}`,
                 !day.isCurrentMonth ? 'out-of-month' : '',
                 isToday ? 'is-today' : '',
                 isPast && day.isCurrentMonth ? 'is-past' : '',
+                isPast && day.isCurrentMonth && bookingCount > 0 ? 'is-past-has-events' : '',
               ].filter(Boolean).join(' ');
-              
-              const dayNum = new Date(day.date + 'T12:00:00').getDate();
-
-              const bookingCount = day.bookings?.length ?? 0;
               const isHardBlocked = day.status === 'BLOCKED' && bookingCount === 0;
-              const isCellDisabled = !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || isPast;
+              const canViewPastEvents = isPast && bookingCount > 0;
+              const isCellDisabled =
+                !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || (isPast && !canViewPastEvents);
               const ariaLabel = day.isCurrentMonth
-                ? `${dayNum} ${day.hebrewDate || ''}, ${bookingCount} אירועים${day.reason ? `, ${day.reason}` : ''}`
+                ? `${dayNum} ${day.hebrewDate || ''}, ${bookingCount} אירועים${day.reason ? `, ${day.reason}` : ''}${canViewPastEvents ? ', לחצי לצפייה בפרטים' : ''}`
                 : `${dayNum}`;
 
               return (
@@ -251,8 +259,12 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
                   aria-label={ariaLabel}
                   disabled={isCellDisabled}
                   onClick={() => {
-                  if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || isPast) return;
-                  
+                  if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked) return;
+                  if (isPast) {
+                    if (bookingCount > 0) setSelectedDay(day);
+                    return;
+                  }
+
                   if (day.bookings.length > 0) { setSelectedDay(day); return; }
                   setSelectedDateForAction(day.date); setIsActionModalOpen(true);
                 }}>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { getSignatureDataUrl } from '../../../utils/signature';
+import { openContractPdf } from '../../../utils/contractPrint';
 import ContractTextViewer from './ContractTextViewer';
 import modalStyles from './ContractModal.module.css';
 
@@ -13,6 +14,7 @@ interface ContractModalProps {
   onSignatureSaved?: (dataUrl: string) => void;
   contractText: string;
   onContractTextChange: (text: string) => void;
+  bookingId?: string;
   styles?: Record<string, string>;
 }
 
@@ -25,6 +27,7 @@ const ContractModal = ({
   onSignatureSaved,
   contractText,
   onContractTextChange,
+  bookingId,
 }: ContractModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
@@ -85,20 +88,31 @@ const ContractModal = ({
 
             <div className={modalStyles.toolbar}>
               <span className={modalStyles.toolbarTitle}>מלל החוזה לאירוע זה</span>
-              {!isEditing ? (
-                <button type="button" onClick={startEditing} className={modalStyles.editBtn}>
-                  ✏️ עריכת מלל החוזה
-                </button>
-              ) : (
-                <div className={modalStyles.editActions}>
-                  <button type="button" onClick={saveEditing} className="maple-btn maple-btn-primary">
-                    שמירה
+              <div className={modalStyles.toolbarActions}>
+                {bookingId && !isEditing && (
+                  <button
+                    type="button"
+                    className="maple-btn maple-btn-secondary"
+                    onClick={() => void openContractPdf(bookingId)}
+                  >
+                    צפייה ב-PDF החוזה
                   </button>
-                  <button type="button" onClick={cancelEditing} className="maple-btn maple-btn-secondary">
-                    ביטול
+                )}
+                {!isEditing ? (
+                  <button type="button" onClick={startEditing} className={modalStyles.editBtn}>
+                    ✏️ עריכת מלל החוזה
                   </button>
-                </div>
-              )}
+                ) : (
+                  <div className={modalStyles.editActions}>
+                    <button type="button" onClick={saveEditing} className="maple-btn maple-btn-primary">
+                      שמירה
+                    </button>
+                    <button type="button" onClick={cancelEditing} className="maple-btn maple-btn-secondary">
+                      ביטול
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {isEditing ? (

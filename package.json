@@ -6,7 +6,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "export:booking-design": "playwright test tests/e2e/export-booking-form-design.spec.ts",
+    "export:booking-design-pdf": "playwright test tests/e2e/export-booking-form-design.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2"

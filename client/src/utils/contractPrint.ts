@@ -5,17 +5,35 @@ export function getContractPdfUrl(bookingId: string | number): string {
   return `${API_BASE}/api/bookings/${bookingId}/contract-pdf`;
 }
 
+async function parseApiError(response: Response): Promise<string> {
+  const err = await response.json().catch(() => ({}));
+  return (err as { message?: string }).message || 'לא ניתן לטעון את החוזה';
+}
+
 export async function fetchContractPdf(bookingId: string | number): Promise<Blob> {
   const response = await secureFetch(getContractPdfUrl(bookingId));
+  const contentType = response.headers.get('Content-Type') || '';
+
   if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error((err as { message?: string }).message || 'לא ניתן לטעון את החוזה');
+    throw new Error(await parseApiError(response));
   }
+
+  if (!contentType.includes('application/pdf')) {
+    throw new Error(await parseApiError(response));
+  }
+
   return response.blob();
 }
 
-export function openContractPdf(bookingId: string | number): void {
-  window.open(getContractPdfUrl(bookingId), '_blank');
+export async function openContractPdf(bookingId: string | number): Promise<void> {
+  try {
+    const blob = await fetchContractPdf(bookingId);
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  } catch (e) {
+    alert(e instanceof Error ? e.message : 'לא ניתן לטעון את החוזה');
+  }
 }
 
 /** פותח דיאלוג הדפסה של הדפדפן — המשתמש בוחר מדפסת מחוברת */
@@ -57,7 +75,7 @@ export async function promptPrintAfterClose(bookingId: string | number): Promise
   if (!shouldPrint) return;
   try {
     await printContract(bookingId);
-  } catch {
-    alert('לא הצלחנו להדפיס את החוזה. ניתן להדפיס מאוחר יותר ממסך עריכת ההזמנה.');
+  } catch (e) {
+    alert(e instanceof Error ? e.message : 'לא הצלחנו להדפיס את החוזה. ניתן להדפיס מאוחר יותר ממסך עריכת ההזמנה.');
   }
 }

@@ -81,9 +81,22 @@
     flex: 1;
     min-height: 0;
     width: 100%;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-page-wrap {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-form-container {
+    flex: 1;
+    min-height: 0;
   }
 
   .app-layout-main-fullwidth {
@@ -104,9 +117,22 @@
   .app-layout-main-fill {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-page-wrap {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-form-container {
+    flex: 1;
+    min-height: 0;
   }
 
   .app-layout-main-fullwidth {

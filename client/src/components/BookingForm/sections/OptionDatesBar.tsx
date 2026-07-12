@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import styles from '../BookingForm.module.css';
 import { type TimeSlot, SLOT_LABELS, normalizeTimeSlot } from '../../../utils/timeSlot';
 import { validateOptionDateSelection } from '../../../utils/optionDateValidation';

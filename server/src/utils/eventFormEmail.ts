@@ -1,6 +1,6 @@
 import prisma from '../config/prisma';
 import { sendPDFToClient, sendWhatsAppMessage } from '../Services/emailService';
-import { generateEventFormPDF } from './pdfGenerator';
+import { buildBookingPdfData, generateEventProductionPDF } from './pdfGenerator';
 
 export const EVENT_FORM_EMAIL_COOLDOWN_MS = 60 * 1000;
 
@@ -67,23 +67,7 @@ export async function sendEventFormEmailIfAllowed(
       return { sent: false, skipped: false, error: 'לא מוגדרות כתובות אימייל ללקוחות אלו' };
     }
 
-    const pdfData = {
-      eventCode: booking.eventCode,
-      clientAFullName: booking.clientAFullName,
-      clientAIdNumber: booking.clientAIdNumber,
-      clientBFullName: booking.clientBFullName || undefined,
-      clientBIdNumber: booking.clientBIdNumber || undefined,
-      eventDate: booking.eventDate.date.toString(),
-      guestCount: booking.guestCount,
-      minimumGuestCount: booking.minimumGuestCount ?? booking.guestCount,
-      eventType: booking.eventType,
-      timeOfDay: booking.timeOfDay || undefined,
-      clientSignatureUrl: booking.clientSignatureUrl,
-      contractText: booking.contractText,
-      eventForm: booking.eventForm,
-    };
-
-    const pdfBuffer = await generateEventFormPDF(pdfData);
+    const pdfBuffer = await generateEventProductionPDF(buildBookingPdfData(booking));
 
     for (const email of emails) {
       await sendPDFToClient(

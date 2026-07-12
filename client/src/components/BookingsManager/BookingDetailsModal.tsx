@@ -296,9 +296,9 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               עריכת פרטי ההזמנה
             </button>
 
-            {booking.isContractSigned && (
+            {booking.id && (
               <>
-                <button type="button" className={styles.btnSecondary} onClick={() => openContractPdf(booking.id)}>
+                <button type="button" className={styles.btnSecondary} onClick={() => void openContractPdf(booking.id)}>
                   צפייה בחוזה
                 </button>
                 <button
@@ -307,14 +307,20 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
                   onClick={async () => {
                     try {
                       await printContract(booking.id);
-                    } catch {
-                      alert('לא הצלחנו להדפיס את החוזה.');
+                    } catch (e) {
+                      alert(e instanceof Error ? e.message : 'לא הצלחנו להדפיס את החוזה.');
                     }
                   }}
                 >
                   הדפסת חוזה
                 </button>
               </>
+            )}
+
+            {booking.isContractSigned && !booking.clientSignatureUrl && (
+              <p className={styles.editBlockedMsg}>
+                החוזה מסומן כחתום, אך תמונת החתימה חסרה. יש לחתום מחדש בעריכת ההזמנה.
+              </p>
             )}
 
             {!editable && (

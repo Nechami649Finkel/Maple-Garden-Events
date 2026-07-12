@@ -16,9 +16,9 @@ import { logger } from '../utils/logger';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-function issueSession(res: Response, email: string, name: string) {
-  const accessToken = signAccessToken(email, name);
-  const refreshToken = signRefreshToken(email, name);
+function issueSession(res: Response, email: string, name: string, role: string) {
+  const accessToken = signAccessToken(email, name, role);
+  const refreshToken = signRefreshToken(email, name, role);
   const csrfToken = generateCsrfToken();
   setSessionCookies(res, accessToken, refreshToken, csrfToken);
 }
@@ -55,12 +55,12 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    issueSession(res, googleUserEmail, userName);
+    issueSession(res, googleUserEmail, userName, user.role || 'manager');
 
     return res.status(200).json({
       success: true,
       message: 'התחברת בהצלחה',
-      user: { role: 'manager', name: userName, email: googleUserEmail },
+      user: { role: user.role || 'manager', name: userName, email: googleUserEmail },
     });
   } catch (error) {
     logger.error('Google authentication failed', { error });
@@ -85,7 +85,7 @@ export const refresh = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: 'אין הרשאות גישה.' });
     }
 
-    issueSession(res, user.email, user.name);
+    issueSession(res, user.email, user.name, authorized.role || user.role || 'manager');
     return res.status(200).json({ success: true });
   } catch {
     clearSessionCookies(res);

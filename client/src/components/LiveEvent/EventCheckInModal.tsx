@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import EventCheckInBoard, {
@@ -8,6 +8,10 @@ import EventCheckInBoard, {
 import { API_URL } from '../../config/api';
 import { secureFetch } from '../../services/api';
 import { useCheckInQuery } from '../../hooks/queries';
+import {
+  enqueueCheckIn,
+  getPendingCheckInCount,
+} from '../../utils/offlineCheckInQueue';
 import styles from './LiveEvent.module.css';
 
 interface EventCheckInModalProps {
@@ -67,6 +71,7 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const { data, isLoading, error: queryError } = useCheckInQuery(bookingId);
+  const [pendingQueueCount, setPendingQueueCount] = useState(getPendingCheckInCount());
 
   const formData = useMemo(() => {
     if (!data?.checkIn) return null;
@@ -80,6 +85,12 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
     return () => {
       document.body.style.overflow = '';
     };
+  }, []);
+
+  useEffect(() => {
+    const refreshPending = () => setPendingQueueCount(getPendingCheckInCount());
+    window.addEventListener('online', refreshPending);
+    return () => window.removeEventListener('online', refreshPending);
   }, []);
 
   const handleSave = async (form: CheckInFormData) => {
@@ -97,21 +108,29 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
       customerSignature: form.customerSignature,
     };
 
-    const response = await secureFetch(`${API_URL}/check-in/${bookingId}`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await secureFetch(`${API_URL}/check-in/${bookingId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    const res = await response.json();
-    if (response.ok && res.success) {
-      await queryClient.invalidateQueries({ queryKey: ['check-in', bookingId] });
-      alert('טופס קבלת האולם נשמר בהצלחה');
+      const res = await response.json();
+      if (response.ok && res.success) {
+        await queryClient.invalidateQueries({ queryKey: ['check-in', bookingId] });
+        alert('טופס קבלת האולם נשמר בהצלחה');
+        onSaved?.();
+        onClose();
+        return;
+      }
+      alert(res.error || 'שגיאה בשמירה');
+    } catch {
+      enqueueCheckIn(bookingId, payload);
+      setPendingQueueCount(getPendingCheckInCount());
+      alert('אין חיבור לשרת — הנתונים נשמרו מקומית ויסונכרנו כשהחיבור יחזור.');
       onSaved?.();
       onClose();
-    } else {
-      alert(res.error || 'שגיאה בשמירה');
     }
   };
 
@@ -120,6 +139,11 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
       <div className={styles.checkInModalBox} onClick={(e) => e.stopPropagation()}>
         <div className={styles.checkInModalHeader}>
           <h2>טופס קבלת אולם{readOnly ? ' (צפייה בלבד)' : ''}</h2>
+          {pendingQueueCount > 0 && (
+            <span className={styles.checkInPendingBadge}>
+              {pendingQueueCount} ממתינים לסנכרון
+            </span>
+          )}
           <button type="button" className={styles.checkInModalClose} onClick={onClose}>
             ✕
           </button>

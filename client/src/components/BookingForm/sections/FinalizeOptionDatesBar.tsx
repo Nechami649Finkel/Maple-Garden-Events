@@ -1,6 +1,3 @@
-import React from 'react';
-import styles from '../BookingForm.module.css';
-
 interface RelatedOption {
   id: string;
   calendarDateId: string;
@@ -32,14 +29,14 @@ const FinalizeOptionDatesBar = ({ relatedOptions, selectedBookingId, onSelect }:
   if (relatedOptions.length <= 1) return null;
 
   return (
-    <div className={styles.optionDatesBar}>
-      <div className={styles.optionDatesBarHead}>
+    <div className="alert alert-info mb-3">
+      <div className="mb-2">
         <strong>בחירת תאריך סופי לאירוע</strong>
-        <span className={styles.optionDatesBarHint}>
+        <div className="small text-muted">
           באופציה נשמרו {relatedOptions.length} תאריכים — יש לבחור תאריך אחד. שאר התאריכים ישוחררו אוטומטית.
-        </span>
+        </div>
       </div>
-      <div className={styles.finalizeDateChoices}>
+      <div className="d-flex flex-wrap gap-2">
         {relatedOptions.map((opt) => {
           const dateStr = opt.eventDate?.date
             ? new Date(opt.eventDate.date).toISOString().split('T')[0]
@@ -50,7 +47,7 @@ const FinalizeOptionDatesBar = ({ relatedOptions, selectedBookingId, onSelect }:
           return (
             <label
               key={opt.id}
-              className={`${styles.finalizeDateChoice} ${isSelected ? styles.finalizeDateChoiceSelected : ''}`}
+              className={`btn ${isSelected ? 'btn-primary' : 'btn-outline-primary'}`}
             >
               <input
                 type="radio"
@@ -58,11 +55,10 @@ const FinalizeOptionDatesBar = ({ relatedOptions, selectedBookingId, onSelect }:
                 value={opt.id}
                 checked={isSelected}
                 onChange={() => onSelect(opt.id)}
+                className="d-none"
               />
-              <span className={styles.finalizeDateChoiceText}>
-                <strong>{formatDisplay(dateStr)}</strong>
-                {hebrew && <span className={styles.optionDateChipHeb}>{hebrew}</span>}
-              </span>
+              <strong>{formatDisplay(dateStr)}</strong>
+              {hebrew && <span className="small d-block">{hebrew}</span>}
             </label>
           );
         })}

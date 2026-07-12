@@ -275,6 +275,13 @@
   color: var(--maple-text-muted);
 }
 
+.contract-missing-msg {
+  display: block;
+  font-size: 0.78rem;
+  color: #b45309;
+  margin-top: 6px;
+}
+
 .event-card-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

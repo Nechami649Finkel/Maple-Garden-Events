@@ -3,13 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node src/server.ts",
+    "dev": "node --watch -r ts-node/register src/server.ts",
     "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/start-public-tunnel.ps1",
     "start": "node dist/server.js",
     "migrate:event-codes": "ts-node scripts/migrate-legacy-event-codes.ts",
+    "fix:contract-sync": "ts-node scripts/fix-contract-sync.ts",
     "verify:double-booking": "ts-node scripts/verify-no-double-booking.ts",
     "sentry:verify": "ts-node scripts/sentry-verify.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --require ts-node/register/transpile-only --test tests/contract-lineItems.test.ts"
   },
   "keywords": [],
   "author": "",

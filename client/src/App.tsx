@@ -10,9 +10,11 @@ import { AccessibilityProvider } from './context/AccessibilityContext';
 import { checkAuthSession } from './services/api';
 import { connectSocket, disconnectSocket } from './services/socketService';
 import { setupRealtimeSync, teardownRealtimeSync } from './services/realtimeSync';
+import { setupOfflineCheckInSync } from './utils/offlineCheckInQueue';
 import { queryClient } from './lib/queryClient';
 
 const BookingForm = lazy(() => import('./components/BookingForm/BookingForm'));
+const BookingFormDesignExport = lazy(() => import('./components/BookingForm/BookingFormDesignExport'));
 const OptionsManager = lazy(() => import('./components/OptionsManager/OptionsManager'));
 const BookingsManager = lazy(() => import('./components/BookingsManager/BookingsManager'));
 const GreetingBlast = lazy(() => import('./components/GreetingBlast/GreetingBlast'));
@@ -60,6 +62,10 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
+    if (import.meta.env.DEV && window.location.pathname.startsWith('/__design__/')) {
+      setIsAuthenticated(true);
+      return;
+    }
     checkAuthSession().then(setIsAuthenticated);
   }, []);
 
@@ -67,6 +73,11 @@ function App() {
     if (isAuthenticated) {
       connectSocket();
       setupRealtimeSync(queryClient);
+      setupOfflineCheckInSync((result) => {
+        if (result.synced > 0) {
+          queryClient.invalidateQueries({ queryKey: ['check-in'] });
+        }
+      });
     } else if (isAuthenticated === false) {
       teardownRealtimeSync();
       disconnectSocket();
@@ -93,6 +104,18 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/feedback/:token" element={<Lazy><FeedbackPage /></Lazy>} />
+          {import.meta.env.DEV && (
+            <Route
+              path="/__design__/booking-form"
+              element={
+                <Lazy>
+                  <AppLayout layout="viewportFill">
+                    <BookingFormDesignExport />
+                  </AppLayout>
+                </Lazy>
+              }
+            />
+          )}
 
           <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
           <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />

@@ -399,6 +399,16 @@
   font-size: 1.25rem;
 }
 
+.checkInPendingBadge {
+  font-size: 0.8rem;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  margin-inline: auto 0.5rem;
+}
+
 .checkInModalClose {
   background: none;
   border: none;
