@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '../BookingForm.module.css';
-import { calendarKeyFromDbDate } from '../../utils/dateLocal';
+import { calendarKeyFromDbDate } from '../../../utils/dateLocal';
 
 interface RelatedOption {
   id: string;

@@ -23,6 +23,7 @@ import {
   prismaCalendarDayWhere,
   localStartOfDay,
   parseCalendarDate,
+  calendarKeyFromDbDate,
 } from '../utils/dateLocal';
 import {
   normalizeTimeSlot,
@@ -34,6 +35,8 @@ import {
   getBookableSlotsForDate,
   type TimeSlot,
 } from '../utils/timeSlot';
+import { validateSlotAvailability } from '../utils/bookingDateValidation';
+import { syncOptionDatesOnEdit } from '../utils/optionDateSync';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import {
   allocateEventCode,
@@ -339,6 +342,19 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         throw err;
       }
 
+      const availabilityError = validateSlotAvailability(
+        parseDateLocal(calendarKey),
+        slot,
+        eventDate?.bookings ?? [],
+        data.eventType || 'חתונה',
+        isOption ? { blockShabbatEntirely: true } : undefined,
+      );
+      if (availabilityError) {
+        const err: any = new Error(availabilityError);
+        err.statusCode = 400;
+        throw err;
+      }
+
       if (!eventDate) {
         eventDate = await tx.eventDate.create({
           data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate },
@@ -465,6 +481,13 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       eventsToEmit.push({ dateId: eventDate.id, status: newStatus });
     }
   }, neonTransactionOptions));
+
+  if (createdBookings.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לשמור — אף תאריך לא עבר את הבדיקות.',
+    });
+  }
 
   eventsToEmit.forEach(ev => emitDateUpdated(ev));
   if (createdBookings.length > 0) {
@@ -756,15 +779,39 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
           where: { calendarDateId: { in: releaseDateIds } },
         });
       }
-    } else if (booking.isOption && data.optionDurationHours) {
-      const expiryDate = new Date();
-      expiryDate.setHours(expiryDate.getHours() + Number(data.optionDurationHours));
-      await tx.eventDate.update({
-        where: { id: booking.eventDate.id },
-        data: { optionExpiresAt: expiryDate },
-      });
     } else if (booking.isOption) {
       await syncEventDateWithOptionBookings(tx, booking.eventDate.id);
+
+      if (data.optionDurationHours) {
+        const expiryDate = new Date();
+        expiryDate.setHours(expiryDate.getHours() + Number(data.optionDurationHours));
+        await tx.eventDate.update({
+          where: { id: booking.eventDate.id },
+          data: { optionExpiresAt: expiryDate },
+        });
+      }
+
+      if (Array.isArray(data.allSelectedDates) && slot) {
+        const optionExpiresAt = data.optionDurationHours
+          ? (() => {
+              const expiry = new Date();
+              expiry.setHours(expiry.getHours() + Number(data.optionDurationHours));
+              return expiry;
+            })()
+          : booking.eventDate.optionExpiresAt;
+
+        const { updatedBy: _updatedBy, ...sharedFields } = updateData;
+        await syncOptionDatesOnEdit(
+          tx,
+          { ...booking, eventDate: booking.eventDate },
+          data,
+          slot,
+          timeString,
+          sharedFields,
+          prices,
+          optionExpiresAt,
+        );
+      }
     }
     
     return updatedBooking;

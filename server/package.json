@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node src/server.ts",
+    "build": "tsc",
+    "postinstall": "prisma generate",
     "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/start-public-tunnel.ps1",
     "start": "node dist/server.js",
     "migrate:event-codes": "ts-node scripts/migrate-legacy-event-codes.ts",
