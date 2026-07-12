@@ -13,6 +13,7 @@ import {
 import { sendManagerFinancialAlertEmail } from '../utils/mailer';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import { logger } from '../utils/logger';
+import { calendarKeyFromDbDate } from '../utils/dateLocal';
 import { emitFeedbackUpdated } from '../utils/realtime';
 
 type AdminSide = {
@@ -197,7 +198,7 @@ function buildAdminGroup(
     eventCode: booking.eventCode,
     eventType: booking.eventType,
     eventDate: booking.eventDate?.date
-      ? new Date(booking.eventDate.date).toISOString().split('T')[0]
+      ? calendarKeyFromDbDate(new Date(booking.eventDate.date))
       : null,
     clientAFullName: booking.clientAFullName,
     clientBFullName: booking.clientBFullName,
@@ -608,7 +609,7 @@ export const feedbackController = {
         .map((f) => ({
           eventCode: f.booking.eventCode,
           eventDate: f.booking.eventDate?.date
-            ? new Date(f.booking.eventDate.date).toISOString().split('T')[0]
+            ? calendarKeyFromDbDate(new Date(f.booking.eventDate.date))
             : null,
           eventType: f.booking.eventType,
           clients: [f.booking.clientAFullName, f.booking.clientBFullName].filter(Boolean).join(' · '),
@@ -623,7 +624,7 @@ export const feedbackController = {
         .map((f) => ({
           eventCode: f.booking.eventCode,
           eventDate: f.booking.eventDate?.date
-            ? new Date(f.booking.eventDate.date).toISOString().split('T')[0]
+            ? calendarKeyFromDbDate(new Date(f.booking.eventDate.date))
             : null,
           comment: f.comments!.trim(),
           score: f.averageScore,

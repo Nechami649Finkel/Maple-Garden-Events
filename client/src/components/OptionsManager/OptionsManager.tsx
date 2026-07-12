@@ -8,6 +8,7 @@ import { API_URL } from '../../config/api';
 import { PageHeader } from '../ui/PageHeader';
 import { Input } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 
 const HEBREW_NUMERALS: Record<number, string> = {
   1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',
@@ -168,7 +169,7 @@ const OptionsManager = () => {
           booking={notifyOption}
           eventDateStr={
             notifyOption.eventDate?.date
-              ? new Date(notifyOption.eventDate.date).toISOString().split('T')[0]
+              ? calendarKeyFromDbDate(new Date(notifyOption.eventDate.date))
               : ''
           }
           onClose={() => setNotifyOption(null)}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { canEditBooking } from '../../utils/bookingEdit';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { parseNotes, parseNotesBundle } from '../../utils/notesStorage';
 import { openContractPdf, printContract } from '../../utils/contractPrint';
@@ -16,7 +16,7 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
   const navigate = useNavigate();
 
   const eventDateStr = booking.eventDate?.date
-    ? new Date(booking.eventDate.date).toISOString().split('T')[0]
+    ? calendarKeyFromDbDate(new Date(booking.eventDate.date))
     : '';
   const dateDisplay = booking.eventDate?.date
     ? new Date(booking.eventDate.date).toLocaleDateString('he-IL')

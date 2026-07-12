@@ -342,8 +342,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     const addrA = parseAddress(b.clientAAddress);
     const addrB = parseAddress(b.clientBAddress);
     const eventDateStr = b.eventDate?.date ? calendarKeyFromDbDate(new Date(b.eventDate.date)) : '';
-    if (!convertFromOption) {
-      setIsOption(b.eventDate?.status === 'OPTION');
+    if (convertFromOption) {
+      setIsOption(false);
+    } else {
+      setIsOption(!!(b.isOption || b.eventDate?.status === 'OPTION'));
       setOrderNumber(b.eventCode || b.id.slice(0, 8));
     }
     if (eventDateStr) setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: '' }]);
@@ -409,24 +411,38 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         }
         applyBookingToForm(b);
         setActiveBookingId(b.id);
-        setIsOption(false);
 
-        if (convertFromOption) {
+        const loadRelatedOptions = async (bookingId: string) => {
           try {
-            const relatedRes = await apiFetch(`${API_URL}/bookings/${b.id}/related-options`);
+            const relatedRes = await apiFetch(`${API_URL}/bookings/${bookingId}/related-options`);
             if (relatedRes.ok) {
               const relatedJson = await relatedRes.json();
-              if (relatedJson.success && Array.isArray(relatedJson.data)) {
-                setRelatedOptions(relatedJson.data.length > 0 ? relatedJson.data : [b]);
-              } else {
-                setRelatedOptions([b]);
+              if (relatedJson.success && Array.isArray(relatedJson.data) && relatedJson.data.length > 0) {
+                return relatedJson.data;
               }
-            } else {
-              setRelatedOptions([b]);
             }
-          } catch {
-            setRelatedOptions([b]);
-          }
+          } catch {}
+          return [b];
+        };
+
+        const applyRelatedOptionDates = (related: any[]) => {
+          setSelectedDatesDisplay(
+            related
+              .map((opt: any) => ({
+                date: opt.eventDate?.date ? calendarKeyFromDbDate(new Date(opt.eventDate.date)) : '',
+                hebrewDate: opt.eventDate?.hebrewDate || '',
+              }))
+              .filter((d) => d.date)
+          );
+        };
+
+        if (convertFromOption) {
+          const related = await loadRelatedOptions(b.id);
+          setRelatedOptions(related);
+        } else if (isStillOption) {
+          const related = await loadRelatedOptions(b.id);
+          setRelatedOptions(related);
+          applyRelatedOptionDates(related);
         }
       } catch {
         alert('שגיאה בטעינת ההזמנה');

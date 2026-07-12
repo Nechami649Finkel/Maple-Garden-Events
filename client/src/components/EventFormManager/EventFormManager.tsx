@@ -13,6 +13,7 @@ import type { TableData } from '../FloorPlanBuilder/FloorPlanBuilder';
 import { serverTablesToClient, clientTablesToServer } from '../../constants/defaultTableLayout';
 import { calculatePortionBilling, MIN_PORTIONS_MIXED, MIN_PORTIONS_PER_UNIT } from '../../utils/portionBilling';
 import { hasEventEnded } from '../../utils/eventStart';
+import { todayCalendarKey } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
 import { secureFetch } from '../../services/api';
 import {
@@ -442,7 +443,7 @@ const EventFormManager = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `event-form-${selected.clientAFullName}-${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = `event-form-${selected.clientAFullName}-${todayCalendarKey()}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

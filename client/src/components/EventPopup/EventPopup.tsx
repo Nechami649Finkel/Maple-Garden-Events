@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { todayCalendarKey } from '../../utils/dateLocal';
 import { canEditBooking } from '../../utils/bookingEdit';
 import { canEditCheckIn, canViewCheckIn } from '../../utils/eventStart';
 import {
@@ -35,7 +36,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
   const isOptionDay = hasOptionOnDay(day);
   const dateDisplay = day.date.split('-').reverse().join('/');
   const hebrewDate = day.hebrewDate || '';
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayCalendarKey();
   const isPast = day.date < todayStr;
   const availableSlotsLabel = formatAvailableSlotsLabelForDate(day.date, bookings);
   const hasFreeSlots =
