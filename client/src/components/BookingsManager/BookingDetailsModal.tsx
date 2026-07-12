@@ -4,7 +4,9 @@ import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { parseNotes, parseNotesBundle } from '../../utils/notesStorage';
 import { openContractPdf, printContract } from '../../utils/contractPrint';
+import { canEditBooking } from '../../utils/bookingEdit';
 import { NotesList } from '../NotesList/NotesList';
+import HallInvoicesPanel from './HallInvoicesPanel';
 import styles from './BookingsManager.module.css';
 
 interface BookingDetailsModalProps {
@@ -101,7 +103,7 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
             )}
             {(booking.externalExtrasPrice ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>ספקים חיצוניים:</label>
+                <label>ספקים חיצוניים (לידיעה):</label>
                 <span>₪{booking.externalExtrasPrice?.toLocaleString() ?? 0}</span>
               </div>
             )}
@@ -112,7 +114,7 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
               </div>
             )}
             <div className={styles.popupRow}>
-              <label>סה"כ חשבון:</label>
+              <label>סה&quot;כ חשבון לאולם:</label>
               <span className={styles.totalPrice}>₪{booking.totalPrice?.toLocaleString() ?? 0}</span>
             </div>
             <div className={styles.popupRow}><label>שולם:</label><span>₪{booking.paidAmount?.toLocaleString() ?? 0}</span></div>
@@ -123,6 +125,9 @@ const BookingDetailsModal = ({ booking, onClose }: BookingDetailsModalProps) => 
               <div className={styles.popupRow}><label>סה"כ שולם:</label><span>₪{booking.totalPaid?.toLocaleString()}</span></div>
             )}
             <div className={styles.popupRow}><label>סטטוס תשלום:</label><span>{booking.paymentStatus || '—'}</span></div>
+
+            <HallInvoicesPanel bookingId={booking.id} isOption={booking.isOption} />
+
             <div className={styles.popupRow}><label>מוזיקה:</label><span>{booking.hasMusic ? 'כן' : 'לא'}</span></div>
             {booking.akumApprovalCode && (
               <div className={styles.popupRow}><label>קוד ע.ח:</label><span>{booking.akumApprovalCode}</span></div>

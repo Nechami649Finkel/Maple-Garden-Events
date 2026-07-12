@@ -40,6 +40,7 @@ interface PaymentAndUpgradesSectionProps {
     baseTotal: number;
     hallExtrasTotal: number;
     externalExtrasTotal: number;
+    hallTotal: number;
     finalTotal: number;
   };
   isFoodRelevant: boolean;
@@ -454,16 +455,18 @@ const PaymentAndUpgradesSection = ({
           </div>
 
           {totals.externalExtrasBase > 0 && (
-            <div className={styles.totalsBreakdown} style={{ marginBottom: '12px' }}>
-              <strong>תשלום לספקים חיצוניים</strong>
+            <div className={styles.totalsBreakdown} style={{ marginBottom: '12px', opacity: 0.92 }}>
+              <strong>ספקים חיצוניים — לידיעה בלבד</strong>
               <span>שדרוגים: ₪{totals.externalExtrasBase.toLocaleString()}</span>
               {totals.externalExtrasVat > 0 && <span>מע"מ: ₪{totals.externalExtrasVat.toLocaleString()}</span>}
               <span style={{ fontWeight: 700 }}>₪{totals.externalExtrasTotal.toLocaleString()}</span>
-              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>תשלום ישיר לספק — לא כולל בצ'ק לאולם</span>
+              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                תשלום ישיר לספק — לא נכלל בחשבון האולם / Easy Count
+              </span>
             </div>
           )}
 
-          <p className={styles.totalsFinal}>סה"כ הצעה: ₪ {totals.finalTotal.toLocaleString()}</p>
+          <p className={styles.totalsFinal}>סה&quot;כ לתשלום לאולם: ₪ {totals.hallTotal.toLocaleString()}</p>
           {isFoodRelevant && formData.guestCount && (
             <p className={styles.totalsNote}>
               {formData.guestCount} מנות בתשלום

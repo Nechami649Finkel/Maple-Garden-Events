@@ -30,6 +30,11 @@ import {
   getContractTemplate,
 } from '../controllers/booking';
 import { sendGreeting, getScheduledGreetings, cancelScheduledGreetingHandler } from '../controllers/greeting';
+import {
+  createBookingHallInvoice,
+  getBookingHallInvoices,
+} from '../controllers/easyCount.controller';
+import { createHallInvoiceSchema } from '../validators/easyCount.validator';
 import { generateEventFormPDF } from '../utils/pdfGenerator';
 
 const router = Router();
@@ -76,6 +81,9 @@ router.get('/:id/contract-pdf', catchAsync(async (req: Request, res: Response) =
   res.setHeader('Content-Disposition', `inline; filename="contract_${booking.eventCode || booking.id}.pdf"`);
   res.send(pdfBuffer);
 }));
+
+router.post('/:id/invoice', validate(createHallInvoiceSchema), createBookingHallInvoice);
+router.get('/:id/invoices', getBookingHallInvoices);
 
 // --- ראוטים סטטיסטיקה וקודים ---
 router.get('/stats/cancellations', getCancellationStats); 

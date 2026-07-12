@@ -16,6 +16,7 @@ import {
   buildExtrasLineItems,
   resolveFullContractText,
 } from '../../utils/contractSections';
+import { finalizeBookingTotals } from '../../utils/hallBilling';
 import { promptPrintAfterClose } from '../../utils/contractPrint';
 import { getSignatureDataUrl } from '../../utils/signature';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
@@ -641,10 +642,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const baseTotal = mainSubtotal + mainVat;
   const hallExtrasTotal = hallExtrasSubtotal + hallExtrasVat;
   const externalExtrasTotal = externalExtrasSubtotal + externalExtrasVat;
-  const extrasTotal = hallExtrasTotal;
-  const finalTotal = baseTotal + hallExtrasTotal + externalExtrasTotal;
 
-  return {
+  return finalizeBookingTotals({
     mainBase,
     hallExtrasBase,
     externalExtrasBase,
@@ -658,12 +657,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     baseTotal,
     hallExtrasTotal,
     externalExtrasTotal,
-    extrasTotal,
-    finalTotal,
     base: mainBase + hallExtrasBase + externalExtrasBase,
     subtotal: mainSubtotal + hallExtrasSubtotal + externalExtrasSubtotal,
     vatAmount: mainVat + hallExtrasVat + externalExtrasVat,
-  };
+  });
   };
 
   const totals = calculateTotals();
@@ -677,7 +674,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     const template = findPaymentTemplate(paymentTemplates, paymentTemplateId);
     if (!template) return;
     const paragraph = renderPaymentTermsText(template, {
-      total: totals.finalTotal,
+      total: totals.hallTotal,
       eventDate: getEventDateStr(),
     });
     setPaymentTermsText(paragraph);
@@ -686,7 +683,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     paymentTermsCustom,
     contractBaseText,
     paymentTemplates,
-    totals.finalTotal,
+    totals.hallTotal,
     selectedDatesDisplay,
     formData.calendarDateId,
   ]);

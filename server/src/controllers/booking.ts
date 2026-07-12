@@ -37,6 +37,7 @@ import {
 } from '../utils/timeSlot';
 import { validateSlotAvailability } from '../utils/bookingDateValidation';
 import { syncOptionDatesOnEdit } from '../utils/optionDateSync';
+import { extractHallPriceBreakdown } from '../utils/hallBilling';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import {
   allocateEventCode,
@@ -158,48 +159,6 @@ function validateHallRentalPriceInput(data: { eventType?: string; hallRentalPric
   return null;
 }
 
-function extractPriceBreakdown(
-  data: {
-    eventType?: string;
-    calculatedTotals?: {
-      baseTotal?: number;
-      hallExtrasTotal?: number;
-      externalExtrasTotal?: number;
-      extrasTotal?: number;
-      finalTotal?: number;
-    };
-    guestCount?: unknown;
-    finalPricePortion?: unknown;
-    hallRentalPrice?: unknown;
-  },
-  liveAdditionsTotal = 0,
-) {
-  const totals = data.calculatedTotals;
-  if (totals?.baseTotal !== undefined) {
-    const basePrice = Number(totals.baseTotal) || 0;
-    const extrasPrice = Number(totals.hallExtrasTotal ?? totals.extrasTotal) || 0;
-    const externalExtrasPrice = Number(totals.externalExtrasTotal) || 0;
-    return {
-      basePrice,
-      extrasPrice,
-      externalExtrasPrice,
-      liveAdditionsTotal,
-      totalPrice: basePrice + extrasPrice + externalExtrasPrice + liveAdditionsTotal,
-    };
-  }
-  if (totals?.finalTotal !== undefined) {
-    const totalPrice = Number(totals.finalTotal) + liveAdditionsTotal;
-    return { basePrice: totalPrice, extrasPrice: 0, externalExtrasPrice: 0, liveAdditionsTotal, totalPrice };
-  }
-  let fallback = 0;
-  if (isHallOnlyBooking(data)) {
-    fallback = Number(data.hallRentalPrice) || 0;
-  } else {
-    fallback = (Number(data.guestCount) || 0) * (Number(data.finalPricePortion) || 0);
-  }
-  return { basePrice: fallback, extrasPrice: 0, externalExtrasPrice: 0, liveAdditionsTotal, totalPrice: fallback + liveAdditionsTotal };
-}
-
 export const createBooking = catchAsync(async (req: AuthRequest, res: Response) => {
   const data = req.body;
   const isManager = req.user?.role === 'manager'; 
@@ -234,7 +193,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
 
   // חישוב מחירים מפוצלים: בסיס / תוספות / סה"כ
-  const prices = extractPriceBreakdown(data, 0);
+  const prices = extractHallPriceBreakdown(data, 0);
 
   const clientAPhoneCombined = data.clientAPhone2 ? `${data.clientAPhone} | נוסף: ${data.clientAPhone2}` : data.clientAPhone;
   const clientAAddressCombined = data.clientACity ? `${data.clientACity}, ${data.clientAAddress}` : data.clientAAddress;
@@ -668,7 +627,7 @@ export const updateBooking = catchAsync(async (req: Request, res: Response) => {
       : booking.timeOfDay);
 
   const liveTotal = Number(booking.liveAdditionsTotal) || 0;
-  const prices = extractPriceBreakdown(data, liveTotal);
+  const prices = extractHallPriceBreakdown(data, liveTotal);
   const isConverting = data.convertFromOption === true;
   const finalSignature = data.clientSignature ?? booking.clientSignatureUrl;
   let convertedEventCode: string | null = null;
@@ -981,13 +940,12 @@ export const addEventAddition = async (req: Request, res: Response) => {
         const newLiveTotal = currentLive + additionCost;
         const basePrice = Number(currentBooking.basePrice) || 0;
         const extrasPrice = Number(currentBooking.extrasPrice) || 0;
-        const externalExtrasPrice = Number(currentBooking.externalExtrasPrice) || 0;
 
         await tx.booking.update({
           where: { id: bookingId },
           data: {
             liveAdditionsTotal: newLiveTotal,
-            totalPrice: basePrice + extrasPrice + externalExtrasPrice + newLiveTotal,
+            totalPrice: basePrice + extrasPrice + newLiveTotal,
           },
         });
       }

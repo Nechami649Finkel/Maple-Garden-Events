@@ -62,8 +62,28 @@ model Booking {
   contractText        String?         @db.Text
   paymentTemplateId   String?
   paymentTermsText    String?         @db.Text
+  hallInvoices        HallInvoice[]
 
   @@unique([calendarDateId, timeSlot])
+}
+
+model HallInvoice {
+  id               String    @id @default(uuid())
+  bookingId        String
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  externalId       String    @unique
+  amount           Float
+  status           String    @default("pending")
+  paymentUrl       String?
+  installmentLabel String?
+  description      String?
+  paidAt           DateTime?
+  webhookPayload   Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
 }
 
 model EventCheckIn {

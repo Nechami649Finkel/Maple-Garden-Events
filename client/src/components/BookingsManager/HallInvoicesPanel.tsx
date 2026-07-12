@@ -1,0 +1,148 @@
+import { useCallback, useEffect, useState } from 'react';
+import { apiFetch } from '../../services/api';
+import { API_URL } from '../../config/api';
+
+export interface HallInvoiceRow {
+  id: string;
+  externalId: string;
+  amount: number;
+  status: string;
+  paymentUrl?: string | null;
+  installmentLabel?: string | null;
+  description?: string | null;
+  paidAt?: string | null;
+  createdAt: string;
+}
+
+interface HallInvoicesPanelProps {
+  bookingId: string;
+  isOption?: boolean;
+  onPaymentUpdated?: () => void;
+}
+
+const HallInvoicesPanel = ({ bookingId, isOption, onPaymentUpdated }: HallInvoicesPanelProps) => {
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [hallAmount, setHallAmount] = useState(0);
+  const [remaining, setRemaining] = useState(0);
+  const [invoices, setInvoices] = useState<HallInvoiceRow[]>([]);
+  const [error, setError] = useState('');
+
+  const loadInvoices = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const res = await apiFetch(`${API_URL}/bookings/${bookingId}/invoices`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'שגיאה בטעינת חשבוניות');
+      setHallAmount(json.data.hallAmount ?? 0);
+      setRemaining(json.data.remaining ?? 0);
+      setInvoices(json.data.invoices ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'שגיאה בטעינת חשבוניות');
+    } finally {
+      setLoading(false);
+    }
+  }, [bookingId]);
+
+  useEffect(() => {
+    loadInvoices();
+  }, [loadInvoices]);
+
+  const handleCreateInvoice = async () => {
+    if (isOption) {
+      alert('לא ניתן להפיק חשבונית לאופציה — יש להמיר לאירוע סגור תחילה.');
+      return;
+    }
+    if (remaining <= 0) {
+      alert('אין יתרה לחיוב מול האולם.');
+      return;
+    }
+
+    setCreating(true);
+    setError('');
+    try {
+      const res = await apiFetch(`${API_URL}/bookings/${bookingId}/invoice`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'שגיאה בהפקת חשבונית');
+      await loadInvoices();
+      onPaymentUpdated?.();
+      if (json.data?.invoice?.paymentUrl) {
+        window.open(json.data.invoice.paymentUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        alert(`חשבונית נוצרה (${json.data.invoice.externalId}).`);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'שגיאה בהפקת חשבונית';
+      setError(msg);
+      alert(msg);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <section style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+      <h3 style={{ margin: '0 0 10px', fontSize: '1rem' }}>חשבוניות Easy Count (אולם)</h3>
+      {loading ? (
+        <p style={{ margin: 0, color: '#64748b' }}>טוען...</p>
+      ) : (
+        <>
+          <p style={{ margin: '0 0 8px', fontSize: '0.9rem' }}>
+            יתרה לתשלום לאולם: <strong>₪{remaining.toLocaleString()}</strong>
+            {' '}(מתוך ₪{hallAmount.toLocaleString()})
+          </p>
+          {error && <p style={{ color: '#dc2626', margin: '0 0 8px', fontSize: '0.85rem' }}>{error}</p>}
+          <button
+            type="button"
+            disabled={creating || isOption || remaining <= 0}
+            onClick={handleCreateInvoice}
+            style={{
+              padding: '8px 14px',
+              background: creating || isOption || remaining <= 0 ? '#94a3b8' : '#059669',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: creating || isOption || remaining <= 0 ? 'not-allowed' : 'pointer',
+              marginBottom: invoices.length > 0 ? '12px' : 0,
+            }}
+          >
+            {creating ? 'מפיקה חשבונית...' : 'הפק חשבונית Easy Count'}
+          </button>
+          {invoices.length > 0 && (
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', fontSize: '0.85rem' }}>
+              {invoices.map((inv) => (
+                <li
+                  key={inv.id}
+                  style={{
+                    padding: '8px 0',
+                    borderTop: '1px solid #e2e8f0',
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span>₪{inv.amount.toLocaleString()}</span>
+                  <span style={{ color: '#64748b' }}>{inv.status}</span>
+                  <span style={{ color: '#94a3b8' }}>{inv.externalId}</span>
+                  {inv.paymentUrl && (
+                    <a href={inv.paymentUrl} target="_blank" rel="noopener noreferrer">
+                      קישור תשלום
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </section>
+  );
+};
+
+export default HallInvoicesPanel;

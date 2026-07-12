@@ -5,6 +5,7 @@ import { emitDateUpdated } from "../utils/realtime";
 import { normalizeTimeSlot, getTakenSlots, SLOT_LABELS, formatStoredTimeOfDay, getBlockedSlotsForDate, isDateFullyBooked, validateSlotOnDate, parseDateLocal, toLocalDateKey } from '../utils/timeSlot';
 import { validateSlotAvailability, resolveBookingSlot } from '../utils/bookingDateValidation';
 import { allocateEventCode } from '../utils/eventCode';
+import { extractHallPriceBreakdown } from '../utils/hallBilling';
 
 export enum EventStatus {
   AVAILABLE = 'AVAILABLE',
@@ -277,12 +278,11 @@ export const calendarService = {
       const storedTime = formatStoredTimeOfDay(slot, bookingDetails.startTime, bookingDetails.endTime);
       const eventCode = await allocateEventCode('EVT');
       const totals = bookingDetails.calculatedTotals;
-      const basePrice = Number(totals?.baseTotal ?? bookingDetails.basePrice) || 0;
-      const extrasPrice = Number(totals?.hallExtrasTotal ?? totals?.extrasTotal ?? bookingDetails.extrasPrice) || 0;
-      const externalExtrasPrice = Number(totals?.externalExtrasTotal ?? bookingDetails.externalExtrasPrice) || 0;
-      const totalPrice = totals?.finalTotal !== undefined
-        ? Number(totals.finalTotal)
-        : Number(bookingDetails.totalPrice) || basePrice + extrasPrice + externalExtrasPrice;
+      const priceBreakdown = extractHallPriceBreakdown(bookingDetails, 0);
+      const basePrice = Number(totals?.baseTotal ?? priceBreakdown.basePrice) || 0;
+      const extrasPrice = Number(totals?.hallExtrasTotal ?? totals?.extrasTotal ?? priceBreakdown.extrasPrice) || 0;
+      const externalExtrasPrice = Number(totals?.externalExtrasTotal ?? priceBreakdown.externalExtrasPrice) || 0;
+      const totalPrice = priceBreakdown.totalPrice;
 
       try {
         const booking = await tx.booking.create({

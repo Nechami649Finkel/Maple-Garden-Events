@@ -19,13 +19,27 @@ export function renderSelectedExtrasSection(items: ExtrasLineItem[]): string {
     return 'לא נבחרו תוספות או שדרוגים בנוסף לתנאי הבסיס בחוזה.';
   }
 
+  const hallItems = items.filter((item) => item.paidTo !== 'external');
+  const externalItems = items.filter((item) => item.paidTo === 'external');
+
   const lines = items.map((item) => {
-    const payNote = item.paidTo === 'external' ? ' (תשלום ישיר לספק חיצוני)' : '';
+    const payNote = item.paidTo === 'external' ? ' (תשלום ישיר לספק חיצוני — לא בחשבון האולם)' : '';
     return `• ${item.label} — ₪${Math.round(item.price).toLocaleString('he-IL')}${payNote}`;
   });
-  const total = items.reduce((sum, item) => sum + item.price, 0);
+
+  const hallTotal = hallItems.reduce((sum, item) => sum + item.price, 0);
+  const externalTotal = externalItems.reduce((sum, item) => sum + item.price, 0);
+
   lines.push('────────────────');
-  lines.push(`סה"כ תוספות: ₪${Math.round(total).toLocaleString('he-IL')}`);
+  if (hallTotal > 0) {
+    lines.push(`סה"כ תוספות לאולם: ₪${Math.round(hallTotal).toLocaleString('he-IL')}`);
+  }
+  if (externalTotal > 0) {
+    lines.push(
+      `ספקים חיצוניים (לידיעה בלבד, לא בחשבון האולם): ₪${Math.round(externalTotal).toLocaleString('he-IL')}`,
+    );
+  }
+
   return lines.join('\n');
 }
 

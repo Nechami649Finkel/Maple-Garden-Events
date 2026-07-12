@@ -238,12 +238,12 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                         <p><strong>תוספות לאולם:</strong> ₪{booking.extrasPrice}</p>
                       )}
                       {(booking.externalExtrasPrice ?? 0) > 0 && (
-                        <p><strong>ספקים חיצוניים:</strong> ₪{booking.externalExtrasPrice}</p>
+                        <p><strong>ספקים חיצוניים (לידיעה):</strong> ₪{booking.externalExtrasPrice}</p>
                       )}
                       {(booking.liveAdditionsTotal ?? 0) > 0 && (
                         <p><strong>תוספות בזמן האירוע:</strong> ₪{booking.liveAdditionsTotal}</p>
                       )}
-                      <p><strong>סה"כ:</strong> ₪{booking.totalPrice || 0}</p>
+                      <p><strong>סה&quot;כ לאולם:</strong> ₪{booking.totalPrice || 0}</p>
                       <p><strong>שולם:</strong> ₪{booking.paidAmount || 0}</p>
                       <p><strong>נציג:</strong> {booking.createdBy || 'לא ידוע'}</p>
                     </div>
