@@ -33,6 +33,16 @@ export const createBookingSchema = z.object({
 
     allSelectedDates: z.array(z.any()).optional(),
     calendarDateId: z.string().optional(),
+    calculatedTotals: z
+      .object({
+        baseTotal: optionalNumber,
+        hallExtrasTotal: optionalNumber,
+        externalExtrasTotal: optionalNumber,
+        extrasTotal: optionalNumber,
+        hallTotal: optionalNumber,
+        finalTotal: optionalNumber,
+      })
+      .optional(),
   })
     .superRefine((data, ctx) => {
       if (data.isOption) {
