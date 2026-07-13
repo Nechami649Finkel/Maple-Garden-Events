@@ -39,7 +39,7 @@ import {
 } from '../utils/timeSlot';
 import { validateSlotAvailability } from '../utils/bookingDateValidation';
 import { syncOptionDatesOnEdit } from '../utils/optionDateSync';
-import { extractHallPriceBreakdown } from '../utils/hallBilling';
+import { validateClientPricing } from '../utils/hallBilling';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import {
   allocateEventCode,
@@ -287,8 +287,13 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
     expiryDate.setHours(expiryDate.getHours() + hoursToAdd);
   }
 
-  // חישוב מחירים מפוצלים: בסיס / תוספות / סה"כ
-  const prices = extractHallPriceBreakdown(data, 0);
+  // חישוב מחירים — מקור אמת בשרת; דוחה מניפולציה מהלקוח
+  const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+  const priceCheck = validateClientPricing(data, systemSettings, 0);
+  if (!priceCheck.valid) {
+    return res.status(400).json({ success: false, message: priceCheck.message });
+  }
+  const prices = priceCheck.serverBreakdown;
 
   const clientAPhoneCombined = data.clientAPhone2 ? `${data.clientAPhone} | נוסף: ${data.clientAPhone2}` : data.clientAPhone;
   const clientAAddressCombined = data.clientACity ? `${data.clientACity}, ${data.clientAAddress}` : data.clientAAddress;
@@ -297,7 +302,6 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
   const menuNotes = parseNotesBundle(data.clientComments).menu;
   const hallOnly = isHallOnlyBooking(data);
-  const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
   const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
   const lineItemOptions = {
     upgrades: resolveEffectiveUpgrades(data.upgrades),
@@ -817,7 +821,26 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       : booking.timeOfDay);
 
   const liveTotal = Number(booking.liveAdditionsTotal) || 0;
-  const prices = extractHallPriceBreakdown(data, liveTotal);
+
+  const pricingPayload = {
+    eventType: data.eventType ?? booking.eventType,
+    guestCount: data.guestCount ?? booking.guestCount,
+    finalPricePortion: data.finalPricePortion ?? booking.finalPricePortion,
+    hallRentalPrice: data.hallRentalPrice ?? (booking as { hallRentalPrice?: number | null }).hallRentalPrice,
+    kosherType: data.kosherType !== undefined ? data.kosherType : (booking as { kosherType?: string | null }).kosherType,
+    vatType: data.vatType !== undefined ? data.vatType : (booking as { vatType?: string | null }).vatType,
+    discountPercent: data.discountPercent,
+    discountAmount: data.discountAmount,
+    upgrades: data.upgrades ?? booking.upgrades,
+    calculatedTotals: data.calculatedTotals,
+  };
+
+  const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+  const priceCheck = validateClientPricing(pricingPayload, systemSettings, liveTotal);
+  if (!priceCheck.valid) {
+    return res.status(400).json({ success: false, message: priceCheck.message });
+  }
+  const prices = priceCheck.serverBreakdown;
   const isConverting = data.convertFromOption === true;
   const finalSignature = data.clientSignature ?? booking.clientSignatureUrl;
   let convertedEventCode: string | null = null;

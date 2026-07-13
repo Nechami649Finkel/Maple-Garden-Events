@@ -3,6 +3,8 @@ import { Router } from 'express';
 import prisma from '../config/prisma';
 
 import { requireAuth } from '../middlewares/auth';
+import { requireRole } from '../middlewares/requireRole';
+import { RBAC } from '../config/rbac';
 
 import { validate } from '../middlewares/validate';
 
@@ -17,7 +19,7 @@ router.use(requireAuth);
 
 
 
-router.get('/', async (_req, res) => {
+router.get('/', requireRole(...RBAC.MENU_READ), async (_req, res) => {
 
   try {
 
@@ -35,7 +37,7 @@ router.get('/', async (_req, res) => {
 
 
 
-router.put('/:id', validate(updateKashrutSchema), async (req, res) => {
+router.put('/:id', requireRole(...RBAC.MENU_WRITE), validate(updateKashrutSchema), async (req, res) => {
 
   const { id } = req.params;
 

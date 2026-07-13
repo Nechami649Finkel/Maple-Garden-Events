@@ -15,7 +15,8 @@ export function requireRole(...allowed: UserRole[]) {
       return;
     }
 
-    if (!allowed.includes(req.user.role as UserRole)) {
+    const role = req.user.role;
+    if (!isValidRole(role) || !allowed.includes(role)) {
       res.status(403).json({ success: false, message: 'אין הרשאה לפעולה זו.' });
       return;
     }

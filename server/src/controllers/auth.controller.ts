@@ -12,6 +12,7 @@ import {
   verifyRefreshToken,
 } from '../utils/authCookie';
 import { catchAsync } from '../middlewares/errorHandler';
+import { isValidRole } from '../middlewares/requireRole';
 import { logger } from '../utils/logger';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -55,12 +56,19 @@ export const login = async (req: Request, res: Response) => {
       });
     }
 
-    issueSession(res, googleUserEmail, userName, user.role || 'manager');
+    if (!isValidRole(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'לחשבון זה לא הוקצה תפקיד תקף. פנה למנהל המערכת.',
+      });
+    }
+
+    issueSession(res, googleUserEmail, userName, user.role);
 
     return res.status(200).json({
       success: true,
       message: 'התחברת בהצלחה',
-      user: { role: user.role || 'manager', name: userName, email: googleUserEmail },
+      user: { role: user.role, name: userName, email: googleUserEmail },
     });
   } catch (error) {
     logger.error('Google authentication failed', { error });
@@ -85,7 +93,12 @@ export const refresh = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, message: 'אין הרשאות גישה.' });
     }
 
-    issueSession(res, user.email, user.name, authorized.role || user.role || 'manager');
+    if (!isValidRole(authorized.role)) {
+      clearSessionCookies(res);
+      return res.status(403).json({ success: false, message: 'לחשבון זה אין תפקיד תקף.' });
+    }
+
+    issueSession(res, user.email, user.name, authorized.role);
     return res.status(200).json({ success: true });
   } catch {
     clearSessionCookies(res);

@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { calendarController } from '../controllers/calendar.controller';
 import { calendarService } from '../Services/calendar.service';
 import { requireAuth } from '../middlewares/auth';
+import { requireRole } from '../middlewares/requireRole';
+import { RBAC } from '../config/rbac';
 import { validate } from '../middlewares/validate';
 import {
   calendarBookingDetailsSchema,
@@ -13,13 +15,13 @@ import {
 const router = Router();
 router.use(requireAuth);
 
-router.get('/dates',                    calendarController.getAllDates);
-router.post('/lock/:dateStr',           validate(lockDateSchema), calendarController.lockDate);
-router.post('/release/:dateStr',        validate(releaseDateSchema), calendarController.releaseDate);
-router.post('/option/:dateId',          validate(calendarBookingDetailsSchema), calendarController.createOption);
-router.post('/book-final/:dateId',      validate(calendarBookingDetailsSchema), calendarController.bookFinal);
+router.get('/dates', requireRole(...RBAC.CALENDAR_READ), calendarController.getAllDates);
+router.post('/lock/:dateStr', requireRole(...RBAC.CALENDAR_WRITE), validate(lockDateSchema), calendarController.lockDate);
+router.post('/release/:dateStr', requireRole(...RBAC.MANAGER_ONLY), validate(releaseDateSchema), calendarController.releaseDate);
+router.post('/option/:dateId', requireRole(...RBAC.CALENDAR_WRITE), validate(calendarBookingDetailsSchema), calendarController.createOption);
+router.post('/book-final/:dateId', requireRole(...RBAC.CALENDAR_WRITE), validate(calendarBookingDetailsSchema), calendarController.bookFinal);
 
-router.post('/options', validate(saveOptionHoldSchema), async (req, res) => {
+router.post('/options', requireRole(...RBAC.CALENDAR_WRITE), validate(saveOptionHoldSchema), async (req, res) => {
   try {
     const { dates, clientName, clientPhone, clientEmail } = req.body;
 

@@ -1,3 +1,23 @@
+export const HALL_UPGRADE_KEYS = ['reception', 'separateReception', 'extraSecurity'] as const;
+
+export const EXTERNAL_UPGRADE_KEYS = new Set<string>([
+  'baseDesign',
+  'lighting',
+  'amplification',
+  'screens',
+  'fireworks',
+]);
+
+/** תוספת מחיר למנה לפי סוג כשרות */
+export const KOSHER_PRICING: Record<string, { label: string; extra: number }> = {
+  machpud: { label: 'הרב מחפוד', extra: 0 },
+  rubin: { label: 'הרב רובין', extra: 10 },
+  kehilot: { label: 'קהילות', extra: 10 },
+  gross: { label: 'הרב גרוס', extra: 10 },
+  landa: { label: 'הרב לנדא', extra: 20 },
+  badatz: { label: 'בד"ץ העדה החרדית', extra: 20 },
+};
+
 export const UPGRADE_LABELS: Record<string, string> = {
   baseDesign: 'עיצוב בסיסי',
   reception: 'קבלת פנים',
