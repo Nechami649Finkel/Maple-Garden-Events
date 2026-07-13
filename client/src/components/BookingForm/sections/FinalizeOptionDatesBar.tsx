@@ -1,3 +1,5 @@
+import { calendarKeyFromDbDate } from '../../../utils/dateLocal';
+
 interface RelatedOption {
   id: string;
   calendarDateId: string;
@@ -39,7 +41,7 @@ const FinalizeOptionDatesBar = ({ relatedOptions, selectedBookingId, onSelect }:
       <div className="d-flex flex-wrap gap-2">
         {relatedOptions.map((opt) => {
           const dateStr = opt.eventDate?.date
-            ? new Date(opt.eventDate.date).toISOString().split('T')[0]
+            ? calendarKeyFromDbDate(new Date(opt.eventDate.date))
             : '';
           const hebrew = opt.eventDate?.hebrewDate || (dateStr ? getHebrewDateLabel(dateStr) : '');
           const isSelected = opt.id === selectedBookingId;

@@ -21,6 +21,8 @@ import feedbackRoutes from './routes/feedback.routes';
 import kashrutRoutes from './routes/kashrut.routes';
 import authRoutes from './routes/auth.routes';
 import checkInRoutes from './routes/checkIn.routes';
+import easyCountRoutes from './routes/easyCount.routes';
+import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
 
 validateEnv();
 
@@ -83,6 +85,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(requestLogger);
 
+app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
+app.use('/api/easy-count', easyCountRoutes);
 app.use('/api/check-in', checkInRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/kashrut', kashrutRoutes);

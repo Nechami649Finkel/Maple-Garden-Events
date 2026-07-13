@@ -20,6 +20,14 @@ import {
   emitDateUpdatedMany,
 } from '../utils/realtime';
 import {
+  toCalendarDateKey,
+  calendarDateForStorage,
+  prismaCalendarDayWhere,
+  localStartOfDay,
+  parseCalendarDate,
+  calendarKeyFromDbDate,
+} from '../utils/dateLocal';
+import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
   getTakenSlots,
@@ -29,6 +37,9 @@ import {
   getBookableSlotsForDate,
   type TimeSlot,
 } from '../utils/timeSlot';
+import { validateSlotAvailability } from '../utils/bookingDateValidation';
+import { syncOptionDatesOnEdit } from '../utils/optionDateSync';
+import { extractHallPriceBreakdown } from '../utils/hallBilling';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import {
   allocateEventCode,
@@ -126,10 +137,8 @@ async function issueEasyCountReceiptForBooking(
 }
 
 function canEditBookingDate(eventDate: Date): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const eventDay = new Date(eventDate);
-  eventDay.setHours(0, 0, 0, 0);
+  const today = localStartOfDay(new Date());
+  const eventDay = localStartOfDay(eventDate);
   return today < eventDay;
 }
 
@@ -245,48 +254,6 @@ function validateHallRentalPriceInput(data: { eventType?: string; hallRentalPric
   return null;
 }
 
-function extractPriceBreakdown(
-  data: {
-    eventType?: string;
-    calculatedTotals?: {
-      baseTotal?: number;
-      hallExtrasTotal?: number;
-      externalExtrasTotal?: number;
-      extrasTotal?: number;
-      finalTotal?: number;
-    };
-    guestCount?: unknown;
-    finalPricePortion?: unknown;
-    hallRentalPrice?: unknown;
-  },
-  liveAdditionsTotal = 0,
-) {
-  const totals = data.calculatedTotals;
-  if (totals?.baseTotal !== undefined) {
-    const basePrice = Number(totals.baseTotal) || 0;
-    const extrasPrice = Number(totals.hallExtrasTotal ?? totals.extrasTotal) || 0;
-    const externalExtrasPrice = Number(totals.externalExtrasTotal) || 0;
-    return {
-      basePrice,
-      extrasPrice,
-      externalExtrasPrice,
-      liveAdditionsTotal,
-      totalPrice: basePrice + extrasPrice + externalExtrasPrice + liveAdditionsTotal,
-    };
-  }
-  if (totals?.finalTotal !== undefined) {
-    const totalPrice = Number(totals.finalTotal) + liveAdditionsTotal;
-    return { basePrice: totalPrice, extrasPrice: 0, externalExtrasPrice: 0, liveAdditionsTotal, totalPrice };
-  }
-  let fallback = 0;
-  if (isHallOnlyBooking(data)) {
-    fallback = Number(data.hallRentalPrice) || 0;
-  } else {
-    fallback = (Number(data.guestCount) || 0) * (Number(data.finalPricePortion) || 0);
-  }
-  return { basePrice: fallback, extrasPrice: 0, externalExtrasPrice: 0, liveAdditionsTotal, totalPrice: fallback + liveAdditionsTotal };
-}
-
 export const createBooking = catchAsync(async (req: AuthRequest, res: Response) => {
   const data = req.body;
   const isManager = req.user?.role === 'manager'; 
@@ -321,7 +288,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
 
   // חישוב מחירים מפוצלים: בסיס / תוספות / סה"כ
-  const prices = extractPriceBreakdown(data, 0);
+  const prices = extractHallPriceBreakdown(data, 0);
 
   const clientAPhoneCombined = data.clientAPhone2 ? `${data.clientAPhone} | נוסף: ${data.clientAPhone2}` : data.clientAPhone;
   const clientAAddressCombined = data.clientACity ? `${data.clientACity}, ${data.clientAAddress}` : data.clientAAddress;
@@ -375,9 +342,15 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     for (const dateItem of datesToProcess) {
       const dateString = typeof dateItem === 'object' && dateItem !== null ? dateItem.date : dateItem;
-      const possibleDate = parseDateLocal(dateString);
-      
-      if (isNaN(possibleDate.getTime())) continue;
+      let calendarKey: string;
+      try {
+        calendarKey = toCalendarDateKey(String(dateString));
+      } catch {
+        const err: any = new Error('תאריך לא תקין.');
+        err.statusCode = 400;
+        throw err;
+      }
+      const possibleDate = parseDateLocal(calendarKey);
 
       if (isPastCalendarDate(possibleDate)) {
         const err: any = new Error('לא ניתן לקבוע אירוע או אופציה בתאריך שעבר.');
@@ -386,7 +359,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       }
 
       let eventDate = await tx.eventDate.findFirst({
-        where: { date: possibleDate },
+        where: prismaCalendarDayWhere(calendarKey),
         include: { bookings: true },
       });
 
@@ -430,16 +403,29 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         throw err;
       }
 
-      const slotError = validateSlotOnDate(parseDateLocal(possibleDate), slot);
+      const slotError = validateSlotOnDate(parseDateLocal(calendarKey), slot);
       if (slotError) {
         const err: any = new Error(slotError);
         err.statusCode = 400;
         throw err;
       }
 
+      const availabilityError = validateSlotAvailability(
+        parseDateLocal(calendarKey),
+        slot,
+        eventDate?.bookings ?? [],
+        data.eventType || 'חתונה',
+        isOption ? { blockShabbatEntirely: true } : undefined,
+      );
+      if (availabilityError) {
+        const err: any = new Error(availabilityError);
+        err.statusCode = 400;
+        throw err;
+      }
+
       if (!eventDate) {
         eventDate = await tx.eventDate.create({
-          data: { date: possibleDate, status: newStatus, optionExpiresAt: expiryDate },
+          data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate },
           include: { bookings: true },
         });
       } else if (!isOverrideTarget) {
@@ -476,12 +462,12 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       }
 
       const existingBookings = eventDate.bookings || [];
-      const bookableSlots = getBookableSlotsForDate(parseDateLocal(possibleDate), existingBookings);
+      const bookableSlots = getBookableSlotsForDate(parseDateLocal(calendarKey), existingBookings);
       if (!bookableSlots.includes(slot)) {
         const taken = getTakenSlots(existingBookings);
         const message = taken.has(slot)
           ? slotConflictMessage(slot, existingBookings)
-          : (validateSlotOnDate(parseDateLocal(possibleDate), slot) || 'התאריך מלא — אין משבצות זמן פנויות.');
+          : (validateSlotOnDate(parseDateLocal(calendarKey), slot) || 'התאריך מלא — אין משבצות זמן פנויות.');
         const err: any = new Error(message);
         err.statusCode = 400;
         throw err;
@@ -586,6 +572,13 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
     }
   }, neonTransactionOptions));
 
+  if (createdBookings.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לשמור — אף תאריך לא עבר את הבדיקות.',
+    });
+  }
+
   eventsToEmit.forEach(ev => emitDateUpdated(ev));
   if (createdBookings.length > 0) {
     emitBookingUpdated(createdBookings[0].id);
@@ -599,7 +592,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
       const contractPdfBuffer = await generateContractPDF(
         buildBookingPdfData(
-          { ...savedBooking, eventDate: { date: new Date(firstDateString) } },
+          { ...savedBooking, eventDate: { date: parseCalendarDate(toCalendarDateKey(String(firstDateString))) } },
           {
             isOption: newStatus === 'OPTION',
             clientSignatureUrl: data.clientSignature,
@@ -613,7 +606,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         await sendPDFToClient(
           clientEmail, 
           savedBooking.clientAFullName, 
-          new Date(firstDateString).toString(), 
+          parseCalendarDate(toCalendarDateKey(String(firstDateString))).toString(), 
           contractPdfBuffer
         );
       }
@@ -824,7 +817,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       : booking.timeOfDay);
 
   const liveTotal = Number(booking.liveAdditionsTotal) || 0;
-  const prices = extractPriceBreakdown(data, liveTotal);
+  const prices = extractHallPriceBreakdown(data, liveTotal);
   const isConverting = data.convertFromOption === true;
   const finalSignature = data.clientSignature ?? booking.clientSignatureUrl;
   let convertedEventCode: string | null = null;
@@ -965,15 +958,39 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
           where: { calendarDateId: { in: releaseDateIds } },
         });
       }
-    } else if (booking.isOption && data.optionDurationHours) {
-      const expiryDate = new Date();
-      expiryDate.setHours(expiryDate.getHours() + Number(data.optionDurationHours));
-      await tx.eventDate.update({
-        where: { id: booking.eventDate.id },
-        data: { optionExpiresAt: expiryDate },
-      });
     } else if (booking.isOption) {
       await syncEventDateWithOptionBookings(tx, booking.eventDate.id);
+
+      if (data.optionDurationHours) {
+        const expiryDate = new Date();
+        expiryDate.setHours(expiryDate.getHours() + Number(data.optionDurationHours));
+        await tx.eventDate.update({
+          where: { id: booking.eventDate.id },
+          data: { optionExpiresAt: expiryDate },
+        });
+      }
+
+      if (Array.isArray(data.allSelectedDates) && slot) {
+        const optionExpiresAt = data.optionDurationHours
+          ? (() => {
+              const expiry = new Date();
+              expiry.setHours(expiry.getHours() + Number(data.optionDurationHours));
+              return expiry;
+            })()
+          : booking.eventDate.optionExpiresAt;
+
+        const { updatedBy: _updatedBy, ...sharedFields } = updateData;
+        await syncOptionDatesOnEdit(
+          tx,
+          { ...booking, eventDate: booking.eventDate },
+          data,
+          slot,
+          timeString,
+          sharedFields,
+          prices,
+          optionExpiresAt,
+        );
+      }
     }
     
     return updatedBooking;
@@ -1214,13 +1231,12 @@ export const addEventAddition = async (req: Request, res: Response) => {
         const newLiveTotal = currentLive + additionCost;
         const basePrice = Number(currentBooking.basePrice) || 0;
         const extrasPrice = Number(currentBooking.extrasPrice) || 0;
-        const externalExtrasPrice = Number(currentBooking.externalExtrasPrice) || 0;
 
         await tx.booking.update({
           where: { id: bookingId },
           data: {
             liveAdditionsTotal: newLiveTotal,
-            totalPrice: basePrice + extrasPrice + externalExtrasPrice + newLiveTotal,
+            totalPrice: basePrice + extrasPrice + newLiveTotal,
           },
         });
       }

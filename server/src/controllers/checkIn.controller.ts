@@ -3,6 +3,7 @@ import prisma from '../config/prisma';
 import { Prisma } from '@prisma/client';
 import { canEditCheckIn } from '../utils/eventStart';
 import { emitBookingUpdated, emitCheckInUpdated } from '../utils/realtime';
+import { calendarKeyFromDbDate } from '../utils/dateLocal';
 
 export interface ReserveTableRow {
   number: number;
@@ -146,7 +147,7 @@ export const checkInController = {
       }
 
       const eventDateStr = existing.eventDate?.date
-        ? existing.eventDate.date.toISOString().split('T')[0]
+        ? calendarKeyFromDbDate(existing.eventDate.date)
         : '';
       if (
         !eventDateStr

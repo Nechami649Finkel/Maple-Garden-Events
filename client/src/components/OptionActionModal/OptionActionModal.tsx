@@ -77,9 +77,9 @@ const OptionActionModal = ({ option, onClose, onSuccess }: Props) => {
                 <div className={styles.infoRow}><label>תוספות לאולם:</label><span>₪{option.extrasPrice?.toLocaleString()}</span></div>
               )}
               {(option.externalExtrasPrice ?? 0) > 0 && (
-                <div className={styles.infoRow}><label>ספקים חיצוניים:</label><span>₪{option.externalExtrasPrice?.toLocaleString()}</span></div>
+                <div className={styles.infoRow}><label>ספקים חיצוניים (לידיעה):</label><span>₪{option.externalExtrasPrice?.toLocaleString()}</span></div>
               )}
-              <div className={styles.infoRow}><label>סה"כ לתשלום:</label><span style={{ fontWeight: 'bold' }}>₪{option.totalPrice?.toLocaleString()}</span></div>
+              <div className={styles.infoRow}><label>סה&quot;כ לאולם:</label><span style={{ fontWeight: 'bold' }}>₪{option.totalPrice?.toLocaleString()}</span></div>
               <div className={styles.infoRow}><label>טלפון:</label><span>{option.clientAPhone}</span></div>
             </div>
             <p className={styles.question}>בחר פעולה להמשך:</p>

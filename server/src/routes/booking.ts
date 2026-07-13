@@ -36,6 +36,11 @@ import {
 import { sendGreeting, getScheduledGreetings, cancelScheduledGreetingHandler } from '../controllers/greeting';
 import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
 import { buildUpgradesPricingFromSettings } from '../utils/pricing';
+import {
+  createBookingHallInvoice,
+  getBookingHallInvoices,
+} from '../controllers/easyCount.controller';
+import { createHallInvoiceSchema } from '../validators/easyCount.validator';
 
 const router = Router();
 router.use(requireAuth);
@@ -70,6 +75,9 @@ router.get('/:id/contract-pdf', catchAsync(async (req: Request, res: Response) =
     });
   }
 }));
+
+router.post('/:id/invoice', validate(createHallInvoiceSchema), createBookingHallInvoice);
+router.get('/:id/invoices', getBookingHallInvoices);
 
 // --- ראוטים סטטיסטיקה וקודים ---
 router.get('/stats/cancellations', getCancellationStats); 

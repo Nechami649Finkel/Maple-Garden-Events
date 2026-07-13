@@ -3,6 +3,9 @@
   "private": true,
   "scripts": {
     "dev": "start cmd /k \"cd server && npm run dev\" && start cmd /k \"cd client && npm run dev\"",
+    "build": "npm run build --prefix client && npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "build:server": "npm run build --prefix server",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

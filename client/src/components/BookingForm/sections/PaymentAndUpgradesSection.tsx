@@ -28,6 +28,7 @@ interface PaymentAndUpgradesSectionProps {
     baseTotal: number;
     hallExtrasTotal: number;
     externalExtrasTotal: number;
+    hallTotal: number;
     finalTotal: number;
   };
   isFoodRelevant: boolean;

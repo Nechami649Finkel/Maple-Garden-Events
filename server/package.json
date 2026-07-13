@@ -4,10 +4,15 @@
   "main": "index.js",
   "scripts": {
     "dev": "node --watch -r ts-node/register src/server.ts",
+    "build": "tsc",
+    "postinstall": "prisma generate",
     "tunnel": "powershell -ExecutionPolicy Bypass -File scripts/start-public-tunnel.ps1",
     "start": "node dist/server.js",
     "migrate:event-codes": "ts-node scripts/migrate-legacy-event-codes.ts",
     "fix:contract-sync": "ts-node scripts/fix-contract-sync.ts",
+    "migrate:hall-invoices": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_hall_invoices.sql",
+    "migrate:hall-totals": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/recalculate_hall_total_price.sql",
+    "migrate:hall-billing": "npm run migrate:hall-invoices && npm run migrate:hall-totals && prisma generate --schema prisma/schema.prisma",
     "verify:double-booking": "ts-node scripts/verify-no-double-booking.ts",
     "sentry:verify": "ts-node scripts/sentry-verify.ts",
     "test": "node --require ts-node/register/transpile-only --test tests/contract-lineItems.test.ts"

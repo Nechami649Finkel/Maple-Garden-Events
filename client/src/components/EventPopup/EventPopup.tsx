@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { todayCalendarKey } from '../../utils/dateLocal';
 import { canEditBooking } from '../../utils/bookingEdit';
 import { canEditCheckIn, canViewCheckIn } from '../../utils/eventStart';
 import {
@@ -35,7 +36,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
   const isOptionDay = hasOptionOnDay(day);
   const dateDisplay = day.date.split('-').reverse().join('/');
   const hebrewDate = day.hebrewDate || '';
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayCalendarKey();
   const isPast = day.date < todayStr;
   const availableSlotsLabel = formatAvailableSlotsLabelForDate(day.date, bookings);
   const hasFreeSlots =
@@ -244,12 +245,12 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                         <p><strong>תוספות לאולם:</strong> ₪{booking.extrasPrice}</p>
                       )}
                       {(booking.externalExtrasPrice ?? 0) > 0 && (
-                        <p><strong>ספקים חיצוניים:</strong> ₪{booking.externalExtrasPrice}</p>
+                        <p><strong>ספקים חיצוניים (לידיעה):</strong> ₪{booking.externalExtrasPrice}</p>
                       )}
                       {(booking.liveAdditionsTotal ?? 0) > 0 && (
                         <p><strong>תוספות בזמן האירוע:</strong> ₪{booking.liveAdditionsTotal}</p>
                       )}
-                      <p><strong>סה"כ:</strong> ₪{booking.totalPrice || 0}</p>
+                      <p><strong>סה&quot;כ לאולם:</strong> ₪{booking.totalPrice || 0}</p>
                       <p><strong>שולם:</strong> ₪{booking.paidAmount || 0}</p>
                       <p><strong>נציג:</strong> {booking.createdBy || 'לא ידוע'}</p>
                     </div>

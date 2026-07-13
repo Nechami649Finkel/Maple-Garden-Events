@@ -13,6 +13,7 @@ import { AuthorizedUsers } from './AuthorizedUsers';
 import { PageLoader } from '../PageLoader/PageLoader';
 import PaymentTemplatesSettings from './PaymentTemplatesSettings';
 import { getPaymentTemplatesFromSettings } from '../../utils/paymentTerms';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import {
   getHiddenSystemPriceFields,
   getVisibleSystemPriceFields,
@@ -208,7 +209,7 @@ export const SettingsManager = () => {
   const formatDateForInput = (dateString: any) => {
     if (!dateString) return '';
     const d = new Date(dateString);
-    return isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+    return isNaN(d.getTime()) ? '' : calendarKeyFromDbDate(d);
   };
 
   if (loading) return <PageLoader />;

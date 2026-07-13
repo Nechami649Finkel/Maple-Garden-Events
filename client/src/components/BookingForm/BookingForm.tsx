@@ -17,6 +17,7 @@ import {
   resolveFullContractText,
   parseStoredUpgrades,
 } from '../../utils/contractSections';
+import { finalizeBookingTotals } from '../../utils/hallBilling';
 import { promptPrintAfterClose } from '../../utils/contractPrint';
 import { getSignatureDataUrl } from '../../utils/signature';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
@@ -32,6 +33,7 @@ import MetaBar from './sections/MetaBar';
 import OptionDatesBar, { normalizeOptionDate } from './sections/OptionDatesBar';
 import FinalizeOptionDatesBar from './sections/FinalizeOptionDatesBar';
 import { verifyAllOptionDates } from '../../utils/optionDateApi';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
 import MenuDisplay from '../MenuDisplay/MenuDisplay';
@@ -442,9 +444,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     const phoneB = parseCombinedPhone(b.clientBPhone);
     const addrA = parseAddress(b.clientAAddress);
     const addrB = parseAddress(b.clientBAddress);
-    const eventDateStr = b.eventDate?.date ? new Date(b.eventDate.date).toISOString().split('T')[0] : '';
-    if (!convertFromOption) {
-      setIsOption(b.eventDate?.status === 'OPTION');
+    const eventDateStr = b.eventDate?.date ? calendarKeyFromDbDate(new Date(b.eventDate.date)) : '';
+    if (convertFromOption) {
+      setIsOption(false);
+    } else {
+      setIsOption(!!(b.isOption || b.eventDate?.status === 'OPTION'));
       setOrderNumber(b.eventCode || b.id.slice(0, 8));
     }
     if (eventDateStr) setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: '' }]);
@@ -521,22 +525,37 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         if (b.updatedAt) setBookingUpdatedAt(b.updatedAt);
         setIsOption(false);
 
-        if (convertFromOption) {
+        const loadRelatedOptions = async (bookingId: string) => {
           try {
-            const relatedRes = await apiFetch(`${API_URL}/bookings/${b.id}/related-options`);
+            const relatedRes = await apiFetch(`${API_URL}/bookings/${bookingId}/related-options`);
             if (relatedRes.ok) {
               const relatedJson = await relatedRes.json();
-              if (relatedJson.success && Array.isArray(relatedJson.data)) {
-                setRelatedOptions(relatedJson.data.length > 0 ? relatedJson.data : [b]);
-              } else {
-                setRelatedOptions([b]);
+              if (relatedJson.success && Array.isArray(relatedJson.data) && relatedJson.data.length > 0) {
+                return relatedJson.data;
               }
-            } else {
-              setRelatedOptions([b]);
             }
-          } catch {
-            setRelatedOptions([b]);
-          }
+          } catch {}
+          return [b];
+        };
+
+        const applyRelatedOptionDates = (related: any[]) => {
+          setSelectedDatesDisplay(
+            related
+              .map((opt: any) => ({
+                date: opt.eventDate?.date ? calendarKeyFromDbDate(new Date(opt.eventDate.date)) : '',
+                hebrewDate: opt.eventDate?.hebrewDate || '',
+              }))
+              .filter((d) => d.date)
+          );
+        };
+
+        if (convertFromOption) {
+          const related = await loadRelatedOptions(b.id);
+          setRelatedOptions(related);
+        } else if (isStillOption) {
+          const related = await loadRelatedOptions(b.id);
+          setRelatedOptions(related);
+          applyRelatedOptionDates(related);
         }
       } catch {
         alert('שגיאה בטעינת ההזמנה');
@@ -553,7 +572,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     if (!selected) return;
     setActiveBookingId(bookingId);
     const eventDateStr = selected.eventDate?.date
-      ? new Date(selected.eventDate.date).toISOString().split('T')[0]
+      ? calendarKeyFromDbDate(new Date(selected.eventDate.date))
       : '';
     if (eventDateStr) {
       setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: selected.eventDate?.hebrewDate || '' }]);
@@ -760,10 +779,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const baseTotal = mainSubtotal + mainVat;
   const hallExtrasTotal = hallExtrasSubtotal + hallExtrasVat;
   const externalExtrasTotal = externalExtrasSubtotal + externalExtrasVat;
-  const extrasTotal = hallExtrasTotal;
-  const finalTotal = baseTotal + hallExtrasTotal + externalExtrasTotal;
 
-  return {
+  return finalizeBookingTotals({
     mainBase,
     hallExtrasBase,
     externalExtrasBase,
@@ -777,12 +794,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     baseTotal,
     hallExtrasTotal,
     externalExtrasTotal,
-    extrasTotal,
-    finalTotal,
     base: mainBase + hallExtrasBase + externalExtrasBase,
     subtotal: mainSubtotal + hallExtrasSubtotal + externalExtrasSubtotal,
     vatAmount: mainVat + hallExtrasVat + externalExtrasVat,
-  };
+  });
   };
 
   const totals = calculateTotals();
@@ -796,7 +811,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     const template = findPaymentTemplate(paymentTemplates, paymentTemplateId);
     if (!template) return;
     const paragraph = renderPaymentTermsText(template, {
-      total: totals.finalTotal,
+      total: totals.hallTotal,
       eventDate: getEventDateStr(),
     });
     setPaymentTermsText(paragraph);
@@ -805,7 +820,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     paymentTermsCustom,
     contractBaseText,
     paymentTemplates,
-    totals.finalTotal,
+    totals.hallTotal,
     selectedDatesDisplay,
     formData.calendarDateId,
   ]);

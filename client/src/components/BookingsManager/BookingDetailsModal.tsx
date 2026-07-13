@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { canEditBooking } from '../../utils/bookingEdit';
+import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { parseNotes, parseNotesBundle } from '../../utils/notesStorage';
 import { openContractPdf, printContract } from '../../utils/contractPrint';
@@ -11,7 +11,9 @@ import {
 } from '../../utils/easycount';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
+import { canEditBooking } from '../../utils/bookingEdit';
 import { NotesList } from '../NotesList/NotesList';
+import HallInvoicesPanel from './HallInvoicesPanel';
 import styles from './BookingsManager.module.css';
 
 interface BookingDetailsModalProps {
@@ -25,7 +27,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
   const [issuingReceipt, setIssuingReceipt] = useState(false);
 
   const eventDateStr = booking.eventDate?.date
-    ? new Date(booking.eventDate.date).toISOString().split('T')[0]
+    ? calendarKeyFromDbDate(new Date(booking.eventDate.date))
     : '';
   const dateDisplay = booking.eventDate?.date
     ? new Date(booking.eventDate.date).toLocaleDateString('he-IL')
@@ -132,7 +134,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
             )}
             {(booking.externalExtrasPrice ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>ספקים חיצוניים:</label>
+                <label>ספקים חיצוניים (לידיעה):</label>
                 <span>₪{booking.externalExtrasPrice?.toLocaleString() ?? 0}</span>
               </div>
             )}
@@ -143,7 +145,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               </div>
             )}
             <div className={styles.popupRow}>
-              <label>סה"כ חשבון:</label>
+              <label>סה&quot;כ חשבון לאולם:</label>
               <span className={styles.totalPrice}>₪{booking.totalPrice?.toLocaleString() ?? 0}</span>
             </div>
             <div className={styles.popupRow}><label>שולם:</label><span>₪{booking.paidAmount?.toLocaleString() ?? 0}</span></div>
@@ -222,6 +224,9 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
                 )}
               </div>
             )}
+
+            <HallInvoicesPanel bookingId={booking.id} isOption={booking.isOption} />
+
             <div className={styles.popupRow}><label>מוזיקה:</label><span>{booking.hasMusic ? 'כן' : 'לא'}</span></div>
             {booking.akumApprovalCode && (
               <div className={styles.popupRow}><label>קוד ע.ח:</label><span>{booking.akumApprovalCode}</span></div>

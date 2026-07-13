@@ -73,6 +73,7 @@ export const calendarBookingDetailsSchema = z.object({
           hallExtrasTotal: optionalNumber,
           externalExtrasTotal: optionalNumber,
           extrasTotal: optionalNumber,
+          hallTotal: optionalNumber,
           finalTotal: optionalNumber,
         })
         .optional(),
