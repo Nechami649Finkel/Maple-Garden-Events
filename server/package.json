@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "dev": "node --watch -r ts-node/register src/server.ts",
+    "dev": "node scripts/copy-shared.js && node --watch -r ts-node/register src/server.ts",
     "build": "npm run prebuild && tsc",
     "prebuild": "node scripts/copy-shared.js",
     "postinstall": "prisma generate",
