@@ -4,6 +4,10 @@ import { UserRole } from '../middlewares/requireRole';
  * קבוצות תפקידים לפי מטריצת ההרשאות (PRD §2.3).
  * manager = מנהל מערכת | staff = נציג | production = הפקה | floor_staff = קבלה
  */
+export function isFloorStaffRole(role: string | undefined | null): boolean {
+  return role === 'floor_staff';
+}
+
 export const RBAC = {
   /** הגדרות מתחם, ניהול משתמשים, פעולות כספיות מלאות */
   MANAGER_ONLY: ['manager'] as UserRole[],
