@@ -12,6 +12,21 @@ import { logger } from './logger';
 const S3_KEY_PREFIX = 's3:';
 const DEFAULT_PRESIGN_TTL = Number(process.env.S3_PRESIGN_TTL_SECONDS || 3600);
 
+/** Matches uploadPrivateFile layout: {category}/{bookingId}/{uuid}-{safeName} */
+const UUID =
+  '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+const ALLOWED_S3_OBJECT_KEY_RE = new RegExp(
+  `^(contracts|checks|signatures|documents)/${UUID}/[A-Za-z0-9._-]+$`,
+  'i',
+);
+
+export class InvalidS3ObjectKeyError extends Error {
+  constructor(message = 'INVALID_S3_KEY') {
+    super(message);
+    this.name = 'InvalidS3ObjectKeyError';
+  }
+}
+
 export function isS3StorageEnabled(): boolean {
   return Boolean(process.env.S3_BUCKET);
 }
@@ -26,6 +41,42 @@ export function toStoredS3Key(objectKey: string): string {
 
 export function fromStoredS3Key(stored: string): string {
   return stored.startsWith(S3_KEY_PREFIX) ? stored.slice(S3_KEY_PREFIX.length) : stored;
+}
+
+/**
+ * Normalize and validate an S3 object key for download/delete.
+ * Blocks path traversal, bare keys, and keys outside the allowed prefix layout.
+ */
+export function assertAllowedS3ObjectKey(storedOrKey: string): string {
+  if (typeof storedOrKey !== 'string' || !storedOrKey.trim()) {
+    throw new InvalidS3ObjectKeyError();
+  }
+
+  const raw = storedOrKey.trim();
+  // Avoid isStoredS3Key() here — its `value is string` predicate narrows the false branch to `never`.
+  let key = raw.startsWith(S3_KEY_PREFIX) ? fromStoredS3Key(raw) : raw;
+  try {
+    key = decodeURIComponent(key);
+  } catch {
+    throw new InvalidS3ObjectKeyError();
+  }
+
+  if (
+    !key
+    || key.includes('..')
+    || key.includes('\\')
+    || key.includes('\0')
+    || key.startsWith('/')
+    || key.includes('//')
+  ) {
+    throw new InvalidS3ObjectKeyError();
+  }
+
+  if (!ALLOWED_S3_OBJECT_KEY_RE.test(key)) {
+    throw new InvalidS3ObjectKeyError();
+  }
+
+  return key;
 }
 
 function createS3Client(): S3Client {
@@ -81,7 +132,7 @@ export async function uploadPrivateFile(params: {
 }
 
 export async function getPresignedDownloadUrl(storedOrKey: string, expiresIn = DEFAULT_PRESIGN_TTL): Promise<string> {
-  const objectKey = isStoredS3Key(storedOrKey) ? fromStoredS3Key(storedOrKey) : storedOrKey;
+  const objectKey = assertAllowedS3ObjectKey(storedOrKey);
   const bucket = getBucket();
   const s3 = createS3Client();
 
@@ -104,7 +155,7 @@ export async function resolveFileUrl(value: string | null | undefined): Promise<
 
 export async function deletePrivateFile(storedOrKey: string): Promise<void> {
   if (!isS3StorageEnabled()) return;
-  const objectKey = isStoredS3Key(storedOrKey) ? fromStoredS3Key(storedOrKey) : storedOrKey;
+  const objectKey = assertAllowedS3ObjectKey(storedOrKey);
   const bucket = getBucket();
   const s3 = createS3Client();
   await s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: objectKey }));

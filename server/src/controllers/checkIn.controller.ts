@@ -1,6 +1,8 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import prisma from '../config/prisma';
 import { Prisma } from '@prisma/client';
+import { AuthRequest } from '../middlewares/auth';
+import { isFloorStaffRole } from '../config/rbac';
 import { canEditCheckIn } from '../utils/eventStart';
 import { emitBookingUpdated, emitCheckInUpdated } from '../utils/realtime';
 import { calendarKeyFromDbDate } from '../utils/dateLocal';
@@ -111,8 +113,115 @@ function paramId(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
+const BOOKING_SENSITIVE_KEYS = [
+  'clientAIdNumber',
+  'clientAPhone',
+  'clientAEmail',
+  'clientAAddress',
+  'clientBIdNumber',
+  'clientBPhone',
+  'clientBEmail',
+  'clientBAddress',
+  'finalPricePortion',
+  'totalPrice',
+  'basePrice',
+  'extrasPrice',
+  'externalExtrasPrice',
+  'liveAdditionsTotal',
+  'hallRentalPrice',
+  'paidAmount',
+  'paymentStatus',
+  'advancePaid',
+  'totalPaid',
+  'depositPaid',
+  'depositMethod',
+  'depositCheckUrl',
+  'depositCheckDetails',
+  'clientSignatureUrl',
+  'securityCheckUrl',
+  'securityCheckStatus',
+  'contractText',
+  'paymentTermsText',
+  'paymentDeadline',
+  'paymentTemplateId',
+  'lastPaymentReminderSent',
+  'easycountDocId',
+  'easycountDocUrl',
+  'easycountStatus',
+  'easycountError',
+  'managerComments',
+  'akumApprovalCode',
+] as const;
+
+const EVENT_FORM_SENSITIVE_KEYS = [
+  'depositCheckUrl',
+  'depositCheckDetails',
+  'pricePerPortion',
+  'kashrutSurcharge',
+  'designPrice',
+  'extrasJson',
+  'totalPrice',
+  'akumCode',
+  'akumPaid',
+] as const;
+
+function omitKeys<T extends Record<string, unknown>>(
+  source: T,
+  keys: readonly string[],
+): Record<string, unknown> {
+  const omitted = new Set(keys);
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (!omitted.has(key)) result[key] = value;
+  }
+  return result;
+}
+
+/** Strip PII, pricing, and signature fields for floor_staff responses. */
+function sanitizeCheckInPayloadForFloorStaff(payload: {
+  checkIn: Record<string, unknown>;
+  booking: Record<string, unknown>;
+  eventForm: Record<string, unknown> | null;
+}) {
+  const { customerSignature: _signature, ...safeCheckIn } = payload.checkIn;
+  const bookingWithoutNested = { ...payload.booking };
+  delete bookingWithoutNested.eventForm;
+  delete bookingWithoutNested.eventCheckIn;
+
+  return {
+    checkIn: safeCheckIn,
+    booking: omitKeys(bookingWithoutNested, BOOKING_SENSITIVE_KEYS),
+    eventForm: payload.eventForm
+      ? omitKeys(payload.eventForm, EVENT_FORM_SENSITIVE_KEYS)
+      : null,
+  };
+}
+
+function assertFloorStaffSameDayAccess(
+  booking: {
+    timeOfDay?: string | null;
+    eventForm?: { eventTime?: string | null } | null;
+    eventDate?: { date: Date } | null;
+  },
+): { ok: true } | { ok: false; status: number; error: string } {
+  const eventDateStr = booking.eventDate?.date
+    ? calendarKeyFromDbDate(booking.eventDate.date)
+    : '';
+  if (
+    !eventDateStr
+    || !canEditCheckIn(eventDateStr, booking, booking.eventForm)
+  ) {
+    return {
+      ok: false,
+      status: 403,
+      error: 'צוות קבלה יכול לגשת לטופס הקבלה רק ביום האירוע ובמהלכו',
+    };
+  }
+  return { ok: true };
+}
+
 export const checkInController = {
-  async getCheckIn(req: Request, res: Response) {
+  async getCheckIn(req: AuthRequest, res: Response) {
     try {
       const bookingId = paramId(req.params.bookingId);
       const result = await getOrCreateCheckIn(bookingId);
@@ -120,13 +229,29 @@ export const checkInController = {
         return res.status(404).json({ error: 'הזמנה לא נמצאה' });
       }
 
+      const role = req.user?.role;
+      if (isFloorStaffRole(role)) {
+        const access = assertFloorStaffSameDayAccess(result.booking);
+        if (!access.ok) {
+          return res.status(access.status).json({ error: access.error });
+        }
+      }
+
+      const payload = {
+        checkIn: result.checkIn as unknown as Record<string, unknown>,
+        booking: result.booking as unknown as Record<string, unknown>,
+        eventForm: (result.booking.eventForm as unknown as Record<string, unknown> | null) ?? null,
+      };
+
       res.json({
         success: true,
-        data: {
-          checkIn: result.checkIn,
-          booking: result.booking,
-          eventForm: result.booking.eventForm,
-        },
+        data: isFloorStaffRole(role)
+          ? sanitizeCheckInPayloadForFloorStaff(payload)
+          : {
+              checkIn: result.checkIn,
+              booking: result.booking,
+              eventForm: result.booking.eventForm,
+            },
       });
     } catch (e) {
       console.error('getCheckIn error:', e);
@@ -134,7 +259,7 @@ export const checkInController = {
     }
   },
 
-  async updateCheckIn(req: Request, res: Response) {
+  async updateCheckIn(req: AuthRequest, res: Response) {
     try {
       const bookingId = paramId(req.params.bookingId);
       const existing = await prisma.booking.findUnique({
@@ -200,6 +325,12 @@ export const checkInController = {
 
       emitBookingUpdated(bookingId);
       emitCheckInUpdated(bookingId);
+
+      if (isFloorStaffRole(req.user?.role)) {
+        const { customerSignature: _sig, ...safeCheckIn } = checkIn as unknown as Record<string, unknown>;
+        return res.json({ success: true, data: safeCheckIn });
+      }
+
       res.json({ success: true, data: checkIn });
     } catch (e) {
       console.error('updateCheckIn error:', e);

@@ -20,7 +20,8 @@ export function verifyEasyCountWebhookSignature(
   signatureHeader: string | undefined,
 ): boolean {
   const secret = process.env.EASY_COUNT_WEBHOOK_SECRET?.trim();
-  if (!secret) return true;
+  // Fail closed: missing secret must never skip verification (allows forged "paid" webhooks).
+  if (!secret) return false;
 
   if (!signatureHeader?.trim()) return false;
 

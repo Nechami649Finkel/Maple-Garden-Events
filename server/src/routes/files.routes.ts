@@ -4,11 +4,11 @@ import { requireAuth, AuthRequest } from '../middlewares/auth';
 import { requireRole } from '../middlewares/requireRole';
 import { RBAC } from '../config/rbac';
 import {
+  assertAllowedS3ObjectKey,
   getPresignedDownloadUrl,
+  InvalidS3ObjectKeyError,
   isS3StorageEnabled,
-  isStoredS3Key,
   uploadPrivateFile,
-  fromStoredS3Key,
 } from '../utils/s3Storage';
 
 const router = Router();
@@ -29,10 +29,25 @@ router.get('/presigned', requireAuth, requireRole(...RBAC.MANAGEMENT), async (re
     return;
   }
 
+  let objectKey: string;
   try {
-    const url = await getPresignedDownloadUrl(key);
-    res.json({ success: true, url, objectKey: isStoredS3Key(key) ? fromStoredS3Key(key) : key });
+    objectKey = assertAllowedS3ObjectKey(key);
   } catch (err) {
+    if (err instanceof InvalidS3ObjectKeyError) {
+      res.status(400).json({ success: false, message: 'מפתח קובץ לא חוקי' });
+      return;
+    }
+    throw err;
+  }
+
+  try {
+    const url = await getPresignedDownloadUrl(objectKey);
+    res.json({ success: true, url, objectKey });
+  } catch (err) {
+    if (err instanceof InvalidS3ObjectKeyError) {
+      res.status(400).json({ success: false, message: 'מפתח קובץ לא חוקי' });
+      return;
+    }
     res.status(500).json({ success: false, message: 'שגיאה ביצירת קישור זמני' });
   }
 });
