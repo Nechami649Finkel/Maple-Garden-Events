@@ -17,6 +17,7 @@
     "export:event-form-design-pdf": "playwright test tests/e2e/export-event-form-design.spec.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "concurrently": "^10.0.3"
   }
 }
