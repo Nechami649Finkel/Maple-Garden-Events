@@ -1,6 +1,7 @@
 import prisma from '../../config/prisma';
 import { getHallBillableAmount } from '../../utils/hallBilling';
-import { computeRemainingHallBalance, resolvePaymentStatus } from './helpers';
+import { resolvePaymentStatus } from './helpers';
+import { syncBookingPaymentMetadata } from '../paymentDeadlineService';
 import type { EasyCountWebhookEvent } from './apiClient';
 
 export async function applyHallInvoicePayment(event: EasyCountWebhookEvent): Promise<{
@@ -71,7 +72,17 @@ export async function applyHallInvoicePayment(event: EasyCountWebhookEvent): Pro
       totalPaid: Number(booking.totalPaid) || 0,
       paymentStatus: booking.paymentStatus,
     };
+  }).then(async (result) => {
+    // עדכון paymentDeadline / depositPaid לאחר שינוי תשלום
+    await syncBookingPaymentMetadata(result.bookingId).catch(() => undefined);
+    return result;
   });
 }
 
-export { computeRemainingHallBalance, resolvePaymentStatus };
+export { resolvePaymentStatus } from './helpers';
+export {
+  computeHallBalanceBreakdown,
+  computeRemainingHallBalance,
+  loadHallBalanceForBooking,
+  type HallBalanceBreakdown,
+} from './hallBalance';

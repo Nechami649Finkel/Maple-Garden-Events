@@ -105,7 +105,86 @@ function formatHebrewDate(date: Date): string {
 function weekBeforeEvent(eventDate: Date): Date {
   const d = new Date(eventDate);
   d.setDate(d.getDate() - 7);
+  d.setHours(23, 59, 59, 999);
   return d;
+}
+
+/** מועד תשלום לפי סוג תשלום בתבנית */
+export function resolveInstallmentDueDate(dueType: PaymentDueType, eventDate: Date): Date {
+  if (dueType === 'WEEK_BEFORE_EVENT') {
+    return weekBeforeEvent(eventDate);
+  }
+  // 24 שעות לאחר האירוע — סוף יום האירוע + יום
+  const d = new Date(eventDate);
+  d.setDate(d.getDate() + 1);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+export interface InstallmentDue {
+  index: number;
+  percent: number;
+  amount: number;
+  dueType: PaymentDueType;
+  dueDate: Date;
+}
+
+/** לוח תשלומים מלא לפי תבנית + סכום חיוב לאולם */
+export function buildInstallmentSchedule(
+  template: PaymentTermsTemplate,
+  hallAmount: number,
+  eventDate: Date,
+): InstallmentDue[] {
+  const total = Math.max(0, Number(hallAmount) || 0);
+  return template.installments.map((inst, index) => ({
+    index,
+    percent: inst.percent,
+    amount: Math.round((total * inst.percent) / 100 * 100) / 100,
+    dueType: inst.dueType,
+    dueDate: resolveInstallmentDueDate(inst.dueType, eventDate),
+  }));
+}
+
+export interface PaymentObligationSnapshot {
+  /** סכום שהיה צריך להיות משולם עד asOf */
+  requiredByNow: number;
+  /** תשלומים שמועדם עבר וטרם כוסו */
+  overdueInstallments: InstallmentDue[];
+  /** מועד התשלום הבא (עתידי) — null אם הכל עבר */
+  nextDueDate: Date | null;
+  /** האם יש איחור ביחס ל-committedTotal */
+  isOverdue: boolean;
+}
+
+/**
+ * מחשב חוב מצטבר לפי מועדי תשלום בתבנית.
+ * isOverdue = committedTotal < requiredByNow (עם סובלנות של אגורה)
+ */
+export function computePaymentObligation(
+  template: PaymentTermsTemplate,
+  hallAmount: number,
+  eventDate: Date,
+  committedTotal: number,
+  asOf: Date = new Date(),
+): PaymentObligationSnapshot {
+  const schedule = buildInstallmentSchedule(template, hallAmount, eventDate);
+  const committed = Math.max(0, Number(committedTotal) || 0);
+
+  const overdueInstallments = schedule.filter((inst) => inst.dueDate.getTime() < asOf.getTime());
+  const requiredByNow = overdueInstallments.reduce((sum, inst) => sum + inst.amount, 0);
+
+  const nextFuture = schedule
+    .filter((inst) => inst.dueDate.getTime() >= asOf.getTime())
+    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime())[0];
+
+  const isOverdue = requiredByNow > 0.01 && committed + 0.01 < requiredByNow;
+
+  return {
+    requiredByNow: Math.round(requiredByNow * 100) / 100,
+    overdueInstallments,
+    nextDueDate: nextFuture?.dueDate ?? null,
+    isOverdue,
+  };
 }
 
 export interface PaymentTermsRenderContext {

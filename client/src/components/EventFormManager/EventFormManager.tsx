@@ -145,10 +145,23 @@ const SEPARATE_MIXED_OPTIONS = [
   { value: 'mixed', label: 'מעורב' },
 ];
 
-const EventFormManager = () => {
+export interface EventFormDesignExportConfig {
+  booking: Booking;
+  formData: EventFormData;
+  notesList?: string[];
+  selectedMenu?: Record<string, string[]> | null;
+  hasEntertainers?: boolean | null;
+  hasHonorTable?: boolean | null;
+}
+
+interface EventFormManagerProps {
+  designExport?: EventFormDesignExportConfig;
+}
+
+const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState<Booking | null>(null);
+  const [selected, setSelected] = useState<Booking | null>(designExport?.booking ?? null);
 
   const { data: bookingsData, isLoading: bookingsLoading } = useBookingsQuery({
     status: 'BOOKED',
@@ -171,26 +184,26 @@ const EventFormManager = () => {
   const [viewMode, setViewMode] = useState<'bookings' | 'forms' | 'stats'>('bookings');
   const [showPastEvents, setShowPastEvents] = useState(false);
   
-  const [formData, setFormData] = useState<EventFormData>({});
+  const [formData, setFormData] = useState<EventFormData>(designExport?.formData ?? {});
   const [depositCheckFile, setDepositCheckFile] = useState<File | null>(null);
   const [checkScanning, setCheckScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [emailSending, setEmailSending] = useState(false);
   const actionBusy = submitting || emailSending;
-  const [notesList, setNotesList] = useState<string[]>([]);
+  const [notesList, setNotesList] = useState<string[]>(designExport?.notesList ?? []);
   const [newNote, setNewNote] = useState('');
 
   const [kashrutImage, setKashrutImage] = useState<string | null>(null);
   const [isKashrutModalOpen, setIsKashrutModalOpen] = useState(false);
   
-  const [selectedMenu, setSelectedMenu] = useState<Record<string, string[]> | null>(null);
+  const [selectedMenu, setSelectedMenu] = useState<Record<string, string[]> | null>(designExport?.selectedMenu ?? null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTableLayoutOpen, setIsTableLayoutOpen] = useState(false);
   const [savedTables, setSavedTables] = useState<TableData[] | undefined>(undefined);
   const [tableLayoutImageUrl, setTableLayoutImageUrl] = useState<string | null>(null);
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
-  const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(null);
-  const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(null);
+  const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
+  const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
   const [barPortionPrice, setBarPortionPrice] = useState(60);
   const [showCamera, setShowCamera] = useState(false);
 
@@ -301,6 +314,8 @@ const EventFormManager = () => {
   }, [globalSettings]);
 
   useEffect(() => {
+    if (designExport) return;
+
     if (!selected) {
       setFormData({});
       setNotesList([]);
@@ -347,7 +362,7 @@ const EventFormManager = () => {
         setSavedTables(undefined);
         setTableLayoutImageUrl(null);
       });
-  }, [selected]);
+  }, [selected, designExport]);
 
   const handleTableLayoutSave = async (tables: TableData[], imageDataUrl: string) => {
     if (!selected) return;
@@ -911,7 +926,9 @@ const EventFormManager = () => {
               <span className="maple-meta-chip">סופי: {formData.finalGuestCount || '—'}</span>
               <span className="maple-meta-chip">כשרות: {formData.kashrut || '—'}</span>
             </div>
-            <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ סגור</button>
+            {!designExport && (
+              <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ סגור</button>
+            )}
           </div>
 
           <div className="maple-form-body card-body">

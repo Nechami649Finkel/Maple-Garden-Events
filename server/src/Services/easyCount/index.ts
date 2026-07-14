@@ -1,26 +1,44 @@
 import { randomUUID } from 'crypto';
 import prisma from '../../config/prisma';
-import { getHallBillableAmount } from '../../utils/hallBilling';
 import { postEasyCountInvoice } from './apiClient';
-import { computeRemainingHallBalance } from './helpers';
+import {
+  assertInvoiceAmountWithinBalance,
+  computeHallBalanceBreakdown,
+} from './hallBalance';
+import { syncBookingPaymentMetadata } from '../paymentDeadlineService';
 import type { EasyCountInvoiceRequest, EasyCountInvoiceResult } from './types';
 
 export type { EasyCountInvoiceRequest, EasyCountInvoiceResult } from './types';
 export { parseEasyCountWebhook } from './apiClient';
-export { applyHallInvoicePayment, computeRemainingHallBalance, resolvePaymentStatus } from './syncPayment';
+export {
+  applyHallInvoicePayment,
+  resolvePaymentStatus,
+} from './syncPayment';
+export {
+  computeHallBalanceBreakdown,
+  computeRemainingHallBalance,
+  loadHallBalanceForBooking,
+  assertInvoiceAmountWithinBalance,
+  type HallBalanceBreakdown,
+} from './hallBalance';
 export { verifyEasyCountWebhookSignature } from './helpers';
 
-type BookingForInvoice = Parameters<typeof getHallBillableAmount>[0] & {
+type BookingForInvoice = {
   id: string;
   eventCode: string;
   clientAFullName: string;
   clientAEmail?: string | null;
   clientAPhone: string;
   isOption?: boolean;
+  basePrice?: number | null;
+  extrasPrice?: number | null;
+  liveAdditionsTotal?: number | null;
+  totalPrice?: number | null;
+  totalPaid?: number | null;
 };
 
 export function resolveHallInvoiceAmount(booking: BookingForInvoice): number {
-  return getHallBillableAmount(booking);
+  return computeHallBalanceBreakdown(booking, []).hallAmount;
 }
 
 export interface CreateHallInvoiceOptions {
@@ -51,27 +69,16 @@ export async function createHallInvoice(
   }
 
   const hallAmount = resolveHallInvoiceAmount(booking);
-  const remaining = computeRemainingHallBalance(booking);
-  const requestedAmount = options?.amount ?? remaining;
+
+  // C5: טוען חשבוניות pending/paid לפני אימות — מונע חריגה מתקרת האולם
+  const existingInvoices = await prisma.hallInvoice.findMany({
+    where: { bookingId: booking.id },
+  });
+  const balance = computeHallBalanceBreakdown(booking, existingInvoices);
+  const requestedAmount = options?.amount ?? balance.remaining;
   const amount = Math.round(Number(requestedAmount) * 100) / 100;
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    const err: Error & { statusCode?: number } = new Error(
-      remaining <= 0
-        ? 'אין יתרה לחיוב מול האולם.'
-        : 'סכום החשבונית חייב להיות גדול מ-0.',
-    );
-    err.statusCode = 400;
-    throw err;
-  }
-
-  if (amount > remaining + 0.01) {
-    const err: Error & { statusCode?: number } = new Error(
-      `סכום החשבונית (₪${amount}) גבוה מהיתרה לאולם (₪${remaining}).`,
-    );
-    err.statusCode = 400;
-    throw err;
-  }
+  assertInvoiceAmountWithinBalance(amount, balance);
 
   const payload: EasyCountInvoiceRequest = {
     bookingId: booking.id,
@@ -100,6 +107,8 @@ export async function createHallInvoice(
   });
 
   void hallAmount;
+
+  void syncBookingPaymentMetadata(booking.id);
 
   return {
     id: stored.id,

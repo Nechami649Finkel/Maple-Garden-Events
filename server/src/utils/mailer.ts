@@ -314,6 +314,57 @@ export const sendManagerFinancialAlertEmail = async (
 };
 
 // ==========================================
+// 4b. תזכורת תשלום בפיגור — ללקוח
+// ==========================================
+export const sendPaymentOverdueReminderEmail = async (
+  clientEmail: string,
+  clientName: string,
+  bodyText: string,
+  remainingAmount: number,
+  missedDeadline: Date,
+): Promise<boolean> => {
+  const deadlineStr = missedDeadline.toLocaleDateString('he-IL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+  const formattedBody = bodyText.replace(/\n/g, '<br/>');
+
+  const mailOptions = {
+    from: getFromAddress(),
+    to: clientEmail,
+    subject: `תזכורת אדיבה: השלמת תשלום לאירוע שלכם במייפל 🍁`,
+    html: `
+      <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background-color: #fffbeb; padding: 20px; text-align: center; border-bottom: 3px solid #d97706;">
+          ${logoHeaderHtml()}
+          <h2 style="color: #92400e; margin: 0;">תזכורת לגבי תשלום האירוע</h2>
+        </div>
+        <div style="padding: 25px;">
+          <p style="font-size: 1.1rem;">שלום <strong>${clientName}</strong>,</p>
+          <p style="font-size: 1.05rem; line-height: 1.6;">${formattedBody}</p>
+          <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px; margin: 20px 0;">
+            <strong>מועד תשלום:</strong> ${deadlineStr}<br/>
+            <strong>יתרה לתשלום:</strong> ₪${Math.round(remainingAmount).toLocaleString('he-IL')}
+          </div>
+          <p style="font-size: 1rem;">
+            לכל שאלה ניתן להשיב למייל זה או ליצור קשר בטלפון 03-6777772.<br/><br/>
+            <strong>צוות מייפל 🍁</strong>
+          </p>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
+          🤖 הודעה זו נשלחה אוטומטית ממערכת מייפל.
+        </div>
+      </div>
+    `,
+    attachments: optionalLogoAttachment(),
+  };
+
+  const result = await deliverMail(mailOptions, `תזכורת תשלום ל-${clientEmail}`);
+  return result.ok;
+};
+
+// ==========================================
 // 5. בקשת משוב לאחר סיום אירוע
 // ==========================================
 export const sendFeedbackRequestEmail = async (

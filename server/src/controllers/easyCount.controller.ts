@@ -1,16 +1,13 @@
 import { Request, Response } from 'express';
-import prisma from '../config/prisma';
 import { catchAsync } from '../middlewares/errorHandler';
 import {
   applyHallInvoicePayment,
-  computeRemainingHallBalance,
   createHallInvoice,
   isEasyCountConfigured,
-  listHallInvoices,
+  loadHallBalanceForBooking,
   parseEasyCountWebhook,
   verifyEasyCountWebhookSignature,
 } from '../Services/easyCount';
-import { getHallBillableAmount } from '../utils/hallBilling';
 import { emitBookingUpdated } from '../utils/realtime';
 
 export const getEasyCountStatus = catchAsync(async (_req: Request, res: Response) => {
@@ -26,16 +23,7 @@ export const getEasyCountStatus = catchAsync(async (_req: Request, res: Response
 export const createBookingHallInvoice = catchAsync(async (req: Request, res: Response) => {
   const bookingId = String(req.params.id);
 
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-  });
-
-  if (!booking) {
-    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
-  }
-
-  const hallAmount = getHallBillableAmount(booking);
-  const remaining = computeRemainingHallBalance(booking);
+  const { booking, balance } = await loadHallBalanceForBooking(bookingId);
 
   const invoice = await createHallInvoice(booking, {
     amount: req.body?.amount,
@@ -47,9 +35,14 @@ export const createBookingHallInvoice = catchAsync(async (req: Request, res: Res
     success: true,
     data: {
       invoice,
-      hallAmount,
-      remainingBefore: remaining,
-      remainingAfter: Math.max(0, Math.round((remaining - invoice.amount) * 100) / 100),
+      hallAmount: balance.hallAmount,
+      remainingBefore: balance.remaining,
+      remainingAfter: Math.max(0, Math.round((balance.remaining - invoice.amount) * 100) / 100),
+      balance: {
+        paidTotal: balance.paidTotal,
+        pendingTotal: balance.pendingTotal,
+        committedTotal: balance.committedTotal,
+      },
     },
   });
 });
@@ -57,18 +50,19 @@ export const createBookingHallInvoice = catchAsync(async (req: Request, res: Res
 export const getBookingHallInvoices = catchAsync(async (req: Request, res: Response) => {
   const bookingId = String(req.params.id);
 
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) {
-    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
-  }
-
-  const invoices = await listHallInvoices(bookingId);
+  const { balance, invoices } = await loadHallBalanceForBooking(bookingId);
 
   res.json({
     success: true,
     data: {
-      hallAmount: getHallBillableAmount(booking),
-      remaining: computeRemainingHallBalance(booking),
+      hallAmount: balance.hallAmount,
+      remaining: balance.remaining,
+      balance: {
+        paidTotal: balance.paidTotal,
+        pendingTotal: balance.pendingTotal,
+        committedTotal: balance.committedTotal,
+        canIssueInvoice: balance.canIssueInvoice,
+      },
       invoices,
     },
   });

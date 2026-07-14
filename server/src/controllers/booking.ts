@@ -13,6 +13,7 @@ import { UPGRADE_DISPLAY_ORDER } from '../utils/pricing';
 import { buildUpgradesPricingFromSettings } from '../utils/pricing';
 import { parseNotesBundle } from '../utils/notesStorage';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
+import { syncBookingPaymentMetadata } from '../Services/paymentDeadlineService';
 import { sendPDFToClient } from '../Services/emailService';
 import {
   emitBookingUpdated,
@@ -30,14 +31,11 @@ import {
 import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
-  getTakenSlots,
   SLOT_LABELS,
   validateSlotOnDate,
   parseDateLocal,
-  getBookableSlotsForDate,
   type TimeSlot,
 } from '../utils/timeSlot';
-import { validateSlotAvailability } from '../utils/bookingDateValidation';
 import { syncOptionDatesOnEdit } from '../utils/optionDateSync';
 import { validateClientPricing } from '../utils/hallBilling';
 import { paginationMeta, parsePagination } from '../utils/pagination';
@@ -50,6 +48,12 @@ import {
 import { isHallOnlyBooking, HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
 import { neonTransactionOptions, withDbRetry } from '../utils/dbRetry';
 import { isSlotUniqueViolation, slotUniqueConflictError } from '../utils/bookingSlotGuard';
+import {
+  assertSlotAvailableAfterLock,
+  lockEventDateRow,
+  type TxClient,
+} from '../utils/eventDateLock';
+import { releaseOwnedOptionDates } from '../utils/optionRelease';
 import { getEasyCountMeta, issueAdvanceReceipt } from '../Services/easycount.service';
 import {
   formatEasyCountUserMessage,
@@ -148,12 +152,6 @@ function isPastCalendarDate(eventDate: Date): boolean {
   const eventDay = new Date(eventDate);
   eventDay.setHours(0, 0, 0, 0);
   return eventDay < today;
-}
-
-type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
-async function lockEventDateRow(tx: TxClient, eventDateId: string): Promise<void> {
-  await tx.$executeRaw`SELECT id FROM "EventDate" WHERE id = ${eventDateId} FOR UPDATE`;
 }
 
 async function releaseOptionDateInTx(tx: TxClient, dateId: string) {
@@ -414,19 +412,6 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         throw err;
       }
 
-      const availabilityError = validateSlotAvailability(
-        parseDateLocal(calendarKey),
-        slot,
-        eventDate?.bookings ?? [],
-        data.eventType || 'חתונה',
-        isOption ? { blockShabbatEntirely: true } : undefined,
-      );
-      if (availabilityError) {
-        const err: any = new Error(availabilityError);
-        err.statusCode = 400;
-        throw err;
-      }
-
       if (!eventDate) {
         eventDate = await tx.eventDate.create({
           data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate },
@@ -465,17 +450,16 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         throw err;
       }
 
-      const existingBookings = eventDate.bookings || [];
-      const bookableSlots = getBookableSlotsForDate(parseDateLocal(calendarKey), existingBookings);
-      if (!bookableSlots.includes(slot)) {
-        const taken = getTakenSlots(existingBookings);
-        const message = taken.has(slot)
-          ? slotConflictMessage(slot, existingBookings)
-          : (validateSlotOnDate(parseDateLocal(calendarKey), slot) || 'התאריך מלא — אין משבצות זמן פנויות.');
-        const err: any = new Error(message);
-        err.statusCode = 400;
-        throw err;
-      }
+      assertSlotAvailableAfterLock(
+        calendarKey,
+        slot,
+        eventDate.bookings || [],
+        data.eventType || 'חתונה',
+        {
+          isOption,
+          optionConflictMessage: slotConflictMessage(slot, eventDate.bookings || []),
+        },
+      );
 
       if (newStatus === 'BOOKED' && eventDate.status !== 'BOOKED') {
         eventDate = await tx.eventDate.update({
@@ -586,6 +570,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   eventsToEmit.forEach(ev => emitDateUpdated(ev));
   if (createdBookings.length > 0) {
     emitBookingUpdated(createdBookings[0].id);
+    if (!isOption) {
+      void syncBookingPaymentMetadata(createdBookings[0].id);
+    }
   }
 
   if (data.contractSigned && data.clientSignature && createdBookings.length > 0) {
@@ -801,17 +788,6 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     if (slotError) {
       return res.status(400).json({ success: false, message: slotError });
     }
-
-    const siblings = await prisma.booking.findMany({
-      where: { calendarDateId: booking.eventDate.id, id: { not: id } },
-    });
-    const taken = getTakenSlots(siblings);
-    if (taken.has(slot)) {
-      return res.status(400).json({
-        success: false,
-        message: slotConflictMessage(slot, siblings),
-      });
-    }
   }
 
   const timeString = slot
@@ -867,6 +843,22 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
   const updated = await prisma.$transaction(async (tx) => {
     await lockEventDateRow(tx, booking.eventDate.id);
+
+    if (slot) {
+      const calendarKey = calendarKeyFromDbDate(booking.eventDate.date);
+      const freshDate = await tx.eventDate.findUnique({
+        where: { id: booking.eventDate.id },
+        include: { bookings: true },
+      });
+      const siblingBookings = (freshDate?.bookings ?? []).filter((b) => b.id !== id);
+      assertSlotAvailableAfterLock(
+        calendarKey,
+        slot,
+        siblingBookings,
+        String(data.eventType ?? booking.eventType),
+        { optionConflictMessage: slotConflictMessage(slot, siblingBookings) },
+      );
+    }
 
     const updateData: Record<string, unknown> = {
       clientAFullName: data.clientAFullName,
@@ -973,13 +965,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
       const releaseDateIds: string[] = Array.isArray(data.releaseDateIds) ? data.releaseDateIds : [];
       if (releaseDateIds.length > 0) {
-        await tx.eventDate.updateMany({
-          where: { id: { in: releaseDateIds } },
-          data: { status: 'AVAILABLE', optionExpiresAt: null, clientName: null, clientPhone: null, clientEmail: null },
-        });
-        await tx.booking.deleteMany({
-          where: { calendarDateId: { in: releaseDateIds } },
-        });
+        await releaseOwnedOptionDates(tx, booking, releaseDateIds);
       }
     } else if (booking.isOption) {
       await syncEventDateWithOptionBookings(tx, booking.eventDate.id);

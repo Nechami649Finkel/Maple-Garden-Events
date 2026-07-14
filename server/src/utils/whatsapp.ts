@@ -183,6 +183,25 @@ export const sendManagerFinancialAlert = async (managerPhone: string, alertType:
 };
 
 // ==========================================
+// 4b. תזכורת תשלום בפיגור — ללקוח
+// ==========================================
+export const sendPaymentOverdueReminderWhatsApp = async (
+  clientPhone: string,
+  clientName: string,
+  bodyText: string,
+): Promise<WhatsAppSendResult> => {
+  const firstName = clientName?.split(' ')[0] || 'יקרים שלנו';
+  const message =
+    `שלום *${firstName}*,\n\n${bodyText}\n\n` +
+    `*צוות מייפל - גן אירועים*\nטלפון: 03-6777772\n` +
+    `--------------------------\n` +
+    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._\n` +
+    `_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+
+  return deliverWhatsApp(clientPhone, message, 'תזכורת תשלום');
+};
+
+// ==========================================
 // 5. בקשת משוב לאחר סיום אירוע (חדש!)
 // ==========================================
 export const sendFeedbackRequestWhatsApp = async (

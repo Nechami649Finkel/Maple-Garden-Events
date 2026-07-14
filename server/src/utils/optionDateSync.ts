@@ -9,16 +9,13 @@ import {
 import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
-  getTakenSlots,
-  getBookableSlotsForDate,
   parseDateLocal,
-  validateSlotOnDate,
   SLOT_LABELS,
   type TimeSlot,
 } from './timeSlot';
-import { validateSlotAvailability } from './bookingDateValidation';
-import { allocateEventCode } from './eventCode';
 import { isSlotUniqueViolation, slotUniqueConflictError } from './bookingSlotGuard';
+import { assertSlotAvailableAfterLock, lockEventDateRow } from './eventDateLock';
+import { allocateEventCode } from './eventCode';
 import prisma from '../config/prisma';
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
@@ -147,31 +144,6 @@ export async function syncOptionDatesOnEdit(
       include: { bookings: true },
     });
 
-    const existingBookings = eventDate?.bookings ?? [];
-    const availabilityError = validateSlotAvailability(
-      parseDateLocal(calendarKey),
-      slot,
-      existingBookings,
-      String(data.eventType || anchor.eventType),
-      { blockShabbatEntirely: true },
-    );
-    if (availabilityError) {
-      const err: any = new Error(`${calendarKey}: ${availabilityError}`);
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const bookableSlots = getBookableSlotsForDate(parseDateLocal(calendarKey), existingBookings);
-    if (!bookableSlots.includes(slot)) {
-      const taken = getTakenSlots(existingBookings);
-      const message = taken.has(slot)
-        ? slotConflictMessage(slot, existingBookings)
-        : validateSlotOnDate(parseDateLocal(calendarKey), slot) || 'התאריך מלא.';
-      const err: any = new Error(`${calendarKey}: ${message}`);
-      err.statusCode = 400;
-      throw err;
-    }
-
     if (!eventDate) {
       eventDate = await tx.eventDate.create({
         data: {
@@ -181,7 +153,36 @@ export async function syncOptionDatesOnEdit(
         },
         include: { bookings: true },
       });
-    } else {
+    }
+
+    await lockEventDateRow(tx, eventDate.id);
+    eventDate = await tx.eventDate.findUnique({
+      where: { id: eventDate.id },
+      include: { bookings: true },
+    });
+    if (!eventDate) {
+      const err: any = new Error(`${calendarKey}: תאריך לא נמצא.`);
+      err.statusCode = 404;
+      throw err;
+    }
+
+    assertSlotAvailableAfterLock(
+      calendarKey,
+      slot,
+      eventDate.bookings ?? [],
+      String(data.eventType || anchor.eventType),
+      { isOption: true, optionConflictMessage: slotConflictMessage(slot, eventDate.bookings ?? []) },
+    );
+
+    if (eventDate.status !== 'OPTION' && !eventDate.bookings.some((b) => b.isOption)) {
+      await tx.eventDate.update({
+        where: { id: eventDate.id },
+        data: {
+          status: eventDate.bookings.some((b) => !b.isOption) ? eventDate.status : 'OPTION',
+          optionExpiresAt: optionExpiresAt,
+        },
+      });
+    } else if (eventDate.status !== 'BOOKED') {
       await tx.eventDate.update({
         where: { id: eventDate.id },
         data: {
@@ -190,8 +191,6 @@ export async function syncOptionDatesOnEdit(
         },
       });
     }
-
-    await tx.$executeRaw`SELECT id FROM "EventDate" WHERE id = ${eventDate.id} FOR UPDATE`;
 
     const eventCode = await allocateEventCode('OPT', tx);
     try {

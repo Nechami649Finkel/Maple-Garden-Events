@@ -15,6 +15,7 @@ import { queryClient } from './lib/queryClient';
 
 const BookingForm = lazy(() => import('./components/BookingForm/BookingForm'));
 const BookingFormDesignExport = lazy(() => import('./components/BookingForm/BookingFormDesignExport'));
+const EventFormDesignExport = lazy(() => import('./components/EventFormManager/EventFormDesignExport'));
 const OptionsManager = lazy(() => import('./components/OptionsManager/OptionsManager'));
 const BookingsManager = lazy(() => import('./components/BookingsManager/BookingsManager'));
 const GreetingBlast = lazy(() => import('./components/GreetingBlast/GreetingBlast'));
@@ -111,6 +112,18 @@ function App() {
                 <Lazy>
                   <AppLayout layout="viewportFill">
                     <BookingFormDesignExport />
+                  </AppLayout>
+                </Lazy>
+              }
+            />
+          )}
+          {import.meta.env.DEV && (
+            <Route
+              path="/__design__/event-form"
+              element={
+                <Lazy>
+                  <AppLayout layout="viewportFill">
+                    <EventFormDesignExport />
                   </AppLayout>
                 </Lazy>
               }

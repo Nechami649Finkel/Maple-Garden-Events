@@ -68,6 +68,12 @@ model Booking {
   contractText        String?         @db.Text
   paymentTemplateId   String?
   paymentTermsText    String?         @db.Text
+  /** מועד תשלום הבא/אחרון שחל — מחושב מתבנית התשלום ותאריך האירוע */
+  paymentDeadline     DateTime?
+  /** האם התקבלה מקדמה / פיקדון (advancePaid או totalPaid > 0) */
+  depositPaid         Boolean         @default(false)
+  /** תאריך שליחת תזכורת תשלום אחרונה — מונע spam יומי (idempotency) */
+  lastPaymentReminderSent DateTime?
   upgrades            Json?
   kosherType          String?
   hallInvoices        HallInvoice[]

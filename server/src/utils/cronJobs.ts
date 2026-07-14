@@ -14,6 +14,8 @@ import {
 import { processEndedEventsFeedback } from './feedbackHelpers';
 import { runDatabaseBackup } from './databaseBackup';
 import { processDueScheduledGreetings } from '../Services/greetingService';
+import { checkOverduePayments } from '../Services/paymentDeadlineService';
+import { computeHallBalanceBreakdown } from '../Services/easyCount/hallBalance';
 
 export const startCronJobs = () => {
   logger.info('Cron jobs service started');
@@ -47,7 +49,7 @@ export const startCronJobs = () => {
     try {
       const activeBookings = await prisma.booking.findMany({
         where: { eventDate: { status: 'BOOKED' } },
-        include: { eventDate: true, eventForm: true }
+        include: { eventDate: true, eventForm: true, hallInvoices: true },
       });
 
       for (const booking of activeBookings) {
@@ -78,11 +80,18 @@ export const startCronJobs = () => {
         }
 
         // ---------------------------------------------------------
-        // 2. כספים: תשלום סופי חסר (פחות מ-30 יום לאירוע - התראה למנהל כל יום)
+        // 2. כספים: תשלום סופי חסר (פחות מ-30 יום לאירוע — C5: כולל pending)
         // ---------------------------------------------------------
-        const amountDue = booking.totalPrice - (booking.totalPaid || 0);
+        const hallBalance = computeHallBalanceBreakdown(booking, booking.hallInvoices);
+        const amountDue = hallBalance.remaining;
         if (daysUntilEvent <= 30 && daysUntilEvent > 0 && amountDue > 0) {
-          const details = `האירוע מתקיים ב-${booking.eventDate!.date.toLocaleDateString('he-IL')}, נותר לתשלום: ₪${amountDue}`;
+          const pendingNote =
+            hallBalance.pendingTotal > 0
+              ? ` (₪${hallBalance.pendingTotal.toLocaleString('he-IL')} ממתין לגבייה)`
+              : '';
+          const details =
+            `האירוע מתקיים ב-${booking.eventDate!.date.toLocaleDateString('he-IL')}, ` +
+            `נותר לתשלום: ₪${amountDue.toLocaleString('he-IL')}${pendingNote}`;
           await sendManagerFinancialAlert(MANAGER_PHONE, "חוב פתוח לאירוע קרוב", clientName, details);
           await sendManagerFinancialAlertEmail(MANAGER_EMAIL, "חוב פתוח לאירוע קרוב", clientName, details);
         }
@@ -147,6 +156,19 @@ export const startCronJobs = () => {
       }
     } catch (error) {
       logger.error('שגיאה בעיבוד ברכות מתוזמנות:', error);
+    }
+  });
+
+  // ==========================================
+  // טיימר 5: מעקב מועדי תשלום + תזכורות (כל בוקר ב-08:00)
+  // ==========================================
+  cron.schedule('0 8 * * *', async () => {
+    logger.info('--- מתחיל סריקת איחורי תשלום (C5 / Easy Count) ---');
+    try {
+      const summary = await checkOverduePayments();
+      logger.info('✅ סריקת מועדי תשלום הסתיימה', summary);
+    } catch (error) {
+      logger.error('שגיאה בסריקת מועדי תשלום:', error);
     }
   });
 

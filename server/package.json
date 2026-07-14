@@ -17,7 +17,8 @@
     "sentry:verify": "ts-node scripts/sentry-verify.ts",
     "test": "jest",
     "test:unit": "node --require ts-node/register/transpile-only --test tests/contract-lineItems.test.ts",
-    "test:security": "jest tests/security.test.ts"
+    "test:security": "jest tests/security.test.ts",
+    "test:integration": "jest --config jest.integration.config.js"
   },
   "keywords": [],
   "author": "",

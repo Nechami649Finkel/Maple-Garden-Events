@@ -1,23 +1,18 @@
 import crypto from 'crypto';
-import { getHallBillableAmount } from '../../utils/hallBilling';
+
+export {
+  computeHallBalanceBreakdown,
+  computeRemainingHallBalance,
+  loadHallBalanceForBooking,
+  assertInvoiceAmountWithinBalance,
+  type HallBalanceBreakdown,
+} from './hallBalance';
 
 export function resolvePaymentStatus(totalPaid: number, hallAmount: number): string {
   if (hallAmount <= 0) return totalPaid > 0 ? 'PARTIAL' : 'pending';
   if (totalPaid >= hallAmount - 0.01) return 'paid';
   if (totalPaid > 0) return 'PARTIAL';
   return 'pending';
-}
-
-export function computeRemainingHallBalance(booking: {
-  basePrice?: number | null;
-  extrasPrice?: number | null;
-  liveAdditionsTotal?: number | null;
-  totalPrice?: number | null;
-  totalPaid?: number | null;
-}): number {
-  const hallAmount = getHallBillableAmount(booking);
-  const paid = Number(booking.totalPaid) || 0;
-  return Math.max(0, Math.round((hallAmount - paid) * 100) / 100);
 }
 
 export function verifyEasyCountWebhookSignature(
