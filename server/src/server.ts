@@ -29,13 +29,14 @@ export const broadcastUpdate = (action: string, data: unknown) => {
 startCronJobs();
 
 const PORT = Number(process.env.PORT) || 5000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 initOrderSequence()
   .then(async () => {
     await verifyEmailConnection();
     const easycount = getEasyCountMeta();
     logger.info(`EZCount mode: ${easycount.mode} — ${easycount.label}`);
-    httpServer.listen(PORT, () => logger.info(`Server running on port ${PORT}`));
+    httpServer.listen(PORT, HOST, () => logger.info(`Server running on http://${HOST}:${PORT}`));
   })
   .catch((err) => {
     logger.error('Failed to initialize order sequence', { error: err });
