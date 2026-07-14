@@ -3,6 +3,9 @@
 dist/
 build/
 
+# Compiled artifacts in shared source (should stay .ts only)
+shared/**/*.js
+
 # Playwright
 /test-results/
 /playwright-report/
