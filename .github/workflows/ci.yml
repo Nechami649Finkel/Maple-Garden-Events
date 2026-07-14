@@ -1,8 +1,7 @@
 name: CI
 
 on:
-  push:
-    branches: [main, miriam, miryami]
+  workflow_call:
   pull_request:
     branches: [main, miriam]
 
@@ -31,6 +30,26 @@ jobs:
       - name: Generate Prisma client
         working-directory: server
         run: npx prisma generate
+
+      - name: Lint client
+        working-directory: client
+        run: npm run lint
+
+      - name: Typecheck client
+        working-directory: client
+        run: npm run typecheck
+
+      - name: Unit tests (server)
+        working-directory: server
+        run: npm test -- --ci --forceExit
+
+      - name: Contract unit tests (node)
+        working-directory: server
+        run: npm run test:unit
+
+      - name: Security tests
+        working-directory: server
+        run: npm run test:security
 
       - name: Build client
         working-directory: client

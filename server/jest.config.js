@@ -4,7 +4,10 @@ module.exports = {
   testEnvironment: 'node',
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
-  testPathIgnorePatterns: ['<rootDir>/tests/integration/'],
+  testPathIgnorePatterns: [
+    '<rootDir>/tests/integration/',
+    '<rootDir>/tests/contract-lineItems.test.ts',
+  ],
   setupFiles: ['<rootDir>/tests/setup.env.ts'],
   modulePathIgnorePatterns: ['<rootDir>/dist'],
   clearMocks: true,

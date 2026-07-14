@@ -23,10 +23,15 @@ import authRoutes from './routes/auth.routes';
 import checkInRoutes from './routes/checkIn.routes';
 import easyCountRoutes from './routes/easyCount.routes';
 import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
+import filesRoutes from './routes/files.routes';
 
 validateEnv();
 
 const app = express();
+
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 app.use(helmet());
 
@@ -97,6 +102,7 @@ app.use('/api/event-forms', eventFormRoutes);
 app.use('/api/options', optionRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/files', filesRoutes);
 
 const shouldServeClient =
   process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';

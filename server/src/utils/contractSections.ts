@@ -14,7 +14,7 @@ import {
   resolveEffectiveUpgrades,
   stripAnnexUpgradeSections,
   type ExtrasLineItem,
-} from '../../../shared/contract';
+} from '../vendor/shared/contract';
 
 export {
   CONTRACT_ANNEX_PLACEHOLDER,
@@ -34,7 +34,7 @@ export {
 };
 
 /** @deprecated use buildSelectedLineItems */
-export { buildSelectedLineItems as buildExtrasLineItems } from '../../../shared/contract';
+export { buildSelectedLineItems as buildExtrasLineItems } from '../vendor/shared/contract';
 
 export function resolveFullContractText(options: {
   baseContract: string;

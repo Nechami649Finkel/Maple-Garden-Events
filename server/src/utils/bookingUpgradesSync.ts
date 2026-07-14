@@ -3,7 +3,7 @@ import {
   resolveEffectiveUpgrades,
   type EventFormEquipmentFields,
   type ExtrasLineItem,
-} from '../../../shared/contract';
+} from '../vendor/shared/contract';
 import { resolveContractWithPaymentTerms, resolveDefaultPaymentTermsText } from './getContractText';
 import { parseNotesBundle } from './notesStorage';
 import { buildUpgradesPricingFromSettings } from './pricing';

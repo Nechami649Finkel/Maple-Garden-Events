@@ -4,4 +4,6 @@ node_modules
 
 logs/
 backups/
+shared/
+src/vendor/
 /src/generated/prisma

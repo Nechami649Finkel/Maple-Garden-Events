@@ -3,7 +3,7 @@ import {
   formatMoneyLine,
   paymentNoteText,
   type ExtrasLineItem,
-} from '../../../../shared/contract';
+} from '../../vendor/shared/contract';
 
 function esc(value: string): string {
   return value
