@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { AccessibilitySettings } from '../../accessibility/accessibilitySettings';
-import { useAccessibility } from '../../context/AccessibilityContext';
+import { useAccessibility } from '../../context/accessibilityContext';
 import styles from './AccessibilityWidget.module.css';
 
 type ToolAction =

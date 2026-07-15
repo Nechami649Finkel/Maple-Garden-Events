@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNavigationOverride } from '../../context/NavigationContext';
+import { useNavigationOverride } from '../../context/navigationContext';
 import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';

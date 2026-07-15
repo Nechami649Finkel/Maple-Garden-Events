@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS, isNavItemActive } from '../../utils/navConfig';
-import { useSidebar } from '../../context/SidebarContext';
+import { useSidebar } from '../../context/sidebarContext';
 import { Icon } from '../ui/Icon';
 import './AppSidebar.css';
 

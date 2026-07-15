@@ -4,7 +4,7 @@ import {
   HALL_UPGRADE_KEYS,
   type UpgradeKey,
 } from '../../../utils/pricing';
-import { EXTERNAL_SUPPLIER_LINKS } from '../BookingForm';
+import { EXTERNAL_SUPPLIER_LINKS } from '../bookingFormConstants';
 
 interface UpgradesSectionProps {
   upgrades: Record<string, boolean>;

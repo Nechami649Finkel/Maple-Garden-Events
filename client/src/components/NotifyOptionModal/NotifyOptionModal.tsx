@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
+import { buildDefaultOptionInterestMessage } from '../../utils/notifyOptionMessage';
 import styles from './NotifyOptionModal.module.css';
 
 interface Props {
@@ -13,13 +14,6 @@ interface Props {
   eventDateStr: string;
   onClose: () => void;
   onSuccess?: () => void;
-}
-
-export function buildDefaultOptionInterestMessage(clientName: string, eventDateStr: string): string {
-  const dateDisplay = eventDateStr.includes('-')
-    ? eventDateStr.split('-').reverse().join('/')
-    : new Date(eventDateStr).toLocaleDateString('he-IL');
-  return `שלום ${clientName}, מתענינים בתאריך שלך (${dateDisplay}) בגן האירועים מייפל. נשמח לשמוע ממך בהקדם.`;
 }
 
 const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props) => {
