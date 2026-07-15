@@ -11,6 +11,8 @@ import liveStyles from '../LiveEvent/LiveEvent.module.css';
 type DayData = CalendarDayApi & {
   dayOfWeek: number;
   isCurrentMonth: boolean;
+  status: string;
+  bookings: CalendarBookingApi[];
 };
 
 interface CalendarProps {
@@ -50,8 +52,8 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     return fullName.trim().split(' ').pop() || '';
   };
 
-  const nameA = getLastName(booking.clientAFullName);
-  const nameB = getLastName(booking.clientBFullName);
+  const nameA = getLastName(booking.clientAFullName ?? '');
+  const nameB = getLastName(booking.clientBFullName ?? '');
 
   // 3. חיבור חכם של השמות - רק אם יש באמת שני צדדים שונים
   const namesDisplay =

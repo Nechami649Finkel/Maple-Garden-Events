@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styles from './CancellationStats.module.css';
 import { useCancellationStatsQuery } from '../../hooks/queries';
 

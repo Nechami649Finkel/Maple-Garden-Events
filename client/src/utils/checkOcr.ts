@@ -13,7 +13,11 @@ import {
 export type { DepositCheckDetails } from './checkOcrParse';
 export { runParseFixtures } from './checkOcrParse';
 
-const PSM_MODES = ['6', '4', '11'] as const;
+const PSM_MODES = [
+  Tesseract.PSM.SINGLE_BLOCK,
+  Tesseract.PSM.SINGLE_COLUMN,
+  Tesseract.PSM.SPARSE_TEXT,
+] as const;
 
 function enhanceForDigits(canvas: HTMLCanvasElement, threshold = 140): void {
   const ctx = canvas.getContext('2d');
@@ -114,7 +118,7 @@ function canvasToJpeg(canvas: HTMLCanvasElement): string {
 async function recognizeNumbers(
   imageSrc: string,
   worker: Tesseract.Worker,
-  psm: string
+  psm: Tesseract.PSM
 ): Promise<string> {
   await worker.setParameters({
     tessedit_char_whitelist: '0123456789 /',
@@ -125,7 +129,7 @@ async function recognizeNumbers(
 }
 
 async function recognizeBankLabels(imageSrc: string, worker: Tesseract.Worker): Promise<string> {
-  await worker.setParameters({ tessedit_pageseg_mode: '3' });
+  await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.AUTO });
   const { data } = await worker.recognize(imageSrc);
   return data.text;
 }

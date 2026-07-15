@@ -30,14 +30,14 @@ const toEventCard = (b: BookingApi): EventCardData => ({
   id: b.id,
   date: dateStr(b),
   code: b.eventCode,
-  clientName: b.clientAFullName,
+  clientName: b.clientAFullName ?? '',
   clientNameB: b.clientBFullName,
-  eventType: b.eventType,
-  timeOfDay: b.timeOfDay,
+  eventType: b.eventType ?? '',
+  timeOfDay: b.timeOfDay ?? undefined,
   guestCount:
     b.eventType === 'השכרת אולם בלי אוכל'
       ? 'השכרת אולם (ללא מנות)'
-      : b.guestCount,
+      : (b.guestCount ?? undefined),
   status: 'confirmed',
   statusLabel: 'מאושר',
 });

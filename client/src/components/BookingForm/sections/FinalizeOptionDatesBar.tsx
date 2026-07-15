@@ -1,13 +1,8 @@
 import { calendarKeyFromDbDate } from '../../../utils/dateLocal';
-
-interface RelatedOption {
-  id: string;
-  calendarDateId: string;
-  eventDate?: { date: string; hebrewDate?: string };
-}
+import type { RelatedBookingOption } from '../bookingFormTypes';
 
 interface FinalizeOptionDatesBarProps {
-  relatedOptions: RelatedOption[];
+  relatedOptions: RelatedBookingOption[];
   selectedBookingId: string;
   onSelect: (bookingId: string) => void;
 }
