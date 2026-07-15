@@ -16,6 +16,7 @@ import {
   type DataTableColumn,
   type EventCardData,
 } from '../ui';
+import { type BookingApi } from '../../utils/bookingApi';
 
 const startOfDay = (d: Date) => {
   const copy = new Date(d);
@@ -23,23 +24,23 @@ const startOfDay = (d: Date) => {
   return copy;
 };
 
-const getEventDay = (b: any) => (b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null);
+const getEventDay = (b: BookingApi) => (b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null);
 
-const dateStr = (b: any) =>
+const dateStr = (b: BookingApi) =>
   b.eventDate?.date ? new Date(b.eventDate.date).toLocaleDateString('he-IL') : '—';
 
-const toEventCard = (b: any, status: 'confirmed' | 'past'): EventCardData => ({
+const toEventCard = (b: BookingApi, status: 'confirmed' | 'past'): EventCardData => ({
   id: b.id,
   date: dateStr(b),
   code: b.eventCode,
-  clientName: b.clientAFullName,
+  clientName: b.clientAFullName ?? '',
   clientNameB: b.clientBFullName,
-  eventType: b.eventType,
-  timeOfDay: b.timeOfDay,
+  eventType: b.eventType ?? '',
+  timeOfDay: b.timeOfDay ?? undefined,
   guestCount:
     b.eventType === 'השכרת אולם בלי אוכל'
       ? 'השכרת אולם (ללא מנות)'
-      : b.guestCount,
+      : (b.guestCount ?? undefined),
   status,
   statusLabel: status === 'confirmed' ? 'מאושר' : 'עבר',
 });
@@ -49,7 +50,7 @@ const TABLE_ID = 'bookings-manager';
 const BookingsManager = () => {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selected, setSelected] = useState<any>(null);
+  const [selected, setSelected] = useState<BookingApi | null>(null);
   const [sortKey, setSortKey] = useState(() => loadTablePrefs(TABLE_ID).sortColumn ?? 'date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>(() => loadTablePrefs(TABLE_ID).sortDir ?? 'asc');
 
@@ -73,10 +74,10 @@ const BookingsManager = () => {
     }
   };
 
-  const sortBookings = (bookings: any[]) => {
+  const sortBookings = (bookings: BookingApi[]) => {
     const sorted = [...bookings];
     sorted.sort((a, b) => {
-      let cmp = 0;
+      let cmp: number;
       switch (sortKey) {
         case 'code':
           cmp = String(a.eventCode ?? '').localeCompare(String(b.eventCode ?? ''), 'he');
@@ -112,11 +113,11 @@ const BookingsManager = () => {
 
   const { upcomingBookings, pastBookings } = useMemo(() => {
     const today = startOfDay(new Date());
-    const bookings = (data?.data ?? []).filter((b: any) => !b.isOption);
+    const bookings = (data?.data ?? []).filter((b) => !b.isOption);
 
     const upcoming = sortBookings(
       bookings
-      .filter((b: any) => {
+      .filter((b) => {
         const day = getEventDay(b);
         return day !== null && day >= today;
       })
@@ -124,7 +125,7 @@ const BookingsManager = () => {
 
     const past = sortBookings(
       bookings
-      .filter((b: any) => {
+      .filter((b) => {
         const day = getEventDay(b);
         return day !== null && day < today;
       })
@@ -135,7 +136,7 @@ const BookingsManager = () => {
 
   const closeSelected = () => setSelected(null);
 
-  const columns: DataTableColumn<any>[] = [
+  const columns: DataTableColumn<BookingApi>[] = [
     { key: 'date', header: 'תאריך', sortable: true, render: (b) => dateStr(b) },
     { key: 'code', header: 'קוד', sortable: true, render: (b) => (b.eventCode ? `#${b.eventCode}` : '—') },
     { key: 'client', header: 'לקוח', sortable: true, render: (b) => b.clientAFullName },
@@ -181,7 +182,7 @@ const BookingsManager = () => {
 
   const renderSection = (
     title: string,
-    bookings: any[],
+    bookings: BookingApi[],
     cardStatus: 'confirmed' | 'past',
   ) => (
     <section className={styles.section}>

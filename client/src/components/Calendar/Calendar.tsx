@@ -5,20 +5,13 @@ import './Calendar.css';
 import { EventPopup } from '../EventPopup/EventPopup';
 import { getSlotColor, SLOT_COLORS, SLOT_LABELS, TIME_SLOTS, getTakenSlots, getBookableSlotsForDate, hasOptionOnDay, normalizeTimeSlot, type TimeSlot } from '../../utils/timeSlot';
 import { isEventLive } from '../../utils/eventStart';
+import { type CalendarBookingApi, type CalendarDayApi } from '../../utils/optionDateApi';
 import liveStyles from '../LiveEvent/LiveEvent.module.css';
-interface DayData {
-  id: string | null;
-  date: string;
+
+type DayData = CalendarDayApi & {
   dayOfWeek: number;
-  hebrewDate: string;
-  status: string;
-  reason: string | null;
-  candleTime: string | null;
-  lockedBy: string | null;
-  bookings: any[];
-  blockedSlots?: string[];
   isCurrentMonth: boolean;
-}
+};
 
 interface CalendarProps {
   onDateSelect: (day: DayData) => void;
@@ -31,7 +24,7 @@ const COL_HEADERS = ['שבת','שישי','חמישי','רביעי','שלישי',
 /** DOM order top→bottom so flex-end stacks: evening on top, morning at bottom */
 const CALENDAR_SLOT_STACK_ORDER: TimeSlot[] = ['evening', 'noon', 'morning'];
 
-function sortBookingsForCalendarCell(bookings: any[]) {
+function sortBookingsForCalendarCell(bookings: CalendarBookingApi[]) {
   return [...bookings].sort((a, b) => {
     const slotA = normalizeTimeSlot(a.timeOfDay) ?? 'morning';
     const slotB = normalizeTimeSlot(b.timeOfDay) ?? 'morning';
@@ -46,7 +39,8 @@ const formatDateLocal = (date: Date): string => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
-export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitle = (booking: any) => {
+export const Calendar = ({ onDateSelect }: CalendarProps) => {
+  const getEventTitle = (booking: CalendarBookingApi) => {
   // 1. מנקים רווחים נסתרים מסוג האירוע כדי שהקוד יזהה אותו בוודאות
   const type = (booking.eventType || '').trim(); 
 
@@ -60,13 +54,10 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
   const nameB = getLastName(booking.clientBFullName);
 
   // 3. חיבור חכם של השמות - רק אם יש באמת שני צדדים שונים
-  let namesDisplay = '';
-  if (nameA && nameB && nameA !== nameB) {
-    namesDisplay = `${nameA}-${nameB}`;
-  } else {
-    // אם הוזן רק צד אחד במערכת, נציג רק אותו
-    namesDisplay = nameA || nameB; 
-  }
+  const namesDisplay =
+    nameA && nameB && nameA !== nameB
+      ? `${nameA}-${nameB}`
+      : nameA || nameB;
 
   // 4. תצוגה סופית על הלוח (בלי מקף מיותר בחתונות)
   if (type === 'חתונה' || type === 'אירוסין') {
@@ -78,7 +69,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
  const navigate = useNavigate();
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<any>(null);
+  const [selectedDay, setSelectedDay] = useState<(DayData & { col?: number; row?: number }) | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedDateForAction, setSelectedDateForAction] = useState<string | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState('חתונה');
@@ -105,7 +96,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
   const datesList = Array.isArray(datesData) ? datesData : [];
 
   const buildGrid = () => {
-    const serverMap = new Map<string, any>(datesList.map((d: any) => [d.date, d]));
+    const serverMap = new Map<string, CalendarDayApi>(datesList.map((d) => [d.date, d]));
     const days: (DayData & { col: number; row: number })[] = [];
     const loop = new Date(startDate);
     let row = 1;
@@ -118,7 +109,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
         date: key, 
         dayOfWeek: dow, 
         hebrewDate: srv?.hebrewDate ?? '',
-        status: srv?.status ?? 'AVAILABLE', 
+        status: srv?.status ?? 'AVAILABLE',
         reason: srv?.reason ?? null, 
         candleTime: srv?.candleTime ?? null,
         lockedBy: srv?.lockedBy ?? null, 
@@ -279,7 +270,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
                   
                   <div className="cell-status-text">{day.isCurrentMonth ? (day.reason || '') : ''}</div>
                   <div className="cell-events-container">
-                    {sortBookingsForCalendarCell(day.bookings).map((b: any, idx: number) => {
+                    {sortBookingsForCalendarCell(day.bookings ?? []).map((b, idx: number) => {
                       const baseColor = getSlotColor(b.timeOfDay);
                       const isOptionBooking = b.isOption === true;
                       const isLive =
@@ -366,7 +357,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {const getEventTitl
                 className="option-btn"
                 onClick={() => {
                   if (!selectedDateForAction) return;
-                  const dayData = datesList.find((d: any) => d.date === selectedDateForAction);
+                  const dayData = datesList.find((d) => d.date === selectedDateForAction);
                   setIsActionModalOpen(false);
                   navigate('/option', {
                     state: {

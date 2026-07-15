@@ -9,6 +9,7 @@ import { PageHeader } from '../ui/PageHeader';
 import { Input } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
 import { calendarKeyFromDbDate } from '../../utils/dateLocal';
+import { type BookingApi } from '../../utils/bookingApi';
 
 const HEBREW_NUMERALS: Record<number, string> = {
   1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',
@@ -35,8 +36,8 @@ const getHebrewDateString = (dateObj: Date | null) => {
 
 const OptionsManager = () => {
   const [search, setSearch] = React.useState('');
-  const [selectedOption, setSelectedOption] = React.useState<any>(null);
-  const [notifyOption, setNotifyOption] = React.useState<any>(null);
+  const [selectedOption, setSelectedOption] = React.useState<BookingApi | null>(null);
+  const [notifyOption, setNotifyOption] = React.useState<BookingApi | null>(null);
 
   const { data, isLoading: loading, refetch } = useBookingsQuery({ status: 'OPTION', limit: 100, page: 1 });
 
@@ -47,7 +48,7 @@ const OptionsManager = () => {
   }, []);
 
   const options = (data?.data ?? [])
-    .filter((b: any) => {
+    .filter((b) => {
       if (!b.isOption) return false;
 
       if (b.eventDate?.date) {
@@ -64,7 +65,7 @@ const OptionsManager = () => {
         b.clientBIdNumber?.includes(search)
       );
     })
-    .sort((a: any, b: any) => {
+    .sort((a, b) => {
       const da = a.eventDate?.date ? new Date(a.eventDate.date).getTime() : 0;
       const db = b.eventDate?.date ? new Date(b.eventDate.date).getTime() : 0;
       return da - db;
@@ -118,7 +119,7 @@ const OptionsManager = () => {
         />
       ) : (
         <div className={styles.grid}>
-          {options.map((option: any) => {
+          {options.map((option) => {
             const dateObj = option.eventDate?.date ? new Date(option.eventDate.date) : null;
             const eventDateStr = dateObj ? dateObj.toLocaleDateString('he-IL') : '';
             const hebrewDateStr = getHebrewDateString(dateObj);

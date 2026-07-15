@@ -7,13 +7,12 @@ import CheckCamera from '../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../CheckDetailsForm/CheckDetailsForm';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
 import CancellationStats from '../CancellationStats/CancellationStats';
-import KashrutSelector from '../KashrutSelector/KashrutSelector';
 import MenuSelectionForm from '../MenuSelectionForm/MenuSelectionForm';
 import FloorPlanBuilder from '../FloorPlanBuilder/FloorPlanBuilder';
 import type { TableData } from '../FloorPlanBuilder/FloorPlanBuilder';
 import { serverTablesToClient, clientTablesToServer } from '../../constants/defaultTableLayout';
 import { calculatePortionBilling } from '../../utils/portionBilling';
-import { hasEventEnded } from '../../utils/eventStart';
+import { hasEventEnded, type EventFormTime } from '../../utils/eventStart';
 import { todayCalendarKey } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
 import { secureFetch } from '../../services/api';
@@ -48,7 +47,7 @@ interface Booking {
   guestCount: number;
   eventType: string;
   timeOfDay: string;
-  eventForm?: any;
+  eventForm?: EventFormTime | null;
   akumApprovalCode?: string;
 }
 
@@ -192,7 +191,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [notesList, setNotesList] = useState<string[]>(designExport?.notesList ?? []);
   const [newNote, setNewNote] = useState('');
 
-  const [kashrutImage, setKashrutImage] = useState<string | null>(null);
+  const kashrutImage = kashruts[0]?.imageUrl ?? null;
   const [isKashrutModalOpen, setIsKashrutModalOpen] = useState(false);
   
   const [selectedMenu, setSelectedMenu] = useState<Record<string, string[]> | null>(designExport?.selectedMenu ?? null);
@@ -203,8 +202,25 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
   const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
   const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
-  const [barPortionPrice, setBarPortionPrice] = useState(60);
+  const barPortionPrice = globalSettings?.barPortionPrice != null
+    ? Number(globalSettings.barPortionPrice)
+    : 60;
   const [showCamera, setShowCamera] = useState(false);
+
+  // Reset draft form fields when selection identity changes (render-time adjustment).
+  const [selectionSource, setSelectionSource] = useState(selected);
+  if (!designExport && selected !== selectionSource) {
+    setSelectionSource(selected);
+    if (!selected) {
+      setFormData({});
+      setNotesList([]);
+      setHasHonorTable(null);
+      setHasEntertainers(null);
+      setShowCamera(false);
+    } else {
+      setShowCamera(false);
+    }
+  }
 
   const portionBilling = calculatePortionBilling({
     finalGuestCount: formData.finalGuestCount || 0,
@@ -281,7 +297,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   useNavigationOverride(navigationOverride);
 
   const prepareFormDataForSave = (data: EventFormData): EventFormData => {
-    const { menCount, womenCount, ...rest } = data;
+    const rest: EventFormData = { ...data };
+    delete rest.menCount;
+    delete rest.womenCount;
     return {
       ...rest,
       honorTableCount: hasHonorTable ? data.honorTableCount : undefined,
@@ -300,35 +318,33 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     alert("התפריט נשמר כחלק מפרטי האירוע!");
   };
 
+  // Fetch server form when a booking is selected; only setState after the async response.
   useEffect(() => {
-    if (kashruts.length > 0 && kashruts[0].imageUrl) {
-      setKashrutImage(kashruts[0].imageUrl);
-    }
-  }, [kashruts]);
+    if (designExport || !selected) return;
 
-  useEffect(() => {
-    if (globalSettings?.barPortionPrice) {
-      setBarPortionPrice(Number(globalSettings.barPortionPrice));
-    }
-  }, [globalSettings]);
-
-  useEffect(() => {
-    if (designExport) return;
-
-    if (!selected) {
-      setFormData({});
-      setNotesList([]);
-      setHasHonorTable(null);
-      setHasEntertainers(null);
-      setShowCamera(false);
-      return;
-    }
-    setShowCamera(false);
+    let cancelled = false;
     secureFetch(`${API_URL}/event-forms/${selected.id}`, { credentials: 'include' })
       .then(r => r.json())
       .then(form => {
+        if (cancelled) return;
         if (form && form.id) {
-          const { id, createdAt, updatedAt, booking, bookingId, tables, ...cleanForm } = form;
+          const {
+            tables,
+            ...formFields
+          } = form as EventFormData & {
+            id?: string;
+            createdAt?: string;
+            updatedAt?: string;
+            booking?: unknown;
+            bookingId?: string;
+            tables?: Parameters<typeof serverTablesToClient>[0];
+          };
+          const cleanForm: EventFormData = { ...formFields };
+          Reflect.deleteProperty(cleanForm, 'id');
+          Reflect.deleteProperty(cleanForm, 'createdAt');
+          Reflect.deleteProperty(cleanForm, 'updatedAt');
+          Reflect.deleteProperty(cleanForm, 'booking');
+          Reflect.deleteProperty(cleanForm, 'bookingId');
           const guestTotal = cleanForm.finalGuestCount || selected.guestCount;
           const { menCount, womenCount } = countsFromPercents(
             cleanForm.menPercent,
@@ -354,6 +370,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         }
       })
       .catch(() => {
+        if (cancelled) return;
         setFormData({});
         setHasHonorTable(null);
         setHasEntertainers(null);
@@ -361,6 +378,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         setSavedTables(undefined);
         setTableLayoutImageUrl(null);
       });
+    return () => { cancelled = true; };
   }, [selected, designExport]);
 
   const handleTableLayoutSave = async (tables: TableData[], imageDataUrl: string) => {
@@ -436,14 +454,17 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     statusLabel: hasForm ? 'טופס קיים' : 'ממתין למילוי',
   });
 
-  const handleInputChange = (field: keyof EventFormData, value: any) => {
+  const handleInputChange = (
+    field: keyof EventFormData,
+    value: EventFormData[keyof EventFormData] | string,
+  ) => {
     if (field === 'menCount' || field === 'womenCount') {
       setFormData(prev => {
         const menCount = field === 'menCount'
-          ? Math.max(0, parseInt(value, 10) || 0)
+          ? Math.max(0, parseInt(String(value), 10) || 0)
           : (prev.menCount || 0);
         const womenCount = field === 'womenCount'
-          ? Math.max(0, parseInt(value, 10) || 0)
+          ? Math.max(0, parseInt(String(value), 10) || 0)
           : (prev.womenCount || 0);
         const { menPercent, womenPercent } = computePercentSplit(menCount, womenCount);
         return { ...prev, menCount, womenCount, menPercent, womenPercent };
@@ -554,17 +575,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       console.error('Download error:', error);
       alert('שגיאה בהורדת PDF');
     }
-  };
-
-  const handleShare = () => {
-    if (!selected) return;
-    const clientName = `${selected.clientAFullName} ${selected.clientBFullName ? `ו${selected.clientBFullName}` : ''}`;
-    const textMsg = `שלום, מצורף עדכון לגבי טופס הפקת אירוע - משפחת ${clientName} בתאריך ${dateStr(selected)}.\nמוזמנים: ${formData.finalGuestCount || 'לא צוין'}.`;
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
-    window.setTimeout(() => {
-      window.open(`mailto:?subject=${encodeURIComponent(`טופס אירוע: ${clientName}`)}&body=${encodeURIComponent(textMsg)}`, '_blank');
-    }, 500);
   };
 
   const handleDeleteCheckImage = () => {

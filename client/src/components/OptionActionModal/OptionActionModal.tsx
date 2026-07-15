@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import styles from './OptionActionModal.module.css';
+import { type BookingApi } from '../../utils/bookingApi';
 
 interface Props {
-  option: any;
+  option: BookingApi;
   onClose: () => void;
   onSuccess: () => void;
 }

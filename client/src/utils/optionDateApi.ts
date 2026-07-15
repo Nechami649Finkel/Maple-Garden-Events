@@ -1,5 +1,6 @@
 import { apiFetch } from '../services/api';
 import { API_URL } from '../config/api';
+import { type EventFormTime } from './eventStart';
 import { type TimeSlot, normalizeTimeSlot } from './timeSlot';
 import { validateOptionDateSelection } from './optionDateValidation';
 
@@ -10,16 +11,47 @@ export function normalizeOptionDate(d: string | OptionDateItem): OptionDateItem 
   return { date: String(d), hebrewDate: '' };
 }
 
+/** Booking summary embedded in calendar day cells */
+export type CalendarBookingApi = {
+  id?: string;
+  timeOfDay?: string | null;
+  isOption?: boolean;
+  clientAFullName?: string;
+  clientBFullName?: string;
+  eventType?: string;
+  eventForm?: EventFormTime | null;
+  eventCode?: string;
+  paidAmount?: number;
+  isContractSigned?: boolean;
+  clientAIdNumber?: string;
+  clientBIdNumber?: string;
+  clientAPhone?: string;
+  clientBPhone?: string;
+  clientAEmail?: string;
+  clientBEmail?: string;
+  guestCount?: number | null;
+  finalPricePortion?: number;
+  basePrice?: number;
+  totalPrice?: number;
+  extrasPrice?: number;
+  externalExtrasPrice?: number;
+  liveAdditionsTotal?: number;
+  createdBy?: string;
+  clientComments?: string | null;
+  managerComments?: string | null;
+  clientSignatureUrl?: string | null;
+};
+
 /** Day payload from GET /api/calendar/dates */
 export type CalendarDayApi = {
+  id?: string | null;
   date: string;
   hebrewDate?: string;
   status?: string;
   reason?: string | null;
-  bookings?: Array<{
-    timeOfDay?: string | null;
-    isOption?: boolean;
-  }>;
+  candleTime?: string | null;
+  lockedBy?: string | null;
+  bookings?: CalendarBookingApi[];
   blockedSlots?: string[];
 };
 

@@ -15,11 +15,12 @@ import { canEditBooking } from '../../utils/bookingEdit';
 import { NotesList } from '../NotesList/NotesList';
 import HallInvoicesPanel from './HallInvoicesPanel';
 import styles from './BookingsManager.module.css';
+import { type BookingApi, type EventAdditionApi } from '../../utils/bookingApi';
 
 interface BookingDetailsModalProps {
-  booking: any;
+  booking: BookingApi;
   onClose: () => void;
-  onBookingUpdated?: (booking: any) => void;
+  onBookingUpdated?: (booking: BookingApi) => void;
 }
 
 const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDetailsModalProps) => {
@@ -56,7 +57,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
       const json = await res.json();
       alert(json.message || (json.success ? 'קבלה הופקה בהצלחה' : 'שגיאה בהפקת קבלה'));
       if (json.success && json.data && onBookingUpdated) {
-        onBookingUpdated(json.data);
+        onBookingUpdated(json.data as BookingApi);
       }
     } catch {
       alert('שגיאת תקשורת עם השרת');
@@ -149,10 +150,10 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               <span className={styles.totalPrice}>₪{booking.totalPrice?.toLocaleString() ?? 0}</span>
             </div>
             <div className={styles.popupRow}><label>שולם:</label><span>₪{booking.paidAmount?.toLocaleString() ?? 0}</span></div>
-            {booking.advancePaid > 0 && (
+            {(booking.advancePaid ?? 0) > 0 && (
               <div className={styles.popupRow}><label>מקדמה:</label><span>₪{booking.advancePaid?.toLocaleString()}</span></div>
             )}
-            {booking.totalPaid > 0 && (
+            {(booking.totalPaid ?? 0) > 0 && (
               <div className={styles.popupRow}><label>סה"כ שולם:</label><span>₪{booking.totalPaid?.toLocaleString()}</span></div>
             )}
             <div className={styles.popupRow}><label>סטטוס תשלום:</label><span>{booking.paymentStatus || '—'}</span></div>
@@ -269,10 +270,10 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
             </section>
           )}
 
-          {booking.additions?.length > 0 && (
+          {booking.additions && booking.additions.length > 0 && (
             <section className={styles.detailsSection}>
               <h3 className={styles.sectionTitle}>תוספות במהלך האירוע</h3>
-              {booking.additions.map((add: any) => (
+              {booking.additions.map((add: EventAdditionApi) => (
                 <div key={add.id} className={styles.additionItem}>
                   <div className={styles.additionMeta}>
                     🕒 {new Date(add.createdAt).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}

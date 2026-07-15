@@ -11,8 +11,15 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ROLE_OPTIONS = Object.entries(ROLE_LABELS);
 
+type AuthorizedUser = {
+  id: string;
+  email: string;
+  role: string;
+  createdAt?: string;
+};
+
 export const AuthorizedUsers = () => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AuthorizedUser[]>([]);
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('manager');
 
@@ -24,7 +31,9 @@ export const AuthorizedUsers = () => {
         if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
         return res.json();
       })
-      .then((data) => setUsers(data))
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setUsers(data as AuthorizedUser[]);
+      })
       .catch((err) => console.error('שגיאה בטעינת משתמשים:', err));
   };
 
