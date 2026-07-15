@@ -4,6 +4,7 @@ import { buildBookingPdfData, generateEventProductionPDF } from '../utils/pdfGen
 import { sendEventFormEmailIfAllowed } from '../utils/eventFormEmail';
 import { emitEventFormsUpdated, emitBookingUpdated } from '../utils/realtime';
 import { refreshBookingUpgradesAndContract } from '../utils/bookingUpgradesSync';
+import { logger } from '../utils/logger';
 
 function mapTableCreate(table: {
   id: number;
@@ -156,7 +157,7 @@ export const eventFormController = {
           emailError = emailResult.error;
         }
       } catch (sendError) {
-        console.warn('Failed to send communications:', sendError);
+        logger.warn('Failed to send communications:', sendError);
         emailError = 'שגיאה בשליחת המייל';
       }
 
@@ -170,7 +171,7 @@ export const eventFormController = {
       });
       emitEventFormsUpdated();
     } catch (e) {
-      console.error('Form upsert error:', e);
+      logger.error('Form upsert error:', e);
       res.status(500).json({ error: 'שגיאה בשמירת הטופס' });
     }
   },
@@ -222,7 +223,7 @@ export const eventFormController = {
       res.json({ success: true, data: form });
       emitEventFormsUpdated();
     } catch (e) {
-      console.error('Save tables error:', e);
+      logger.error('Save tables error:', e);
       res.status(500).json({ error: 'שגיאה בשמירת סידור שולחנות' });
     }
   },
@@ -260,7 +261,7 @@ export const eventFormController = {
       res.setHeader('Content-Disposition', `attachment; filename="event-form-${booking.clientAFullName}.pdf"`);
       res.send(pdfBuffer);
     } catch (e) {
-      console.error('PDF generation error:', e);
+      logger.error('PDF generation error:', e);
       res.status(500).json({ error: 'שגיאה בהפקת PDF' });
     }
   },
@@ -286,7 +287,7 @@ export const eventFormController = {
       const status = emailResult.error === 'הזמנה או טופס לא נמצאו' ? 404 : 400;
       return res.status(status).json({ success: false, error: emailResult.error });
     } catch (e) {
-      console.error('Send email error:', e);
+      logger.error('Send email error:', e);
       res.status(500).json({ error: 'שגיאה בשליחת המייל' });
     }
   }

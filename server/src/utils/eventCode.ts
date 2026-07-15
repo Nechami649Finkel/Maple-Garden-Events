@@ -1,5 +1,6 @@
 import prisma from '../config/prisma';
 import { neonTransactionOptions } from './dbRetry';
+import { logger } from './logger';
 
 type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
@@ -45,7 +46,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 5, delay = 2000): Pr
     return await fn();
   } catch (error) {
     if (retries <= 0) throw error;
-    console.log(`Connection failed, retrying in ${delay}ms... (${retries} retries left)`);
+    logger.warn('Connection failed, retrying', { delayMs: delay, retriesLeft: retries });
     await new Promise(resolve => setTimeout(resolve, delay));
     return withRetry(fn, retries - 1, delay);
   }

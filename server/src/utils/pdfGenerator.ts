@@ -15,6 +15,7 @@ import {
 import { renderUpgradesSectionsHtml } from './contract/upgradeTablesHtml';
 import { DEFAULT_UPGRADES_PRICING } from './pricing';
 import { HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
+import { logger } from './logger';
 
 type DepositCheckDetails = {
   payee?: string;
@@ -402,7 +403,7 @@ function parseMenuRows(menuSelections: unknown): string {
       return row(category, esc(itemsList));
     }).join('');
   } catch (err) {
-    console.error('שגיאה בפענוח התפריט ל-PDF:', err);
+    logger.error('שגיאה בפענוח התפריט ל-PDF', { error: err });
     return '';
   }
 }

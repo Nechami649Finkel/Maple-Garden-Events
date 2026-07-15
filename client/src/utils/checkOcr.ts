@@ -74,7 +74,7 @@ function cropRegion(
   region: 'top' | 'bottom' | 'topLeft' | 'bottomWide',
   fraction = 0.35
 ): HTMLCanvasElement {
-  let sx = 0;
+  const sx = 0;
   let sy = 0;
   let sw = canvas.width;
   let sh = canvas.height;

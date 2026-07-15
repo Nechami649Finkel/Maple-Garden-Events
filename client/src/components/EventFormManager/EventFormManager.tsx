@@ -85,7 +85,6 @@ interface EventFormData {
   hasSoundSystem?: boolean;
   hasScreens?: boolean;
   hasFireworks?: boolean;
-  entertainersTotal?: number; 
   entertainersBar?: number;
   entertainersSitting?: number;
   entertainersMen?: number;

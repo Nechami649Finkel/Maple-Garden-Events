@@ -2,13 +2,13 @@ import {
   DeleteObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
-  S3Client,
 } from '@aws-sdk/client-s3';
 import { execFile } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import { logger } from './logger';
+import { getS3Client } from './s3Client';
 
 const execFileAsync = promisify(execFile);
 
@@ -29,20 +29,6 @@ function getBackupPrefix(): string {
   return `${base}/${tenant}/`;
 }
 
-function createS3Client(): S3Client {
-  const region = process.env.AWS_REGION || 'auto';
-  const endpoint = process.env.S3_ENDPOINT;
-
-  return new S3Client({
-    region,
-    ...(endpoint ? { endpoint, forcePathStyle: true } : {}),
-    credentials: {
-      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-    },
-  });
-}
-
 async function compressSqlDump(sqlPath: string): Promise<string> {
   const archivePath = sqlPath.replace(/\.sql$/, '.tar.gz');
   const backupDir = path.dirname(sqlPath);
@@ -60,7 +46,7 @@ async function compressSqlDump(sqlPath: string): Promise<string> {
 
 async function uploadBackupToS3(archivePath: string, objectKey: string): Promise<void> {
   const bucket = process.env.S3_BACKUP_BUCKET!;
-  const s3 = createS3Client();
+  const s3 = getS3Client();
   const body = fs.readFileSync(archivePath);
 
   await s3.send(
@@ -84,7 +70,7 @@ async function pruneRemoteBackups(): Promise<void> {
 
   const bucket = process.env.S3_BACKUP_BUCKET!;
   const prefix = getBackupPrefix();
-  const s3 = createS3Client();
+  const s3 = getS3Client();
   const cutoffMs = Date.now() - REMOTE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
   let deletedCount = 0;
   let continuationToken: string | undefined;

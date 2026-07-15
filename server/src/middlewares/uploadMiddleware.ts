@@ -152,5 +152,8 @@ export function assertUploadedFileMagicBytes(
   next();
 }
 
-/** Shared default uploader for files + greeting attachments */
+/**
+ * Shared default uploader — import this from routes (booking, files, etc.).
+ * Do not create local multer() instances elsewhere.
+ */
 export const upload = createMemoryUpload();

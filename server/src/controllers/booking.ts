@@ -28,6 +28,7 @@ import {
   parseCalendarDate,
   calendarKeyFromDbDate,
 } from '../utils/dateLocal';
+import { logger } from '../utils/logger';
 import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
@@ -602,7 +603,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         );
       }
     } catch (pdfError) {
-      console.error("שגיאה בהפקת או שליחת החוזה הראשוני למייל:", pdfError);
+      logger.error("שגיאה בהפקת או שליחת החוזה הראשוני למייל:", pdfError);
     }
   }
 
@@ -612,7 +613,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       try {
         easycountResult = await issueEasyCountReceiptForBooking(savedBooking.id);
       } catch (easycountError) {
-        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+        logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
     }
   }
@@ -1035,7 +1036,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
           );
         }
       } catch (pdfError) {
-        console.error('שגיאה בהפקת או שליחת חוזה ה-PDF:', pdfError);
+        logger.error('שגיאה בהפקת או שליחת חוזה ה-PDF:', pdfError);
       }
     }
 
@@ -1044,7 +1045,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       try {
         easycountResult = await issueEasyCountReceiptForBooking(updated.id);
       } catch (easycountError) {
-        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+        logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
     }
 
@@ -1069,7 +1070,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     try {
       easycountResult = await issueEasyCountReceiptForBooking(updated.id);
     } catch (easycountError) {
-      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
   }
 
@@ -1256,7 +1257,7 @@ export const addEventAddition = async (req: Request, res: Response) => {
     emitBookingUpdated(bookingId);
     res.status(201).json({ message: 'התוספת נשמרה בהצלחה!', addition: newAddition });
   } catch (error) {
-    console.error('Error adding event addition:', error);
+    logger.error('Error adding event addition:', error);
     res.status(500).json({ error: 'שגיאת שרת פנימית בעת שמירת התוספת' });
   }
 };
@@ -1355,7 +1356,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
         );
       }
     } catch (pdfError) {
-      console.error("שגיאה בהפקת או שליחת חוזה ה-PDF:", pdfError);
+      logger.error("שגיאה בהפקת או שליחת חוזה ה-PDF:", pdfError);
     }
   }
 
@@ -1364,7 +1365,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
     try {
       easycountResult = await issueEasyCountReceiptForBooking(bookingId);
     } catch (easycountError) {
-      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
   }
 

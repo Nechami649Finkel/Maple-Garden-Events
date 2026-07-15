@@ -320,12 +320,25 @@ describe('SEC-07: Check-in access gate — floor_staff', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.booking.clientAPhone).toBeUndefined();
-      expect(res.body.data.booking.clientAIdNumber).toBeUndefined();
-      expect(res.body.data.booking.totalPrice).toBeUndefined();
-      expect(res.body.data.checkIn.customerSignature).toBeUndefined();
-      expect(res.body.data.eventForm?.pricePerPortion).toBeUndefined();
-      expect(res.body.data.eventForm?.totalPrice).toBeUndefined();
+      const data = res.body.data;
+      expect(Object.keys(data).sort()).toEqual([
+        'eventCode',
+        'eventType',
+        'familiesLabel',
+        'guestCount',
+        'id',
+        'portions',
+        'tables',
+      ].sort());
+      expect(data.clientAPhone).toBeUndefined();
+      expect(data.clientAIdNumber).toBeUndefined();
+      expect(data.totalPrice).toBeUndefined();
+      expect(data.createdBy).toBeUndefined();
+      expect(data.upgrades).toBeUndefined();
+      expect(data.customerSignature).toBeUndefined();
+      expect(data.booking).toBeUndefined();
+      expect(data.checkIn).toBeUndefined();
+      expect(data.eventForm).toBeUndefined();
     } finally {
       jest.useRealTimers();
     }

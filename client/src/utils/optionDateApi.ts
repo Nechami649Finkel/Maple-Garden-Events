@@ -5,6 +5,19 @@ import { validateOptionDateSelection } from './optionDateValidation';
 
 export type OptionDateItem = { date: string; hebrewDate?: string };
 
+/** Day payload from GET /api/calendar/dates */
+export type CalendarDayApi = {
+  date: string;
+  hebrewDate?: string;
+  status?: string;
+  reason?: string | null;
+  bookings?: Array<{
+    timeOfDay?: string | null;
+    isOption?: boolean;
+  }>;
+  blockedSlots?: string[];
+};
+
 export function getEventTypeFilter(eventType: string): string {
   return eventType === 'חתונה' || eventType === 'אירוסין' ? 'חתונה' : 'אירוע אחר';
 }
@@ -13,13 +26,15 @@ export async function fetchCalendarDays(
   start: string,
   end: string,
   eventType: string
-): Promise<any[]> {
+): Promise<CalendarDayApi[]> {
   const filter = getEventTypeFilter(eventType);
   const res = await apiFetch(
     `${API_URL}/calendar/dates?start=${start}&end=${end}&eventType=${filter}`
   );
   if (!res.ok) throw new Error('fetch failed');
-  return res.json();
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data as CalendarDayApi[];
 }
 
 function getHebrewDateLabel(dateStr: string): string {
@@ -54,8 +69,9 @@ export async function resolveOptionDate(
     if (!res.ok) {
       return { ok: false, error: 'לא ניתן לוודא את התאריך — נסי שוב.' };
     }
-    const data = await res.json();
-    const day = data?.[0];
+    const data: unknown = await res.json();
+    const days = Array.isArray(data) ? (data as CalendarDayApi[]) : [];
+    const day = days[0];
     const serverError = validateOptionDateSelection(date, day, slot, excludeDates);
     if (serverError) return { ok: false, error: serverError };
     return {
