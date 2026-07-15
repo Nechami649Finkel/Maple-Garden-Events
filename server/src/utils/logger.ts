@@ -6,9 +6,10 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 const logsDir = process.env.LOG_DIR || path.join(process.cwd(), 'logs');
 fs.mkdirSync(logsDir, { recursive: true });
 
+const isProd = process.env.NODE_ENV === 'production';
 const { combine, timestamp, errors, json, colorize, printf } = winston.format;
 
-const consoleFormat = printf(({ level, message, timestamp: ts, stack, ...meta }) => {
+const readableFormat = printf(({ level, message, timestamp: ts, stack, ...meta }) => {
   const extra = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
   return `${ts} [${level}] ${stack || message}${extra}`;
 });
@@ -38,12 +39,20 @@ export const logger = winston.createLogger({
   ],
 });
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: combine(colorize(), timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), consoleFormat),
-  }));
+if (isProd) {
+  logger.add(
+    new winston.transports.Console({
+      format: combine(timestamp(), errors({ stack: true }), json()),
+    }),
+  );
 } else {
-  logger.add(new winston.transports.Console({
-    format: combine(timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }), consoleFormat),
-  }));
+  logger.add(
+    new winston.transports.Console({
+      format: combine(
+        colorize(),
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        readableFormat,
+      ),
+    }),
+  );
 }

@@ -1,4 +1,5 @@
 // src/utils/whatsapp.ts
+import { logger } from './logger';
 
 export type WhatsAppSendResult = {
   sent: boolean;
@@ -37,14 +38,14 @@ export async function checkHasWhatsApp(rawPhone: string): Promise<boolean | null
     );
 
     if (!res.ok) {
-      console.error(`Green API checkWhatsapp failed (${res.status})`);
+      logger.error('Green API checkWhatsapp failed', { status: res.status });
       return null;
     }
 
     const data = (await res.json()) as { existsWhatsapp?: boolean };
     return !!data.existsWhatsapp;
   } catch (error) {
-    console.error('Green API checkWhatsapp error:', error);
+    logger.error('Green API checkWhatsapp error', { error });
     return null;
   }
 }
@@ -67,14 +68,14 @@ async function sendGreenApiMessage(rawPhone: string, message: string): Promise<b
     );
 
     if (!res.ok) {
-      console.error(`Green API sendMessage failed (${res.status})`);
+      logger.error('Green API sendMessage failed', { status: res.status });
       return false;
     }
 
-    console.log(`✅ WhatsApp sent to ${rawPhone}`);
+    logger.info('WhatsApp sent', { phone: rawPhone });
     return true;
   } catch (error) {
-    console.error('Green API sendMessage error:', error);
+    logger.error('Green API sendMessage error', { error });
     return false;
   }
 }
@@ -87,7 +88,7 @@ async function deliverWhatsApp(
   if (isGreenApiConfigured()) {
     const hasWhatsApp = await checkHasWhatsApp(phone);
     if (hasWhatsApp === false) {
-      console.log(`[WHATSAPP] ${phone} — אין וואטסאפ, דילוג על שליחה (${type})`);
+      logger.info('WhatsApp skipped — no WhatsApp on number', { phone, type });
       return { sent: false, simulated: false, hasWhatsApp: false };
     }
 
@@ -95,9 +96,7 @@ async function deliverWhatsApp(
     return { sent, simulated: false, hasWhatsApp: hasWhatsApp ?? true };
   }
 
-  console.log(`\n[WHATSAPP SIMULATION - ${type}] מכין שליחה לטלפון: ${phone}...`);
-  console.log(`------------ תוכן ההודעה ------------\n${message}\n-------------------------------------`);
-  console.log('[WHATSAPP SIMULATION] (API לא מוגדר — לא נשלח בפועל)');
+  logger.info('WhatsApp simulation (API not configured)', { type, phone, message });
   return { sent: false, simulated: true, hasWhatsApp: null };
 }
 

@@ -11,6 +11,7 @@ concurrency:
 jobs:
   ci:
     uses: ./.github/workflows/ci.yml
+    secrets: inherit
 
   deploy:
     needs: ci
@@ -69,9 +70,13 @@ jobs:
 
       - name: Install server dependencies (Prisma only)
         working-directory: server
+        env:
+          DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_STAGING }}
         run: |
           rm -f .npmrc .npmrc.bak
-          npm ci --registry=https://registry.npmjs.org/
+          export DATABASE_URL="${DATABASE_URL:-postgresql://prisma:prisma@127.0.0.1:5432/prisma}"
+          npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npx prisma generate
 
       - name: Run Prisma migrate deploy
         working-directory: server

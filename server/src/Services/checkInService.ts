@@ -40,16 +40,19 @@ function calcReservePortions(guestCount: number): number {
   return Math.ceil(guestCount * 0.1);
 }
 
+/** Portions for entertainers — sum of schema fields (bar / sitting). */
 function calcEntertainerPortions(eventForm: {
-  entertainersTotal?: number | null;
   entertainersBar?: number | null;
   entertainersSitting?: number | null;
+  entertainersMen?: number | null;
+  entertainersWomen?: number | null;
 } | null | undefined): number {
   if (!eventForm) return 0;
-  if (eventForm.entertainersTotal && eventForm.entertainersTotal > 0) {
-    return eventForm.entertainersTotal;
-  }
-  return (eventForm.entertainersBar || 0) + (eventForm.entertainersSitting || 0);
+  const byType =
+    (eventForm.entertainersBar || 0) + (eventForm.entertainersSitting || 0);
+  if (byType > 0) return byType;
+  // Fallback when only gender split was filled
+  return (eventForm.entertainersMen || 0) + (eventForm.entertainersWomen || 0);
 }
 
 function defaultReserveTables(): ReserveTableRow[] {
@@ -65,9 +68,10 @@ export function buildDefaultCheckIn(
     clientComments?: string | null;
   },
   eventForm: {
-    entertainersTotal?: number | null;
     entertainersBar?: number | null;
     entertainersSitting?: number | null;
+    entertainersMen?: number | null;
+    entertainersWomen?: number | null;
     notes?: string | null;
   } | null | undefined,
 ) {

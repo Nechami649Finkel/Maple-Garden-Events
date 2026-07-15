@@ -64,10 +64,7 @@ export function getEventStartTimeString(
   return getSlotStartTimeString(booking);
 }
 
-export function getEventEndTimeString(
-  booking: BookingTime,
-  _eventForm?: EventFormTime | null
-): string {
+export function getEventEndTimeString(booking: BookingTime): string {
   return getSlotEndTimeString(booking);
 }
 
@@ -100,9 +97,8 @@ export function getEventStartDateTime(
 export function getEventEndDateTime(
   eventDateStr: string,
   booking: BookingTime,
-  eventForm?: EventFormTime | null
 ): Date {
-  return buildDateTime(eventDateStr, getEventEndTimeString(booking, eventForm), true);
+  return buildDateTime(eventDateStr, getEventEndTimeString(booking), true);
 }
 
 export function isEventDay(eventDateStr: string, now: Date = new Date()): boolean {
@@ -113,9 +109,10 @@ export function isEventDay(eventDateStr: string, now: Date = new Date()): boolea
 export function canViewCheckIn(
   eventDateStr: string,
   booking: BookingTime,
-  _eventForm?: EventFormTime | null,
+  eventForm?: EventFormTime | null,
   now: Date = new Date()
 ): boolean {
+  void eventForm; // API parity with server; view window uses booking slot only
   const today = formatDateStr(now);
   if (eventDateStr > today) return false;
   if (eventDateStr < today) return true;
@@ -127,9 +124,10 @@ export function canViewCheckIn(
 export function canEditCheckIn(
   eventDateStr: string,
   booking: BookingTime,
-  _eventForm?: EventFormTime | null,
+  eventForm?: EventFormTime | null,
   now: Date = new Date()
 ): boolean {
+  void eventForm; // API parity with server; edit window uses booking slot only
   if (!isEventDay(eventDateStr, now)) return false;
   const start = getSlotStartDateTime(eventDateStr, booking);
   const end = getSlotEndDateTime(eventDateStr, booking);
@@ -157,7 +155,8 @@ export function hasEventEnded(
   eventForm?: EventFormTime | null,
   now: Date = new Date(),
 ): boolean {
+  void eventForm;
   const eventDateStr = toEventDateKey(eventDate);
-  const endAt = getEventEndDateTime(eventDateStr, booking, eventForm);
+  const endAt = getEventEndDateTime(eventDateStr, booking);
   return now >= endAt;
 }

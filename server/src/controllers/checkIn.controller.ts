@@ -7,11 +7,13 @@ import { canEditCheckIn } from '../utils/eventStart';
 import { emitBookingUpdated, emitCheckInUpdated } from '../utils/realtime';
 import { calendarKeyFromDbDate } from '../utils/dateLocal';
 import { ForbiddenError, NotFoundError } from '../utils/httpErrors';
+import { sanitizeFloorStaffData } from '../utils/sanitizeFloorStaffData';
 import {
   buildDefaultCheckIn,
   getOrCreateCheckIn,
   validateFloorStaffAccess,
 } from '../Services/checkInService';
+import { logger } from '../utils/logger';
 
 function toPrismaJson(value: unknown): Prisma.InputJsonValue {
   return value as unknown as Prisma.InputJsonValue;
@@ -21,90 +23,7 @@ function paramId(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
-const BOOKING_SENSITIVE_KEYS = [
-  'clientAIdNumber',
-  'clientAPhone',
-  'clientAEmail',
-  'clientAAddress',
-  'clientBIdNumber',
-  'clientBPhone',
-  'clientBEmail',
-  'clientBAddress',
-  'finalPricePortion',
-  'totalPrice',
-  'basePrice',
-  'extrasPrice',
-  'externalExtrasPrice',
-  'liveAdditionsTotal',
-  'hallRentalPrice',
-  'paidAmount',
-  'paymentStatus',
-  'advancePaid',
-  'totalPaid',
-  'depositPaid',
-  'depositMethod',
-  'depositCheckUrl',
-  'depositCheckDetails',
-  'clientSignatureUrl',
-  'securityCheckUrl',
-  'securityCheckStatus',
-  'contractText',
-  'paymentTermsText',
-  'paymentDeadline',
-  'paymentTemplateId',
-  'lastPaymentReminderSent',
-  'easycountDocId',
-  'easycountDocUrl',
-  'easycountStatus',
-  'easycountError',
-  'managerComments',
-  'akumApprovalCode',
-] as const;
-
-const EVENT_FORM_SENSITIVE_KEYS = [
-  'depositCheckUrl',
-  'depositCheckDetails',
-  'pricePerPortion',
-  'kashrutSurcharge',
-  'designPrice',
-  'extrasJson',
-  'totalPrice',
-  'akumCode',
-  'akumPaid',
-] as const;
-
-function omitKeys<T extends Record<string, unknown>>(
-  source: T,
-  keys: readonly string[],
-): Record<string, unknown> {
-  const omitted = new Set(keys);
-  const result: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(source)) {
-    if (!omitted.has(key)) result[key] = value;
-  }
-  return result;
-}
-
-function sanitizeCheckInPayloadForFloorStaff(payload: {
-  checkIn: Record<string, unknown>;
-  booking: Record<string, unknown>;
-  eventForm: Record<string, unknown> | null;
-}) {
-  const { customerSignature: _signature, ...safeCheckIn } = payload.checkIn;
-  const bookingWithoutNested = { ...payload.booking };
-  delete bookingWithoutNested.eventForm;
-  delete bookingWithoutNested.eventCheckIn;
-
-  return {
-    checkIn: safeCheckIn,
-    booking: omitKeys(bookingWithoutNested, BOOKING_SENSITIVE_KEYS),
-    eventForm: payload.eventForm
-      ? omitKeys(payload.eventForm, EVENT_FORM_SENSITIVE_KEYS)
-      : null,
-  };
-}
-
-function mapDomainError(res: Response, err: unknown, fallbackMessage: string): boolean {
+function mapDomainError(res: Response, err: unknown): boolean {
   if (err instanceof ForbiddenError) {
     res.status(403).json({ error: err.message });
     return true;
@@ -124,31 +43,29 @@ export const checkInController = {
 
       let preloadedBooking = null;
       if (isFloorStaffRole(role)) {
-        // Gate BEFORE any check-in write
         preloadedBooking = await validateFloorStaffAccess(req.user, bookingId);
       }
 
       const result = await getOrCreateCheckIn(bookingId, preloadedBooking);
 
-      const payload = {
-        checkIn: result.checkIn as unknown as Record<string, unknown>,
-        booking: result.booking as unknown as Record<string, unknown>,
-        eventForm: (result.booking.eventForm as unknown as Record<string, unknown> | null) ?? null,
-      };
+      if (isFloorStaffRole(role)) {
+        return res.json({
+          success: true,
+          data: sanitizeFloorStaffData(result.booking, result.checkIn),
+        });
+      }
 
       res.json({
         success: true,
-        data: isFloorStaffRole(role)
-          ? sanitizeCheckInPayloadForFloorStaff(payload)
-          : {
-              checkIn: result.checkIn,
-              booking: result.booking,
-              eventForm: result.booking.eventForm,
-            },
+        data: {
+          checkIn: result.checkIn,
+          booking: result.booking,
+          eventForm: result.booking.eventForm,
+        },
       });
     } catch (e) {
-      if (mapDomainError(res, e, 'שגיאה בטעינת טופס הקבלה')) return;
-      console.error('getCheckIn error:', e);
+      if (mapDomainError(res, e)) return;
+      logger.error('getCheckIn error', { error: e });
       res.status(500).json({ error: 'שגיאה בטעינת טופס הקבלה' });
     }
   },
@@ -233,14 +150,16 @@ export const checkInController = {
       emitCheckInUpdated(bookingId);
 
       if (isFloorStaffRole(req.user?.role)) {
-        const { customerSignature: _sig, ...safeCheckIn } = checkIn as unknown as Record<string, unknown>;
-        return res.json({ success: true, data: safeCheckIn });
+        return res.json({
+          success: true,
+          data: sanitizeFloorStaffData(existing, checkIn),
+        });
       }
 
       res.json({ success: true, data: checkIn });
     } catch (e) {
-      if (mapDomainError(res, e, 'שגיאה בשמירת טופס הקבלה')) return;
-      console.error('updateCheckIn error:', e);
+      if (mapDomainError(res, e)) return;
+      logger.error('updateCheckIn error', { error: e });
       res.status(500).json({ error: 'שגיאה בשמירת טופס הקבלה' });
     }
   },

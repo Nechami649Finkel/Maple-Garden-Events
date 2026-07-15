@@ -11,6 +11,7 @@ import {
   releaseDateSchema,
   saveOptionHoldSchema,
 } from '../validators/calendar.validator';
+import { logger } from '../utils/logger';
 
 const router = Router();
 router.use(requireAuth);
@@ -34,7 +35,7 @@ router.post('/options', requireRole(...RBAC.CALENDAR_WRITE), validate(saveOption
 
     res.status(200).json({ success: true, data: result });
   } catch (error) {
-    console.error('שגיאה בשמירת אופציה:', error);
+    logger.error('שגיאה בשמירת אופציה', { error });
     res.status(500).json({ error: 'אירעה שגיאה בשרת בעת שמירת האופציה' });
   }
 });

@@ -60,7 +60,6 @@ const eventFormFieldsSchema = z
     tables: z.array(tableSchema).optional(),
     menCount: optionalNumber,
     womenCount: optionalNumber,
-    entertainersTotal: optionalNumber,
     akumPaid: optionalBoolean,
   });
 
