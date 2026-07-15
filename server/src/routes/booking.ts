@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
 import { validate } from '../middlewares/validate';
 import { createBookingSchema, updateBookingSchema } from '../validators/booking.validator';
 import {
@@ -16,6 +15,10 @@ import { requireAuth } from '../middlewares/auth';
 import { requireRole } from '../middlewares/requireRole';
 import { RBAC } from '../config/rbac';
 import { catchAsync } from '../middlewares/errorHandler';
+import {
+  assertUploadedFileMagicBytes,
+  upload,
+} from '../middlewares/uploadMiddleware';
 import prisma from '../config/prisma';
 
 import {
@@ -46,33 +49,6 @@ import { createHallInvoiceSchema } from '../validators/easyCount.validator';
 
 const router = Router();
 router.use(requireAuth);
-
-const MAX_GREETING_ATTACHMENT_BYTES = 10 * 1024 * 1024;
-const ALLOWED_GREETING_MIME_TYPES = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/plain',
-]);
-
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: MAX_GREETING_ATTACHMENT_BYTES },
-  fileFilter: (_req, file, cb) => {
-    if (ALLOWED_GREETING_MIME_TYPES.has(file.mimetype)) {
-      cb(null, true);
-      return;
-    }
-    cb(new Error('סוג קובץ לא מורשה. מותרים: תמונות, PDF ומסמכי Office.'));
-  },
-});
 
 const { MANAGEMENT, MANAGER_ONLY, FINANCE_READ } = RBAC;
 
@@ -133,7 +109,14 @@ router.post('/notify-option-interest', requireRole(...MANAGEMENT), validate(noti
 router.post('/finalize', requireRole(...MANAGEMENT), validate(finalizeBookingSchema), finalizeBooking);
 
 // --- ברכות ותוספות ---
-router.post('/send-greeting', requireRole(...MANAGEMENT), upload.single('attachment'), validate(sendGreetingSchema), sendGreeting);
+router.post(
+  '/send-greeting',
+  requireRole(...MANAGEMENT),
+  upload.single('attachment'),
+  assertUploadedFileMagicBytes,
+  validate(sendGreetingSchema),
+  sendGreeting,
+);
 router.post('/:id/additions', requireRole(...MANAGEMENT), validate(addEventAdditionSchema), addEventAddition);
 
 export default router;

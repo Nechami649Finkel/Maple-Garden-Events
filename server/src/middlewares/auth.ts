@@ -5,7 +5,7 @@ import { isValidRole } from './requireRole';
 import { catchAsync } from './errorHandler';
 
 export interface AuthRequest extends Request {
-  user?: AuthUser;
+  user?: AuthUser & { userId?: string };
 }
 
 /**
@@ -52,8 +52,9 @@ export const requireAuth = catchAsync(async (req: AuthRequest, res: Response, ne
     return;
   }
 
-  // תפקיד ואימייל תמיד מה-DB — לא מה-JTD (מונע הרחבת הרשאות)
+  // תפקיד ואימייל תמיד מה-DB — לא מה-JWT (מונע הרחבת הרשאות)
   req.user = {
+    userId: dbUser.id,
     email: dbUser.email,
     role: dbUser.role,
     name: payload.name || dbUser.email,

@@ -91,11 +91,14 @@ app.use(cors({
 
 app.use(cookieParser());
 app.use(csrfProtection);
+
+// Must mount before express.json so the route's express.raw can capture the original body.
+app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(requestLogger);
 
-app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
 app.use('/api/easy-count', easyCountRoutes);
 app.use('/api/check-in', checkInRoutes);
 app.use('/api/auth', authRoutes);

@@ -1,8 +1,11 @@
 import { Router, Response } from 'express';
-import multer from 'multer';
 import { requireAuth, AuthRequest } from '../middlewares/auth';
 import { requireRole } from '../middlewares/requireRole';
 import { RBAC } from '../config/rbac';
+import {
+  assertUploadedFileMagicBytes,
+  upload,
+} from '../middlewares/uploadMiddleware';
 import {
   assertAllowedS3ObjectKey,
   getPresignedDownloadUrl,
@@ -10,12 +13,22 @@ import {
   isS3StorageEnabled,
   uploadPrivateFile,
 } from '../utils/s3Storage';
+import {
+  assertBookingAccess,
+  BookingAccessDeniedError,
+  extractBookingIdFromObjectKey,
+} from '../utils/bookingAccess';
 
 const router = Router();
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-});
+
+function accessUserFromReq(req: AuthRequest) {
+  if (!req.user) return null;
+  return {
+    userId: req.user.userId,
+    email: req.user.email,
+    role: req.user.role,
+  };
+}
 
 router.get('/presigned', requireAuth, requireRole(...RBAC.MANAGEMENT), async (req: AuthRequest, res: Response) => {
   const key = typeof req.query.key === 'string' ? req.query.key : '';
@@ -40,6 +53,22 @@ router.get('/presigned', requireAuth, requireRole(...RBAC.MANAGEMENT), async (re
     throw err;
   }
 
+  const bookingId = extractBookingIdFromObjectKey(objectKey);
+  if (!bookingId) {
+    res.status(400).json({ success: false, message: 'מפתח קובץ לא חוקי' });
+    return;
+  }
+
+  try {
+    await assertBookingAccess(accessUserFromReq(req), bookingId);
+  } catch (err) {
+    if (err instanceof BookingAccessDeniedError) {
+      res.status(403).json({ success: false, message: err.message });
+      return;
+    }
+    throw err;
+  }
+
   try {
     const url = await getPresignedDownloadUrl(objectKey);
     res.json({ success: true, url, objectKey });
@@ -57,6 +86,7 @@ router.post(
   requireAuth,
   requireRole(...RBAC.MANAGEMENT),
   upload.single('file'),
+  assertUploadedFileMagicBytes,
   async (req: AuthRequest, res: Response) => {
     if (!isS3StorageEnabled()) {
       res.status(503).json({ success: false, message: 'אחסון S3 לא מוגדר' });
@@ -72,8 +102,8 @@ router.post(
       return;
     }
 
-    const allowed = ['contracts', 'checks', 'signatures', 'documents'];
-    if (!allowed.includes(category)) {
+    const allowedCategories = ['contracts', 'checks', 'signatures', 'documents'];
+    if (!allowedCategories.includes(category)) {
       res.status(400).json({ success: false, message: 'קטגוריה לא חוקית' });
       return;
     }
@@ -85,10 +115,15 @@ router.post(
         fileName: file.originalname || 'upload.bin',
         contentType: file.mimetype || 'application/octet-stream',
         body: file.buffer,
+        accessUser: accessUserFromReq(req),
       });
       const url = await getPresignedDownloadUrl(storedKey);
       res.json({ success: true, key: storedKey, url });
-    } catch {
+    } catch (err) {
+      if (err instanceof BookingAccessDeniedError) {
+        res.status(403).json({ success: false, message: err.message });
+        return;
+      }
       res.status(500).json({ success: false, message: 'שגיאה בהעלאת קובץ' });
     }
   },
