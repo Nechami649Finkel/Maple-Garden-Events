@@ -5,6 +5,11 @@ import { validateOptionDateSelection } from './optionDateValidation';
 
 export type OptionDateItem = { date: string; hebrewDate?: string };
 
+export function normalizeOptionDate(d: string | OptionDateItem): OptionDateItem {
+  if (typeof d === 'object' && d?.date) return d;
+  return { date: String(d), hebrewDate: '' };
+}
+
 /** Day payload from GET /api/calendar/dates */
 export type CalendarDayApi = {
   date: string;

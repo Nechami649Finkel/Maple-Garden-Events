@@ -1,5 +1,5 @@
 import { SLOT_LABELS, SLOT_HOURS, sortSlotsForDisplay } from '../../../utils/timeSlot';
-import { KOSHER_PRICING, SERVING_STYLES, DEFAULT_SERVING_STYLE } from '../BookingForm';
+import { KOSHER_PRICING, SERVING_STYLES, DEFAULT_SERVING_STYLE } from '../bookingFormConstants';
 
 const HEBREW_NUMERALS: Record<number, string> = {
   1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',

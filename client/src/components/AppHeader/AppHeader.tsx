@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useNavigationContext } from '../../context/NavigationContext';
-import { useSidebar } from '../../context/SidebarContext';
+import { useNavigationContext } from '../../context/navigationContext';
+import { useSidebar } from '../../context/sidebarContext';
 import {
   resolveDefaultBackPath,
   resolveRouteTitle,

@@ -5,11 +5,10 @@ import { validateOptionDateSelection } from '../../../utils/optionDateValidation
 import {
   type OptionDateItem,
   fetchCalendarDays,
+  normalizeOptionDate,
   resolveOptionDate,
 } from '../../../utils/optionDateApi';
 import { REALTIME_DATE_UPDATED_EVENT } from '../../../services/realtimeSync';
-
-export type { OptionDateItem };
 
 const MAX_OPTION_DATES = 3;
 const MONTH_NAMES = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
@@ -30,12 +29,6 @@ function formatDisplay(dateStr: string): string {
 function getDayOfWeek(dateStr: string): string {
   const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
   return days[new Date(dateStr + 'T12:00:00').getDay()];
-}
-
-
-export function normalizeOptionDate(d: string | OptionDateItem): OptionDateItem {
-  if (typeof d === 'object' && d?.date) return d;
-  return { date: String(d), hebrewDate: '' };
 }
 
 interface OptionDatePickerModalProps {
