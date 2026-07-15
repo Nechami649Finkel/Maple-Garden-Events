@@ -2,6 +2,9 @@ name: CI
 
 on:
   workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: false
   pull_request:
     branches: [main, miriam]
 
@@ -26,13 +29,13 @@ jobs:
 
       - name: Install server dependencies
         working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           rm -f .npmrc .npmrc.bak
-          npm ci --registry=https://registry.npmjs.org/
-
-      - name: Generate Prisma client
-        working-directory: server
-        run: npx prisma generate
+          export DATABASE_URL="${DATABASE_URL:-postgresql://prisma:prisma@127.0.0.1:5432/prisma}"
+          npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npx prisma generate
 
       - name: Lint client
         working-directory: client
