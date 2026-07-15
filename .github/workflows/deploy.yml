@@ -66,14 +66,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: https://registry.npmjs.org
 
       - name: Install server dependencies (Prisma only)
         working-directory: server
         env:
-          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm config delete "//registry.npmjs.org/:_authToken" 2>/dev/null || true
-          npm ci --registry=https://registry.npmjs.org/
+          rm -f .npmrc .npmrc.bak
+          npm config set registry https://registry.npmjs.org/
+          npm ci
 
       - name: Run Prisma migrate deploy
         working-directory: server
