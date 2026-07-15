@@ -69,7 +69,11 @@ jobs:
 
       - name: Install server dependencies (Prisma only)
         working-directory: server
-        run: npm ci
+        env:
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          npm config delete "//registry.npmjs.org/:_authToken" 2>/dev/null || true
+          npm ci --registry=https://registry.npmjs.org/
 
       - name: Run Prisma migrate deploy
         working-directory: server
