@@ -12,6 +12,7 @@ import {
   type EventCardData,
 } from '../ui';
 import styles from './UpcomingEventsPanel.module.css';
+import { type BookingApi } from '../../utils/bookingApi';
 
 const startOfDay = (d: Date) => {
   const copy = new Date(d);
@@ -19,13 +20,13 @@ const startOfDay = (d: Date) => {
   return copy;
 };
 
-const getEventDay = (b: any) =>
+const getEventDay = (b: BookingApi) =>
   b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null;
 
-const dateStr = (b: any) =>
+const dateStr = (b: BookingApi) =>
   b.eventDate?.date ? new Date(b.eventDate.date).toLocaleDateString('he-IL') : '—';
 
-const toEventCard = (b: any): EventCardData => ({
+const toEventCard = (b: BookingApi): EventCardData => ({
   id: b.id,
   date: dateStr(b),
   code: b.eventCode,
@@ -51,16 +52,16 @@ export function UpcomingEventsPanel() {
   const upcoming = useMemo(() => {
     const today = startOfDay(new Date());
     return (data?.data ?? [])
-      .filter((b: any) => !b.isOption)
-      .filter((b: any) => {
+      .filter((b) => !b.isOption)
+      .filter((b) => {
         const day = getEventDay(b);
         return day !== null && day >= today;
       })
-      .sort((a: any, b: any) => getEventDay(a)!.getTime() - getEventDay(b)!.getTime())
+      .sort((a, b) => getEventDay(a)!.getTime() - getEventDay(b)!.getTime())
       .slice(0, 5);
   }, [data]);
 
-  const columns: DataTableColumn<any>[] = [
+  const columns: DataTableColumn<BookingApi>[] = [
     { key: 'date', header: 'תאריך', render: (b) => dateStr(b) },
     { key: 'code', header: 'קוד', render: (b) => b.eventCode ? `#${b.eventCode}` : '—' },
     { key: 'client', header: 'לקוח', render: (b) => b.clientAFullName },
@@ -103,11 +104,11 @@ export function UpcomingEventsPanel() {
               caption="אירועים קרובים"
               columns={columns}
               data={upcoming}
-              rowKey={(b: any) => b.id}
+              rowKey={(b) => b.id}
             />
           </div>
           <div className={styles.cardsWrap}>
-            {upcoming.map((b: any) => (
+            {upcoming.map((b) => (
               <EventCard key={b.id} event={toEventCard(b)} />
             ))}
           </div>

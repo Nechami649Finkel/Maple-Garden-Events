@@ -1,16 +1,25 @@
 import { useState } from 'react';
+import type { BookingFormChangeHandler, BookingFormData } from '../bookingFormTypes';
 
-const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }: any) => {
+interface ClientsSectionProps {
+  formData: BookingFormData;
+  handleChange: BookingFormChangeHandler;
+  errors: Record<string, string>;
+  isWedding: boolean;
+  isOption: boolean;
+}
+
+const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }: ClientsSectionProps) => {
   const [activeEmailField, setActiveEmailField] = useState<string | null>(null);
   const emailSuffixes = ['@gmail.com', '@hotmail.com', '@yahoo.com', '@walla.co.il'];
 
-  const handleEmailSelect = (fieldName: string, suffix: string) => {
+  const handleEmailSelect = (fieldName: 'clientAEmail' | 'clientBEmail', suffix: string) => {
     const baseEmail = formData[fieldName].split('@')[0];
-    handleChange({ target: { name: fieldName, value: baseEmail + suffix } });
+    handleChange({ target: { name: fieldName, value: baseEmail + suffix } } as React.ChangeEvent<HTMLInputElement>);
     setActiveEmailField(null);
   };
 
-  const renderEmailField = (fieldName: string, label: string, required = false) => (
+  const renderEmailField = (fieldName: 'clientAEmail' | 'clientBEmail', label: string, required = false) => (
     <div className="mb-3 position-relative">
       <label className="form-label">{label}</label>
       <input

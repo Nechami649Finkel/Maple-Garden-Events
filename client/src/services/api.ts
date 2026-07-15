@@ -81,7 +81,9 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       Sentry.captureException(error, { extra: { url, method } });
     }
     if (isNetworkError) {
-      throw new Error('לא ניתן להתחבר לשרver — ודאי שהשרver רץ על פורט 5000');
+      throw new Error('לא ניתן להתחבר לשרת — ודאי שהשרת רץ על פורט 5000', {
+        cause: error,
+      });
     }
     throw error;
   }

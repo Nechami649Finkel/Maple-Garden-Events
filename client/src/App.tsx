@@ -59,15 +59,41 @@ const Lazy = ({ children }: { children: React.ReactNode }) => (
   <Suspense fallback={<PageLoader />}>{children}</Suspense>
 );
 
+/** Hoisted out of App render so route elements stay stable across renders. */
+const ProtectedRoute = ({
+  isAuthenticated,
+  onLoginSuccess,
+  children,
+}: {
+  isAuthenticated: boolean;
+  onLoginSuccess: () => void;
+  children: React.ReactNode;
+}) => {
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={onLoginSuccess} />;
+  }
+  return <>{children}</>;
+};
+
+const isDesignRoute =
+  import.meta.env.DEV &&
+  typeof window !== 'undefined' &&
+  window.location.pathname.startsWith('/__design__/');
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() =>
+    isDesignRoute ? true : null,
+  );
 
   useEffect(() => {
-    if (import.meta.env.DEV && window.location.pathname.startsWith('/__design__/')) {
-      setIsAuthenticated(true);
-      return;
-    }
-    checkAuthSession().then(setIsAuthenticated);
+    if (isDesignRoute) return;
+    let cancelled = false;
+    checkAuthSession().then((authenticated) => {
+      if (!cancelled) setIsAuthenticated(authenticated);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -93,12 +119,11 @@ function App() {
     return <PageLoader />;
   }
 
-  const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    if (!isAuthenticated) {
-      return <Login onLoginSuccess={handleLoginSuccess} />;
-    }
-    return <>{children}</>;
-  };
+  const guard = (children: React.ReactNode) => (
+    <ProtectedRoute isAuthenticated={isAuthenticated} onLoginSuccess={handleLoginSuccess}>
+      {children}
+    </ProtectedRoute>
+  );
 
   return (
     <AccessibilityProvider>
@@ -130,22 +155,22 @@ function App() {
             />
           )}
 
-          <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
-          <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
-          <Route path="/gallery" element={<ProtectedRoute><Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy></ProtectedRoute>} />
+          <Route path="/" element={guard(<Navigate to="/dashboard" replace />)} />
+          <Route path="/dashboard" element={guard(<Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy>)} />
+          <Route path="/calendar" element={guard(<CalendarWrapper />)} />
+          <Route path="/booking" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+          <Route path="/booking/close-option/:optionId" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+          <Route path="/booking/edit/:id" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+          <Route path="/options-manager" element={guard(<Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy>)} />
+          <Route path="/bookings-manager" element={guard(<Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy>)} />
+          <Route path="/greeting" element={guard(<Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy>)} />
+          <Route path="/event-form-manager" element={guard(<Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy>)} />
+          <Route path="/option" element={guard(<Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy>)} />
+          <Route path="/menu" element={guard(<Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy>)} />
+          <Route path="/settings" element={guard(<Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy>)} />
+          <Route path="/feedback-manager" element={guard(<Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy>)} />
+          <Route path="/feedback-stats" element={guard(<Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy>)} />
+          <Route path="/gallery" element={guard(<Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy>)} />
         </Routes>
         <AccessibilityWidget />
       </BrowserRouter>

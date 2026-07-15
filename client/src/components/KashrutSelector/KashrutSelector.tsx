@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useKashrutQuery } from '../../hooks/queries';
 import './KashrutSelector.css';
 
@@ -19,13 +19,10 @@ const KASHRUT_LIST = [
 export default function KashrutSelector({ value, onChange }: Props) {
   const { data: kashruts = [] } = useKashrutQuery();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   const certImage = kashruts.length > 0 ? kashruts[0].imageUrl ?? null : null;
-
-  useEffect(() => {
-    setImageError(false);
-  }, [certImage]);
+  const imageError = certImage != null && failedImageUrl === certImage;
 
   return (
     <div style={{ display: 'flex', gap: '15px', alignItems: 'center', marginTop: '10px' }}>
@@ -55,7 +52,7 @@ export default function KashrutSelector({ value, onChange }: Props) {
             src={certImage}
             alt="תעודת הכשר"
             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={() => setImageError(true)}
+            onError={() => certImage && setFailedImageUrl(certImage)}
           />
         </div>
       ) : (

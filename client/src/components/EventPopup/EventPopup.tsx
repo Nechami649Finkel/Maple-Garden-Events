@@ -18,9 +18,12 @@ import EventCheckInModal from '../LiveEvent/EventCheckInModal';
 import NotifyOptionModal from '../NotifyOptionModal/NotifyOptionModal';
 import liveEventStyles from '../LiveEvent/LiveEvent.module.css';
 import './EventPopup.css';
+import { type CalendarBookingApi, type CalendarDayApi } from '../../utils/optionDateApi';
+
+type NotifyBooking = CalendarBookingApi & { id: string };
 
 interface EventPopupProps {
-  day: any;
+  day: CalendarDayApi;
   onClose: () => void;
   onAddEvent?: () => void;
   onAddOption?: () => void;
@@ -30,7 +33,7 @@ interface EventPopupProps {
 export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOptionBook }: EventPopupProps) => {
   const navigate = useNavigate();
   const [checkInState, setCheckInState] = useState<{ bookingId: string; readOnly: boolean } | null>(null);
-  const [notifyBooking, setNotifyBooking] = useState<any | null>(null);
+  const [notifyBooking, setNotifyBooking] = useState<NotifyBooking | null>(null);
   const [, setTick] = useState(0);
   const bookings = day.bookings || [];
   const isOptionDay = hasOptionOnDay(day);
@@ -106,7 +109,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
           {bookings.length === 0 ? (
             <p className="no-events-msg">אין אירועים בתאריך זה.</p>
           ) : (
-            bookings.map((booking: any, index: number) => {
+            bookings.map((booking: CalendarBookingApi, index: number) => {
               const isWedding = booking.eventType === 'חתונה';
               const missingItems: string[] = [];
 
@@ -144,7 +147,9 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                         <button
                           type="button"
                           className="edit-btn notify-option-btn"
-                          onClick={() => setNotifyBooking(booking)}
+                          onClick={() => {
+                            if (booking.id) setNotifyBooking({ ...booking, id: booking.id });
+                          }}
                         >
                           הקפץ הודעה ללקוח
                         </button>

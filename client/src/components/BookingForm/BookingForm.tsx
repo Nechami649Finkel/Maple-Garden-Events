@@ -32,7 +32,7 @@ import ContractModal from './sections/ContractModal';
 import MetaBar from './sections/MetaBar';
 import OptionDatesBar from './sections/OptionDatesBar';
 import FinalizeOptionDatesBar from './sections/FinalizeOptionDatesBar';
-import { normalizeOptionDate, verifyAllOptionDates } from '../../utils/optionDateApi';
+import { normalizeOptionDate, verifyAllOptionDates, type OptionDateItem } from '../../utils/optionDateApi';
 import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
@@ -56,6 +56,7 @@ import {
   EXTERNAL_UPGRADE_KEYS,
   type UpgradeKey,
 } from '../../utils/pricing';
+import type { LoadedBooking, RelatedBookingOption } from './bookingFormTypes';
 
 const DEFAULT_UPGRADES: Record<UpgradeKey, boolean> = {
   baseDesign: true,
@@ -69,7 +70,7 @@ const DEFAULT_UPGRADES: Record<UpgradeKey, boolean> = {
 };
 
 interface BookingFormProps {
-  initialDates?: any[];
+  initialDates?: (string | OptionDateItem)[];
   isOption?: boolean;
 }
 
@@ -182,31 +183,33 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loadingBooking, setLoadingBooking] = useState(isEditMode);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [relatedOptions, setRelatedOptions] = useState<any[]>([]);
+  const [relatedOptions, setRelatedOptions] = useState<RelatedBookingOption[]>([]);
   const [activeBookingId, setActiveBookingId] = useState(activeEditId || '');
   const [bookingUpdatedAt, setBookingUpdatedAt] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
 
-  let datesToProcess: any[] = [];
+  let datesToProcess: (string | OptionDateItem)[] = [];
   if (initialDates && initialDates.length > 0) datesToProcess = initialDates;
   else if (location.state?.selectedDates) datesToProcess = location.state.selectedDates;
   else if (location.state?.selectedDate) datesToProcess = [location.state.selectedDate];
   else if (location.state?.date) datesToProcess = [{ date: location.state.date, hebrewDate: location.state.hebrewDate || '' }];
 
-  const [selectedDatesDisplay, setSelectedDatesDisplay] = useState<any[]>(
+  const [selectedDatesDisplay, setSelectedDatesDisplay] = useState<OptionDateItem[]>(
     datesToProcess.map(normalizeOptionDate)
   );
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
   const [isOption, setIsOption] = useState(isOptionMode);
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
-  const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
+  const [asyncSlotWarning, setAsyncSlotWarning] = useState('');
+
+  const initialCalendarDateId = datesToProcess[0] ? normalizeOptionDate(datesToProcess[0]).date : '';
 
   const [formData, setFormData] = useState({
     createdBy: '', clientAFirstName: '', clientALastName: '', clientAFullName: '', clientAIdNumber: '', clientAPhone: '', clientAPhone2: '', clientAEmail: '', clientACity: '', clientAAddress: '',
     clientBFullName: '', clientBIdNumber: '', clientBPhone: '', clientBPhone2: '', clientBEmail: '', clientBCity: '', clientBAddress: '',
-    calendarDateId: '', eventType: '', timeOfDay: initialTimeSlot, startTime: initialSlotHours.start, endTime: initialSlotHours.end,
+    calendarDateId: initialCalendarDateId, eventType: '', timeOfDay: initialTimeSlot, startTime: initialSlotHours.start, endTime: initialSlotHours.end,
     guestCount: '', minimumGuestCount: '', optionalGuestCount: '', finalPricePortion: '200', discountPercent: '', discountAmount: '', vatType: DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: '', clientSignatureUrl: '',
    
     akumApprovalCode: '', hasMusic: false, hallRentalPrice: '',
@@ -226,14 +229,21 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [savedSignature, setSavedSignature] = useState<string | null>(null);
   const [isMenuViewOpen, setIsMenuViewOpen] = useState(false);
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
-  const [contractText, setContractText] = useState('');
+  const [loadedContractText, setLoadedContractText] = useState('');
+  const [contractTextOverride, setContractTextOverride] = useState<string | null>(null);
   const [contractBaseText, setContractBaseText] = useState('');
-  const [paymentTemplates, setPaymentTemplates] = useState<PaymentTermsTemplate[]>(DEFAULT_PAYMENT_TEMPLATES);
+  const [apiPaymentTemplates, setApiPaymentTemplates] = useState<PaymentTermsTemplate[]>(DEFAULT_PAYMENT_TEMPLATES);
   const [paymentTemplateId, setPaymentTemplateId] = useState('50-50');
   const [paymentTermsCustom, setPaymentTermsCustom] = useState(false);
   const [paymentTermsText, setPaymentTermsText] = useState('');
-  const [vatRate, setVatRate] = useState(17);
   const { data: globalSettings } = useGlobalSettingsQuery();
+  const vatRate = globalSettings?.vatRate != null ? Number(globalSettings.vatRate) : 17;
+  const paymentTemplates = useMemo(() => {
+    if (globalSettings?.paymentTemplates) {
+      return getPaymentTemplatesFromSettings(globalSettings).templates;
+    }
+    return apiPaymentTemplates;
+  }, [globalSettings, apiPaymentTemplates]);
   const upgradesPricing = useMemo(
     () => buildUpgradesPricingFromSettings(globalSettings),
     [globalSettings],
@@ -243,44 +253,64 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     [globalSettings],
   );
 
-  useEffect(() => {
-    if (globalSettings?.vatRate != null) setVatRate(Number(globalSettings.vatRate));
-  }, [globalSettings]);
+  const normalizedSlot = normalizeTimeSlot(formData.timeOfDay as string);
+  const optionDatesSlotWarning =
+    !isOption || selectedDatesDisplay.length === 0
+      ? ''
+      : !normalizedSlot
+        ? 'יש לבחור זמן ביום לפני הוספת תאריכים.'
+        : asyncSlotWarning;
+
+  const handleSelectedDatesChange = (dates: OptionDateItem[]) => {
+    setSelectedDatesDisplay(dates);
+    const firstDate = dates[0]?.date || '';
+    setFormData((prev) =>
+      prev.calendarDateId === firstDate ? prev : { ...prev, calendarDateId: firstDate },
+    );
+  };
 
   useEffect(() => {
+    let cancelled = false;
     getAuthUser().then((user) => {
-      if (user?.email) setUserEmail(user.email);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (isEditMode || !userEmail || draftRestored) return;
-    const draft = loadBookingDraft(userEmail);
-    if (!draft) {
+      if (cancelled || !user?.email) return;
+      setUserEmail(user.email);
+      if (isEditMode) {
+        setDraftRestored(true);
+        return;
+      }
+      const draft = loadBookingDraft(user.email);
+      if (!draft) {
+        setDraftRestored(true);
+        return;
+      }
+      const restore = window.confirm('נמצאה טיוטת הזמנה שלא נשמרה. לשחזר אותה?');
+      if (restore) {
+        const dates = (draft.selectedDatesDisplay as OptionDateItem[]).map(normalizeOptionDate);
+        const firstDate = dates[0]?.date || '';
+        setFormData((prev) => {
+          const merged = { ...prev, ...(draft.formData as typeof prev) };
+          return firstDate ? { ...merged, calendarDateId: firstDate } : merged;
+        });
+        setMenuNotesList(draft.menuNotesList);
+        setInternalNotesList(draft.internalNotesList);
+        setServingStyle(draft.servingStyle);
+        setKosherType(draft.kosherType);
+        setUpgrades(draft.upgrades);
+        setDepositMethod(draft.depositMethod);
+        setContractSigned(draft.contractSigned);
+        setSelectedDatesDisplay(dates);
+        setIsOption(draft.isOption);
+        setOptionDurationHours(draft.optionDurationHours);
+        setPaymentTemplateId(draft.paymentTemplateId);
+        setPaymentTermsCustom(draft.paymentTermsCustom);
+        setPaymentTermsText(draft.paymentTermsText);
+      } else {
+        clearBookingDraft();
+      }
       setDraftRestored(true);
-      return;
-    }
-    const restore = window.confirm('נמצאה טיוטת הזמנה שלא נשמרה. לשחזר אותה?');
-    if (restore) {
-      setFormData((prev) => ({ ...prev, ...(draft.formData as typeof prev) }));
-      setMenuNotesList(draft.menuNotesList);
-      setInternalNotesList(draft.internalNotesList);
-      setServingStyle(draft.servingStyle);
-      setKosherType(draft.kosherType);
-      setUpgrades(draft.upgrades);
-      setDepositMethod(draft.depositMethod);
-      setContractSigned(draft.contractSigned);
-      setSelectedDatesDisplay(draft.selectedDatesDisplay as typeof selectedDatesDisplay);
-      setIsOption(draft.isOption);
-      setOptionDurationHours(draft.optionDurationHours);
-      setPaymentTemplateId(draft.paymentTemplateId);
-      setPaymentTermsCustom(draft.paymentTermsCustom);
-      setPaymentTermsText(draft.paymentTermsText);
-    } else {
-      clearBookingDraft();
-    }
-    setDraftRestored(true);
-  }, [isEditMode, userEmail, draftRestored]);
+    });
+    return () => { cancelled = true; };
+  }, [isEditMode]);
 
   const buildDraftSnapshot = (): BookingDraftSnapshot => ({
     formData: { ...formData },
@@ -334,7 +364,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           setContractBaseText(json.data.contractBaseText);
         }
         if (json.data.contractText) {
-          setContractText((prev) => prev || json.data.contractText);
+          setLoadedContractText((prev) => prev || json.data.contractText);
         }
         if (json.data.paymentTermsText) {
           setPaymentTermsText((prev) => prev || json.data.paymentTermsText);
@@ -343,47 +373,24 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           setPaymentTemplateId(json.data.paymentTemplateId);
         }
         if (Array.isArray(json.data.paymentTemplates) && json.data.paymentTemplates.length > 0) {
-          setPaymentTemplates(json.data.paymentTemplates);
+          setApiPaymentTemplates(json.data.paymentTemplates);
         }
       })
-      .catch(() => {});
+      .catch(() => { /* ignore */ });
   }, []);
 
   useEffect(() => {
-    if (globalSettings?.paymentTemplates) {
-      const meta = getPaymentTemplatesFromSettings(globalSettings);
-      setPaymentTemplates(meta.templates);
-    }
-  }, [globalSettings]);
-
-  useEffect(() => {
-    if (selectedDatesDisplay.length > 0) {
-      const firstDate = typeof selectedDatesDisplay[0] === 'object' ? selectedDatesDisplay[0].date : selectedDatesDisplay[0];
-      setFormData(prev => ({ ...prev, calendarDateId: firstDate || '' }));
-    }
-  }, [selectedDatesDisplay]);
-
-  useEffect(() => {
-    if (!isOption || selectedDatesDisplay.length === 0) {
-      setOptionDatesSlotWarning('');
-      return;
-    }
-    const slot = normalizeTimeSlot(formData.timeOfDay as string);
-    if (!slot) {
-      setOptionDatesSlotWarning('יש לבחור זמן ביום לפני הוספת תאריכים.');
-      return;
-    }
+    if (!isOption || selectedDatesDisplay.length === 0 || !normalizedSlot) return;
     let cancelled = false;
     verifyAllOptionDates(
       selectedDatesDisplay.map(normalizeOptionDate),
       formData.eventType || 'חתונה',
-      slot,
+      normalizedSlot,
     ).then((verify) => {
-      if (cancelled) return;
-      setOptionDatesSlotWarning(verify.ok ? '' : verify.error);
+      if (!cancelled) setAsyncSlotWarning(verify.ok ? '' : verify.error);
     });
     return () => { cancelled = true; };
-  }, [isOption, formData.timeOfDay, formData.eventType, selectedDatesDisplay]);
+  }, [isOption, normalizedSlot, formData.eventType, selectedDatesDisplay]);
 
   useEffect(() => {
     if (isEditMode && convertFromOption) return;
@@ -399,7 +406,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         if (codes.length === 0) return;
         if (codes.length === 1) setOrderNumber(codes[0]);
         else setOrderNumber(`${codes[0]} – ${codes[codes.length - 1]}`);
-      } catch {}
+      } catch { /* ignore */ }
     };
     loadNextCode();
   }, [isEditMode, convertFromOption, isOption, selectedDatesDisplay.length]);
@@ -411,11 +418,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         .then(json => {
           if (json.success && json.data?.code) setOrderNumber(json.data.code);
         })
-        .catch(() => {});
+        .catch(() => { /* ignore */ });
     }
   }, [convertFromOption, activeEditId]);
 
-  const applyBookingToForm = (b: any) => {
+  const applyBookingToForm = (b: LoadedBooking) => {
     const phoneA = parseCombinedPhone(b.clientAPhone);
     const phoneB = parseCombinedPhone(b.clientBPhone);
     const addrA = parseAddress(b.clientAAddress);
@@ -459,7 +466,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     setContractSigned(!!b.isContractSigned);
     if (b.clientSignatureUrl) setSavedSignature(b.clientSignatureUrl);
     if (b.contractText) {
-      setContractText(b.contractText);
+      setLoadedContractText(b.contractText);
     }
     if (b.paymentTermsText) {
       setPaymentTermsText(b.paymentTermsText);
@@ -489,7 +496,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           navigate('/calendar');
           return;
         }
-        const b = json.data;
+        const b = json.data as LoadedBooking;
         const isStillOption = b.isOption || b.eventDate?.status === 'OPTION';
         if (convertFromOption && !isStillOption) {
           alert('האופציה כבר הומרה להזמנה.');
@@ -501,28 +508,27 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         if (b.updatedAt) setBookingUpdatedAt(b.updatedAt);
         setIsOption(false);
 
-        const loadRelatedOptions = async (bookingId: string) => {
+        const loadRelatedOptions = async (bookingId: string): Promise<RelatedBookingOption[]> => {
           try {
             const relatedRes = await apiFetch(`${API_URL}/bookings/${bookingId}/related-options`);
             if (relatedRes.ok) {
               const relatedJson = await relatedRes.json();
               if (relatedJson.success && Array.isArray(relatedJson.data) && relatedJson.data.length > 0) {
-                return relatedJson.data;
+                return relatedJson.data as RelatedBookingOption[];
               }
             }
-          } catch {}
+          } catch { /* ignore */ }
           return [b];
         };
 
-        const applyRelatedOptionDates = (related: any[]) => {
-          setSelectedDatesDisplay(
-            related
-              .map((opt: any) => ({
-                date: opt.eventDate?.date ? calendarKeyFromDbDate(new Date(opt.eventDate.date)) : '',
-                hebrewDate: opt.eventDate?.hebrewDate || '',
-              }))
-              .filter((d) => d.date)
-          );
+        const applyRelatedOptionDates = (related: RelatedBookingOption[]) => {
+          const dates = related
+            .map((opt) => ({
+              date: opt.eventDate?.date ? calendarKeyFromDbDate(new Date(opt.eventDate.date)) : '',
+              hebrewDate: opt.eventDate?.hebrewDate || '',
+            }))
+            .filter((d) => d.date);
+          handleSelectedDatesChange(dates);
         };
 
         if (convertFromOption) {
@@ -551,61 +557,52 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       ? calendarKeyFromDbDate(new Date(selected.eventDate.date))
       : '';
     if (eventDateStr) {
-      setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: selected.eventDate?.hebrewDate || '' }]);
-      setFormData((prev) => ({ ...prev, calendarDateId: eventDateStr }));
+      handleSelectedDatesChange([{ date: eventDateStr, hebrewDate: selected.eventDate?.hebrewDate || '' }]);
     }
   };
 
-  useEffect(() => {
-    if (isEditMode) return;
-    const free = availableSlots;
+  const unavailableKey = unavailableSlots.join(',');
+  const availableKey = availableSlots.join(',');
+  const [slotAdjustKey, setSlotAdjustKey] = useState(
+    unavailableKey + '|' + availableKey + '|' + formData.eventType,
+  );
+  const slotKeyNow = unavailableKey + '|' + availableKey + '|' + formData.eventType;
+
+  if (!isEditMode && slotKeyNow !== slotAdjustKey) {
+    setSlotAdjustKey(slotKeyNow);
     const current = formData.timeOfDay as TimeSlot;
-
-    if (current && unavailableSlots.includes(current)) {
-      const next = getDefaultTimeSlot(free);
-      if (!next) return;
-      const hours = getSlotHours(next);
-      setFormData((prev) =>
-        prev.timeOfDay === next && prev.startTime === hours.start && prev.endTime === hours.end
-          ? prev
-          : { ...prev, timeOfDay: next, startTime: hours.start, endTime: hours.end }
-      );
-    } else if (!current && free.length > 0) {
-      const next = getDefaultTimeSlot(free);
-      if (!next) return;
-      const hours = getSlotHours(next);
-      setFormData((prev) => ({ ...prev, timeOfDay: next, startTime: hours.start, endTime: hours.end }));
-    }
-  }, [isEditMode, unavailableSlots.join(','), availableSlots.join(','), formData.timeOfDay]);
-
-  useEffect(() => {
-    if (isEditMode) return;
+    let next: TimeSlot | '' = current;
     if (formData.eventType === 'חתונה') {
       const eveningOk = availableSlots.includes('evening') && !unavailableSlots.includes('evening');
-      if (eveningOk && formData.timeOfDay !== 'evening') {
-        const { start, end } = getSlotHours('evening');
-        setFormData((prev) => ({ ...prev, timeOfDay: 'evening', startTime: start, endTime: end }));
-        return;
+      if (eveningOk) next = 'evening';
+    }
+    if (next && unavailableSlots.includes(next as TimeSlot)) {
+      next = getDefaultTimeSlot(availableSlots) || '';
+    } else if (!next && availableSlots.length > 0) {
+      next = getDefaultTimeSlot(availableSlots) || '';
+    }
+    if (next && SLOT_HOURS[next as TimeSlot]) {
+      const { start, end } = getSlotHours(next as TimeSlot);
+      if (formData.timeOfDay !== next || formData.startTime !== start || formData.endTime !== end) {
+        setFormData((prev) => ({ ...prev, timeOfDay: next as TimeSlot, startTime: start, endTime: end }));
       }
     }
-    const slot = formData.timeOfDay as TimeSlot;
-    if (!slot || !SLOT_HOURS[slot]) return;
-    const { start, end } = getSlotHours(slot);
-    setFormData((prev) => {
-      if (prev.startTime === start && prev.endTime === end) return prev;
-      return { ...prev, startTime: start, endTime: end };
-    });
-  }, [formData.timeOfDay, formData.eventType, isEditMode, unavailableSlots.join(','), availableSlots.join(',')]);
-
-  useEffect(() => {
-    if (formData.eventType !== HALL_ONLY_EVENT_TYPE) {
-      setErrors((prev) => (prev.hallRentalPrice ? { ...prev, hallRentalPrice: '' } : prev));
-    }
-  }, [formData.eventType]);
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     if (type === 'radio' && name === 'vatType') return setFormData(prev => ({ ...prev, vatType: value }));
+    if (name === 'timeOfDay') {
+      const slot = value as TimeSlot;
+      const hours = SLOT_HOURS[slot] ? getSlotHours(slot) : null;
+      setFormData((prev) => ({
+        ...prev,
+        timeOfDay: value,
+        ...(hours ? { startTime: hours.start, endTime: hours.end } : {}),
+      }));
+      if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+      return;
+    }
     if (name === 'guestCount') {
       setFormData(prev => ({
         ...prev,
@@ -618,6 +615,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     if (name === 'hallRentalPrice') {
       setErrors(prev => ({ ...prev, hallRentalPrice: validateHallRentalPrice(value) }));
+    } else if (name === 'eventType' && value !== HALL_ONLY_EVENT_TYPE) {
+      setErrors((prev) => (prev.hallRentalPrice ? { ...prev, hallRentalPrice: '' } : prev));
     } else if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -642,7 +641,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           return;
         }
         setUpgrades((prev) => ({ ...prev, [key]: true }));
-        if (json.data?.contractText) setContractText(json.data.contractText);
+        if (json.data?.contractText) setContractTextOverride(json.data.contractText);
         if (json.data?.paymentTermsText) setPaymentTermsText(json.data.paymentTermsText);
         return;
       }
@@ -782,45 +781,56 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     setPaymentTermsText(text);
   };
 
-  useEffect(() => {
-    if (paymentTermsCustom || !contractBaseText) return;
+  const autoPaymentTermsText = useMemo(() => {
+    if (paymentTermsCustom || !contractBaseText) return null;
     const template = findPaymentTemplate(paymentTemplates, paymentTemplateId);
-    if (!template) return;
-    const paragraph = renderPaymentTermsText(template, {
+    if (!template) return null;
+    const eventDate =
+      selectedDatesDisplay.length > 0
+        ? selectedDatesDisplay[0].date
+        : formData.calendarDateId || null;
+    return renderPaymentTermsText(template, {
       total: totals.hallTotal,
-      eventDate: getEventDateStr(),
+      eventDate,
     });
-    setPaymentTermsText(paragraph);
   }, [
-    paymentTemplateId,
     paymentTermsCustom,
     contractBaseText,
     paymentTemplates,
+    paymentTemplateId,
     totals.hallTotal,
     selectedDatesDisplay,
     formData.calendarDateId,
   ]);
 
-  useEffect(() => {
-    if (!contractBaseText) return;
-    const lineItemOptions = {
-      upgrades,
-      kosherType,
-      guestCount: Number(formData.guestCount) || 0,
-      isHallOnly,
-      isFoodRelevant,
-      upgradesPricing,
-      upgradeKeys: visibleUpgradeKeys,
-    };
-    setContractText(resolveFullContractText({
+  const effectivePaymentTermsText = autoPaymentTermsText ?? paymentTermsText;
+
+  const handlePaymentTermsCustomChange = (custom: boolean) => {
+    if (custom && !paymentTermsCustom && autoPaymentTermsText) {
+      setPaymentTermsText(autoPaymentTermsText);
+    }
+    setPaymentTermsCustom(custom);
+  };
+
+  const autoContractText = useMemo(() => {
+    if (!contractBaseText) return null;
+    return resolveFullContractText({
       baseContract: contractBaseText,
-      paymentTerms: paymentTermsText,
-      lineItemOptions,
+      paymentTerms: effectivePaymentTermsText,
+      lineItemOptions: {
+        upgrades,
+        kosherType,
+        guestCount: Number(formData.guestCount) || 0,
+        isHallOnly,
+        isFoodRelevant,
+        upgradesPricing,
+        upgradeKeys: visibleUpgradeKeys,
+      },
       menuNotes: menuNotesList,
-    }));
+    });
   }, [
     contractBaseText,
-    paymentTermsText,
+    effectivePaymentTermsText,
     upgrades,
     kosherType,
     formData.guestCount,
@@ -830,6 +840,14 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     upgradesPricing,
     visibleUpgradeKeys,
   ]);
+
+  const [cachedAutoContractText, setCachedAutoContractText] = useState(autoContractText);
+  if (autoContractText !== cachedAutoContractText) {
+    setCachedAutoContractText(autoContractText);
+    if (contractTextOverride !== null) setContractTextOverride(null);
+  }
+
+  const contractText = contractTextOverride ?? autoContractText ?? loadedContractText;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -945,7 +963,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         return;
       }
       datesForSubmit = verify.dates;
-      setSelectedDatesDisplay(verify.dates);
+      handleSelectedDatesChange(verify.dates);
     }
 
     const selectedSlot = normalizeTimeSlot(formData.timeOfDay, formData.startTime);
@@ -999,7 +1017,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         clientSignature: signatureData,
         contractText,
         paymentTemplateId: paymentTermsCustom ? 'custom' : paymentTemplateId,
-        paymentTermsText,
+        paymentTermsText: effectivePaymentTermsText,
       };
 
       if (convertFromOption) {
@@ -1063,7 +1081,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         alert(`שגיאה בשמירת הנתונים:\n${fieldErrors || resData.message || 'השרת החזיר שגיאה לא ידועה'}`);
         setIsSubmitting(false);
       }
-    } catch (error) {
+    } catch {
       alert("שגיאת התחברות לשרת - ודאי שהשרת פועל ברקע");
       setIsSubmitting(false);
     }
@@ -1113,7 +1131,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           {isOption && (
             <OptionDatesBar
               selectedDates={selectedDatesDisplay}
-              onChange={setSelectedDatesDisplay}
+              onChange={handleSelectedDatesChange}
               eventType={formData.eventType || 'חתונה'}
               timeSlot={formData.timeOfDay}
               slotWarning={optionDatesSlotWarning}
@@ -1211,7 +1229,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             </div>
 
             <div className="col-lg-4">
-              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={setPaymentTermsCustom} paymentTermsText={paymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} easycountMeta={(globalSettings as { easycount?: { mode?: string; label?: string; canIssueRealDocuments?: boolean } } | undefined)?.easycount} />
+              <PaymentAndUpgradesSection formData={formData} handleChange={handleChange} isHallOnly={isHallOnly} isOption={isOption} depositMethod={depositMethod} setDepositMethod={handleDepositMethodChange} checkScanning={checkScanning} onCheckCapture={handleCheckCapture} onCheckFileUpload={handleCheckFileUpload} onDeleteCheck={handleDeleteCheck} onCheckDetailsChange={handleCheckDetailsChange} totals={totals} isFoodRelevant={isFoodRelevant} kosherType={kosherType} isEditMode={isEditMode} editId={editId} errors={errors} vatRate={vatRate} paymentTemplates={paymentTemplates} paymentTemplateId={paymentTemplateId} onPaymentTemplateChange={setPaymentTemplateId} paymentTermsCustom={paymentTermsCustom} onPaymentTermsCustomChange={handlePaymentTermsCustomChange} paymentTermsText={effectivePaymentTermsText} onPaymentTermsTextChange={handlePaymentTermsTextChange} eventDate={getEventDateStr()} easycountMeta={(globalSettings as { easycount?: { mode?: string; label?: string; canIssueRealDocuments?: boolean } } | undefined)?.easycount} />
             </div>
           </div>
 
@@ -1280,7 +1298,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         setContractSigned={setContractSigned}
         onSignatureSaved={setSavedSignature}
         contractText={contractText}
-        onContractTextChange={setContractText}
+        onContractTextChange={setContractTextOverride}
         bookingId={editId}
       />
 

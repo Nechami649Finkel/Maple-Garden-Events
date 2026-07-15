@@ -26,7 +26,7 @@ interface EventCheckInBoardProps {
   onCancel: () => void;
 }
 
-const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
+const EventCheckInBoardInner: React.FC<EventCheckInBoardProps> = ({
   dateDisplay,
   initialData,
   readOnly = false,
@@ -37,11 +37,6 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
   const [saving, setSaving] = useState(false);
   const sigCanvas = useRef<SignatureCanvas>(null);
   const sigLoaded = useRef(false);
-
-  useEffect(() => {
-    setForm(initialData);
-    sigLoaded.current = false;
-  }, [initialData]);
 
   useEffect(() => {
     if (initialData.customerSignature && sigCanvas.current && !sigLoaded.current) {
@@ -226,5 +221,12 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
     </form>
   );
 };
+
+const EventCheckInBoard: React.FC<EventCheckInBoardProps> = (props) => (
+  <EventCheckInBoardInner
+    key={JSON.stringify(props.initialData)}
+    {...props}
+  />
+);
 
 export default EventCheckInBoard;

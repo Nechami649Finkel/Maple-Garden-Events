@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '../../config/api';
 import { secureFetch } from '../../services/api';
 import styles from './GreetingBlast.module.css';
@@ -52,45 +53,32 @@ const GreetingBlast = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [resultMessage, setResultMessage] = useState('');
-  const [scheduledItems, setScheduledItems] = useState<ScheduledGreetingItem[]>([]);
-  const [listLoading, setListLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
-
-  const loadScheduledGreetings = useCallback(async (silent = false) => {
-    if (!silent) setListLoading(true);
-    try {
+  const {
+    data: scheduledItems = [],
+    isLoading: listLoading,
+    refetch: refetchScheduledGreetings,
+  } = useQuery({
+    queryKey: ['scheduled-greetings'],
+    queryFn: async (): Promise<ScheduledGreetingItem[]> => {
       const res = await secureFetch(`${API_URL}/bookings/scheduled-greetings`, {
         credentials: 'include',
       });
       const data = await res.json();
       if (data.success) {
-        setScheduledItems(data.items || []);
+        return data.items || [];
       }
-    } catch {
-      // silent — list is secondary
-    } finally {
-      if (!silent) setListLoading(false);
-    }
-  }, []);
+      return [];
+    },
+    refetchInterval: (query) => {
+      const items = query.state.data ?? [];
+      return items.some((item) => item.status === 'PENDING' || item.status === 'PROCESSING')
+        ? 30_000
+        : false;
+    },
+  });
 
-  useEffect(() => {
-    loadScheduledGreetings();
-  }, [loadScheduledGreetings]);
-
-  const hasActiveScheduled = scheduledItems.some(
-    (item) => item.status === 'PENDING' || item.status === 'PROCESSING',
-  );
-
-  useEffect(() => {
-    if (!hasActiveScheduled) return undefined;
-
-    const intervalId = window.setInterval(() => {
-      loadScheduledGreetings(true);
-    }, 30_000);
-
-    return () => window.clearInterval(intervalId);
-  }, [hasActiveScheduled, loadScheduledGreetings]);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,7 +102,7 @@ const GreetingBlast = () => {
       if (result.success) {
         setResultMessage(result.message || 'הברכה נשלחה לכל הלקוחות');
         setSent(true);
-        await loadScheduledGreetings();
+        await refetchScheduledGreetings();
       } else {
         const detail = result.skippedReasons?.length
           ? `${result.message}\n\n${result.skippedReasons.join('\n')}`
@@ -138,7 +126,7 @@ const GreetingBlast = () => {
       });
       const data = await res.json();
       if (data.success) {
-        await loadScheduledGreetings();
+        await refetchScheduledGreetings();
       } else {
         alert(data.message || 'לא ניתן לבטל');
       }
@@ -299,7 +287,7 @@ const GreetingBlast = () => {
         <div className={styles.listCard}>
           <div className={styles.listHeader}>
             <h2 className={styles.listTitle}>ברכות מתוזמנות</h2>
-            <button type="button" className={styles.refreshBtn} onClick={() => loadScheduledGreetings()}>
+            <button type="button" className={styles.refreshBtn} onClick={() => refetchScheduledGreetings()}>
               רענון
             </button>
           </div>

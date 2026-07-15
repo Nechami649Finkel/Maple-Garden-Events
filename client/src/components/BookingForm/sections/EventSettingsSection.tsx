@@ -1,5 +1,7 @@
-import { SLOT_LABELS, SLOT_HOURS, sortSlotsForDisplay } from '../../../utils/timeSlot';
+import { type TimeSlot, SLOT_LABELS, SLOT_HOURS, sortSlotsForDisplay } from '../../../utils/timeSlot';
+import { type OptionDateItem } from '../../../utils/optionDateApi';
 import { KOSHER_PRICING, SERVING_STYLES, DEFAULT_SERVING_STYLE } from '../bookingFormConstants';
+import type { BookingFormChangeHandler, BookingFormData } from '../bookingFormTypes';
 
 const HEBREW_NUMERALS: Record<number, string> = {
   1:'א',2:'ב',3:'ג',4:'ד',5:'ה',6:'ו',7:'ז',8:'ח',9:'ט',10:'י',
@@ -31,20 +33,34 @@ const getDayOfWeek = (dateString: string) => {
   return `יום ${days[date.getDay()]}`;
 };
 
+interface EventSettingsSectionProps {
+  formData: BookingFormData;
+  handleChange: BookingFormChangeHandler;
+  isOption: boolean;
+  availableSlots: TimeSlot[];
+  takenSlots: TimeSlot[];
+  isEditMode: boolean;
+  servingStyle: string;
+  setServingStyle: (style: string) => void;
+  kosherType: string;
+  setKosherType: (type: string) => void;
+  isFoodRelevant: boolean;
+  selectedDatesDisplay: OptionDateItem[];
+  setIsMenuViewOpen: (open: boolean) => void;
+}
+
 const EventSettingsSection = ({
   formData, handleChange, isOption, availableSlots, takenSlots, isEditMode,
   servingStyle, setServingStyle, kosherType, setKosherType, isFoodRelevant,
   selectedDatesDisplay, setIsMenuViewOpen,
-}: any) => {
-  const dateStr = selectedDatesDisplay.map((d: any) => typeof d === 'object' ? d.date : d).join(', ');
-  const hebrewDateDisplay = selectedDatesDisplay.map((d: any) => {
-    if (typeof d === 'object' && d.hebrewDate) {
+}: EventSettingsSectionProps) => {
+  const dateStr = selectedDatesDisplay.map((d) => d.date).join(', ');
+  const hebrewDateDisplay = selectedDatesDisplay.map((d) => {
+    if (d.hebrewDate) {
       return `${d.hebrewDate} (${getDayOfWeek(d.date)})`;
-    } else if (typeof d === 'string') {
-      const hebDate = getHebrewDateString(new Date(d));
-      return `${hebDate} (${getDayOfWeek(d)})`;
     }
-    return '';
+    const hebDate = getHebrewDateString(new Date(d.date));
+    return `${hebDate} (${getDayOfWeek(d.date)})`;
   }).filter(Boolean).join(' | ');
 
   return (
@@ -69,15 +85,15 @@ const EventSettingsSection = ({
             <label className="form-label">זמן ביום{isOption ? ' (אופציונלי)' : ''}</label>
             <select name="timeOfDay" required={!isOption} value={formData.timeOfDay} onChange={handleChange} className="form-select">
               {isOption && <option value="">לא נבחר</option>}
-              {sortSlotsForDisplay(availableSlots).map((slot: any) => (
+              {sortSlotsForDisplay(availableSlots).map((slot) => (
                 <option key={slot} value={slot}>
-                  {SLOT_LABELS[slot as keyof typeof SLOT_LABELS]} ({SLOT_HOURS[slot as keyof typeof SLOT_HOURS].start} - {SLOT_HOURS[slot as keyof typeof SLOT_HOURS].end})
+                  {SLOT_LABELS[slot]} ({SLOT_HOURS[slot].start} - {SLOT_HOURS[slot].end})
                 </option>
               ))}
             </select>
             {!isEditMode && takenSlots.length > 0 && availableSlots.length > 0 && (
               <div className="form-text maple-hint">
-                פנוי: {availableSlots.map((s: any) => SLOT_LABELS[s as keyof typeof SLOT_LABELS]).join(', ')}
+                פנוי: {availableSlots.map((s) => SLOT_LABELS[s]).join(', ')}
               </div>
             )}
           </div>

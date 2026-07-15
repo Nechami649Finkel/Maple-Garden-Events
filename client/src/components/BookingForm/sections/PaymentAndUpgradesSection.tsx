@@ -4,9 +4,10 @@ import CheckDetailsForm from '../../CheckDetailsForm/CheckDetailsForm';
 import type { DepositCheckDetails } from '../../../utils/checkOcr';
 import { openContractPdf, printContract } from '../../../utils/contractPrint';
 import type { PaymentTermsTemplate } from '../../../utils/paymentTerms';
+import type { BookingFormData } from '../bookingFormTypes';
 
 interface PaymentAndUpgradesSectionProps {
-  formData: any;
+  formData: BookingFormData;
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
   isHallOnly: boolean;
   isOption?: boolean;

@@ -1,8 +1,18 @@
 import { useStaffQuery } from '../../../hooks/queries';
+import type { BookingFormChangeHandler, BookingFormData } from '../bookingFormTypes';
 
 const eventTypesList = ['חתונה', 'אירוסין', 'בר מצווה', 'בת מצווה', 'ברית', 'בריתה', 'חינה', 'הרמת כוסית', 'כנס מקצועי', 'אירוע חברה/עסקי', 'השכרת אולם בלי אוכל'];
 
-const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours }: any) => {
+interface MetaBarProps {
+  formData: BookingFormData;
+  handleChange: BookingFormChangeHandler;
+  isOption: boolean;
+  orderNumber: string;
+  optionDurationHours: number;
+  setOptionDurationHours: (hours: number) => void;
+}
+
+const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours }: MetaBarProps) => {
   const { data: staffMembers = [] } = useStaffQuery();
 
   const currentDateDisplay = new Date().toLocaleString('he-IL', {

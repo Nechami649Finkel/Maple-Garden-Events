@@ -3,6 +3,7 @@ import styles from '../BookingForm.module.css';
 import { type TimeSlot, SLOT_LABELS, normalizeTimeSlot } from '../../../utils/timeSlot';
 import { validateOptionDateSelection } from '../../../utils/optionDateValidation';
 import {
+  type CalendarDayApi,
   type OptionDateItem,
   fetchCalendarDays,
   normalizeOptionDate,
@@ -49,8 +50,8 @@ export const OptionDatePickerModal = ({
   timeSlot,
 }: OptionDatePickerModalProps) => {
   const [current, setCurrent] = useState(() => new Date());
-  const [days, setDays] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [days, setDays] = useState<CalendarDayApi[]>([]);
+  const [fetchedKey, setFetchedKey] = useState<string | null>(null);
   const [manualDate, setManualDate] = useState('');
   const [manualError, setManualError] = useState('');
   const [manualAdding, setManualAdding] = useState(false);
@@ -58,46 +59,62 @@ export const OptionDatePickerModal = ({
   const [pickerError, setPickerError] = useState('');
 
   const todayStr = formatDateLocal(new Date());
+  const year = current.getFullYear();
+  const month = current.getMonth();
+  const monthKey = `${year}-${month}-${eventType}`;
+  const loading = isOpen && fetchedKey !== monthKey;
 
-  const loadMonthDays = useCallback(async () => {
-    const year = current.getFullYear();
-    const month = current.getMonth();
-    const start = formatDateLocal(new Date(year, month, 1));
-    const end = formatDateLocal(new Date(year, month + 1, 0));
-
-    setLoading(true);
+  const reloadMonth = useCallback(async () => {
+    const y = current.getFullYear();
+    const m = current.getMonth();
+    const key = `${y}-${m}-${eventType}`;
+    const start = formatDateLocal(new Date(y, m, 1));
+    const end = formatDateLocal(new Date(y, m + 1, 0));
     try {
       const data = await fetchCalendarDays(start, end, eventType);
       setDays(data);
+      setFetchedKey(key);
     } catch {
       setDays([]);
-    } finally {
-      setLoading(false);
+      setFetchedKey(key);
     }
   }, [current, eventType]);
 
   useEffect(() => {
     if (!isOpen) return;
-    setManualDate('');
-    setManualError('');
-    setPickerError('');
-    loadMonthDays();
-  }, [isOpen, loadMonthDays]);
+    let cancelled = false;
+    const key = monthKey;
+    const start = formatDateLocal(new Date(year, month, 1));
+    const end = formatDateLocal(new Date(year, month + 1, 0));
+    (async () => {
+      try {
+        const data = await fetchCalendarDays(start, end, eventType);
+        if (!cancelled) {
+          setDays(data);
+          setFetchedKey(key);
+        }
+      } catch {
+        if (!cancelled) {
+          setDays([]);
+          setFetchedKey(key);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, monthKey, year, month, eventType]);
 
   useEffect(() => {
     if (!isOpen) return;
-    const refresh = () => { loadMonthDays(); };
+    const refresh = () => { void reloadMonth(); };
     window.addEventListener(REALTIME_DATE_UPDATED_EVENT, refresh);
     return () => { window.removeEventListener(REALTIME_DATE_UPDATED_EVENT, refresh); };
-  }, [isOpen, loadMonthDays]);
+  }, [isOpen, reloadMonth]);
 
   if (!isOpen) return null;
 
-  const year = current.getFullYear();
-  const month = current.getMonth();
   const firstDow = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const serverMap = new Map(days.map((d: any) => [d.date, d]));
+  const serverMap = new Map(days.map((d) => [d.date, d]));
 
   const cells: (null | { date: string; hebrewDate: string; disabled: boolean; reason?: string })[] = [];
   for (let i = 0; i < firstDow; i++) cells.push(null);
@@ -123,7 +140,7 @@ export const OptionDatePickerModal = ({
     setManualAdding(false);
     if (!result.ok) {
       setManualError(result.error);
-      loadMonthDays();
+      void reloadMonth();
       return;
     }
     onSelect(result.item);
@@ -138,7 +155,7 @@ export const OptionDatePickerModal = ({
     setSelectingDate(null);
     if (!result.ok) {
       setPickerError(result.error);
-      loadMonthDays();
+      void reloadMonth();
       return;
     }
     onSelect(result.item);
@@ -307,7 +324,15 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
         {canAdd ? (
           <div className={styles.optionDatesAddSection}>
             <div className={styles.optionDatesAddRow}>
-              <button type="button" className={styles.optionAddDateBtn} onClick={() => setPickerOpen(true)}>
+              <button
+                type="button"
+                className={styles.optionAddDateBtn}
+                onClick={() => {
+                  setManualDate('');
+                  setManualError('');
+                  setPickerOpen(true);
+                }}
+              >
                 + בחירה מלוח שנה
               </button>
               <span className={styles.optionDatesOr}>או</span>
