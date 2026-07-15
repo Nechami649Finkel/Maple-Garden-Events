@@ -11,11 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # setup-node writes auth for registry.npmjs.org using NODE_AUTH_TOKEN at install time
+      # Public npm packages only — no registry-url / NODE_AUTH_TOKEN (avoids E401).
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: https://registry.npmjs.org
           cache: npm
           cache-dependency-path: |
             client/package-lock.json
@@ -23,19 +22,13 @@ jobs:
 
       - name: Install client dependencies
         working-directory: client
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm ci
+        run: npm ci --registry=https://registry.npmjs.org/
 
       - name: Install server dependencies
         working-directory: server
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          # Clear local overrides that can conflict with setup-node auth
           rm -f .npmrc .npmrc.bak
-          npm config set registry https://registry.npmjs.org/
-          npm ci
+          npm ci --registry=https://registry.npmjs.org/
 
       - name: Generate Prisma client
         working-directory: server

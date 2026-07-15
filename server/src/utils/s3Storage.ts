@@ -8,6 +8,10 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 import { logger } from './logger';
+import {
+  assertBookingAccess,
+  type BookingAccessUser,
+} from './bookingAccess';
 
 const S3_KEY_PREFIX = 's3:';
 const DEFAULT_PRESIGN_TTL = Number(process.env.S3_PRESIGN_TTL_SECONDS || 3600);
@@ -111,7 +115,11 @@ export async function uploadPrivateFile(params: {
   fileName: string;
   contentType: string;
   body: Buffer;
+  /** Authenticated principal — access is asserted before any S3 write. */
+  accessUser: BookingAccessUser | null | undefined;
 }): Promise<string> {
+  await assertBookingAccess(params.accessUser, params.bookingId);
+
   const bucket = getBucket();
   const safeName = params.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   const objectKey = `${params.category}/${params.bookingId}/${randomUUID()}-${safeName}`;

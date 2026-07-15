@@ -6,7 +6,6 @@ import {
   isEasyCountConfigured,
   loadHallBalanceForBooking,
   parseEasyCountWebhook,
-  verifyEasyCountWebhookSignature,
 } from '../Services/easyCount';
 import { emitBookingUpdated } from '../utils/realtime';
 
@@ -69,13 +68,7 @@ export const getBookingHallInvoices = catchAsync(async (req: Request, res: Respo
 });
 
 export const handleEasyCountWebhook = catchAsync(async (req: Request, res: Response) => {
-  const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body ?? {});
-  const signature = req.headers['x-easycount-signature'] as string | undefined;
-
-  if (!verifyEasyCountWebhookSignature(rawBody, signature)) {
-    return res.status(401).json({ success: false, message: 'חתימת webhook לא תקינה.' });
-  }
-
+  // HMAC + JSON.parse already handled by easyCountWebhookHmac (raw Buffer → req.body object).
   const event = parseEasyCountWebhook(req.body);
   if (!event) {
     return res.status(400).json({ success: false, message: 'גוף webhook לא תקין.' });

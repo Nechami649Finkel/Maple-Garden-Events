@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { HmacVerificationError, verifyHmacSha256 } from '../../utils/hmac';
 
 export {
   computeHallBalanceBreakdown,
@@ -15,28 +16,21 @@ export function resolvePaymentStatus(totalPaid: number, hallAmount: number): str
   return 'pending';
 }
 
+/** @returns true when HMAC matches; false when secret/signature invalid (fail-closed). */
 export function verifyEasyCountWebhookSignature(
-  rawBody: string,
+  rawBody: string | Buffer,
   signatureHeader: string | undefined,
 ): boolean {
-  const secret = process.env.EASY_COUNT_WEBHOOK_SECRET?.trim();
-  // Fail closed: missing secret must never skip verification (allows forged "paid" webhooks).
-  if (!secret) return false;
-
-  if (!signatureHeader?.trim()) return false;
-
-  const expected = crypto
-    .createHmac('sha256', secret)
-    .update(rawBody)
-    .digest('hex');
-
-  const provided = signatureHeader.replace(/^sha256=/i, '').trim();
+  const buffer = Buffer.isBuffer(rawBody) ? rawBody : Buffer.from(rawBody, 'utf8');
   try {
-    return crypto.timingSafeEqual(
-      Buffer.from(expected, 'hex'),
-      Buffer.from(provided, 'hex'),
+    verifyHmacSha256(
+      buffer,
+      signatureHeader,
+      process.env.EASY_COUNT_WEBHOOK_SECRET,
     );
-  } catch {
+    return true;
+  } catch (err) {
+    if (err instanceof HmacVerificationError) return false;
     return false;
   }
 }
