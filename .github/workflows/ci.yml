@@ -8,6 +8,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Public packages only — never send a stale/empty npm auth header (causes E401).
+      NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
     steps:
       - uses: actions/checkout@v4
 
@@ -21,11 +24,13 @@ jobs:
 
       - name: Install client dependencies
         working-directory: client
-        run: npm ci
+        run: npm ci --registry=https://registry.npmjs.org/
 
       - name: Install server dependencies
         working-directory: server
-        run: npm ci
+        run: |
+          npm config delete "//registry.npmjs.org/:_authToken" 2>/dev/null || true
+          npm ci --registry=https://registry.npmjs.org/
 
       - name: Generate Prisma client
         working-directory: server
