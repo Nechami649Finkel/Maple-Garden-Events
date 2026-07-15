@@ -158,7 +158,10 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                         <button
                           type="button"
                           className="edit-btn finalize-option-btn"
-                          onClick={() => handleCloseOption(booking.id)}
+                          onClick={() => {
+                            if (!booking.id) return;
+                            handleCloseOption(booking.id);
+                          }}
                         >
                           סגור כהזמנה
                         </button>
@@ -177,7 +180,10 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                           <button
                             type="button"
                             className="edit-btn"
-                            onClick={() => void openContractPdf(booking.id)}
+                            onClick={() => {
+                              if (!booking.id) return;
+                              void openContractPdf(booking.id);
+                            }}
                           >
                             צפייה בחוזה
                           </button>
@@ -185,6 +191,7 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                             type="button"
                             className="edit-btn"
                             onClick={async () => {
+                              if (!booking.id) return;
                               try {
                                 await printContract(booking.id);
                               } catch (e) {
@@ -205,10 +212,13 @@ export const EventPopup = ({ day, onClose, onAddEvent, onAddOption, onOverrideOp
                         <button
                           type="button"
                           className={liveEventStyles.checkInBtn}
-                          onClick={() => setCheckInState({
-                            bookingId: booking.id,
-                            readOnly: !checkInEditable,
-                          })}
+                          onClick={() => {
+                            if (!booking.id) return;
+                            setCheckInState({
+                              bookingId: booking.id,
+                              readOnly: !checkInEditable,
+                            });
+                          }}
                         >
                           טופס קבלת אולם
                         </button>

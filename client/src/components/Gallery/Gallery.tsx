@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import styles from './Gallery.module.css';
 
 // נתונים עם קידוד דגמים ברור לתקשורת קלה מול המנהל

@@ -1,7 +1,7 @@
 import { AppHeader } from '../AppHeader/AppHeader';
 import { AppSidebar } from '../AppSidebar/AppSidebar';
-import { NavigationProvider } from '../../context/NavigationContext';
-import { SidebarProvider } from '../../context/SidebarContext';
+import { NavigationProvider } from '../../context/NavigationProvider';
+import { SidebarProvider } from '../../context/SidebarProvider';
 import './AppLayout.css';
 
 export type AppLayoutMode = 'default' | 'viewportFill' | 'fullWidth';
@@ -40,7 +40,7 @@ export const AppLayout = ({
     <NavigationProvider>
       <SidebarProvider>
         <a href="#main-content" className="skip-link">
-          דלג לתוכן ראשי
+          ׳“׳׳’ ׳׳×׳•׳›׳ ׳¨׳׳©׳™
         </a>
         <div
           className={[

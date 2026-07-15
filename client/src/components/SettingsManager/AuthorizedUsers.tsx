@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 
@@ -10,6 +10,8 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 const ROLE_OPTIONS = Object.entries(ROLE_LABELS);
+
+const AUTH_USERS_URL = `${API_URL}/auth/authorized-users`;
 
 type AuthorizedUser = {
   id: string;
@@ -23,9 +25,7 @@ export const AuthorizedUsers = () => {
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('manager');
 
-  const AUTH_USERS_URL = `${API_URL}/auth/authorized-users`;
-
-  const loadUsers = () => {
+  const loadUsers = useCallback(() => {
     apiFetch(AUTH_USERS_URL)
       .then((res) => {
         if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
@@ -35,11 +35,11 @@ export const AuthorizedUsers = () => {
         if (Array.isArray(data)) setUsers(data as AuthorizedUser[]);
       })
       .catch((err) => console.error('שגיאה בטעינת משתמשים:', err));
-  };
+  }, []);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   const handleAddEmail = async () => {
     const emailToSave = email.toLowerCase().trim();

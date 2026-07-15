@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './BookingsManager.module.css';
 import BookingDetailsModal from './BookingDetailsModal';
 import { useBookingsQuery } from '../../hooks/queries';
@@ -74,7 +74,7 @@ const BookingsManager = () => {
     }
   };
 
-  const sortBookings = (bookings: BookingApi[]) => {
+  const sortBookings = useCallback((bookings: BookingApi[]) => {
     const sorted = [...bookings];
     sorted.sort((a, b) => {
       let cmp: number;
@@ -102,7 +102,7 @@ const BookingsManager = () => {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  };
+  }, [sortKey, sortDir]);
 
   const { data, isLoading } = useBookingsQuery({
     status: 'BOOKED',
@@ -132,7 +132,7 @@ const BookingsManager = () => {
     );
 
     return { upcomingBookings: upcoming, pastBookings: past };
-  }, [data, sortKey, sortDir]);
+  }, [data, sortBookings]);
 
   const closeSelected = () => setSelected(null);
 

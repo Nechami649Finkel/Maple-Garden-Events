@@ -41,7 +41,6 @@ import {
   clearBookingDraft,
   loadBookingDraft,
   saveBookingDraft,
-  type BookingDraftSnapshot,
 } from '../../utils/bookingDraft';
 import {
   DEFAULT_KOSHER_TYPE,
@@ -312,27 +311,25 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     return () => { cancelled = true; };
   }, [isEditMode]);
 
-  const buildDraftSnapshot = (): BookingDraftSnapshot => ({
-    formData: { ...formData },
-    menuNotesList,
-    internalNotesList,
-    servingStyle,
-    kosherType,
-    upgrades,
-    depositMethod,
-    contractSigned,
-    selectedDatesDisplay,
-    isOption,
-    optionDurationHours,
-    paymentTemplateId,
-    paymentTermsCustom,
-    paymentTermsText,
-  });
-
   useEffect(() => {
     if (isEditMode || !userEmail || !draftRestored) return;
     const timer = setTimeout(() => {
-      saveBookingDraft(userEmail, buildDraftSnapshot());
+      saveBookingDraft(userEmail, {
+        formData: { ...formData },
+        menuNotesList,
+        internalNotesList,
+        servingStyle,
+        kosherType,
+        upgrades,
+        depositMethod,
+        contractSigned,
+        selectedDatesDisplay,
+        isOption,
+        optionDurationHours,
+        paymentTemplateId,
+        paymentTermsCustom,
+        paymentTermsText,
+      });
     }, 800);
     return () => clearTimeout(timer);
   }, [
@@ -422,71 +419,72 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
   }, [convertFromOption, activeEditId]);
 
-  const applyBookingToForm = (b: LoadedBooking) => {
-    const phoneA = parseCombinedPhone(b.clientAPhone);
-    const phoneB = parseCombinedPhone(b.clientBPhone);
-    const addrA = parseAddress(b.clientAAddress);
-    const addrB = parseAddress(b.clientBAddress);
-    const eventDateStr = b.eventDate?.date ? calendarKeyFromDbDate(new Date(b.eventDate.date)) : '';
-    if (convertFromOption) {
-      setIsOption(false);
-    } else {
-      setIsOption(!!(b.isOption || b.eventDate?.status === 'OPTION'));
-      setOrderNumber(b.eventCode || b.id.slice(0, 8));
-    }
-    if (eventDateStr) setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: '' }]);
-    const parsedTime = parseStoredTimeOfDay(b.timeOfDay);
-    const loadedSlot = parsedTime.timeOfDay as TimeSlot;
-    const defaultHours = loadedSlot && SLOT_HOURS[loadedSlot] ? getSlotHours(loadedSlot) : null;
-
-    const nameParts = splitFullName(b.clientAFullName || '');
-
-    setFormData({
-      createdBy: b.createdBy || '',
-      clientAFirstName: nameParts.first,
-      clientALastName: nameParts.last,
-      clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
-      clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
-      calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
-      guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
-      akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
-      hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',
-      advancePaid: b.advancePaid ? String(b.advancePaid) : '',
-      depositCheckUrl: b.depositCheckUrl || '',
-      depositCheckDetails: (b.depositCheckDetails as DepositCheckDetails | null) || null,
-    });
-    if (b.depositCheckUrl) {
-      setDepositMethod(b.depositCheckUrl.startsWith('data:') ? 'check_capture' : 'check_upload');
-    } else if (b.depositMethod) {
-      setDepositMethod(b.depositMethod);
-    }
-    const notesBundle = parseNotesBundle(b.clientComments || '');
-    setMenuNotesList(notesBundle.menu);
-    setInternalNotesList(notesBundle.internal);
-    setContractSigned(!!b.isContractSigned);
-    if (b.clientSignatureUrl) setSavedSignature(b.clientSignatureUrl);
-    if (b.contractText) {
-      setLoadedContractText(b.contractText);
-    }
-    if (b.paymentTermsText) {
-      setPaymentTermsText(b.paymentTermsText);
-    }
-    if (b.paymentTemplateId) {
-      setPaymentTemplateId(b.paymentTemplateId);
-      setPaymentTermsCustom(b.paymentTemplateId === 'custom');
-    } else if (b.paymentTermsText) {
-      setPaymentTermsCustom(true);
-    }
-    if (b.upgrades && typeof b.upgrades === 'object') {
-      setUpgrades({ ...DEFAULT_UPGRADES, ...parseStoredUpgrades(b.upgrades) });
-    } else if (b.hasMusic !== undefined) {
-      setUpgrades((prev) => ({ ...prev, amplification: !!b.hasMusic }));
-    }
-    if (b.kosherType) setKosherType(b.kosherType);
-  };
-
   useEffect(() => {
     if (!activeEditId) return;
+
+    const applyBookingToForm = (b: LoadedBooking) => {
+      const phoneA = parseCombinedPhone(b.clientAPhone);
+      const phoneB = parseCombinedPhone(b.clientBPhone);
+      const addrA = parseAddress(b.clientAAddress);
+      const addrB = parseAddress(b.clientBAddress);
+      const eventDateStr = b.eventDate?.date ? calendarKeyFromDbDate(new Date(b.eventDate.date)) : '';
+      if (convertFromOption) {
+        setIsOption(false);
+      } else {
+        setIsOption(!!(b.isOption || b.eventDate?.status === 'OPTION'));
+        setOrderNumber(b.eventCode || b.id.slice(0, 8));
+      }
+      if (eventDateStr) setSelectedDatesDisplay([{ date: eventDateStr, hebrewDate: '' }]);
+      const parsedTime = parseStoredTimeOfDay(b.timeOfDay);
+      const loadedSlot = parsedTime.timeOfDay as TimeSlot;
+      const defaultHours = loadedSlot && SLOT_HOURS[loadedSlot] ? getSlotHours(loadedSlot) : null;
+
+      const nameParts = splitFullName(b.clientAFullName || '');
+
+      setFormData({
+        createdBy: b.createdBy || '',
+        clientAFirstName: nameParts.first,
+        clientALastName: nameParts.last,
+        clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
+        clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
+        calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
+        guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
+        akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
+        hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',
+        advancePaid: b.advancePaid ? String(b.advancePaid) : '',
+        depositCheckUrl: b.depositCheckUrl || '',
+        depositCheckDetails: (b.depositCheckDetails as DepositCheckDetails | null) || null,
+      });
+      if (b.depositCheckUrl) {
+        setDepositMethod(b.depositCheckUrl.startsWith('data:') ? 'check_capture' : 'check_upload');
+      } else if (b.depositMethod) {
+        setDepositMethod(b.depositMethod);
+      }
+      const notesBundle = parseNotesBundle(b.clientComments || '');
+      setMenuNotesList(notesBundle.menu);
+      setInternalNotesList(notesBundle.internal);
+      setContractSigned(!!b.isContractSigned);
+      if (b.clientSignatureUrl) setSavedSignature(b.clientSignatureUrl);
+      if (b.contractText) {
+        setLoadedContractText(b.contractText);
+      }
+      if (b.paymentTermsText) {
+        setPaymentTermsText(b.paymentTermsText);
+      }
+      if (b.paymentTemplateId) {
+        setPaymentTemplateId(b.paymentTemplateId);
+        setPaymentTermsCustom(b.paymentTemplateId === 'custom');
+      } else if (b.paymentTermsText) {
+        setPaymentTermsCustom(true);
+      }
+      if (b.upgrades && typeof b.upgrades === 'object') {
+        setUpgrades({ ...DEFAULT_UPGRADES, ...parseStoredUpgrades(b.upgrades) });
+      } else if (b.hasMusic !== undefined) {
+        setUpgrades((prev) => ({ ...prev, amplification: !!b.hasMusic }));
+      }
+      if (b.kosherType) setKosherType(b.kosherType);
+    };
+
     const loadBooking = async () => {
       try {
         const res = await apiFetch(`${API_URL}/bookings/${activeEditId}`);
@@ -528,7 +526,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
               hebrewDate: opt.eventDate?.hebrewDate || '',
             }))
             .filter((d) => d.date);
-          handleSelectedDatesChange(dates);
+          setSelectedDatesDisplay(dates);
+          const firstDate = dates[0]?.date || '';
+          setFormData((prev) =>
+            prev.calendarDateId === firstDate ? prev : { ...prev, calendarDateId: firstDate },
+          );
         };
 
         if (convertFromOption) {
@@ -597,7 +599,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       const hours = SLOT_HOURS[slot] ? getSlotHours(slot) : null;
       setFormData((prev) => ({
         ...prev,
-        timeOfDay: value,
+        timeOfDay: slot,
         ...(hours ? { startTime: hours.start, endTime: hours.end } : {}),
       }));
       if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
@@ -1120,7 +1122,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         )}
 
         <form className="card-body" onSubmit={handleSubmit}>
-          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} />
+          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} />
           {convertFromOption && relatedOptions.length > 1 && (
             <FinalizeOptionDatesBar
               relatedOptions={relatedOptions}
@@ -1140,7 +1142,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
           <div className="row g-3 maple-form-columns">
             <div className="col-lg-4">
-              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} setErrors={setErrors} isWedding={isWedding} isOption={isOption} />
+              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} isWedding={isWedding} isOption={isOption} />
               <UpgradesSection
                 upgrades={upgrades}
                 handleUpgradeChange={handleUpgradeChange}

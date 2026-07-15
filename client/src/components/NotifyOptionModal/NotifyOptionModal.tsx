@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import { buildDefaultOptionInterestMessage } from '../../utils/notifyOptionMessage';
