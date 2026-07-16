@@ -24,6 +24,7 @@ import checkInRoutes from './routes/checkIn.routes';
 import easyCountRoutes from './routes/easyCount.routes';
 import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
 import filesRoutes from './routes/files.routes';
+import checkScanRoutes from './routes/checkScan.routes';
 
 validateEnv();
 
@@ -111,6 +112,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api/scan-check', checkScanRoutes);
 
 const shouldServeClient =
   process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';

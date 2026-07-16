@@ -258,7 +258,13 @@ export const eventFormController = {
       const pdfBuffer = await generateEventProductionPDF(buildBookingPdfData(booking));
 
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="event-form-${booking.clientAFullName}.pdf"`);
+      // HTTP headers are latin1-only — Hebrew names must go through RFC 5987 filename*
+      const asciiName = `event-form-${booking.eventCode || booking.id}.pdf`;
+      const utf8Name = encodeURIComponent(`טופס-הפקה-${booking.clientAFullName || ''}.pdf`);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${asciiName}"; filename*=UTF-8''${utf8Name}`,
+      );
       res.send(pdfBuffer);
     } catch (e) {
       logger.error('PDF generation error:', e);

@@ -1,119 +1,205 @@
-name: Deploy
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מדריך Backend: רישוי דיגיטלי ומנויים</title>
+    <style>
+        :root {
+            --primary: #0d7c86;
+            --primary-dark: #0a5d65;
+            --secondary: #f4c76b;
+            --bg-color: #fbf5ec;
+            --card-bg: #ffffff;
+            --text-main: #2a2620;
+            --text-muted: #6f675c;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+            border-bottom: 5px solid var(--secondary);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+        header p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        .section-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid #e8ddc9;
+        }
+        h2 {
+            color: var(--primary-dark);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h3 {
+            color: var(--primary);
+            margin-top: 25px;
+        }
+        code {
+            background-color: #f4f4f4;
+            color: #d63384;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: Consolas, monospace;
+            direction: ltr;
+            display: inline-block;
+        }
+        .highlight-box {
+            background-color: rgba(13, 124, 134, 0.05);
+            border-right: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+        }
+        ul {
+            padding-right: 20px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
 
-on:
-  push:
-    branches: [main, miriam, miryami]
+<header>
+    <h1>מדריך ארכיטקטורה ולוגיקה: Backend רישוי דיגיטלי</h1>
+    <p>הכנה לסקירת קוד והצגת ה-MVP | מאת: מרים</p>
+</header>
 
-concurrency:
-  group: deploy-${{ github.ref_name }}
-  cancel-in-progress: true
+<div class="container">
 
-jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
+    <!-- Section 1: Lifecycle -->
+    <div class="section-card">
+        <h2>1. מחזור החיים המלא (Main Lifecycle)</h2>
+        <p>מחזור החיים של רישיון הוא "מכונת המצבים" (State Machine) של המערכת. הוא נועד להבטיח שרישיון לא ילך לאיבוד, לא יימכר פעמיים, ושתמיד נדע איפה הוא נמצא.</p>
+        
+        <h3>Intake (קליטה)</h3>
+        <p><strong>מה זה אומר:</strong> הרגע שבו ספק או מנהל מכניסים קוד רישיון חדש למערכת.</p>
+        <p><strong>בקוד:</strong> הרישיון מיד עובר הצפנה (Encryption at rest). הוא לא נשמר כטקסט גלוי אפילו לשנייה אחת. הסטטוס שלו מוגדר כ-<code>Available</code> (זמין למכירה).</p>
 
-  # deploy job is currently disabled to focus on development
-  # deploy:
-  #   needs: ci
-  #   runs-on: ubuntu-latest
-  #   environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Set deploy target
-  #       id: target
-  #       run: |
-  #         if [ "${{ github.ref_name }}" = "main" ]; then
-  #           echo "env_name=production" >> "$GITHUB_OUTPUT"
-  #           echo "db_secret=DATABASE_URL_PRODUCTION" >> "$GITHUB_OUTPUT"
-  #           echo "service_secret=APP_RUNNER_SERVICE_ARN_PRODUCTION" >> "$GITHUB_OUTPUT"
-  #         else
-  #           echo "env_name=staging" >> "$GITHUB_OUTPUT"
-  #           echo "db_secret=DATABASE_URL_STAGING" >> "$GITHUB_OUTPUT"
-  #           echo "service_secret=APP_RUNNER_SERVICE_ARN_STAGING" >> "$GITHUB_OUTPUT"
-  #         fi
-  #
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
-  #
-  #     - name: Login to Amazon ECR
-  #       id: ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #
-  #     - name: Build and push Docker image
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-  #         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         docker build \
-  #           --build-arg VITE_GOOGLE_CLIENT_ID="${{ secrets.VITE_GOOGLE_CLIENT_ID }}" \
-  #           --build-arg VITE_API_URL="" \
-  #           -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-  #           -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
-  #           .
-  #         docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-  #         docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-  #
-  #     - name: Setup Node for Prisma migrate
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
-  #
-  #     - name: Install server dependencies (Prisma only)
-  #       working-directory: server
-  #       env:
-  #         DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_STAGING }}
-  #       run: |
-  #         rm -f .npmrc .npmrc.bak
-  #         export DATABASE_URL="${DATABASE_URL:-postgresql://prisma:prisma@127.0.0.1:5432/prisma}"
-  #         npm ci --ignore-scripts --registry=https://registry.npmjs.org/
-  #         npx prisma generate
-  #
-  #     - name: Run Prisma migrate deploy
-  #       working-directory: server
-  #       env:
-  #         DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_STAGING }}
-  #       run: npx prisma migrate deploy
-  #
-  #     - name: Deploy to App Runner
-  #       env:
-  #         SERVICE_ARN: ${{ github.ref_name == 'main' && secrets.APP_RUNNER_SERVICE_ARN_PRODUCTION || secrets.APP_RUNNER_SERVICE_ARN_STAGING }}
-  #         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-  #         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-  #         aws apprunner update-service \
-  #           --service-arn "$SERVICE_ARN" \
-  #           --source-configuration "{\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE_URI\",\"ImageRepositoryType\":\"ECR\"}}"
-  #         aws apprunner start-deployment --service-arn "$SERVICE_ARN"
-  #         echo "Deployed $IMAGE_URI to App Runner"
-  #
-  #     - name: Smoke test health endpoint
-  #       env:
-  #         HEALTH_URL: ${{ github.ref_name == 'main' && secrets.PRODUCTION_HEALTH_URL || secrets.STAGING_HEALTH_URL }}
-  #       run: |
-  #         if [ -z "$HEALTH_URL" ]; then
-  #           echo "HEALTH_URL not configured — skipping smoke test"
-  #           exit 0
-  #         fi
-  #         for i in 1 2 3 4 5 6 7 8 9 10; do
-  #           if curl -sf "$HEALTH_URL/api/health" | grep -q '"status":"ok"'; then
-  #             echo "✅ Health check passed"
-  #             exit 0
-  #           fi
-  #           echo "Waiting for service... ($i/10)"
-  #           sleep 30
-  #         done
-  #         echo "❌ Health check failed after 5 minutes"
-  #         exit 1
+        <h3>Reserve (שריון)</h3>
+        <p><strong>מה זה אומר:</strong> לקוח ביצע הזמנה, והמערכת "תופסת" עבורו רישיון ספציפי מהמלאי כדי שאף אחד אחר לא יקנה אותו במקביל.</p>
+        <p><strong>בקוד:</strong> הסטטוס עובר ל-<code>Reserved</code>, והמערכת משייכת את ה-ID של הרישיון להזמנה של הלקוח. זה מונע מצב של Double-Spending (כפל מכירה).</p>
+
+        <h3>Deliver (מסירה)</h3>
+        <p><strong>מה זה אומר:</strong> הרישיון נמסר פיזית (או דיגיטלית במייל/פורטל) ללקוח.</p>
+        <p><strong>בקוד:</strong> הסטטוס משתנה ל-<code>Delivered</code>. בשלב זה הלקוח קיבל בעלות על המפתח, והמערכת רושמת את זה ב-Ledger (יומן התנועות).</p>
+
+        <h3>Activate (הפעלה)</h3>
+        <p><strong>מה זה אומר:</strong> הלקוח לקח את הקוד והזין אותו בתוכנה (למשל אופיס או אנטי-וירוס). הקוד הפך לפעיל.</p>
+        <p><strong>בקוד:</strong> הסטטוס עובר ל-<code>Active</code>. מרגע זה מתחיל לפעול "שעון החיים" של הרישיון (תוקף, תאריך חידוש למנוי).</p>
+
+        <h3>Reveal (חשיפה)</h3>
+        <p><strong>מה זה אומר:</strong> משתמש במערכת (מנהל/נציג תמיכה) רוצה לראות את הקוד הגלוי בעיניים שלו (למשל כדי להקריא ללקוח בטלפון).</p>
+        <p><strong>בקוד:</strong> זו הפעולה הרגישה ביותר. היא <strong>דורשת</strong> רישום תיעוד (Audit) לפני הפענוח (מי לחץ, מתי, מה ה-IP, ומה סיבת החשיפה). אם הרישיון מוגדר כ-High-Risk, הפעולה נעצרת ודורשת <code>ApproveHighRisk</code> (אישור מנהל).</p>
+    </div>
+
+    <!-- Section 2: Security -->
+    <div class="section-card">
+        <h2>2. אבטחה, הצפנה וקונפיגורציות</h2>
+        <p>האבטחה היא לב המערכת. אנחנו לא מנהלים כאן סתם טקסטים, אלא כסף (רישיונות שעולים הרבה מאוד כסף).</p>
+
+        <h3>למה <code>ILicenseSecretProtector</code> קיים?</h3>
+        <p>כדי שמתכנתים אחרים לא יעשו טעויות. בעבר, שירותים (AppServices) קראו ישירות לשירות ההצפנה הגנרי כדי לפענח קוד. <code>ILicenseSecretProtector</code> מרכז את כל הגישה לסודות למקום אחד בלבד. הוא מהווה "שער" שמוודא שאי אפשר לפענח רישיון בלי לבצע Audit ולבדוק הרשאות. זה מונע מעקפים (Bypassing).</p>
+
+        <h3>מה המשמעות של <code>SearchHashPepper</code>?</h3>
+        <p>מכיוון שהרישיונות מוצפנים, איך נוכל לבדוק אם קוד שהספק העלה עכשיו כבר קיים במערכת (למנוע כפילויות)? אי אפשר לחפש טקסט מוצפן כי כל הצפנה מייצרת מחרוזת שונה. הפתרון הוא לגזור <strong>Hash</strong> מהקוד הגלוי בזמן הקליטה ולשמור אותו בעמודה נפרדת. ה-<strong>Pepper</strong> הוא מחרוזת סודית שמוספת לקוד לפני הגיבוב (Hashing), כך שגם אם מישהו פורץ למסד הנתונים ורואה את ה-Hash, הוא לא יכול להפעיל מתקפת Rainbow Table כדי לנחש מה הקוד המקורי.</p>
+
+        <h3>ההבדל בין <code>Local</code> ל-<code>Configured</code> Protector</h3>
+        <div class="highlight-box">
+            <ul>
+                <li><strong><code>LocalLicenseSecretProtector</code>:</strong> משמש לסביבת פיתוח מקומית (Dev). הוא משתמש במפתח קבוע או זמני כדי שיהיה נוח לפתח בלי להרים תשתית אבטחה כבדה.</li>
+                <li><strong><code>ConfiguredLicenseSecretProtector</code>:</strong> משמש לסביבת ייצור (Production). הוא מתממשק למערכת Data Protection אמיתית (כמו AWS KMS או Azure Key Vault) שמנהלת את מפתחות ההצפנה. המערכת מוגדרת ל-Fail-Fast (לקרוס מיד) אם מנסים להריץ את ה-Local בסביבת ייצור.</li>
+            </ul>
+        </div>
+
+        <h3>שינויים ב-<code>PlatformModule</code></h3>
+        <p>מודול זה שונה כדי להזריק (Dependency Injection) את ה-Protector הנכון לפי הסביבה (פיתוח לעומת ייצור), וכדי להגדיר את אופן שמירת המפתחות (<code>PersistKeysToDbContext</code>) כך שמפתחות ההצפנה ישרדו נפילת שרת ולא נאבד גישה לרישיונות.</p>
+    </div>
+
+    <!-- Section 3: Entities & Services -->
+    <div class="section-card">
+        <h2>3. ישויות ושירותים</h2>
+        
+        <h3><code>LicenseStockItem</code></h3>
+        <p><strong>תפקיד:</strong> הישות המרכזית (Entity) במסד הנתונים המייצגת רישיון פיזי/דיגיטלי אחד במחסן.</p>
+        <p><strong>בקוד:</strong> מכילה את הסוד המוצפן עצמו (כמחרוזת ג'יבריש), את ה-SearchHash (למניעת כפילויות), את הסטטוס הנוכחי, ואת ה-Tenant ID (כדי להפריד בין חברות שונות במערכת).</p>
+
+        <h3><code>LicenseStockStatus</code></h3>
+        <p><strong>תפקיד:</strong> Enum (רשימת קבועים) המגדיר את 9 המצבים האפשריים שבהם רישיון יכול להימצא (Available, Reserved, Delivered וכו'). הוא הבסיס למכונת המצבים ומונע מעבר מסטטוס א' ל-ג' ללא מעבר ב-ב'.</p>
+
+        <h3><code>LicenseStockItemAppService</code></h3>
+        <p><strong>תפקיד:</strong> שכבת ה-API שמקשרת בין מסכי ה-Frontend לבין מסד הנתונים.</p>
+        <p><strong>בקוד:</strong> כאן מתבצעת אכיפת ההרשאות (RBAC). השירות הזה מכיל את מתודות ה-Deliver וה-Activate שהיו חסרות בעבר, ומוודא שרק משתמש עם הרשאה מתאימה יכול לשנות סטטוס של רישיון או לשלוף אותו.</p>
+    </div>
+
+    <!-- Section 4: Testing -->
+    <div class="section-card">
+        <h2>4. טסטים ובדיקות תוכנה</h2>
+
+        <h3>מה נבדק ב-<code>LicenseStockItemAppServiceTests</code>?</h3>
+        <p>אלו הם Unit Tests שבודקים את הלוגיקה העסקית בסביבה מבודדת. הם מוודאים:</p>
+        <ul>
+            <li>שאי אפשר לבצע מעבר סטטוס לא חוקי (למשל להפעיל רישיון שעוד לא נמסר), ושהמערכת זורקת שגיאת <code>409 Conflict</code>.</li>
+            <li>שתהליך ה-High-Risk באמת עוצר את החשיפה עד לקבלת אישור.</li>
+            <li>שמשתמש בלי הרשאה לא יכול לקרוא לשירות (בדיקת RBAC).</li>
+        </ul>
+
+        <h3>הסבר על טסטי האינטגרציה (Integration Tests)</h3>
+        <p>טסטי האינטגרציה (שדורשים DB אמיתי או Docker) הם קריטיים להוכחת ה-MVP כי הם בודקים את <strong>המערכת בשלמותה</strong>. הם מוכיחים ש:</p>
+        <ol>
+            <li><strong>הצפנה בפועל (Round-trip):</strong> הרישיון באמת נשמר מוצפן ב-DB האמיתי (ולא רק בזיכרון), וכששולפים אותו הוא מפוענח נכון.</li>
+            <li><strong>אילוצי מסד הנתונים:</strong> שאינדקס ה-Hash הייחודי באמת חוסם ניסיון להכניס קוד כפול ברמת מסד הנתונים.</li>
+            <li><strong>בידוד דיירים (Tenant Isolation):</strong> שדייר א' בשום אופן לא יכול לראות מידע מה-DB של דייר ב'.</li>
+        </ol>
+        <p><em>הערה לפגישה:</em> גם אם Docker עשה בעיות טכניות בהרצה מקומית, הלוגיקה שכתובה בטסטים היא ההוכחה הארכיטקטונית לכך שהמערכת עומדת בדרישות האבטחה המחמירות ביותר.</p>
+    </div>
+
+    <!-- Section 5: MVP -->
+    <div class="section-card">
+        <h2>5. עמידה בדרישות ה-MVP של נתנאל</h2>
+
+        <h3>חיבור לתרחיש הזהב (Golden Scenario)</h3>
+        <p>ה-MVP של רישוי דיגיטלי מתנקז למטרה אחת: <strong>אספקה אוטומטית</strong>. כל הלוגיקה והאבטחה שתוארו למעלה מתחברות כדי לאפשר מצב שבו: לקוח משלם על הזמנה -> האירוע <code>SalesOrderConfirmedEto</code> נורה -> המערכת שולפת <code>LicenseStockItem</code> במצב Available -> עושה לו Reserve -> מפעילה את ה-Deliver -> ופולטת אירוע <code>LicenseDeliveredEto</code>. כל זה קורה באלפיות שנייה, ללא מגע יד אדם, תוך שמירה על הצפנה ותיעוד מלא. זהו חוט הזהב.</p>
+
+        <h3>מה היה חסר (ומה הסטטוס העדכני)</h3>
+        <div class="highlight-box">
+            <p>חלק מהכנות ל-MVP הוא להציג בשקיפות את הפערים. חשוב לשקף בפגישה את הנקודות הבאות:</p>
+            <ul>
+                <li><strong>ה-Ledger (יומן תנועות המלאי הדיגיטלי):</strong> מנגנון קריטי לתיעוד פיננסי. חשוב לציין: ה-Ledger (<code>DigitalInventoryTransaction</code>) והטסטים שלו (<code>LicenseSalesOrderConfirmedEventHandlerTests</code>) <strong>מוזגו בהצלחה ל-Main ממש הבוקר</strong>, כך שפער זה נסגר רגע לפני ה-MVP!</li>
+                <li><strong>כפילות מלאי מול הקטלוג:</strong> עדיין נדרשת החלטה ארכיטקטונית (איחוד בין הישות הישנה <code>LicenseKey</code> לבין <code>LicenseStockItem</code> החדש והמוצפן שלנו).</li>
+                <li><strong>הקשחה בסביבת ייצור:</strong> חיבור בפועל ל-Key Vault של מיקרוסופט או AWS KMS בסביבת ה-Production טרם יושם במלואו וממתין להגדרות DevOps.</li>
+            </ul>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

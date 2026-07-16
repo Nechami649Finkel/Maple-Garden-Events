@@ -14,7 +14,7 @@ export type WebhookHmacOptions = {
 export function createWebhookHmacMiddleware(options: WebhookHmacOptions) {
   return catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const rawBody = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-    req.rawBody = rawBody;
+    (req as any).rawBody = rawBody;
 
     const headerName = options.signatureHeader.toLowerCase();
     const signatureHeader = req.headers[headerName];
