@@ -5,10 +5,11 @@ import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../CheckDetailsForm/CheckDetailsForm';
-import KashrutSelector, {
+import KashrutSelector from '../KashrutSelector/KashrutSelector';
+import {
   DEFAULT_EVENT_KASHRUT,
   normalizeKashrutValue,
-} from '../KashrutSelector/KashrutSelector';
+} from '../KashrutSelector/kashrutOptions';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
 import CancellationStats from '../CancellationStats/CancellationStats';
 import MenuSelectionForm from '../MenuSelectionForm/MenuSelectionForm';
