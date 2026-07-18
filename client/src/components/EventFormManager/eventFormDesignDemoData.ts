@@ -71,7 +71,7 @@ export const DEMO_FORM_DATA = {
   depositCheckDetails: DEMO_CHECK_DETAILS,
   akumPaid: true,
   akumCode: 'ACUM-12345',
-  kashrut: 'מחפוד',
+  kashrut: 'הרב מחפוד',
 };
 
 export const DEMO_MENU: Record<string, string[]> = {

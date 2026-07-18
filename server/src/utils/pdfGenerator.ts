@@ -275,13 +275,17 @@ const translateSeatingType = (type?: string | null, men?: number | null, women?:
 const translateKashrut = (k?: string | null) =>
   ({
     bad_reuven: 'בד רובין',
-    machpud: 'מחפוד',
+    machpud: 'הרב מחפוד',
+    מחפוד: 'הרב מחפוד',
     other: 'אחר',
     rubin: 'הרב רובין',
-    kehilot: 'קהילות',
+    רובין: 'הרב רובין',
+    kehilot: 'בדץ קהילות',
     gross: 'הרב גרוס',
     landa: 'הרב לנדא',
+    לנדא: 'הרב לנדא',
     badatz: 'בד"ץ העדה החרדית',
+    'בדץ ע"ח': 'בד"ץ העדה החרדית',
   }[k || ''] || k || 'לא צוין');
 
 const esc = (value: string) => escapeHtml(value);

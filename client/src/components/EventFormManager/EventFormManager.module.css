@@ -1896,12 +1896,63 @@
   margin-top: 14px;
 }
 
+.tableLayoutPreviewBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+  text-align: center;
+  position: relative;
+}
+
 .tableLayoutPreviewImg {
   width: 100%;
   max-height: 280px;
   object-fit: contain;
   border-radius: var(--maple-radius-sm);
   border: 1px solid var(--maple-border);
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.tableLayoutPreviewBtn:hover .tableLayoutPreviewImg,
+.tableLayoutPreviewBtn:focus-visible .tableLayoutPreviewImg {
+  border-color: var(--maple-green, #2d6a4f);
+  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.25);
+}
+
+.tableLayoutPreviewHint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tableLayoutLightbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: min(96vw, 1100px);
+  width: 100%;
+}
+
+.tableLayoutLightboxImg {
+  width: 100%;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: var(--maple-radius);
+  background: #fff;
+  box-shadow: var(--maple-shadow-lg);
+}
+
+.tableLayoutLightboxActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
 }
 
 /* פוטר */
