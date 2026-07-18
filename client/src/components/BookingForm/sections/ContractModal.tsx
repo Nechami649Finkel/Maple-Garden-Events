@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { getSignatureDataUrl } from '../../../utils/signature';
 import { openContractPdf } from '../../../utils/contractPrint';
@@ -18,6 +18,9 @@ interface ContractModalProps {
   styles?: Record<string, string>;
 }
 
+/** Locked bitmap size — avoids ResizeObserver remounts that wipe strokes. */
+const SIGNATURE_SIZE = { width: 700, height: 200 };
+
 const ContractModal = ({
   isOpen,
   onClose,
@@ -31,61 +34,31 @@ const ContractModal = ({
 }: ContractModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
-  const signatureWrapRef = useRef<HTMLDivElement>(null);
-  /** Size is locked after the first measure so ResizeObserver cannot wipe strokes. */
-  const [signatureSize, setSignatureSize] = useState<{ width: number; height: number } | null>(null);
-  const [canvasReady, setCanvasReady] = useState(false);
-  const hasInkRef = useRef(false);
-  const latestSignatureRef = useRef<string | null>(null);
+  const [padGeneration, setPadGeneration] = useState(0);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  const latestSignatureRef = useRef<{ gen: number; data: string } | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) {
-      setSignatureSize(null);
-      setCanvasReady(false);
-      hasInkRef.current = false;
-      latestSignatureRef.current = null;
+  // Reset pad session when the modal opens (render-time adjust — no effect setState).
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
       setIsEditing(false);
-      return;
+      setDraftText('');
+      setPadGeneration((g) => g + 1);
     }
-
-    const el = signatureWrapRef.current;
-    if (!el) return;
-
-    // Defer one frame so the modal layout is settled, then lock dimensions.
-    const frame = window.requestAnimationFrame(() => {
-      const width = Math.max(260, Math.min(700, Math.floor(el.clientWidth - 4)));
-      const height = width < 400 ? 140 : 200;
-      setSignatureSize({ width, height });
-      setCanvasReady(true);
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [isOpen]);
+  }
 
   if (!isOpen) return null;
-
-  const startEditing = () => {
-    setDraftText(contractText);
-    setIsEditing(true);
-  };
-
-  const saveEditing = () => {
-    onContractTextChange(draftText);
-    setIsEditing(false);
-  };
-
-  const cancelEditing = () => {
-    setDraftText(contractText);
-    setIsEditing(false);
-  };
 
   const captureFromPad = (): string | null => {
     const fromPad = getSignatureDataUrl(sigCanvas);
     if (fromPad) {
-      latestSignatureRef.current = fromPad;
+      latestSignatureRef.current = { gen: padGeneration, data: fromPad };
       return fromPad;
     }
-    return latestSignatureRef.current;
+    const cached = latestSignatureRef.current;
+    if (cached && cached.gen === padGeneration) return cached.data;
+    return null;
   };
 
   const handleConfirmSignature = () => {
@@ -101,6 +74,21 @@ const ContractModal = ({
     onSignatureSaved?.(dataUrl);
     setContractSigned(true);
     onClose();
+  };
+
+  const startEditing = () => {
+    setDraftText(contractText);
+    setIsEditing(true);
+  };
+
+  const saveEditing = () => {
+    onContractTextChange(draftText);
+    setIsEditing(false);
+  };
+
+  const cancelEditing = () => {
+    setDraftText(contractText);
+    setIsEditing(false);
   };
 
   return (
@@ -173,25 +161,21 @@ const ContractModal = ({
 
           <div className={modalStyles.signatureSection}>
             <h4>חתימת הלקוח:</h4>
-            <div ref={signatureWrapRef} className={modalStyles.signatureBox}>
-              {canvasReady && signatureSize ? (
-                <SignatureCanvas
-                  ref={sigCanvas}
-                  penColor="#0f172a"
-                  onEnd={() => {
-                    hasInkRef.current = true;
-                    const snap = getSignatureDataUrl(sigCanvas);
-                    if (snap) latestSignatureRef.current = snap;
-                  }}
-                  canvasProps={{
-                    width: signatureSize.width,
-                    height: signatureSize.height,
-                    style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block', touchAction: 'none' },
-                  }}
-                />
-              ) : (
-                <div style={{ height: 200 }} aria-hidden="true" />
-              )}
+            <div className={modalStyles.signatureBox}>
+              <SignatureCanvas
+                key={padGeneration}
+                ref={sigCanvas}
+                penColor="#0f172a"
+                onEnd={() => {
+                  const snap = getSignatureDataUrl(sigCanvas);
+                  if (snap) latestSignatureRef.current = { gen: padGeneration, data: snap };
+                }}
+                canvasProps={{
+                  width: SIGNATURE_SIZE.width,
+                  height: SIGNATURE_SIZE.height,
+                  style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block', touchAction: 'none' },
+                }}
+              />
             </div>
           </div>
 
@@ -200,7 +184,6 @@ const ContractModal = ({
               type="button"
               onClick={() => {
                 sigCanvas.current?.clear();
-                hasInkRef.current = false;
                 latestSignatureRef.current = null;
               }}
               className="maple-btn maple-btn-danger"
