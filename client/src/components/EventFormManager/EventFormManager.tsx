@@ -5,6 +5,10 @@ import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../CheckDetailsForm/CheckDetailsForm';
+import KashrutSelector, {
+  DEFAULT_EVENT_KASHRUT,
+  normalizeKashrutValue,
+} from '../KashrutSelector/KashrutSelector';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
 import CancellationStats from '../CancellationStats/CancellationStats';
 import MenuSelectionForm from '../MenuSelectionForm/MenuSelectionForm';
@@ -20,7 +24,6 @@ import {
   useBookingsQuery,
   useEventFormsQuery,
   useGlobalSettingsQuery,
-  useKashrutQuery,
 } from '../../hooks/queries';
 import {
   PageHeader,
@@ -102,15 +105,6 @@ interface EventFormData {
   totalPrice?: number;
 }
 
-const KASHRUT_LIST = [
-  "רובין",
-  "מחפוד",
-  "לנדא",
-  "בדץ קהילות",
-  "הרב גרוס",
-  'בדץ ע"ח'
-];
-
 interface SegmentedControlProps {
   value: string;
   options: { value: string; label: string }[];
@@ -167,7 +161,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     page: 1,
   });
   const { data: allForms = [] } = useEventFormsQuery();
-  const { data: kashruts = [] } = useKashrutQuery();
   const { data: globalSettings } = useGlobalSettingsQuery();
 
   const bookings = useMemo(
@@ -182,7 +175,15 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [viewMode, setViewMode] = useState<'bookings' | 'forms' | 'stats'>('bookings');
   const [showPastEvents, setShowPastEvents] = useState(false);
   
-  const [formData, setFormData] = useState<EventFormData>(designExport?.formData ?? {});
+  const [formData, setFormData] = useState<EventFormData>(() => {
+    if (designExport?.formData) {
+      return {
+        ...designExport.formData,
+        kashrut: normalizeKashrutValue(designExport.formData.kashrut),
+      };
+    }
+    return { kashrut: DEFAULT_EVENT_KASHRUT };
+  });
   const [depositCheckFile, setDepositCheckFile] = useState<File | null>(null);
   const [checkScanning, setCheckScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -191,12 +192,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [notesList, setNotesList] = useState<string[]>(designExport?.notesList ?? []);
   const [newNote, setNewNote] = useState('');
 
-  const kashrutImage = kashruts[0]?.imageUrl ?? null;
-  const [isKashrutModalOpen, setIsKashrutModalOpen] = useState(false);
-  
   const [selectedMenu, setSelectedMenu] = useState<Record<string, string[]> | null>(designExport?.selectedMenu ?? null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTableLayoutOpen, setIsTableLayoutOpen] = useState(false);
+  const [isTableLayoutPreviewOpen, setIsTableLayoutPreviewOpen] = useState(false);
   const [savedTables, setSavedTables] = useState<TableData[] | undefined>(undefined);
   const [tableLayoutImageUrl, setTableLayoutImageUrl] = useState<string | null>(null);
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
@@ -260,7 +259,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       ),
       hasEquipment,
       entertainersOk,
-      hasCheck && !!formData.kashrut,
+      hasCheck && !!normalizeKashrutValue(formData.kashrut),
       !!selectedMenu && Object.keys(selectedMenu).length > 0,
       true,
     ];
@@ -272,6 +271,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setShowCamera(false);
       return;
     }
+    if (isTableLayoutPreviewOpen) {
+      setIsTableLayoutPreviewOpen(false);
+      return;
+    }
     if (isTableLayoutOpen) {
       setIsTableLayoutOpen(false);
       return;
@@ -280,19 +283,16 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setIsMenuOpen(false);
       return;
     }
-    if (isKashrutModalOpen) {
-      setIsKashrutModalOpen(false);
-      return;
-    }
     if (selected) {
       setSelected(null);
     }
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, selected]);
+  }, [showCamera, isTableLayoutPreviewOpen, isTableLayoutOpen, isMenuOpen, selected]);
 
   const navigationOverride = useMemo(() => {
-    const inSubStep = showCamera || isTableLayoutOpen || isMenuOpen || isKashrutModalOpen || !!selected;
+    const inSubStep =
+      showCamera || isTableLayoutPreviewOpen || isTableLayoutOpen || isMenuOpen || !!selected;
     return inSubStep ? { onBack: handleStepBack } : null;
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, selected, handleStepBack]);
+  }, [showCamera, isTableLayoutPreviewOpen, isTableLayoutOpen, isMenuOpen, selected, handleStepBack]);
 
   useNavigationOverride(navigationOverride);
 
@@ -302,6 +302,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     delete rest.womenCount;
     return {
       ...rest,
+      kashrut: normalizeKashrutValue(data.kashrut),
       honorTableCount: hasHonorTable ? data.honorTableCount : undefined,
       ...(hasEntertainers === false ? {
         entertainersBar: undefined,
@@ -351,7 +352,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             cleanForm.womenPercent,
             guestTotal
           );
-          setFormData({ ...cleanForm, menCount, womenCount });
+          setFormData({
+            ...cleanForm,
+            menCount,
+            womenCount,
+            kashrut: normalizeKashrutValue(cleanForm.kashrut),
+          });
           setHasHonorTable(!!(form.honorTableCount && form.honorTableCount > 0));
           setHasEntertainers(
             form.entertainersBar != null || form.entertainersSitting != null ? true : null
@@ -361,7 +367,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           setSavedTables(tables?.length ? serverTablesToClient(tables) : undefined);
           setTableLayoutImageUrl(form.tableLayoutImageUrl || null);
         } else {
-          setFormData({});
+          setFormData({ kashrut: DEFAULT_EVENT_KASHRUT });
           setHasHonorTable(null);
           setHasEntertainers(null);
           setNotesList([]);
@@ -371,7 +377,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       })
       .catch(() => {
         if (cancelled) return;
-        setFormData({});
+        setFormData({ kashrut: DEFAULT_EVENT_KASHRUT });
         setHasHonorTable(null);
         setHasEntertainers(null);
         setNotesList([]);
@@ -608,7 +614,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       currentSeating &&
       (currentSeating === 'mixed' || ((formData.menCount || 0) + (formData.womenCount || 0) > 0)) &&
       (formData.depositCheckUrl || depositCheckFile) && 
-      formData.kashrut
+      !!normalizeKashrutValue(formData.kashrut)
     );
   };
 
@@ -933,7 +939,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             </div>
             <div className="d-flex flex-wrap gap-2 mt-2">
               <span className="maple-meta-chip">סופי: {formData.finalGuestCount || '—'}</span>
-              <span className="maple-meta-chip">כשרות: {formData.kashrut || '—'}</span>
+              <span className="maple-meta-chip">כשרות: {normalizeKashrutValue(formData.kashrut)}</span>
             </div>
             {!designExport && (
               <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ סגור</button>
@@ -1315,11 +1321,20 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
 
               {tableLayoutImageUrl && (
                 <div className={styles.tableLayoutPreviewBlock}>
-                  <img
-                    src={tableLayoutImageUrl}
-                    alt="סקיצת סידור שולחנות"
-                    className={styles.tableLayoutPreviewImg}
-                  />
+                  <button
+                    type="button"
+                    className={styles.tableLayoutPreviewBtn}
+                    onClick={() => setIsTableLayoutPreviewOpen(true)}
+                    title="לחץ להגדלה ולצפייה בסידור המלא"
+                    aria-label="הגדלת סקיצת סידור שולחנות"
+                  >
+                    <img
+                      src={tableLayoutImageUrl}
+                      alt="סקיצת סידור שולחנות"
+                      className={styles.tableLayoutPreviewImg}
+                    />
+                    <span className={styles.tableLayoutPreviewHint}>לחץ להגדלה ולצפייה בסידור</span>
+                  </button>
                 </div>
               )}
 
@@ -1430,13 +1445,13 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   ) : (
                     <span className={styles.payStatusWarn}>⚠ חסר צ&apos;ק פיקדון</span>
                   )}
-                  {formData.kashrut ? (
-                    <span className={styles.payStatusOk}>✓ כשרות: {formData.kashrut}</span>
+                  {normalizeKashrutValue(formData.kashrut) ? (
+                    <span className={styles.payStatusOk}>✓ כשרות: {normalizeKashrutValue(formData.kashrut)}</span>
                   ) : (
                     <span className={styles.payStatusWarn}>⚠ יש לבחור כשרות</span>
                   )}
                 </div>
-                <div className="d-flex flex-wrap gap-2 mb-3">
+                <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
                   <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowCamera(true)}>
                     צלם
                   </button>
@@ -1444,10 +1459,15 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     העלה
                   </button>
                   <input type="file" id="fileInput" accept="image/*" onChange={handleFileChange} className="d-none" />
-                  <div className="form-check">
+                  <div className="form-check mb-0">
                     <input type="checkbox" className="form-check-input" id="deposit-received" checked={formData.depositCheckStatus || false} onChange={e => handleCheckboxChange('depositCheckStatus', e.target.checked)} />
                     <label className="form-check-label" htmlFor="deposit-received">צ&apos;ק קיבל</label>
                   </div>
+                  {(depositCheckFile || formData.depositCheckUrl) && (
+                    <button type="button" onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">
+                      מחק צ&apos;ק
+                    </button>
+                  )}
                 </div>
 
                 {(formData.depositCheckUrl || formData.depositCheckDetails) && (
@@ -1465,22 +1485,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     <input type="text" readOnly value={selected.akumApprovalCode || 'לא הוזן'} className={`form-control bg-light ${selected.akumApprovalCode ? 'text-success' : 'text-muted'}`} />
                   </div>
                   <div className="col-6">
-                    <label className="form-label">כשרות</label>
-                    <div className={styles.kashrutRow}>
-                      <select className="form-select" value={formData.kashrut || ''} onChange={(e) => handleInputChange('kashrut', e.target.value)}>
-                        <option value="">בחר...</option>
-                        {KASHRUT_LIST.map((kName, idx) => (
-                          <option key={idx} value={kName}>{kName}</option>
-                        ))}
-                      </select>
-                      {kashrutImage ? (
-                        <div onClick={() => setIsKashrutModalOpen(true)} className={styles.kashrutThumb} title="הגדלת תעודה">
-                          <img src={kashrutImage} alt="כשרות" />
-                        </div>
-                      ) : (
-                        <div className={styles.kashrutThumbEmpty}>—</div>
-                      )}
-                    </div>
+                    <label className="form-label" htmlFor="event-kashrut">כשרות</label>
+                    <KashrutSelector
+                      id="event-kashrut"
+                      value={formData.kashrut}
+                      onChange={(val) => handleInputChange('kashrut', val)}
+                    />
                   </div>
                 </div>
 
@@ -1492,20 +1502,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   {selected.clientSignatureUrl && (
                     <img src={selected.clientSignatureUrl} alt="חוזה" className={styles.signatureThumb} title="חוזה חתום" />
                   )}
-                  {(depositCheckFile || formData.depositCheckUrl) && (
-                    <button onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">מחק צ&apos;ק</button>
-                  )}
                 </div>
               </div>
               </div>
-              {isKashrutModalOpen && kashrutImage && (
-                <div onClick={() => setIsKashrutModalOpen(false)} className={styles.modalOverlay}>
-                  <div onClick={e => e.stopPropagation()} className={styles.modalContent}>
-                    <img src={kashrutImage} alt="תעודה מוגדלת" className={styles.modalImg} />
-                    <button onClick={() => setIsKashrutModalOpen(false)} className={styles.modalCloseBtn}>סגור</button>
-                  </div>
-                </div>
-              )}
             </div>
 
             <div className={`card mb-0 ${styles.boardNotes}`}>
@@ -1582,6 +1581,46 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                          initialSelections={selectedMenu} 
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {isTableLayoutPreviewOpen && tableLayoutImageUrl && (
+              <div
+                className={styles.modalOverlay}
+                onClick={() => setIsTableLayoutPreviewOpen(false)}
+                role="dialog"
+                aria-modal="true"
+                aria-label="תצוגה מוגדלת של סידור שולחנות"
+              >
+                <div
+                  className={styles.tableLayoutLightbox}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img
+                    src={tableLayoutImageUrl}
+                    alt="סידור שולחנות — תצוגה מלאה"
+                    className={styles.tableLayoutLightboxImg}
+                  />
+                  <div className={styles.tableLayoutLightboxActions}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => {
+                        setIsTableLayoutPreviewOpen(false);
+                        setIsTableLayoutOpen(true);
+                      }}
+                    >
+                      פתיחת הסידור המלא לעריכה / צפייה
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.modalCloseBtn}
+                      onClick={() => setIsTableLayoutPreviewOpen(false)}
+                    >
+                      סגור
+                    </button>
                   </div>
                 </div>
               </div>

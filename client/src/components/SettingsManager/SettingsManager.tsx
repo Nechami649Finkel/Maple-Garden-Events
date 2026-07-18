@@ -34,22 +34,21 @@ export const SettingsManager = () => {
   const queryClient = useQueryClient();
   const { data: globalSettingsData, isLoading: settingsLoading } = useGlobalSettingsQuery();
   const { data: extras = [], isLoading: extrasLoading } = useExtrasQuery();
-  const { data: kashrutsData = [], isLoading: kashrutLoading } = useKashrutQuery();
+  // Do NOT default to `[]` — a fresh array each render caused infinite setState loops.
+  const { data: kashrutsData, isLoading: kashrutLoading } = useKashrutQuery();
   const { data: staffMembers = [], isLoading: staffLoading } = useStaffQuery();
 
-  const [globalSettings, setGlobalSettings] = useState<GlobalSettingsDraft>(
-    () => (globalSettingsData as GlobalSettingsDraft | undefined) ?? {},
-  );
-  const [settingsSource, setSettingsSource] = useState(globalSettingsData);
-  if (globalSettingsData && globalSettingsData !== settingsSource) {
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettingsDraft>({});
+  const [settingsSource, setSettingsSource] = useState<typeof globalSettingsData>(undefined);
+  // Sync editable draft only when React Query provides a new cached object reference.
+  if (globalSettingsData !== undefined && globalSettingsData !== settingsSource) {
     setSettingsSource(globalSettingsData);
     setGlobalSettings(globalSettingsData as GlobalSettingsDraft);
   }
 
-  const initialKashruts = Array.isArray(kashrutsData) ? (kashrutsData as KashrutRecord[]) : [];
-  const [kashruts, setKashruts] = useState<KashrutRecord[]>(() => initialKashruts);
-  const [kashrutsSource, setKashrutsSource] = useState(kashrutsData);
-  if (kashrutsData !== kashrutsSource) {
+  const [kashruts, setKashruts] = useState<KashrutRecord[]>([]);
+  const [kashrutsSource, setKashrutsSource] = useState<typeof kashrutsData>(undefined);
+  if (kashrutsData !== undefined && kashrutsData !== kashrutsSource) {
     setKashrutsSource(kashrutsData);
     setKashruts(Array.isArray(kashrutsData) ? (kashrutsData as KashrutRecord[]) : []);
   }

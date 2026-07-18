@@ -32,27 +32,34 @@ const ContractModal = ({
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const signatureWrapRef = useRef<HTMLDivElement>(null);
-  const [signatureSize, setSignatureSize] = useState({ width: 700, height: 200 });
+  /** Size is locked after the first measure so ResizeObserver cannot wipe strokes. */
+  const [signatureSize, setSignatureSize] = useState<{ width: number; height: number } | null>(null);
+  const [canvasReady, setCanvasReady] = useState(false);
+  const hasInkRef = useRef(false);
+  const latestSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setSignatureSize(null);
+      setCanvasReady(false);
+      hasInkRef.current = false;
+      latestSignatureRef.current = null;
+      setIsEditing(false);
+      return;
+    }
+
     const el = signatureWrapRef.current;
     if (!el) return;
 
-    const updateSize = () => {
+    // Defer one frame so the modal layout is settled, then lock dimensions.
+    const frame = window.requestAnimationFrame(() => {
       const width = Math.max(260, Math.min(700, Math.floor(el.clientWidth - 4)));
       const height = width < 400 ? 140 : 200;
       setSignatureSize({ width, height });
-    };
+      setCanvasReady(true);
+    });
 
-    updateSize();
-    const ro = new ResizeObserver(updateSize);
-    ro.observe(el);
-    window.addEventListener('resize', updateSize);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', updateSize);
-    };
+    return () => window.cancelAnimationFrame(frame);
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -70,6 +77,30 @@ const ContractModal = ({
   const cancelEditing = () => {
     setDraftText(contractText);
     setIsEditing(false);
+  };
+
+  const captureFromPad = (): string | null => {
+    const fromPad = getSignatureDataUrl(sigCanvas);
+    if (fromPad) {
+      latestSignatureRef.current = fromPad;
+      return fromPad;
+    }
+    return latestSignatureRef.current;
+  };
+
+  const handleConfirmSignature = () => {
+    if (isEditing) {
+      alert('יש לשמור או לבטל את עריכת מלל החוזה לפני החתימה.');
+      return;
+    }
+    const dataUrl = captureFromPad();
+    if (!dataUrl) {
+      alert('נא לחתום לפני האישור');
+      return;
+    }
+    onSignatureSaved?.(dataUrl);
+    setContractSigned(true);
+    onClose();
   };
 
   return (
@@ -143,36 +174,43 @@ const ContractModal = ({
           <div className={modalStyles.signatureSection}>
             <h4>חתימת הלקוח:</h4>
             <div ref={signatureWrapRef} className={modalStyles.signatureBox}>
-              <SignatureCanvas
-                ref={sigCanvas}
-                penColor="#0f172a"
-                canvasProps={{
-                  width: signatureSize.width,
-                  height: signatureSize.height,
-                  style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block' },
-                }}
-              />
+              {canvasReady && signatureSize ? (
+                <SignatureCanvas
+                  ref={sigCanvas}
+                  penColor="#0f172a"
+                  onEnd={() => {
+                    hasInkRef.current = true;
+                    const snap = getSignatureDataUrl(sigCanvas);
+                    if (snap) latestSignatureRef.current = snap;
+                  }}
+                  canvasProps={{
+                    width: signatureSize.width,
+                    height: signatureSize.height,
+                    style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block', touchAction: 'none' },
+                  }}
+                />
+              ) : (
+                <div style={{ height: 200 }} aria-hidden="true" />
+              )}
             </div>
           </div>
 
           <div className={modalStyles.actions}>
-            <button type="button" onClick={() => sigCanvas.current?.clear()} className="maple-btn maple-btn-danger">
+            <button
+              type="button"
+              onClick={() => {
+                sigCanvas.current?.clear();
+                hasInkRef.current = false;
+                latestSignatureRef.current = null;
+              }}
+              className="maple-btn maple-btn-danger"
+            >
               נקה חתימה 🗑️
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                if (isEditing) {
-                  alert('יש לשמור או לבטל את עריכת מלל החוזה לפני החתימה.');
-                  return;
-                }
-                const dataUrl = getSignatureDataUrl(sigCanvas);
-                if (!dataUrl) return alert('נא לחתום לפני האישור');
-                onSignatureSaved?.(dataUrl);
-                setContractSigned(true);
-                onClose();
-              }}
+              onClick={handleConfirmSignature}
               className={`maple-btn maple-btn-primary ${modalStyles.signBtn}`}
             >
               אני מאשר/ת וחותם/ת ✓

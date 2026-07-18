@@ -19,7 +19,7 @@ import {
 } from '../../utils/contractSections';
 import { finalizeBookingTotals } from '../../utils/hallBilling';
 import { promptPrintAfterClose } from '../../utils/contractPrint';
-import { getSignatureDataUrl } from '../../utils/signature';
+import { getSignatureDataUrl, isSignaturePayload } from '../../utils/signature';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
 import SignatureCanvas from 'react-signature-canvas';
 
@@ -296,7 +296,9 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         setKosherType(draft.kosherType);
         setUpgrades(draft.upgrades);
         setDepositMethod(draft.depositMethod);
-        setContractSigned(draft.contractSigned);
+        // Draft never stores the signature image — never restore "signed" without it.
+        setContractSigned(false);
+        setSavedSignature(null);
         setSelectedDatesDisplay(dates);
         setIsOption(draft.isOption);
         setOptionDurationHours(draft.optionDurationHours);
@@ -860,6 +862,9 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     if (!signatureData && isEditMode && formData.clientSignatureUrl) {
       signatureData = formData.clientSignatureUrl;
     }
+    if (signatureData && !isSignaturePayload(signatureData)) {
+      signatureData = null;
+    }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -1014,9 +1019,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         kosherType,
         upgrades,
         depositMethod,
-        contractSigned,
+        contractSigned: !!(contractSigned && signatureData),
         calculatedTotals: totals,
         clientSignature: signatureData,
+        clientSignatureUrl: signatureData || formData.clientSignatureUrl || null,
         contractText,
         paymentTemplateId: paymentTermsCustom ? 'custom' : paymentTemplateId,
         paymentTermsText: effectivePaymentTermsText,
@@ -1237,40 +1243,50 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
           {(!isOption || convertFromOption) && (
           <div className="row g-3 mt-2">
-            {((!isEditMode && !isOption) || convertFromOption) && (
-              <div className="col-12">
-                <div className="maple-contract-box p-3">
-                  <div className="form-check mb-2">
-                    <input
-                      type="checkbox"
-                      className="form-check-input"
-                      id="contract-signed"
-                      checked={contractSigned}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setIsContractModalOpen(true);
-                        } else {
-                          setContractSigned(false);
-                          setSavedSignature(null);
-                          sigCanvas.current?.clear();
-                        }
-                      }}
+            <div className="col-12">
+              <div className="maple-contract-box p-3">
+                {(savedSignature || formData.clientSignatureUrl) && (
+                  <div className="mb-2 d-flex align-items-center gap-2">
+                    <span className="text-success small">✓ חתימה נשמרה</span>
+                    <img
+                      src={savedSignature || formData.clientSignatureUrl}
+                      alt="תצוגת חתימה"
+                      style={{ maxHeight: 48, border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff' }}
                     />
-                    <label className="form-check-label" htmlFor="contract-signed">
-                      קראתי את החוזה, מאשר את התנאים וחותם
-                    </label>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-link p-0"
-                    onClick={() => setIsContractModalOpen(true)}
-                  >
-                    לחץ לקריאת החוזה ולחתימה דיגיטלית
-                  </button>
+                )}
+                <div className="form-check mb-2">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="contract-signed"
+                    checked={contractSigned && !!(savedSignature || formData.clientSignatureUrl)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setIsContractModalOpen(true);
+                      } else {
+                        setContractSigned(false);
+                        setSavedSignature(null);
+                        setFormData((prev) => ({ ...prev, clientSignatureUrl: '' }));
+                        sigCanvas.current?.clear();
+                      }
+                    }}
+                  />
+                  <label className="form-check-label" htmlFor="contract-signed">
+                    קראתי את החוזה, מאשר את התנאים וחותם
+                  </label>
                 </div>
+                <button
+                  type="button"
+                  className="btn btn-link p-0"
+                  onClick={() => setIsContractModalOpen(true)}
+                >
+                  {savedSignature || formData.clientSignatureUrl
+                    ? 'לחץ לצפייה בחוזה או לחתימה מחדש'
+                    : 'לחץ לקריאת החוזה ולחתימה דיגיטלית'}
+                </button>
               </div>
-            )}
-
+            </div>
           </div>
           )}
 
@@ -1278,7 +1294,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             <button
               type="submit"
               className="btn btn-primary"
-              disabled={isSubmitting || ((convertFromOption || (!isOption && !isEditMode)) && !contractSigned)}
+              disabled={
+                isSubmitting ||
+                ((convertFromOption || (!isOption && !isEditMode)) &&
+                  !(contractSigned && (savedSignature || formData.clientSignatureUrl)))
+              }
             >
               {isSubmitting
                 ? 'שומר נתונים...'
@@ -1298,7 +1318,10 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         isOption={isOption && !convertFromOption}
         sigCanvas={sigCanvas}
         setContractSigned={setContractSigned}
-        onSignatureSaved={setSavedSignature}
+        onSignatureSaved={(dataUrl) => {
+          setSavedSignature(dataUrl);
+          setFormData((prev) => ({ ...prev, clientSignatureUrl: dataUrl }));
+        }}
         contractText={contractText}
         onContractTextChange={setContractTextOverride}
         bookingId={editId}
