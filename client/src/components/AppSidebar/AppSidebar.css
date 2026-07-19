@@ -93,7 +93,7 @@
 }
 
 .app-sidebar-venue {
-  font-size: var(--maple-text-sm);
+  font-size: var(--maple-sidebar-text-size);
   font-weight: 600;
   color: var(--maple-sidebar-text-active);
   white-space: nowrap;
@@ -142,7 +142,7 @@
   background: none;
   border: none;
   border-radius: var(--maple-radius-sm);
-  font-size: var(--maple-text-sm);
+  font-size: var(--maple-sidebar-text-size);
   font-weight: 500;
   color: var(--maple-sidebar-text);
   cursor: pointer;

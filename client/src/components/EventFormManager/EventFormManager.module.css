@@ -1896,12 +1896,65 @@
   margin-top: 14px;
 }
 
+.tableLayoutPreviewBtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--maple-radius-sm);
+  transition: box-shadow var(--maple-transition);
+}
+
+.tableLayoutPreviewBtn:hover {
+  box-shadow: 0 0 0 2px rgba(184, 149, 106, 0.35);
+}
+
+.tableLayoutPreviewBtn:focus-visible {
+  outline: 2px solid var(--maple-green);
+  outline-offset: 2px;
+}
+
 .tableLayoutPreviewImg {
   width: 100%;
   max-height: 280px;
   object-fit: contain;
   border-radius: var(--maple-radius-sm);
   border: 1px solid var(--maple-border);
+  display: block;
+}
+
+.imageLightboxContent {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.imageLightboxCloseBtn {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--maple-border);
+  border-radius: 50%;
+  background: var(--maple-surface);
+  color: var(--maple-text);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--maple-shadow-lg);
+  z-index: 1;
+  font-family: var(--maple-font);
+}
+
+.imageLightboxCloseBtn:hover {
+  background: var(--maple-bg);
 }
 
 /* פוטר */

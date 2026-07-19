@@ -215,6 +215,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [isTableLayoutOpen, setIsTableLayoutOpen] = useState(false);
   const [savedTables, setSavedTables] = useState<TableData[] | undefined>(undefined);
   const [tableLayoutImageUrl, setTableLayoutImageUrl] = useState<string | null>(null);
+  const [isTableLayoutModalOpen, setIsTableLayoutModalOpen] = useState(false);
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
   const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
   const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
@@ -283,15 +284,19 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setIsKashrutModalOpen(false);
       return;
     }
+    if (isTableLayoutModalOpen) {
+      setIsTableLayoutModalOpen(false);
+      return;
+    }
     if (selected) {
       setSelected(null);
     }
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, selected]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected]);
 
   const navigationOverride = useMemo(() => {
-    const inSubStep = showCamera || isTableLayoutOpen || isMenuOpen || isKashrutModalOpen || !!selected;
+    const inSubStep = showCamera || isTableLayoutOpen || isMenuOpen || isKashrutModalOpen || isTableLayoutModalOpen || !!selected;
     return inSubStep ? { onBack: handleStepBack } : null;
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, selected, handleStepBack]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected, handleStepBack]);
 
   useNavigationOverride(navigationOverride);
 
@@ -1321,11 +1326,39 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
 
               {tableLayoutImageUrl && (
                 <div className={styles.tableLayoutPreviewBlock}>
-                  <img
-                    src={tableLayoutImageUrl}
-                    alt={t(T.EVENT_FORM.TABLE_SKETCH_ALT)}
-                    className={styles.tableLayoutPreviewImg}
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsTableLayoutModalOpen(true)}
+                    className={styles.tableLayoutPreviewBtn}
+                    title={t(T.EVENT_FORM.ENLARGE_TABLE_LAYOUT)}
+                    aria-label={t(T.EVENT_FORM.ENLARGE_TABLE_LAYOUT)}
+                  >
+                    <img
+                      src={tableLayoutImageUrl}
+                      alt={t(T.EVENT_FORM.TABLE_SKETCH_ALT)}
+                      className={styles.tableLayoutPreviewImg}
+                    />
+                  </button>
+                </div>
+              )}
+
+              {isTableLayoutModalOpen && tableLayoutImageUrl && (
+                <div onClick={() => setIsTableLayoutModalOpen(false)} className={styles.modalOverlay}>
+                  <div onClick={e => e.stopPropagation()} className={styles.imageLightboxContent}>
+                    <button
+                      type="button"
+                      onClick={() => setIsTableLayoutModalOpen(false)}
+                      className={styles.imageLightboxCloseBtn}
+                      aria-label={t(T.UI.CLOSE)}
+                    >
+                      ✕
+                    </button>
+                    <img
+                      src={tableLayoutImageUrl}
+                      alt={t(T.EVENT_FORM.ENLARGED_TABLE_SKETCH_ALT)}
+                      className={styles.modalImg}
+                    />
+                  </div>
                 </div>
               )}
 

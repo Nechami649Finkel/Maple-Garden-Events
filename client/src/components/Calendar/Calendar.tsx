@@ -217,19 +217,19 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
 
       <div className="calendar-header-nav">
         <div className="year-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn year-btn" onClick={nextYear} aria-label={t(T.CALENDAR.NEXT_YEAR)}>»</button>
+          <button className="nav-btn year-btn" onClick={prevYear} aria-label={t(T.CALENDAR.PREV_YEAR)}>»</button>
           <span className="year-display">{year}</span>
-          <button className="nav-btn year-btn" onClick={prevYear} aria-label={t(T.CALENDAR.PREV_YEAR)}>«</button>
+          <button className="nav-btn year-btn" onClick={nextYear} aria-label={t(T.CALENDAR.NEXT_YEAR)}>«</button>
         </div>
 
         <div className="calendar-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn" onClick={nextMonth} aria-label={t(T.CALENDAR.NEXT_MONTH)}>›</button>
+          <button className="nav-btn" onClick={prevMonth} aria-label={t(T.CALENDAR.PREV_MONTH)}>›</button>
           <div className="months-bar">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
               <div key={i} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{t(T.CALENDAR.MONTHS[i as keyof typeof T.CALENDAR.MONTHS])}</div>
             ))}
           </div>
-          <button className="nav-btn" onClick={prevMonth} aria-label={t(T.CALENDAR.PREV_MONTH)}>‹</button>
+          <button className="nav-btn" onClick={nextMonth} aria-label={t(T.CALENDAR.NEXT_MONTH)}>‹</button>
         </div>
       </div>
 

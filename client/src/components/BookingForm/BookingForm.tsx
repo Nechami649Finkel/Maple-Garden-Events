@@ -214,6 +214,8 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   );
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
   const [isOption, setIsOption] = useState(isOptionMode);
+  const defaultEventTypeForForm =
+    convertFromOption || (!activeEditId && !isOptionMode) ? DEFAULT_EVENT_TYPE : '';
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
   const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
@@ -221,7 +223,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [formData, setFormData] = useState({
     createdBy: '', clientAFirstName: '', clientALastName: '', clientAFullName: '', clientAIdNumber: '', clientAPhone: '', clientAPhone2: '', clientAEmail: '', clientACity: '', clientAAddress: '',
     clientBFullName: '', clientBIdNumber: '', clientBPhone: '', clientBPhone2: '', clientBEmail: '', clientBCity: '', clientBAddress: '',
-    calendarDateId: '', eventType: '', timeOfDay: initialTimeSlot, startTime: initialSlotHours.start, endTime: initialSlotHours.end,
+    calendarDateId: '', eventType: defaultEventTypeForForm, timeOfDay: initialTimeSlot, startTime: initialSlotHours.start, endTime: initialSlotHours.end,
     guestCount: '', minimumGuestCount: '', optionalGuestCount: '', finalPricePortion: '200', discountPercent: '', discountAmount: '', vatType: DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: '', clientSignatureUrl: '',
    
     akumApprovalCode: '', hasMusic: false, hallRentalPrice: '',
@@ -456,7 +458,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       clientALastName: nameParts.last,
       clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
       clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
-      calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
+      calendarDateId: eventDateStr, eventType: convertFromOption ? DEFAULT_EVENT_TYPE : (b.eventType || ''), timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
       guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
       akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
       hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',

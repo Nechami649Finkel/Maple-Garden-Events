@@ -1432,7 +1432,10 @@
     "SPLIT_70_30_NAME": "70% one week before · 30% within 24 hours after",
     "SPLIT_BODY": "Payment for the event{{TOTAL_PART}} will be made in two stages: {{PERCENT_1}}%{{AMOUNT_1_PART}} no later than 7 days before the event{{DUE_1}}, and the remaining {{PERCENT_2}}%{{AMOUNT_2_PART}} no later than 24 hours after the event ends.",
     "FULL_AFTER_NAME": "Full payment within 24 hours after event",
-    "FULL_AFTER_BODY": "Payment for the event{{TOTAL_PART}} will be made no later than 24 hours after the event ends."
+    "FULL_AFTER_BODY": "Payment for the event{{TOTAL_PART}} will be made no later than 24 hours after the event ends.",
+    "PLACEHOLDER_TOTAL": "total amount",
+    "PLACEHOLDER_AMOUNT": "amount",
+    "PLACEHOLDER_DUE_DATE": "due date"
   },
   "FEEDBACK": {
     "PAGE_TITLE": "Customer feedback",
@@ -1652,6 +1655,8 @@
     "TABLES_COUNT": "{count} tables",
     "TABLE_LAYOUT": "Table layout",
     "TABLE_SKETCH_ALT": "Table layout sketch",
+    "ENLARGE_TABLE_LAYOUT": "Click to enlarge table layout",
+    "ENLARGED_TABLE_SKETCH_ALT": "Enlarged table layout sketch",
     "LABEL_MEN_COUNT": "Men count",
     "LABEL_WOMEN_COUNT": "Women count",
     "LABEL_SPLIT_PERCENT": "Split (percentages)",

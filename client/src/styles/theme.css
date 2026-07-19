@@ -34,6 +34,7 @@
   --maple-sidebar-border: #E8E6E1;
   --maple-sidebar-width: 260px;
   --maple-sidebar-collapsed: 72px;
+  --maple-sidebar-text-size: clamp(15px, 0.9375rem + 0.1vw, 16px);
 
   /* ── Panel headers & active tabs ── */
   --maple-panel-header-bg: linear-gradient(135deg, #EEF4EF 0%, #F5EFE6 100%);
