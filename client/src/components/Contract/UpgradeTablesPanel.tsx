@@ -6,6 +6,7 @@ import {
   type ExtrasLineItem,
 } from '../../utils/contractSections';
 import type { UpgradeKey } from '../../utils/pricing';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './UpgradeTablesPanel.module.css';
 
 interface UpgradeTablesPanelProps {
@@ -25,6 +26,14 @@ function renderTable(
   items: ExtrasLineItem[],
   emptyMessage: string,
   showActions: boolean,
+  labels: {
+    service: string;
+    price: string;
+    paymentNote: string;
+    action: string;
+    adding: string;
+    addToContract: string;
+  },
   onAdd?: (key: UpgradeKey) => void,
   addingKey?: string | null,
 ) {
@@ -35,10 +44,10 @@ function renderTable(
         <table className={`table table-bordered table-sm ${styles.table}`}>
           <thead>
             <tr>
-              <th>שירות</th>
-              <th>מחיר</th>
-              <th>הערת תשלום</th>
-              {showActions && <th>פעולה</th>}
+              <th>{labels.service}</th>
+              <th>{labels.price}</th>
+              <th>{labels.paymentNote}</th>
+              {showActions && <th>{labels.action}</th>}
             </tr>
           </thead>
           <tbody>
@@ -62,7 +71,7 @@ function renderTable(
                         disabled={addingKey === item.key}
                         onClick={() => onAdd?.(item.key as UpgradeKey)}
                       >
-                        {addingKey === item.key ? 'מוסיף...' : 'הוסף לחוזה'}
+                        {addingKey === item.key ? labels.adding : labels.addToContract}
                       </button>
                     </td>
                   )}
@@ -87,6 +96,17 @@ const UpgradeTablesPanel = ({
   upgradeDisplayOrder,
   addingKey,
 }: UpgradeTablesPanelProps) => {
+  const { t, T } = useTranslation();
+
+  const tableLabels = {
+    service: t(T.BOOKINGS.UPGRADES_COL_SERVICE),
+    price: t(T.UI.PRICE),
+    paymentNote: t(T.BOOKINGS.UPGRADES_COL_PAYMENT_NOTE),
+    action: t(T.COMMON.LABELS.ACTIONS),
+    adding: t(T.UI.ADDING),
+    addToContract: t(T.BOOKINGS.ADD_TO_CONTRACT),
+  };
+
   const lineItemOptions = {
     upgrades,
     kosherType,
@@ -102,25 +122,26 @@ const UpgradeTablesPanel = ({
 
   return (
     <div className={`card mb-3 ${styles.panel}`}>
-      <div className="card-header maple-section-header">טבלאות תוספות לחוזה</div>
+      <div className="card-header maple-section-header">{t(T.BOOKINGS.UPGRADE_TABLES_TITLE)}</div>
       <div className="card-body">
         {renderTable(
-          'תוספות ושדרוגים שנבחרו',
+          t(T.BOOKINGS.SELECTED_UPGRADES),
           selectedItems,
-          'לא נבחרו תוספות או שדרוגים בנוסף לתנאי הבסיס בחוזה.',
+          t(T.BOOKINGS.NO_SELECTED_UPGRADES),
           false,
+          tableLabels,
         )}
         {renderTable(
-          'אפשרויות לשדרוג נוסף',
+          t(T.BOOKINGS.AVAILABLE_UPGRADES),
           availableItems,
-          'כל שירותי השדרוג הזמינים נכללו בהזמנה.',
+          t(T.BOOKINGS.ALL_UPGRADES_INCLUDED),
           true,
+          tableLabels,
           onAddUpgrade,
           addingKey,
         )}
         <p className={styles.marketingNote}>
-          שירותים בטבלה השנייה יופיעו גם ב-PDF החוזה כהצעה ללקוח. לחיצה על &quot;הוסף לחוזה&quot; מעדכנת את
-          החוזה והמחיר.
+          {t(T.BOOKINGS.UPGRADE_TABLES_HELP)}
         </p>
       </div>
     </div>

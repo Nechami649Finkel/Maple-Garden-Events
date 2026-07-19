@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
-import { buildDefaultOptionInterestMessage } from '../../utils/notifyOptionMessage';
+import { useTranslation } from '../../i18n/useTranslation';
+import { formatDate } from '@shared/i18n/formatters';
 import styles from './NotifyOptionModal.module.css';
 
 interface Props {
@@ -16,10 +17,32 @@ interface Props {
   onSuccess?: () => void;
 }
 
+export function buildDefaultOptionInterestMessage(
+  translate: (key: string, params?: Record<string, string | number>) => string,
+  defaultKey: string,
+  clientName: string,
+  eventDateStr: string,
+  locale: string,
+): string {
+  const dateDisplay = eventDateStr.includes('-')
+    ? formatDate(eventDateStr, locale as 'he' | 'en')
+    : formatDate(new Date(eventDateStr), locale as 'he' | 'en');
+  return translate(defaultKey, { clientName, dateStr: dateDisplay });
+}
+
 const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props) => {
+  const { t, T, locale } = useTranslation();
+
   const defaultMessage = useMemo(
-    () => buildDefaultOptionInterestMessage(booking.clientAFullName || 'לקוח/ה', eventDateStr),
-    [booking.clientAFullName, eventDateStr],
+    () =>
+      buildDefaultOptionInterestMessage(
+        t as (key: string, params?: Record<string, string | number>) => string,
+        T.OPTIONS.INTEREST_MESSAGE_DEFAULT,
+        booking.clientAFullName || t(T.COMMON.LABELS.UNKNOWN_CLIENT),
+        eventDateStr,
+        locale,
+      ),
+    [booking.clientAFullName, eventDateStr, t, T, locale],
   );
 
   const [message, setMessage] = useState(defaultMessage);
@@ -32,8 +55,8 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
   } | null>(null);
 
   const dateDisplay = eventDateStr.includes('-')
-    ? eventDateStr.split('-').reverse().join('/')
-    : new Date(eventDateStr).toLocaleDateString('he-IL');
+    ? formatDate(eventDateStr, locale)
+    : formatDate(new Date(eventDateStr), locale);
 
   const handleSend = async () => {
     if (!booking.id || isSubmitting) return;
@@ -58,9 +81,11 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
       try {
         data = await res.json();
       } catch {
-        alert(res.status === 404
-          ? 'השרת לא מכיר את הפעולה — נסי להפעיל מחדש את השרת (npm run dev בתיקיית server).'
-          : `שגיאת תקשורת עם השרת (קוד ${res.status}).`);
+        alert(
+          res.status === 404
+            ? t(T.OPTIONS.NOTIFY_UNKNOWN_ACTION)
+            : t(T.OPTIONS.NOTIFY_SERVER_STATUS, { status: String(res.status) }),
+        );
         return;
       }
 
@@ -74,12 +99,12 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
         onSuccess?.();
       } else {
         const details = data.skippedReasons?.length
-          ? `${data.message || 'שגיאה בשליחת ההודעה.'}\n\n${data.skippedReasons.join('\n')}`
-          : (data.message || 'שגיאה בשליחת ההודעה.');
+          ? `${data.message || t(T.OPTIONS.NOTIFY_SEND_ERROR)}\n\n${data.skippedReasons.join('\n')}`
+          : data.message || t(T.OPTIONS.NOTIFY_SEND_ERROR);
         alert(details);
       }
     } catch {
-      alert('שגיאת תקשורת עם השרת.');
+      alert(t(T.OPTIONS.NOTIFY_NETWORK_ERROR));
     } finally {
       setIsSubmitting(false);
     }
@@ -87,8 +112,8 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
 
   const resultLines: string[] = [];
   if (result) {
-    if (result.emailSent) resultLines.push('נשלח במייל ✓');
-    if (result.whatsappSent) resultLines.push('נשלח בוואטסאפ ✓');
+    if (result.emailSent) resultLines.push(t(T.COMMON.LABELS.SENT_EMAIL));
+    if (result.whatsappSent) resultLines.push(t(T.COMMON.LABELS.SENT_WHATSAPP));
     if (result.skippedReasons?.length) {
       resultLines.push(...result.skippedReasons);
     }
@@ -98,28 +123,42 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <span>הקפצת הודעה ללקוח</span>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="סגירה">
+          <span>{t(T.OPTIONS.NOTIFY_TITLE)}</span>
+          <button
+            type="button"
+            className={styles.closeBtn}
+            onClick={onClose}
+            aria-label={t(T.COMMON.ACTIONS.CLOSE)}
+          >
             ×
           </button>
         </div>
 
         <div className={styles.body}>
           <p className={styles.infoRow}>
-            <strong>לקוח:</strong> {booking.clientAFullName || 'לא ידוע'}
+            <strong>{t(T.OPTIONS.NOTIFY_CLIENT)}:</strong>{' '}
+            {booking.clientAFullName || t(T.UI.UNKNOWN)}
           </p>
           <p className={styles.infoRow}>
-            <strong>תאריך:</strong> {dateDisplay}
+            <strong>{t(T.OPTIONS.NOTIFY_DATE)}:</strong> {dateDisplay}
           </p>
           {(booking.clientAEmail || booking.clientAPhone) && (
             <p className={styles.infoRow}>
-              {booking.clientAEmail && <span>מייל: {booking.clientAEmail} </span>}
-              {booking.clientAPhone && <span>| טלפון: {booking.clientAPhone.split(' | ')[0]}</span>}
+              {booking.clientAEmail && (
+                <span>
+                  {t(T.OPTIONS.NOTIFY_EMAIL)}: {booking.clientAEmail}{' '}
+                </span>
+              )}
+              {booking.clientAPhone && (
+                <span>
+                  | {t(T.OPTIONS.NOTIFY_PHONE)}: {booking.clientAPhone.split(' | ')[0]}
+                </span>
+              )}
             </p>
           )}
 
           <label className={styles.label} htmlFor="notify-option-message">
-            תוכן ההודעה (ניתן לערוך)
+            {t(T.OPTIONS.NOTIFY_MESSAGE_LABEL)}
           </label>
           <textarea
             id="notify-option-message"
@@ -128,12 +167,12 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
             onChange={(e) => setMessage(e.target.value)}
             disabled={isSubmitting || !!result}
           />
-          <p className={styles.hint}>
-            ההודעה תישלח במייל. אם מוגדר Green API ולמספר יש וואטסאפ — תישלח גם שם.
-          </p>
+          <p className={styles.hint}>{t(T.OPTIONS.NOTIFY_HELP)}</p>
 
           {result && (
-            <div className={`${styles.resultBox} ${result.skippedReasons?.length ? styles.resultBoxPartial : ''}`}>
+            <div
+              className={`${styles.resultBox} ${result.skippedReasons?.length ? styles.resultBoxPartial : ''}`}
+            >
               {resultLines.map((line) => (
                 <div key={line}>{line}</div>
               ))}
@@ -143,7 +182,7 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
 
         <div className={styles.footer}>
           <button type="button" className={styles.cancelBtn} onClick={onClose}>
-            {result ? 'סגור' : 'ביטול'}
+            {result ? t(T.COMMON.ACTIONS.CLOSE) : t(T.COMMON.ACTIONS.CANCEL)}
           </button>
           {!result && (
             <button
@@ -152,7 +191,7 @@ const NotifyOptionModal = ({ booking, eventDateStr, onClose, onSuccess }: Props)
               onClick={handleSend}
               disabled={isSubmitting || !message.trim()}
             >
-              {isSubmitting ? 'שולח...' : 'שלח הודעה'}
+              {isSubmitting ? t(T.OPTIONS.NOTIFY_SENDING) : t(T.OPTIONS.NOTIFY_SEND)}
             </button>
           )}
         </div>

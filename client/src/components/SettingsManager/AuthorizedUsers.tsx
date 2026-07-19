@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
+import { useTranslation } from '../../i18n/useTranslation';
 
-const ROLE_LABELS: Record<string, string> = {
-  manager: 'מנהל/ת',
-  staff: 'מזכירות / מכירות',
-  production: 'הפקה',
-  floor_staff: 'צוות קבלה',
-};
+const ROLE_KEYS = {
+  manager: 'ROLE_MANAGER',
+  staff: 'ROLE_STAFF',
+  production: 'ROLE_PRODUCTION',
+  floor_staff: 'ROLE_FLOOR',
+} as const;
 
-const ROLE_OPTIONS = Object.entries(ROLE_LABELS);
+const ROLE_OPTIONS = Object.entries(ROLE_KEYS) as [keyof typeof ROLE_KEYS, string][];
 
 const AUTH_USERS_URL = `${API_URL}/auth/authorized-users`;
 
@@ -21,21 +22,25 @@ type AuthorizedUser = {
 };
 
 export const AuthorizedUsers = () => {
+  const { t, T } = useTranslation();
   const [users, setUsers] = useState<AuthorizedUser[]>([]);
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('manager');
 
+  const roleLabel = (role: keyof typeof ROLE_KEYS) =>
+    t(T.SETTINGS[ROLE_KEYS[role] as keyof typeof T.SETTINGS] as typeof T.SETTINGS.ROLE_MANAGER);
+
   const loadUsers = useCallback(() => {
     apiFetch(AUTH_USERS_URL)
       .then((res) => {
-        if (!res.ok) throw new Error(`שגיאת שרת: ${res.status}`);
+        if (!res.ok) throw new Error(`${t(T.UI.SERVER_ERROR)}: ${res.status}`);
         return res.json();
       })
       .then((data: unknown) => {
         if (Array.isArray(data)) setUsers(data as AuthorizedUser[]);
       })
-      .catch((err) => console.error('שגיאה בטעינת משתמשים:', err));
-  }, []);
+      .catch((err) => console.error(t(T.SETTINGS.USERS_LOAD_ERROR), err));
+  }, [t, T]);
 
   useEffect(() => {
     loadUsers();
@@ -51,11 +56,11 @@ export const AuthorizedUsers = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: emailToSave, role: newRole }),
       });
-      if (!res.ok) throw new Error('שגיאה בהוספה');
+      if (!res.ok) throw new Error(t(T.SETTINGS.USER_ADD_ERROR));
       setEmail('');
       loadUsers();
     } catch {
-      alert('שגיאה בהוספת המייל - אולי הוא כבר קיים?');
+      alert(t(T.SETTINGS.USER_ADD_ERROR));
     }
   };
 
@@ -66,21 +71,21 @@ export const AuthorizedUsers = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role }),
       });
-      if (!res.ok) throw new Error('שגיאה בעדכון תפקיד');
+      if (!res.ok) throw new Error(t(T.SETTINGS.ROLE_UPDATE_ERROR));
       loadUsers();
     } catch {
-      alert('שגיאה בעדכון התפקיד');
+      alert(t(T.SETTINGS.ROLE_UPDATE_ERROR));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('האם את בטוחה שברצונך למחוק משתמש זה?')) return;
+    if (!window.confirm(t(T.SETTINGS.USER_DELETE_CONFIRM))) return;
     try {
       const res = await apiFetch(`${AUTH_USERS_URL}/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('שגיאה במחיקה');
+      if (!res.ok) throw new Error(t(T.SETTINGS.USER_DELETE_ERROR));
       loadUsers();
     } catch {
-      alert('שגיאה במחיקת המייל');
+      alert(t(T.SETTINGS.USER_DELETE_ERROR));
     }
   };
 
@@ -92,12 +97,12 @@ export const AuthorizedUsers = () => {
       boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
       marginTop: '20px',
     }}>
-      <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2c3e50' }}>ניהול משתמשים מורשים</h3>
+      <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2c3e50' }}>{t(T.SETTINGS.USERS_TITLE)}</h3>
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <input
           type="email"
-          placeholder="הקלידי מייל של משתמש חדש..."
+          placeholder={t(T.SETTINGS.USER_EMAIL_PLACEHOLDER)}
           value={email}
           onChange={(e) => setEmail(e.target.value.toLowerCase().trim())}
           style={{ flex: 1, minWidth: '200px', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
@@ -106,26 +111,26 @@ export const AuthorizedUsers = () => {
           value={newRole}
           onChange={(e) => setNewRole(e.target.value)}
           style={{ padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
-          aria-label="תפקיד משתמש חדש"
+          aria-label={t(T.SETTINGS.USER_ROLE_ARIA)}
         >
-          {ROLE_OPTIONS.map(([value, label]) => (
-            <option key={value} value={value}>{label}</option>
+          {ROLE_OPTIONS.map(([value]) => (
+            <option key={value} value={value}>{roleLabel(value)}</option>
           ))}
         </select>
         <button
           onClick={handleAddEmail}
           style={{ padding: '10px 20px', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          הוסף
+          {t(T.SETTINGS.ADD_USER)}
         </button>
       </div>
 
       <table style={{ width: '100%', textAlign: 'right', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ borderBottom: '2px solid #eee' }}>
-            <th style={{ padding: '12px 8px', color: '#7f8c8d' }}>מייל מורשה</th>
-            <th style={{ padding: '12px 8px', color: '#7f8c8d' }}>תפקיד</th>
-            <th style={{ padding: '12px 8px', color: '#7f8c8d', width: '80px' }}>פעולות</th>
+            <th style={{ padding: '12px 8px', color: '#7f8c8d' }}>{t(T.UI.LABEL_EMAIL)}</th>
+            <th style={{ padding: '12px 8px', color: '#7f8c8d' }}>{t(T.SETTINGS.USER_ROLE_ARIA)}</th>
+            <th style={{ padding: '12px 8px', color: '#7f8c8d', width: '80px' }}>{t(T.COMMON.LABELS.ACTIONS)}</th>
           </tr>
         </thead>
         <tbody>
@@ -137,10 +142,10 @@ export const AuthorizedUsers = () => {
                   value={user.role || 'manager'}
                   onChange={(e) => handleRoleChange(user.id, e.target.value)}
                   style={{ padding: '6px', borderRadius: '4px', border: '1px solid #ddd' }}
-                  aria-label={`תפקיד עבור ${user.email}`}
+                  aria-label={`${t(T.SETTINGS.USER_ROLE_ARIA)} ${user.email}`}
                 >
-                  {ROLE_OPTIONS.map(([value, label]) => (
-                    <option key={value} value={value}>{label}</option>
+                  {ROLE_OPTIONS.map(([value]) => (
+                    <option key={value} value={value}>{roleLabel(value)}</option>
                   ))}
                 </select>
               </td>
@@ -149,7 +154,7 @@ export const AuthorizedUsers = () => {
                   onClick={() => handleDelete(user.id)}
                   style={{ background: '#ff4757', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '12px' }}
                 >
-                  מחק
+                  {t(T.UI.DELETE)}
                 </button>
               </td>
             </tr>

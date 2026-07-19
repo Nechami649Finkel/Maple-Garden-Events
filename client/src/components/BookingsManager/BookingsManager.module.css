@@ -1,16 +1,16 @@
 .container {
   direction: rtl;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .searchInput {
   width: 100%;
   max-width: 420px;
-  margin-bottom: var(--maple-space-6);
+  margin-bottom: var(--brand-space-6);
 }
 
 .section {
-  margin-bottom: var(--maple-space-8);
+  margin-bottom: var(--brand-space-8);
 }
 
 .tableWrap {
@@ -20,7 +20,7 @@
 .cardsWrap {
   display: flex;
   flex-direction: column;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
 }
 
 @media (min-width: 768px) {
@@ -47,22 +47,22 @@
 .popupOverlay {
   position: fixed;
   inset: 0;
-  background: var(--maple-overlay);
+  background: var(--brand-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--maple-z-modal);
+  z-index: var(--brand-z-modal);
   direction: rtl;
 }
 
 .popupBox {
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
   width: 480px;
   max-width: 95vw;
-  box-shadow: var(--maple-shadow-lg);
+  box-shadow: var(--brand-shadow-lg);
   overflow: hidden;
-  border: 1px solid var(--maple-border);
+  border: 1px solid var(--brand-border);
 }
 
 .detailsBox {
@@ -70,21 +70,21 @@
 }
 
 .popupHeader {
-  background: var(--maple-panel-header-bg);
-  color: var(--maple-panel-header-text);
+  background: var(--brand-panel-header-bg);
+  color: var(--brand-panel-header-text);
   padding: 14px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
-  border-bottom: 3px solid var(--maple-gold);
-  font-size: var(--maple-text-sm);
+  border-bottom: 3px solid var(--brand-gold);
+  font-size: var(--brand-text-sm);
 }
 
 .popupClose {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  color: var(--maple-text-muted);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  color: var(--brand-text-muted);
   font-size: 1rem;
   cursor: pointer;
   width: 28px;
@@ -93,8 +93,8 @@
 }
 
 .popupClose:hover {
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .popupBody {
@@ -110,70 +110,70 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--brand-border);
   padding-bottom: 8px;
 }
 
 .popupRow label {
   font-weight: 600;
-  color: var(--maple-text-secondary);
-  font-size: var(--maple-text-xs);
+  color: var(--brand-text-secondary);
+  font-size: var(--brand-text-xs);
   min-width: 90px;
 }
 
 .popupRow span {
-  color: var(--maple-text);
-  font-size: var(--maple-text-sm);
+  color: var(--brand-text);
+  font-size: var(--brand-text-sm);
 }
 
 .detailsSection {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--brand-border);
 }
 
 .sectionTitle {
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 700;
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
   margin: 0 0 10px;
 }
 
 .totalPrice {
   font-weight: 700;
-  color: var(--maple-danger);
+  color: var(--brand-danger);
 }
 
 .notesBlock {
   margin-bottom: 10px;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
 }
 
 .additionItem {
   margin-bottom: 14px;
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--maple-green-light);
-  font-size: var(--maple-text-sm);
+  border-bottom: 1px solid var(--brand-green-light);
+  font-size: var(--brand-text-sm);
 }
 
 .additionMeta {
-  color: var(--maple-text-muted);
-  font-size: var(--maple-text-xs);
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-xs);
   margin-bottom: 4px;
 }
 
 .signatureBlock {
   margin-top: 8px;
-  font-size: var(--maple-text-xs);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-xs);
+  color: var(--brand-text-muted);
 }
 
 .signatureImg {
   width: 150px;
   height: 60px;
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
-  background-color: var(--maple-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
+  background-color: var(--brand-surface);
   display: block;
   margin-top: 4px;
 }
@@ -184,23 +184,23 @@
   gap: 10px;
   margin-top: 8px;
   padding-top: 16px;
-  border-top: 2px solid var(--maple-border);
+  border-top: 2px solid var(--brand-border);
 }
 
 .btnPrimary {
   padding: 12px 18px;
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: #fff;
   border: none;
-  border-radius: var(--maple-radius-sm);
-  font-size: var(--maple-text-sm);
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 700;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .btnPrimary:disabled {
@@ -210,24 +210,24 @@
 
 .btnSecondary {
   padding: 10px 16px;
-  background: var(--maple-surface);
-  color: var(--maple-green-dark);
-  border: 1px solid var(--maple-green-muted);
-  border-radius: var(--maple-radius-sm);
-  font-size: var(--maple-text-xs);
+  background: var(--brand-surface);
+  color: var(--brand-green-dark);
+  border: 1px solid var(--brand-green-muted);
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-xs);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .btnSecondary:hover {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
 }
 
 .editBlockedMsg {
   text-align: center;
-  font-size: var(--maple-text-xs);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-xs);
+  color: var(--brand-text-muted);
   margin: 0;
 }
 
@@ -257,7 +257,7 @@
   .detailsBox {
     width: 100%;
     max-width: 100%;
-    border-radius: var(--maple-radius-lg) var(--maple-radius-lg) 0 0;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
   }
 
   .popupOverlay {

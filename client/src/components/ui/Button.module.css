@@ -4,14 +4,14 @@
   justify-content: center;
   gap: 8px;
   padding: 10px 18px;
-  border-radius: var(--maple-radius-sm);
-  font-size: var(--maple-text-sm);
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
   cursor: pointer;
   border: none;
-  transition: background var(--maple-transition), color var(--maple-transition),
-    border-color var(--maple-transition), transform var(--maple-transition);
+  transition: background var(--brand-transition), color var(--brand-transition),
+    border-color var(--brand-transition), transform var(--brand-transition);
   white-space: nowrap;
 }
 
@@ -25,37 +25,37 @@
 }
 
 .primary {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: #fff;
 }
 
 .primary:not(:disabled):hover {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .secondary {
-  background: var(--maple-surface);
-  color: var(--maple-text-secondary);
-  border: 1px solid var(--maple-border-strong);
+  background: var(--brand-surface);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border-strong);
 }
 
 .secondary:not(:disabled):hover {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
 }
 
 .danger {
-  background: var(--maple-surface);
-  color: var(--maple-danger);
-  border: 2px solid var(--maple-danger);
+  background: var(--brand-surface);
+  color: var(--brand-danger);
+  border: 2px solid var(--brand-danger);
 }
 
 .danger:not(:disabled):hover {
-  background: var(--maple-danger);
+  background: var(--brand-danger);
   color: #fff;
 }
 
 .warning {
-  background: var(--maple-warning);
+  background: var(--brand-warning);
   color: #fff;
 }
 
@@ -65,12 +65,12 @@
 
 .sm {
   padding: 7px 14px;
-  font-size: var(--maple-text-xs);
+  font-size: var(--brand-text-xs);
 }
 
 .lg {
   padding: 12px 22px;
-  font-size: var(--maple-text-base);
+  font-size: var(--brand-text-base);
 }
 
 .fullWidth {

@@ -1,8 +1,16 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import '../../styles/bootstrap-maple-forms.css';
 import styles from './BookingForm.module.css';
-import { type TimeSlot, TIME_SLOTS, SLOT_LABELS, normalizeTimeSlot, getBlockedSlotsForDate, SLOT_HOURS, getSlotHours, getDefaultTimeSlot } from '../../utils/timeSlot';
+import { type TimeSlot, TIME_SLOTS, normalizeTimeSlot, getBlockedSlotsForDate, SLOT_HOURS, getSlotHours, getDefaultTimeSlot } from '../../utils/timeSlot';
+import { useTranslation } from '../../i18n/useTranslation';
+import {
+  HALL_ONLY_EVENT_TYPE,
+  DEFAULT_EVENT_TYPE,
+  UNSPECIFIED_EVENT_TYPE,
+  KOSHER_TYPE_EXTRAS,
+  TIME_SLOT_KEYS,
+} from '@shared/i18n/bookingLookups';
 import { parseNotesBundle, serializeNotesBundle } from '../../utils/notesStorage';
 import { apiFetch, getAuthUser } from '../../services/api';
 import { useGlobalSettingsQuery } from '../../hooks/queries';
@@ -109,21 +117,10 @@ const parseStoredTimeOfDay = (stored: string | null | undefined) => {
   return { timeOfDay: main, startTime: '', endTime: '' };
 };
 
-const HALL_ONLY_EVENT_TYPE = 'השכרת אולם בלי אוכל';
-
 function calcOptionalGuestCount(guestCount: string | number): string {
   const count = Number(guestCount);
   if (!Number.isFinite(count) || count <= 0) return '';
   return String(Math.ceil(count * 0.1));
-}
-
-function validateHallRentalPrice(value: string): string {
-  const trimmed = (value ?? '').trim();
-  if (!trimmed) return 'יש להזין מחיר השכרת אולם';
-  const num = Number(trimmed);
-  if (!Number.isFinite(num)) return 'יש להזין מספר תקין';
-  if (num <= 0) return 'הסכום חייב להיות גדול מ-0';
-  return '';
 }
 
 function splitFullName(fullName: string): { first: string; last: string } {
@@ -134,7 +131,17 @@ function splitFullName(fullName: string): { first: string; last: string } {
 }
 
 const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProps) => {
+  const { t, T } = useTranslation();
   const navigate = useNavigate();
+
+  const validateHallRentalPrice = (value: string): string => {
+    const trimmed = (value ?? '').trim();
+    if (!trimmed) return t(T.BOOKING.VALIDATION.HALL_PRICE_REQUIRED);
+    const num = Number(trimmed);
+    if (!Number.isFinite(num)) return t(T.BOOKING.VALIDATION.HALL_PRICE_INVALID);
+    if (num <= 0) return t(T.BOOKING.VALIDATION.HALL_PRICE_POSITIVE);
+    return '';
+  };
   const location = useLocation();
   const { id: editId, optionId } = useParams<{ id?: string; optionId?: string }>();
   const convertFromOption = !!optionId;
@@ -257,7 +264,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     !isOption || selectedDatesDisplay.length === 0
       ? ''
       : !normalizedSlot
-        ? 'יש לבחור זמן ביום לפני הוספת תאריכים.'
+        ? t(T.BOOKING.FORM.SELECT_TIME_BEFORE_DATES)
         : asyncSlotWarning;
 
   const handleSelectedDatesChange = (dates: OptionDateItem[]) => {
@@ -282,7 +289,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         setDraftRestored(true);
         return;
       }
-      const restore = window.confirm('נמצאה טיוטת הזמנה שלא נשמרה. לשחזר אותה?');
+      const restore = window.confirm(t(T.BOOKING.FORM.DRAFT_RESTORE_CONFIRM));
       if (restore) {
         const dates = (draft.selectedDatesDisplay as OptionDateItem[]).map(normalizeOptionDate);
         const firstDate = dates[0]?.date || '';
@@ -383,8 +390,9 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     let cancelled = false;
     verifyAllOptionDates(
       selectedDatesDisplay.map(normalizeOptionDate),
-      formData.eventType || 'חתונה',
+      formData.eventType || DEFAULT_EVENT_TYPE,
       normalizedSlot,
+      t,
     ).then((verify) => {
       if (!cancelled) setAsyncSlotWarning(verify.ok ? '' : verify.error);
     });
@@ -492,14 +500,14 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         const res = await apiFetch(`${API_URL}/bookings/${activeEditId}`);
         const json = await res.json();
         if (!res.ok || !json.success) {
-          alert(json.message || 'שגיאה בטעינת ההזמנה');
+          alert(json.message || t(T.BOOKING.ALERTS.LOAD_BOOKING_ERROR));
           navigate('/calendar');
           return;
         }
         const b = json.data as LoadedBooking;
         const isStillOption = b.isOption || b.eventDate?.status === 'OPTION';
         if (convertFromOption && !isStillOption) {
-          alert('האופציה כבר הומרה להזמנה.');
+          alert(t(T.BOOKING.ALERTS.OPTION_ALREADY_CONVERTED));
           navigate('/calendar');
           return;
         }
@@ -544,7 +552,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           applyRelatedOptionDates(related);
         }
       } catch {
-        alert('שגיאה בטעינת ההזמנה');
+        alert(t(T.BOOKING.ALERTS.LOAD_BOOKING_ERROR));
         navigate('/calendar');
       } finally {
         setLoadingBooking(false);
@@ -576,7 +584,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     setSlotAdjustKey(slotKeyNow);
     const current = formData.timeOfDay as TimeSlot;
     let next: TimeSlot | '' = current;
-    if (formData.eventType === 'חתונה') {
+    if (formData.eventType === DEFAULT_EVENT_TYPE) {
       const eveningOk = availableSlots.includes('evening') && !unavailableSlots.includes('evening');
       if (eveningOk) next = 'evening';
     }
@@ -641,7 +649,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         });
         const json = await res.json();
         if (!res.ok || !json.success) {
-          alert(json.message || 'לא ניתן להוסיף את השדרוג לחוזה');
+          alert(json.message || t(T.BOOKING.ALERTS.UPGRADE_ADD_FAILED));
           return;
         }
         setUpgrades((prev) => ({ ...prev, [key]: true }));
@@ -663,7 +671,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     } catch (error) {
       console.error('Check OCR failed:', error);
       setFormData(prev => ({ ...prev, depositCheckDetails: { scannedAt: new Date().toISOString() } }));
-      alert('לא הצלחנו לזהות את כל פרטי הצ\'ק. ניתן למלא אותם ידנית.');
+      alert(t(T.BOOKING.ALERTS.CHECK_OCR_PARTIAL));
     } finally {
       setCheckScanning(false);
     }
@@ -682,7 +690,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       setFormData(prev => ({ ...prev, depositCheckUrl: dataUrl }));
       await processCheckImage(dataUrl);
     } catch {
-      alert('שגיאה בטעינת קובץ הצ\'ק');
+      alert(t(T.BOOKING.ALERTS.CHECK_FILE_ERROR));
     }
   };
 
@@ -707,7 +715,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
   const isHallOnly = formData.eventType === HALL_ONLY_EVENT_TYPE;
   const isFoodRelevant = !isHallOnly;
-  const isWedding = formData.eventType === 'חתונה';
+  const isWedding = formData.eventType === DEFAULT_EVENT_TYPE;
 
   const getEventDateStr = (): string | null => {
     if (selectedDatesDisplay.length > 0) {
@@ -731,7 +739,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   let hallExtrasBase = 0;
   if (isFoodRelevant) {
     const portions = Number(formData.guestCount) || 0;
-    hallExtrasBase += portions * KOSHER_PRICING[kosherType].extra;
+    hallExtrasBase += portions * (KOSHER_TYPE_EXTRAS[kosherType as keyof typeof KOSHER_TYPE_EXTRAS] ?? 0);
   }
   HALL_UPGRADE_KEYS.forEach((key) => {
     if (upgrades[key]) hallExtrasBase += upgradesPricing[key] ?? 0;
@@ -870,36 +878,36 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
     if (isOption) {
       if (!formData.clientAFirstName?.trim()) {
-        alert('חובה להזין שם פרטי.');
+        alert(t(T.BOOKING.VALIDATION.FIRST_NAME_REQUIRED));
         return;
       }
       if (!formData.clientALastName?.trim()) {
-        alert('חובה להזין שם משפחה.');
+        alert(t(T.BOOKING.VALIDATION.LAST_NAME_REQUIRED));
         return;
       }
       if (!formData.clientAPhone?.trim() || formData.clientAPhone.trim().length < 9) {
-        alert('חובה להזין מספר טלפון תקין (לפחות 9 ספרות).');
+        alert(t(T.BOOKING.VALIDATION.PHONE_REQUIRED));
         return;
       }
       if (!formData.createdBy?.trim()) {
-        alert('חובה לבחור נציג מהרשימה.');
+        alert(t(T.BOOKING.VALIDATION.REPRESENTATIVE_REQUIRED));
         return;
       }
       if (formData.clientAEmail?.trim() && !emailPattern.test(formData.clientAEmail.trim())) {
-        alert('כתובת האימייל של בעל/ת השמחה אינה תקינה.');
+        alert(t(T.BOOKING.VALIDATION.CLIENT_EMAIL_INVALID));
         return;
       }
       if (formData.clientBEmail?.trim() && !emailPattern.test(formData.clientBEmail.trim())) {
-        alert('כתובת האימייל של צד ב\' אינה תקינה.');
+        alert(t(T.BOOKING.VALIDATION.PARTNER_EMAIL_INVALID));
         return;
       }
     } else {
       if ((!isEditMode || convertFromOption) && !contractSigned) {
-        alert('יש לחתום על החוזה בחלונית החתימה טרם השמירה.');
+        alert(t(T.BOOKING.VALIDATION.CONTRACT_SIGNATURE_REQUIRED));
         return;
       }
       if (contractSigned && !signatureData) {
-        alert('יש לחתום על החוזה בחלונית החתימה טרם השמירה.');
+        alert(t(T.BOOKING.VALIDATION.CONTRACT_SIGNATURE_REQUIRED));
         return;
       }
       if (isHallOnly) {
@@ -910,42 +918,42 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
           return;
         }
       } else if (!formData.guestCount || Number(formData.guestCount) <= 0) {
-        alert('חובה להזין מספר אורחים (מעל 0).');
+        alert(t(T.BOOKING.VALIDATION.GUEST_COUNT_REQUIRED));
         return;
       }
 
       if (!formData.clientAFullName?.trim()) {
-        alert('חובה להזין שם לקוח.');
+        alert(t(T.BOOKING.VALIDATION.CLIENT_NAME_REQUIRED));
         return;
       }
       if (!formData.clientAPhone?.trim() || formData.clientAPhone.trim().length < 9) {
-        alert('חובה להזין מספר טלפון תקין (לפחות 9 ספרות).');
+        alert(t(T.BOOKING.VALIDATION.PHONE_REQUIRED));
         return;
       }
       if (!formData.eventType) {
-        alert('חובה לבחור סוג אירוע.');
+        alert(t(T.BOOKING.VALIDATION.EVENT_TYPE_REQUIRED));
         return;
       }
       if (!formData.timeOfDay) {
-        alert('חובה לבחור זמן ביום (בוקר / צהריים / ערב).');
+        alert(t(T.BOOKING.VALIDATION.TIME_SLOT_REQUIRED));
         return;
       }
       if (selectedDatesDisplay.length === 0 && !formData.calendarDateId) {
-        alert('חובה לבחור תאריך לאירוע.');
+        alert(t(T.BOOKING.VALIDATION.EVENT_DATE_REQUIRED));
         return;
       }
       if (formData.clientAEmail?.trim() && !emailPattern.test(formData.clientAEmail.trim())) {
-        alert('כתובת האימייל של בעל/ת השמחה אינה תקינה.');
+        alert(t(T.BOOKING.VALIDATION.CLIENT_EMAIL_INVALID));
         return;
       }
       if (formData.clientBEmail?.trim() && !emailPattern.test(formData.clientBEmail.trim())) {
-        alert('כתובת האימייל של צד ב\' אינה תקינה.');
+        alert(t(T.BOOKING.VALIDATION.PARTNER_EMAIL_INVALID));
         return;
       }
     }
 
     if (selectedDatesDisplay.length === 0 && !formData.calendarDateId) {
-      alert('חובה לבחור תאריך לאירוע.');
+      alert(t(T.BOOKING.VALIDATION.EVENT_DATE_REQUIRED));
       return;
     }
 
@@ -953,20 +961,21 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     if (isOption && selectedDatesDisplay.length > 0) {
       const slot = normalizeTimeSlot(formData.timeOfDay as string);
       if (!slot) {
-        alert('חובה לבחור זמן ביום (בוקר / צהריים / ערב).');
+        alert(t(T.BOOKING.VALIDATION.TIME_SLOT_REQUIRED));
         return;
       }
       if (optionDatesSlotWarning) {
-        alert(`לא ניתן לשמור — התאריך כבר לא זמין:\n${optionDatesSlotWarning}`);
+        alert(t(T.BOOKING.ALERTS.SAVE_DATE_UNAVAILABLE, { message: optionDatesSlotWarning }));
         return;
       }
       const verify = await verifyAllOptionDates(
         selectedDatesDisplay.map(normalizeOptionDate),
-        formData.eventType || 'חתונה',
-        slot
+        formData.eventType || DEFAULT_EVENT_TYPE,
+        slot,
+        t,
       );
       if (!verify.ok) {
-        alert(`לא ניתן לשמור — התאריך כבר לא זמין:\n${verify.error}`);
+        alert(t(T.BOOKING.ALERTS.SAVE_DATE_UNAVAILABLE, { message: verify.error }));
         return;
       }
       datesForSubmit = verify.dates;
@@ -983,9 +992,12 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     ) {
       const freeSlots = TIME_SLOTS.filter((s) => !unavailableSlots.includes(s));
       if (freeSlots.length > 0) {
-        alert(`משבצת ${SLOT_LABELS[selectedSlot] || selectedSlot} תפוסה. בחרי משבצת פנויה: ${freeSlots.map((s) => SLOT_LABELS[s]).join(', ')}.`);
+        alert(t(T.BOOKING.ALERTS.SLOT_TAKEN, {
+          slot: t(TIME_SLOT_KEYS[selectedSlot]),
+          slots: freeSlots.map((s) => t(TIME_SLOT_KEYS[s])).join(', '),
+        }));
       } else {
-        alert('משבצת זו תפוסה על ידי אופציה. חזרי ללוח השנה ולחצי "סגירת אירוע במקום האופציה".');
+        alert(t(T.BOOKING.ALERTS.SLOT_TAKEN_BY_OPTION));
       }
       return;
     }
@@ -995,7 +1007,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     try {
       const advanceAmount = Number(formData.advancePaid) || 0;
       if (!isOption && advanceAmount > 0 && !depositMethod) {
-        alert('כשמזינים מקדמה — יש לבחור אמצעי תשלום (אשראי/מזומן, צ\'ק וכו\').');
+        alert(t(T.BOOKING.ALERTS.DEPOSIT_METHOD_REQUIRED));
         setIsSubmitting(false);
         return;
       }
@@ -1007,7 +1019,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       const payload: Record<string, unknown> = {
         ...formData,
         clientAFullName,
-        eventType: isOption ? (formData.eventType || 'לא צוין') : (isHallOnly ? HALL_ONLY_EVENT_TYPE : formData.eventType),
+        eventType: isOption ? (formData.eventType || UNSPECIFIED_EVENT_TYPE) : (isHallOnly ? HALL_ONLY_EVENT_TYPE : formData.eventType),
         timeOfDay: isOption ? (formData.timeOfDay || 'evening') : formData.timeOfDay,
         hasMusic: isWedding ? true : formData.hasMusic,
         clientComments: serializeNotesBundle({ menu: menuNotesList, internal: internalNotesList }),
@@ -1066,64 +1078,67 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         const savedCode = savedBooking?.eventCode;
         const savedId = savedBooking?.id || submitId;
         const successMsg = convertFromOption
-          ? `האירוע נסגר ונשמר בהצלחה!${savedCode ? `\nמספר הזמנה: ${savedCode}` : ''}`
+          ? `${t(T.BOOKING.SUCCESS.EVENT_CLOSED)}${savedCode ? `\n${t(T.BOOKING.SUCCESS.ORDER_NUMBER, { orderNumber: savedCode })}` : ''}`
           : isEditMode
-            ? (isOption ? 'האופציה עודכנה בהצלחה!' : 'ההזמנה עודכנה בהצלחה!')
+            ? (isOption ? t(T.BOOKING.SUCCESS.OPTION_UPDATED) : t(T.BOOKING.SUCCESS.BOOKING_UPDATED))
             : isOption
-              ? `האופציה נשמרה בהצלחה!${savedCode ? `\nמספר אופציה: ${savedCode}` : ''}`
-              : `האירוע נסגר ונשמר בהצלחה!${savedCode ? `\nמספר הזמנה: ${savedCode}` : ''}`;
+              ? `${t(T.BOOKING.SUCCESS.OPTION_SAVED)}${savedCode ? `\n${t(T.BOOKING.SUCCESS.OPTION_NUMBER, { orderNumber: savedCode })}` : ''}`
+              : `${t(T.BOOKING.SUCCESS.EVENT_CLOSED)}${savedCode ? `\n${t(T.BOOKING.SUCCESS.ORDER_NUMBER, { orderNumber: savedCode })}` : ''}`;
         const easycountMsg = resData.easycount?.message;
         alert(easycountMsg ? `${successMsg}\n\n${easycountMsg}` : successMsg);
         if ((!isOption || convertFromOption) && contractSigned && savedId) {
-          await promptPrintAfterClose(savedId);
+          await promptPrintAfterClose(savedId, t);
         }
         navigate('/calendar');
       } else if (response.status === 409 && resData.conflict) {
-        const updatedBy = resData.updatedBy ? ` (${resData.updatedBy})` : '';
-        alert(`ההזמנה עודכנה על ידי משתמש אחר${updatedBy}. רענני את העמוד ונסי שוב.`);
+        alert(t(T.BOOKING.ALERTS.CONFLICT_UPDATED, {
+          updatedBy: resData.updatedBy ? ` (${resData.updatedBy})` : '',
+        }));
         setIsSubmitting(false);
       } else {
         const fieldErrors = Array.isArray(resData.errors)
           ? resData.errors.map((e: { message?: string }) => e.message).filter(Boolean).join('\n')
           : '';
-        alert(`שגיאה בשמירת הנתונים:\n${fieldErrors || resData.message || 'השרת החזיר שגיאה לא ידועה'}`);
+        alert(t(T.BOOKING.ALERTS.SAVE_ERROR, {
+          fieldErrors: fieldErrors || resData.message || t(T.BOOKING.ALERTS.SAVE_UNKNOWN_ERROR),
+        }));
         setIsSubmitting(false);
       }
     } catch {
-      alert("שגיאת התחברות לשרת - ודאי שהשרת פועל ברקע");
+      alert(t(T.BOOKING.ALERTS.SERVER_CONNECTION_ERROR));
       setIsSubmitting(false);
     }
   };
 
   if (loadingBooking) return (
     <div className="maple-bs-form maple-page-wrap">
-      <p className="maple-loading">טוען...</p>
+      <p className="maple-loading">{t(T.BOOKING.FORM.LOADING)}</p>
     </div>
   );
+
+  const formTitle = convertFromOption
+    ? t(T.BOOKING.FORM.TITLE_CLOSE_FROM_OPTION)
+    : overrideOptionDateId
+      ? t(T.BOOKING.FORM.TITLE_CLOSE_OVERRIDE_OPTION)
+      : isEditMode
+        ? (isOption ? t(T.BOOKING.FORM.TITLE_EDIT_OPTION) : t(T.BOOKING.FORM.TITLE_EDIT_BOOKING))
+        : (isOption ? t(T.BOOKING.FORM.TITLE_SAVE_OPTION) : t(T.BOOKING.FORM.TITLE_CLOSE_BOOKING));
 
   return (
     <div className="maple-bs-form maple-page-wrap">
       <div className="card shadow-sm maple-form-card">
         <div className="card-header">
-          <h2 className="h4 mb-1">
-            {convertFromOption
-              ? 'סגירת הזמנה מאופציה'
-              : overrideOptionDateId
-                ? 'סגירת אירוע במקום אופציה'
-              : isEditMode
-                ? (isOption ? 'עריכת אופציה' : 'עריכת הזמנה')
-                : (isOption ? 'שמירת אופציה לאירוע' : 'סגירת הזמנת אירוע')}
-          </h2>
+          <h2 className="h4 mb-1">{formTitle}</h2>
           <p className="maple-subtitle">
-            {isOption
-              ? 'מילוי פרטי לקוח, תאריכי אופציה ושמירה'
-              : 'מילוי פרטי הזמנה, תשלום וחתימה על חוזה'}
+            {isOption ? t(T.BOOKING.FORM.SUBTITLE_OPTION) : t(T.BOOKING.FORM.SUBTITLE_BOOKING)}
           </p>
         </div>
 
         {overrideOptionDateId && (
           <div className="alert alert-warning rounded-0 mb-0">
-            האופציה{overrideOptionClientName ? ` של ${overrideOptionClientName}` : ''} תשוחרר ותוחלף באירוע החדש בעת השמירה.
+            {overrideOptionClientName
+              ? t(T.BOOKING.FORM.OVERRIDE_ALERT_WITH_CLIENT, { clientName: overrideOptionClientName })
+              : t(T.BOOKING.FORM.OVERRIDE_ALERT)}
           </div>
         )}
 
@@ -1140,7 +1155,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             <OptionDatesBar
               selectedDates={selectedDatesDisplay}
               onChange={handleSelectedDatesChange}
-              eventType={formData.eventType || 'חתונה'}
+              eventType={formData.eventType || DEFAULT_EVENT_TYPE}
               timeSlot={formData.timeOfDay}
               slotWarning={optionDatesSlotWarning}
             />
@@ -1170,7 +1185,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
               {!isOption && (
                 <div className="card border-info mb-3">
                   <div className="card-body">
-                    <span className="fw-semibold d-block mb-2">🎵 הסדרת רישיון אקו&quot;ם</span>
+                    <span className="fw-semibold d-block mb-2">{t(T.BOOKING.AKUM.TITLE)}</span>
 
                     {!isWedding && (
                       <div className="form-check mb-2">
@@ -1182,7 +1197,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                           onChange={(e) => setFormData(prev => ({ ...prev, hasMusic: e.target.checked }))}
                         />
                         <label className="form-check-label" htmlFor="has-music">
-                          יש מוזיקה באירוע (דורש תשלום לאקו&quot;ם)
+                          {t(T.BOOKING.AKUM.HAS_MUSIC)}
                         </label>
                       </div>
                     )}
@@ -1190,7 +1205,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                     {(isWedding || formData.hasMusic) && (
                       <>
                         <p className="small text-secondary mb-2">
-                          {isWedding ? 'חובה להסדיר רישיון השמעת מוזיקה מול אקו"ם.' : 'חובה להסדיר רישיון מול אקו"ם.'}
+                          {isWedding ? t(T.BOOKING.AKUM.REQUIRED_WEDDING) : t(T.BOOKING.AKUM.REQUIRED_OTHER)}
                         </p>
                         <a
                           href="https://apps.acum.org.il/licenses/family-event/register-payment?action=payFamilyEvent"
@@ -1198,17 +1213,17 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                           rel="noopener noreferrer"
                           className="btn btn-sm btn-outline-primary mb-3"
                         >
-                          לתשלום והפקת הרישיון לאקו&quot;ם
+                          {t(T.BOOKING.AKUM.PAY_LINK)}
                         </a>
                         <div>
-                          <label className="form-label">קוד אישור אקו&quot;ם:</label>
+                          <label className="form-label">{t(T.BOOKING.AKUM.APPROVAL_CODE)}</label>
                           <input
                             type="text"
                             name="akumApprovalCode"
                             value={formData.akumApprovalCode}
                             onChange={handleChange}
                             className="form-control"
-                            placeholder="מספר אישור לאחר התשלום..."
+                            placeholder={t(T.BOOKING.AKUM.APPROVAL_PLACEHOLDER)}
                           />
                         </div>
                       </>
@@ -1222,16 +1237,16 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
               <EventSettingsSection formData={formData} handleChange={handleChange} isOption={isOption} availableSlots={availableSlots} takenSlots={takenSlots} isEditMode={isEditMode} servingStyle={servingStyle} setServingStyle={setServingStyle} kosherType={kosherType} setKosherType={setKosherType} isFoodRelevant={isFoodRelevant} selectedDatesDisplay={selectedDatesDisplay} setIsMenuViewOpen={setIsMenuViewOpen} />
               {isFoodRelevant && (
                 <div className="card mb-3">
-                  <div className="card-header maple-section-header">הערות לתפריט</div>
+                  <div className="card-header maple-section-header">{t(T.BOOKING.NOTES.MENU_TITLE)}</div>
                   <div className="card-body py-2">
-                    <NotesList notes={menuNotesList} onChange={setMenuNotesList} placeholder="לדוגמה: אלרגיות..." />
+                    <NotesList notes={menuNotesList} onChange={setMenuNotesList} placeholder={t(T.BOOKING.NOTES.MENU_PLACEHOLDER)} />
                   </div>
                 </div>
               )}
               <div className="card mb-3">
-                <div className="card-header maple-section-header">הערות פנימיות</div>
+                <div className="card-header maple-section-header">{t(T.BOOKING.NOTES.INTERNAL_TITLE)}</div>
                 <div className="card-body py-2">
-                  <NotesList notes={internalNotesList} onChange={setInternalNotesList} placeholder="הוסף הערה פנימית..." />
+                  <NotesList notes={internalNotesList} onChange={setInternalNotesList} placeholder={t(T.BOOKING.NOTES.INTERNAL_PLACEHOLDER)} />
                 </div>
               </div>
             </div>
@@ -1273,7 +1288,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                     }}
                   />
                   <label className="form-check-label" htmlFor="contract-signed">
-                    קראתי את החוזה, מאשר את התנאים וחותם
+                    {t(T.BOOKING.FORM.CONTRACT_READ_AND_SIGN)}
                   </label>
                 </div>
                 <button
@@ -1301,12 +1316,12 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
               }
             >
               {isSubmitting
-                ? 'שומר נתונים...'
+                ? t(T.BOOKING.FORM.SUBMIT_SAVING)
                 : convertFromOption
-                  ? 'שמירת וסגירת אירוע'
+                  ? t(T.BOOKING.FORM.SUBMIT_CLOSE_EVENT)
                   : isEditMode
-                    ? 'שמירת שינויים'
-                    : (isOption ? 'שמירת אופציה' : 'שמירת וסגירת אירוע')}
+                    ? t(T.BOOKING.FORM.SUBMIT_SAVE_CHANGES)
+                    : (isOption ? t(T.BOOKING.FORM.SUBMIT_SAVE_OPTION) : t(T.BOOKING.FORM.SUBMIT_CLOSE_EVENT))}
             </button>
           </div>
         </form>
@@ -1328,7 +1343,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       />
 
       {isMenuViewOpen && (
-         <div className={styles.menuOverlay}><div className={styles.menuModal}><button type="button" className={styles.menuCloseBtn} onClick={() => setIsMenuViewOpen(false)}>✕ סגור</button><div className={styles.menuModalContent}><MenuDisplay /></div></div></div>
+         <div className={styles.menuOverlay}><div className={styles.menuModal}><button type="button" className={styles.menuCloseBtn} onClick={() => setIsMenuViewOpen(false)}>{t(T.BOOKING.FORM.MENU_CLOSE)}</button><div className={styles.menuModalContent}><MenuDisplay /></div></div></div>
       )}
     </div>
   );

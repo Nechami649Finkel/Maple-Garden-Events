@@ -11,7 +11,7 @@ function copySourceFiles(from, to) {
     const destPath = path.join(to, entry.name);
     if (entry.isDirectory()) {
       copySourceFiles(srcPath, destPath);
-    } else if (entry.name.endsWith('.ts')) {
+    } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.json')) {
       fs.copyFileSync(srcPath, destPath);
     }
   }
@@ -19,4 +19,4 @@ function copySourceFiles(from, to) {
 
 fs.rmSync(dest, { recursive: true, force: true });
 copySourceFiles(src, dest);
-console.log('Copied shared/ (.ts only) into server/src/vendor/shared/');
+console.log('Copied shared/ (.ts and .json) into server/src/vendor/shared/');

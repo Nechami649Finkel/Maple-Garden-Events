@@ -1,3 +1,5 @@
+import { getBrandConfig } from '../vendor/shared/brand/index';
+const brand = getBrandConfig();
 import cron from 'node-cron';
 import prisma from '../config/prisma';
 import { logger } from './logger';
@@ -16,6 +18,7 @@ import { runDatabaseBackup } from './databaseBackup';
 import { processDueScheduledGreetings } from '../Services/greetingService';
 import { checkOverduePayments } from '../Services/paymentDeadlineService';
 import { computeHallBalanceBreakdown } from '../Services/easyCount/hallBalance';
+import { DEFAULT_LOCALE, getServerTranslation, T } from '../i18n/getServerTranslation';
 
 export const startCronJobs = () => {
   logger.info('Cron jobs service started');
@@ -31,7 +34,7 @@ export const startCronJobs = () => {
   
   // הגדרות למנהל
   const MANAGER_PHONE = '0501234567'; 
-  const MANAGER_EMAIL = 'maple.events.il@gmail.com'; 
+  const MANAGER_EMAIL = process.env.MANAGER_EMAIL || brand.messaging.managerAlertEmail; 
 
   // ==========================================
   // אופציות שפג תוקפן — נשארות על הלוח עד סגירת אירוע אמיתי (BOOKED)
@@ -43,6 +46,7 @@ export const startCronJobs = () => {
   // ==========================================
   cron.schedule('0 9 * * *', async () => {
     logger.info('--- מתחיל סריקת בוקר להתראות "נודניק" לאירועים סגורים ---');
+    const { t } = getServerTranslation(DEFAULT_LOCALE);
     const now = new Date();
     const todayDayOfWeek = now.getDay(); // 0 = יום ראשון, 1 = שני...
 
@@ -74,9 +78,12 @@ export const startCronJobs = () => {
           if (clientPhone) await sendSecurityCheckReminderWhatsApp(clientPhone, clientName);
           if (clientEmail) await sendSecurityCheckReminderEmail(clientEmail, clientName);
           
-          const details = `האירוע נסגר בתאריך ${booking.createdAt.toLocaleDateString('he-IL')} וטרם התקבל צ'ק.`;
-          await sendManagerFinancialAlert(MANAGER_PHONE, "חסר צ'ק ביטחון", clientName, details);
-          await sendManagerFinancialAlertEmail(MANAGER_EMAIL, "חסר צ'ק ביטחון", clientName, details);
+          const details = t(T.SERVER.CRON.SECURITY_CHECK_DETAILS, {
+            date: booking.createdAt.toLocaleDateString('he-IL'),
+          });
+          const alertType = t(T.SERVER.CRON.ALERTS.MISSING_SECURITY_CHECK);
+          await sendManagerFinancialAlert(MANAGER_PHONE, alertType, clientName, details);
+          await sendManagerFinancialAlertEmail(MANAGER_EMAIL, alertType, clientName, details);
         }
 
         // ---------------------------------------------------------
@@ -87,13 +94,18 @@ export const startCronJobs = () => {
         if (daysUntilEvent <= 30 && daysUntilEvent > 0 && amountDue > 0) {
           const pendingNote =
             hallBalance.pendingTotal > 0
-              ? ` (₪${hallBalance.pendingTotal.toLocaleString('he-IL')} ממתין לגבייה)`
+              ? t(T.SERVER.CRON.PENDING_NOTE, {
+                  amount: hallBalance.pendingTotal.toLocaleString('he-IL'),
+                })
               : '';
-          const details =
-            `האירוע מתקיים ב-${booking.eventDate!.date.toLocaleDateString('he-IL')}, ` +
-            `נותר לתשלום: ₪${amountDue.toLocaleString('he-IL')}${pendingNote}`;
-          await sendManagerFinancialAlert(MANAGER_PHONE, "חוב פתוח לאירוע קרוב", clientName, details);
-          await sendManagerFinancialAlertEmail(MANAGER_EMAIL, "חוב פתוח לאירוע קרוב", clientName, details);
+          const details = t(T.SERVER.CRON.OPEN_BALANCE_DETAILS, {
+            eventDate: booking.eventDate!.date.toLocaleDateString('he-IL'),
+            amount: amountDue.toLocaleString('he-IL'),
+            pendingNote,
+          });
+          const alertType = t(T.SERVER.CRON.ALERTS.OPEN_BALANCE);
+          await sendManagerFinancialAlert(MANAGER_PHONE, alertType, clientName, details);
+          await sendManagerFinancialAlertEmail(MANAGER_EMAIL, alertType, clientName, details);
         }
 
         // ---------------------------------------------------------
@@ -105,11 +117,21 @@ export const startCronJobs = () => {
           const f = booking.eventForm;
           
           if (!f) {
-            missingItems.push('עיצוב שולחנות ואולם', 'תפריט קייטרינג', 'שעות ויעד מוזמנים סופי');
+            missingItems.push(
+              t(T.SERVER.CRON.MISSING_ITEMS.TABLE_DESIGN),
+              t(T.SERVER.CRON.MISSING_ITEMS.MENU),
+              t(T.SERVER.CRON.MISSING_ITEMS.GUEST_COUNT),
+            );
           } else {
-            if (!f.tableclothId || !f.napkinId) missingItems.push('בחירת צבעי מפות ומפיות');
-            if (!f.finalGuestCount) missingItems.push('כמות מוזמנים סופית');
-            if (!f.kashrut) missingItems.push('סוג כשרות מבוקשת');
+            if (!f.tableclothId || !f.napkinId) {
+              missingItems.push(t(T.SERVER.CRON.MISSING_ITEMS.TABLECLOTH));
+            }
+            if (!f.finalGuestCount) {
+              missingItems.push(t(T.SERVER.CRON.MISSING_ITEMS.FINAL_GUESTS));
+            }
+            if (!f.kashrut) {
+              missingItems.push(t(T.SERVER.CRON.MISSING_ITEMS.KASHRUT));
+            }
           }
 
           if (missingItems.length > 0) {
@@ -177,6 +199,7 @@ export const startCronJobs = () => {
   // ==========================================
   cron.schedule('0 8 * * *', async () => {
     logger.info('--- בודק תוקף תעודות כשרות ---');
+    const { t } = getServerTranslation(DEFAULT_LOCALE);
     const now = new Date();
     const warningDate = new Date();
     warningDate.setDate(now.getDate() + 14); // התראה שבועיים מראש
@@ -191,14 +214,22 @@ export const startCronJobs = () => {
       for (const cert of expiringCerts) {
         // בודקים אם עבר התוקף או שרק מתקרב
         const isExpired = cert.validUntil && cert.validUntil < now;
-        const statusText = isExpired ? 'פג תוקף!' : 'עומד לפוג בקרוב.';
-        const dateStr = cert.validUntil ? cert.validUntil.toLocaleDateString('he-IL') : 'לא ידוע';
-        
-        const details = `תעודת הכשרות של "${cert.displayName}" ${statusText} (תאריך פקיעה: ${dateStr}). נא להיכנס למערכת, לעדכן תאריך חדש ולהעלות צילום תעודה מעודכן.`;
-        
-        // שליחת התראה גם למייל וגם לוואטסאפ של המנהל
-        await sendManagerFinancialAlert(MANAGER_PHONE, "תוקף תעודת כשרות", cert.displayName, details);
-        await sendManagerFinancialAlertEmail(MANAGER_EMAIL, "תוקף תעודת כשרות", cert.displayName, details);
+        const statusText = isExpired
+          ? t(T.SERVER.CRON.KASHRUT_EXPIRED)
+          : t(T.SERVER.CRON.KASHRUT_EXPIRING);
+        const dateStr = cert.validUntil
+          ? cert.validUntil.toLocaleDateString('he-IL')
+          : t(T.SERVER.CRON.KASHRUT_UNKNOWN_DATE);
+
+        const details = t(T.SERVER.CRON.KASHRUT_DETAILS, {
+          name: cert.displayName,
+          status: statusText,
+          date: dateStr,
+        });
+        const alertType = t(T.SERVER.CRON.ALERTS.KASHRUT_EXPIRY);
+
+        await sendManagerFinancialAlert(MANAGER_PHONE, alertType, cert.displayName, details);
+        await sendManagerFinancialAlertEmail(MANAGER_EMAIL, alertType, cert.displayName, details);
         
         logger.info(`✅ נשלחה התראת כשרות למנהל עבור: ${cert.displayName}`);
       }

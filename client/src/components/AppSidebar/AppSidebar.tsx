@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS, isNavItemActive } from '../../utils/navConfig';
-import { useSidebar } from '../../context/sidebarContext';
+import { useSidebar } from '../../context/SidebarContext';
+import { useTranslation } from '../../i18n/useTranslation';
 import { Icon } from '../ui/Icon';
 import './AppSidebar.css';
 
@@ -9,6 +10,7 @@ export const AppSidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOpen, close } = useSidebar();
+  const { t, T } = useTranslation();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -29,16 +31,16 @@ export const AppSidebar = () => {
           type="button"
           className="app-sidebar-brand-btn"
           onClick={() => goTo('/dashboard')}
-          aria-label="חזרה ללוח הבקרה"
+          aria-label={t(T.NAV.SIDEBAR_BACK_DASHBOARD)}
         >
           <img src="/logo.png" alt="" className="app-sidebar-logo" />
-          <span className="app-sidebar-venue">מיפל — גן אירועים</span>
+          <span className="app-sidebar-venue">{t(T.NAV.SIDEBAR_VENUE)}</span>
         </button>
         <button
           type="button"
           className="app-sidebar-close"
           onClick={close}
-          aria-label="סגירת תפריט"
+          aria-label={t(T.NAV.SIDEBAR_CLOSE)}
         >
           ✕
         </button>
@@ -58,7 +60,7 @@ export const AppSidebar = () => {
                 <span className="app-sidebar-icon" aria-hidden="true">
                   <Icon name={item.icon} size={20} />
                 </span>
-                {item.label}
+                {t(item.labelKey)}
               </button>
             </li>
           );
@@ -69,12 +71,10 @@ export const AppSidebar = () => {
 
   return (
     <>
-      {/* Desktop persistent sidebar */}
-      <aside className="app-sidebar app-sidebar-desktop" aria-label="ניווט ראשי">
+      <aside className="app-sidebar app-sidebar-desktop" aria-label={t(T.NAV.SIDEBAR_MAIN_NAV)}>
         {navContent}
       </aside>
 
-      {/* Mobile drawer overlay */}
       {isOpen && (
         <div
           className="app-sidebar-overlay"
@@ -85,7 +85,7 @@ export const AppSidebar = () => {
 
       <nav
         className={`app-sidebar app-sidebar-drawer ${isOpen ? 'app-sidebar-drawer-open' : ''}`}
-        aria-label="ניווט ראשי"
+        aria-label={t(T.NAV.SIDEBAR_MAIN_NAV)}
         aria-hidden={!isOpen}
       >
         {navContent}

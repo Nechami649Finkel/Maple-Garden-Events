@@ -14,17 +14,17 @@
 
 .title {
   margin: 0;
-  font-size: var(--maple-text-xl);
+  font-size: var(--brand-text-xl);
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
   padding-bottom: 12px;
-  border-bottom: 2px solid var(--maple-gold-light);
+  border-bottom: 2px solid var(--brand-gold-light);
 }
 
 .subtitle {
   margin: 8px 0 0;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-muted);
 }
 
 .actions {
@@ -41,7 +41,7 @@
   }
 
   .title {
-    font-size: var(--maple-text-lg);
+    font-size: var(--brand-text-lg);
   }
 
   .actions {

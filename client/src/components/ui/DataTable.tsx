@@ -1,3 +1,4 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './DataTable.module.css';
 
 export interface DataTableColumn<T> {
@@ -29,10 +30,13 @@ export function DataTable<T>({
   sortKey,
   sortDir,
   onSort,
-  emptyMessage = 'אין נתונים להצגה',
+  emptyMessage,
 }: DataTableProps<T>) {
+  const { t, T } = useTranslation();
+  const resolvedEmpty = emptyMessage ?? t(T.UI.EMPTY_TABLE);
+
   if (data.length === 0) {
-    return <p className={styles.empty}>{emptyMessage}</p>;
+    return <p className={styles.empty}>{resolvedEmpty}</p>;
   }
 
   return (

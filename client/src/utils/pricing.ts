@@ -1,15 +1,15 @@
-/** מחירון שדרוגים — מקור אמת: SystemSettings ב-DB */
+/** Upgrade pricing — source of truth: SystemSettings in DB */
 
-export const UPGRADE_LABELS: Record<string, string> = {
-  baseDesign: 'עיצוב בסיסי',
-  reception: 'קבלת פנים',
-  separateReception: 'קבלת פנים נפרד',
-  lighting: 'תאורה',
-  amplification: 'הגברה',
-  screens: 'מסכים',
-  fireworks: 'זיקוקים',
-  extraSecurity: 'מאבטח נוסף',
-};
+import {
+  UPGRADE_I18N_KEYS,
+  SYSTEM_PRICE_FIELD_DEFS,
+  SETTINGS_TO_UPGRADE,
+  type SystemPriceFieldDef,
+} from '@shared/i18n/pricingLookups';
+import type { TranslationKey } from '@shared/i18n';
+
+export { UPGRADE_I18N_KEYS, SETTINGS_TO_UPGRADE };
+export type { SystemPriceFieldDef as SystemPriceField };
 
 export const UPGRADE_DISPLAY_ORDER = [
   'baseDesign',
@@ -45,51 +45,9 @@ export const DEFAULT_UPGRADES_PRICING: Record<string, number> = {
   fireworks: 700,
 };
 
-/** שדות מחיר ב-SystemSettings — לתצוגה במסך הגדרות */
-export interface SystemPriceField {
-  field: string;
-  label: string;
-  hint?: string;
-  suffix?: string;
-  group: 'system' | 'upgrades';
-  /** פריטי ליבה שלא ניתן להסיר מהמחירון */
-  required?: boolean;
-}
-
 export const NON_REMOVABLE_PRICE_FIELDS = new Set(['vatRate', 'basePricePerPortion']);
 
-export const SYSTEM_PRICE_FIELDS: SystemPriceField[] = [
-  { field: 'vatRate', label: 'מע"מ', suffix: '%', group: 'system', required: true },
-  { field: 'basePricePerPortion', label: 'מחיר בסיס למנה', suffix: '₪', group: 'system', required: true },
-  {
-    field: 'barPortionPrice',
-    label: 'עלות מנת בר',
-    suffix: '₪',
-    group: 'system',
-    hint: 'מינימום מנות בטופס הפקה ובחוזה',
-  },
-  { field: 'staffPortionPrice', label: 'מנה לאיש צוות', suffix: '₪', group: 'system' },
-  { field: 'akumFee', label: 'אקו"ם (דמי רישום)', suffix: '₪', group: 'system' },
-  { field: 'designBasePrice', label: UPGRADE_LABELS.baseDesign, suffix: '₪', group: 'upgrades' },
-  { field: 'receptionPrice', label: UPGRADE_LABELS.reception, suffix: '₪', group: 'upgrades' },
-  { field: 'separateReceptionPrice', label: UPGRADE_LABELS.separateReception, suffix: '₪', group: 'upgrades' },
-  { field: 'lightingPrice', label: UPGRADE_LABELS.lighting, suffix: '₪', group: 'upgrades' },
-  { field: 'soundSystemPrice', label: UPGRADE_LABELS.amplification, suffix: '₪', group: 'upgrades' },
-  { field: 'screensPrice', label: UPGRADE_LABELS.screens, suffix: '₪', group: 'upgrades' },
-  { field: 'fireworksPrice', label: UPGRADE_LABELS.fireworks, suffix: '₪', group: 'upgrades' },
-  { field: 'extraSecurityPrice', label: UPGRADE_LABELS.extraSecurity, suffix: '₪', group: 'upgrades' },
-];
-
-export const SETTINGS_TO_UPGRADE: Record<UpgradeKey, string> = {
-  baseDesign: 'designBasePrice',
-  amplification: 'soundSystemPrice',
-  lighting: 'lightingPrice',
-  screens: 'screensPrice',
-  reception: 'receptionPrice',
-  separateReception: 'separateReceptionPrice',
-  extraSecurity: 'extraSecurityPrice',
-  fireworks: 'fireworksPrice',
-};
+export const SYSTEM_PRICE_FIELDS = SYSTEM_PRICE_FIELD_DEFS;
 
 export function parseHiddenPriceFields(settings?: Record<string, unknown> | null): string[] {
   const raw = settings?.hiddenPriceFields;
@@ -108,16 +66,16 @@ export function isPriceFieldHidden(
 
 export function getVisibleSystemPriceFields(
   settings?: Record<string, unknown> | null,
-): SystemPriceField[] {
+): SystemPriceFieldDef[] {
   const hidden = new Set(parseHiddenPriceFields(settings));
-  return SYSTEM_PRICE_FIELDS.filter((item) => !hidden.has(item.field));
+  return SYSTEM_PRICE_FIELD_DEFS.filter((item) => !hidden.has(item.field));
 }
 
 export function getHiddenSystemPriceFields(
   settings?: Record<string, unknown> | null,
-): SystemPriceField[] {
+): SystemPriceFieldDef[] {
   const hidden = new Set(parseHiddenPriceFields(settings));
-  return SYSTEM_PRICE_FIELDS.filter((item) => hidden.has(item.field));
+  return SYSTEM_PRICE_FIELD_DEFS.filter((item) => hidden.has(item.field));
 }
 
 export function filterUpgradeDisplayOrder(
@@ -151,4 +109,11 @@ export function getSettingNumber(
 ): number {
   const num = Number(settings?.[field]);
   return Number.isFinite(num) ? num : fallback;
+}
+
+export function getPriceFieldLabel(
+  translate: (key: TranslationKey) => string,
+  field: SystemPriceFieldDef,
+): string {
+  return translate(field.labelKey);
 }

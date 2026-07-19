@@ -1,11 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCalendarDatesQuery } from '../../hooks/queries';
 import { useNavigate } from 'react-router-dom';
 import './Calendar.css';
 import { EventPopup } from '../EventPopup/EventPopup';
-import { getSlotColor, SLOT_COLORS, SLOT_LABELS, TIME_SLOTS, getTakenSlots, getBookableSlotsForDate, hasOptionOnDay, normalizeTimeSlot, type TimeSlot } from '../../utils/timeSlot';
+import {
+  getSlotColor,
+  SLOT_COLORS,
+  TIME_SLOTS,
+  getTakenSlots,
+  getBookableSlotsForDate,
+  hasOptionOnDay,
+  normalizeTimeSlot,
+  formatSlotLabel,
+  type TimeSlot,
+} from '../../utils/timeSlot';
 import { isEventLive } from '../../utils/eventStart';
 import { type CalendarBookingApi, type CalendarDayApi } from '../../utils/optionDateApi';
+import { useTranslation } from '../../i18n/useTranslation';
+import { DEFAULT_EVENT_TYPE, translateByValue, EVENT_TYPE_KEY_BY_VALUE } from '@shared/i18n/bookingLookups';
 import liveStyles from '../LiveEvent/LiveEvent.module.css';
 
 type DayData = CalendarDayApi & {
@@ -19,9 +31,8 @@ interface CalendarProps {
   onDateSelect: (day: DayData) => void;
 }
 
-const MONTH_NAMES = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const DOW_TO_COL: Record<number, number> = { 0:7, 1:6, 2:5, 3:4, 4:3, 5:2, 6:1 };
-const COL_HEADERS = ['שבת','שישי','חמישי','רביעי','שלישי','שני','ראשון'];
+const COL_HEADER_INDEX_KEYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 /** DOM order top→bottom so flex-end stacks: evening on top, morning at bottom */
 const CALENDAR_SLOT_STACK_ORDER: TimeSlot[] = ['evening', 'noon', 'morning'];
@@ -42,6 +53,9 @@ const formatDateLocal = (date: Date): string => {
 };
 
 export const Calendar = ({ onDateSelect }: CalendarProps) => {
+  const { t, T } = useTranslation();
+  const navigate = useNavigate();
+
   const getEventTitle = (booking: CalendarBookingApi) => {
   // 1. מנקים רווחים נסתרים מסוג האירוע כדי שהקוד יזהה אותו בוודאות
   const type = (booking.eventType || '').trim(); 
@@ -63,18 +77,20 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
 
   // 4. תצוגה סופית על הלוח (בלי מקף מיותר בחתונות)
   if (type === 'חתונה' || type === 'אירוסין') {
-    return `${type} ${namesDisplay}`;
+    return `${translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, type)} ${namesDisplay}`;
   }
-  
-  return `${type} - משפחת ${namesDisplay}`;
-};
- const navigate = useNavigate();
+
+  return t(T.CALENDAR.EVENT_LABEL_FAMILY, {
+    type: translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, type),
+    namesDisplay,
+  });
+  };
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<(DayData & { col?: number; row?: number }) | null>(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
   const [selectedDateForAction, setSelectedDateForAction] = useState<string | null>(null);
-  const [eventTypeFilter, setEventTypeFilter] = useState('חתונה');
+  const [eventTypeFilter, setEventTypeFilter] = useState(DEFAULT_EVENT_TYPE);
   const [, setLiveTick] = useState(0);
 
   useEffect(() => {
@@ -142,18 +158,18 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
 
   const handleOverrideOptionBook = (day: DayData) => {
     if (!day.id) {
-      alert('לא ניתן לשחרר את האופציה — נסי לרענן את הלוח שנה.');
+      alert(t(T.CALENDAR.RELEASE_OPTION_ERROR));
       return;
     }
     const optionBooking = day.bookings?.find((b: { isOption?: boolean }) => b.isOption) || day.bookings?.[0];
-    const clientName = optionBooking?.clientAFullName || 'לקוח';
+    const clientName = optionBooking?.clientAFullName || t(T.UI.CLIENT_FALLBACK);
     const isShabbat = new Date(`${day.date}T12:00:00`).getDay() === 6;
     const bookable = getBookableSlotsForDate(day.date, day.bookings || []);
     const shabbatNote = isShabbat && bookable.length === 0
-      ? '\n\nשימי לב: בשבת ניתן לקבוע אירוע בערב בלבד.'
+      ? `\n\n${t(T.CALENDAR.SHABBAT_EVENING_NOTE)}`
       : '';
     const confirmed = window.confirm(
-      `קיימת אופציה עבור ${clientName} בתאריך זה.\n\nהאם את בטוחה שברצונך לשחרר את האופציה ולקבוע אירוע אחר?${shabbatNote}`,
+      t(T.CALENDAR.RELEASE_OPTION_CONFIRM, { clientName, shabbatNote }),
     );
     if (!confirmed) return;
 
@@ -176,16 +192,16 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
       <div className="calendar-container">
       
       <div className="calendar-toolbar">
-        <span className="calendar-toolbar-label">בדוק זמינות עבור:</span>
+        <span className="calendar-toolbar-label">{t(T.CALENDAR.AVAILABILITY_LABEL)}</span>
         <select className="calendar-toolbar-select" value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}>
-          <option value="חתונה">חתונה</option>
-          <option value="אירוע אחר">אירוע אחר</option>
+          <option value="חתונה">{t(T.CALENDAR.FILTER_WEDDING)}</option>
+          <option value="אירוע אחר">{t(T.CALENDAR.FILTER_OTHER)}</option>
         </select>
         <div className="calendar-legend">
           {TIME_SLOTS.map((slot) => (
             <span key={slot} className="calendar-legend-item">
               <span className="calendar-legend-swatch" style={{ backgroundColor: SLOT_COLORS[slot] }} />
-              {SLOT_LABELS[slot]}
+              {formatSlotLabel(t, slot)}
             </span>
           ))}
         </div>
@@ -193,28 +209,30 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
 
       <div className="calendar-header-nav">
         <div className="year-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn year-btn" onClick={nextYear} aria-label="שנה הבאה">»</button>
+          <button className="nav-btn year-btn" onClick={nextYear} aria-label={t(T.CALENDAR.NEXT_YEAR)}>»</button>
           <span className="year-display">{year}</span>
-          <button className="nav-btn year-btn" onClick={prevYear} aria-label="שנה קודמת">«</button>
+          <button className="nav-btn year-btn" onClick={prevYear} aria-label={t(T.CALENDAR.PREV_YEAR)}>«</button>
         </div>
 
         <div className="calendar-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn" onClick={nextMonth} aria-label="חודש הבא">›</button>
+          <button className="nav-btn" onClick={nextMonth} aria-label={t(T.CALENDAR.NEXT_MONTH)}>›</button>
           <div className="months-bar">
-            {MONTH_NAMES.map((name, i) => (
-              <div key={name} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{name}</div>
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
+              <div key={i} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{t(T.CALENDAR.MONTHS[i as keyof typeof T.CALENDAR.MONTHS])}</div>
             ))}
           </div>
-          <button className="nav-btn" onClick={prevMonth} aria-label="חודש קודם">‹</button>
+          <button className="nav-btn" onClick={prevMonth} aria-label={t(T.CALENDAR.PREV_MONTH)}>‹</button>
         </div>
       </div>
 
-      {loading ? <div className="calendar-loading">טוען נתונים...</div> : isError ? (
-        <div className="calendar-loading">שגיאה בטעינת לוח השנה — ודאי שהשרת רץ על פורט 5000</div>
+      {loading ? <div className="calendar-loading">{t(T.UI.LOADING_DATA)}</div> : isError ? (
+        <div className="calendar-loading">{t(T.CALENDAR.LOAD_ERROR)}</div>
       ) : (
         <div className="calendar-grid-wrapper">
           <div className="calendar-weekdays-bar">
-            {COL_HEADERS.map((d) => <div key={d} className="week-day-label">{d}</div>)}
+            {COL_HEADER_INDEX_KEYS.map((idx) => (
+              <div key={idx} className="week-day-label">{t(T.CALENDAR.COL_HEADERS[idx])}</div>
+            ))}
           </div>
           <div
             className="calendar-grid calendar-grid-uniform"
@@ -240,8 +258,14 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
               const isCellDisabled =
                 !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || (isPast && !canViewPastEvents);
               const ariaLabel = day.isCurrentMonth
-                ? `${dayNum} ${day.hebrewDate || ''}, ${bookingCount} אירועים${day.reason ? `, ${day.reason}` : ''}${canViewPastEvents ? ', לחצי לצפייה בפרטים' : ''}`
-                : `${dayNum}`;
+                ? t(T.CALENDAR.CELL_ARIA, {
+                    day: dayNum,
+                    hebrewDate: day.hebrewDate || '',
+                    count: bookingCount,
+                    reason: day.reason || '',
+                    viewHint: canViewPastEvents ? t(T.CALENDAR.VIEW_CHECK_IN) : '',
+                  })
+                : String(dayNum);
 
               return (
                 <button
@@ -264,7 +288,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                   <div className="cell-header-row">
                       <span className="gregorian-num">
                         {dayNum}
-                        {isToday && <span className="today-badge">היום</span>}
+                        {isToday && <span className="today-badge">{t(T.CALENDAR.TODAY)}</span>}
                       </span>
                       {day.isCurrentMonth && day.candleTime && <span className="candle-time">{day.candleTime}</span>}
                       <span className="hebrew-text">{day.isCurrentMonth ? day.hebrewDate : ''}</span>
@@ -306,7 +330,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                             setSelectedDay(day);
                           }}
                         >
-                          {isLive && <span className={liveStyles.liveBadge}>חי</span>}
+                          {isLive && <span className={liveStyles.liveBadge}>{t(T.CALENDAR.LIVE_BADGE)}</span>}
                           {getEventTitle(b)}
                         </div>
                       );
@@ -350,11 +374,11 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
         <div className="side-panel-overlay" onClick={() => setIsActionModalOpen(false)}>
           <div className="side-panel" onClick={e => e.stopPropagation()}>
             <div className="side-panel-header">
-              <span>תאריך: {selectedDateForAction?.split('-').reverse().join('-')}</span>
+              <span>{t(T.CALENDAR.SELECTED_DATE, { date: selectedDateForAction?.split('-').reverse().join('-') ?? '' })}</span>
               <button className="side-panel-close" onClick={() => setIsActionModalOpen(false)}>✕</button>
             </div>
             <div className="side-panel-body">
-              <button className="book-btn" onClick={handleBookEvent}>סגירת אירוע</button>
+              <button className="book-btn" onClick={handleBookEvent}>{t(T.CALENDAR.BOOK_EVENT)}</button>
               <button
                 className="option-btn"
                 onClick={() => {
@@ -371,7 +395,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                   });
                 }}
               >
-                פתיחת אופציה
+                {t(T.CALENDAR.OPEN_OPTION)}
               </button>
             </div>
           </div>

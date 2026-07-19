@@ -6,6 +6,13 @@ import { HmacVerificationError } from '../utils/hmac';
 import { BookingAccessDeniedError } from '../utils/bookingAccess';
 import { ForbiddenError, NotFoundError } from '../utils/httpErrors';
 import { UploadValidationError } from './uploadMiddleware';
+import {
+  DEFAULT_LOCALE,
+  resolveLocaleFromRequest,
+  resolveServerMessage,
+  T,
+  type ServerError,
+} from '../i18n/getServerTranslation';
 
 export const catchAsync = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -29,9 +36,10 @@ function resolveMulterError(err: multer.MulterError): { statusCode: number; mess
   }
 }
 
-export const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (err: ServerError & { code?: string }, req: Request, res: Response, _next: NextFunction) => {
+  const locale = resolveLocaleFromRequest(req, DEFAULT_LOCALE);
   let statusCode = 500;
-  let message = 'שגיאת שרת פנימית';
+  let message: string = T.SERVER.ERROR.INTERNAL;
 
   if (err instanceof multer.MulterError) {
     ({ statusCode, message } = resolveMulterError(err));
@@ -53,6 +61,8 @@ export const errorHandler = (err: any, req: Request, res: Response, _next: NextF
   } else if (err?.message) {
     message = err.message;
   }
+
+  message = resolveServerMessage(locale, message, err?.i18nParams);
 
   logger.error('Unhandled error', {
     message,

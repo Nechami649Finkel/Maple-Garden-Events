@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { PaymentTermsTemplate } from '../../utils/paymentTerms';
-import { DEFAULT_PAYMENT_TEMPLATES } from '../../utils/paymentTerms';
+import {
+  DEFAULT_PAYMENT_TEMPLATES,
+  getLocalizedPaymentTemplateDisplay,
+} from '../../utils/paymentTerms';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface PaymentTemplatesSettingsProps {
   templates: PaymentTermsTemplate[];
@@ -8,11 +12,10 @@ interface PaymentTemplatesSettingsProps {
   onSave: (templates: PaymentTermsTemplate[], defaultTemplateId: string) => Promise<void>;
 }
 
-const emptyTemplate = (): PaymentTermsTemplate => ({
+const emptyTemplate = (bodyTemplate: string): PaymentTermsTemplate => ({
   id: `custom-${Date.now()}`,
   name: '',
-  bodyTemplate:
-    'תשלום עבור האירוע{{TOTAL_PART}} יבוצע כדלקמן: {{PERCENT_1}}%{{AMOUNT_1_PART}} לא יאוחר מ-7 ימים לפני האירוע{{DUE_1}}, ויתרת {{PERCENT_2}}%{{AMOUNT_2_PART}} לא יאוחר מ-24 שעות לאחר האירוע.',
+  bodyTemplate,
   installments: [
     { percent: 50, dueType: 'WEEK_BEFORE_EVENT' },
     { percent: 50, dueType: 'HOURS_24_AFTER_EVENT' },
@@ -24,6 +27,7 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
   defaultTemplateId: initialDefaultId,
   onSave,
 }) => {
+  const { t, T } = useTranslation();
   const [templates, setTemplates] = useState<PaymentTermsTemplate[]>(
     initialTemplates.length ? initialTemplates : DEFAULT_PAYMENT_TEMPLATES,
   );
@@ -31,29 +35,32 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
   const [draft, setDraft] = useState<PaymentTermsTemplate | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const startAdd = () => setDraft(emptyTemplate());
+  const displayTemplate = (template: PaymentTermsTemplate) =>
+    getLocalizedPaymentTemplateDisplay(t, template);
+
+  const startAdd = () => setDraft(emptyTemplate(t(T.PAYMENT_TERMS.SPLIT_BODY)));
 
   const saveAll = async () => {
     setSaving(true);
     try {
       let next = templates;
       if (draft?.name.trim()) {
-        next = [...templates.filter((t) => t.id !== draft.id), draft];
+        next = [...templates.filter((item) => item.id !== draft.id), draft];
         setTemplates(next);
         setDraft(null);
       }
       await onSave(next, defaultTemplateId);
-      alert('תבניות תשלום נשמרו בהצלחה');
+      alert(t(T.SETTINGS.TEMPLATES_SAVED));
     } catch {
-      alert('שגיאה בשמירת תבניות');
+      alert(t(T.SETTINGS.TEMPLATES_SAVE_ERROR));
     } finally {
       setSaving(false);
     }
   };
 
   const removeTemplate = (id: string) => {
-    if (!window.confirm('להסיר תבנית זו?')) return;
-    const next = templates.filter((t) => t.id !== id);
+    if (!window.confirm(t(T.SETTINGS.TEMPLATE_REMOVE_CONFIRM))) return;
+    const next = templates.filter((item) => item.id !== id);
     setTemplates(next.length ? next : DEFAULT_PAYMENT_TEMPLATES);
     if (defaultTemplateId === id) {
       setDefaultTemplateId(next[0]?.id || DEFAULT_PAYMENT_TEMPLATES[0].id);
@@ -62,75 +69,77 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
 
   return (
     <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
-      <h2>תבניות תשלום לחוזה</h2>
+      <h2>{t(T.SETTINGS.PAYMENT_TEMPLATES_TITLE)}</h2>
       <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
-        התבניות יופיעו בטופס הזמנה. המנהל בוחר תבנית לכל אירוע ויכול לערוך נוסח ייחודי לחתונה ספציפית.
-        השתמשי ב-placeholders: {'{{TOTAL_PART}}'}, {'{{PERCENT_1}}'}, {'{{AMOUNT_1_PART}}'}, {'{{DUE_1}}'}, {'{{PERCENT_2}}'}, {'{{AMOUNT_2_PART}}'}.
+        {t(T.SETTINGS.PAYMENT_TEMPLATES_HINT)}
       </p>
 
       <div className="form-group">
-        <label>ברירת מחדל בטופס הזמנה</label>
+        <label>{t(T.SETTINGS.DEFAULT_TEMPLATE)}</label>
         <select
           value={defaultTemplateId}
           onChange={(e) => setDefaultTemplateId(e.target.value)}
           style={{ width: '100%', maxWidth: '420px', padding: '8px' }}
         >
-          {templates.map((t) => (
-            <option key={t.id} value={t.id}>{t.name}</option>
+          {templates.map((item) => (
+            <option key={item.id} value={item.id}>{displayTemplate(item).name}</option>
           ))}
         </select>
       </div>
 
       <ul style={{ listStyle: 'none', padding: 0, margin: '16px 0' }}>
-        {templates.map((t) => (
-          <li
-            key={t.id}
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              gap: '12px',
-              padding: '12px',
-              borderBottom: '1px solid #eee',
-            }}
-          >
-            <div>
-              <strong>{t.name}</strong>
-              <div style={{ fontSize: '13px', color: '#555', marginTop: '6px', whiteSpace: 'pre-wrap' }}>
-                {t.bodyTemplate}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => removeTemplate(t.id)}
+        {templates.map((item) => {
+          const shown = displayTemplate(item);
+          return (
+            <li
+              key={item.id}
               style={{
-                background: '#fee2e2',
-                color: '#b91c1c',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '6px 12px',
-                cursor: 'pointer',
-                flexShrink: 0,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: '12px',
+                padding: '12px',
+                borderBottom: '1px solid #eee',
               }}
             >
-              הסר
-            </button>
-          </li>
-        ))}
+              <div>
+                <strong>{shown.name}</strong>
+                <div style={{ fontSize: '13px', color: '#555', marginTop: '6px', whiteSpace: 'pre-wrap' }}>
+                  {shown.bodyTemplate}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => removeTemplate(item.id)}
+                style={{
+                  background: '#fee2e2',
+                  color: '#b91c1c',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                {t(T.UI.REMOVE)}
+              </button>
+            </li>
+          );
+        })}
       </ul>
 
       {draft && (
         <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
           <div className="form-group">
-            <label>שם תבנית</label>
+            <label>{t(T.SETTINGS.TEMPLATE_NAME)}</label>
             <input
               value={draft.name}
               onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-              placeholder="לדוגמה: 60/40 לחתונות קיץ"
+              placeholder={t(T.SETTINGS.TEMPLATE_NAME_PLACEHOLDER)}
             />
           </div>
           <div className="form-group">
-            <label>נוסח לחוזה</label>
+            <label>{t(T.SETTINGS.TEMPLATE_BODY)}</label>
             <textarea
               rows={4}
               value={draft.bodyTemplate}
@@ -140,21 +149,21 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button type="button" className="save-btn" onClick={() => {
-              if (!draft.name.trim()) return alert('יש להזין שם');
-              setTemplates((prev) => [...prev.filter((t) => t.id !== draft.id), draft]);
+              if (!draft.name.trim()) return alert(t(T.SETTINGS.TEMPLATE_NAME_REQUIRED));
+              setTemplates((prev) => [...prev.filter((item) => item.id !== draft.id), draft]);
               setDraft(null);
             }}>
-              הוסף לרשימה
+              {t(T.SETTINGS.ADD_TEMPLATE)}
             </button>
-            <button type="button" onClick={() => setDraft(null)}>ביטול</button>
+            <button type="button" onClick={() => setDraft(null)}>{t(T.UI.CANCEL)}</button>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-        <button type="button" className="add-btn" onClick={startAdd}>+ תבנית חדשה</button>
+        <button type="button" className="add-btn" onClick={startAdd}>+ {t(T.SETTINGS.ADD_TEMPLATE)}</button>
         <button type="button" className="save-btn" disabled={saving} onClick={saveAll}>
-          {saving ? 'שומר...' : 'שמור תבניות תשלום'}
+          {saving ? t(T.SETTINGS.SAVING) : t(T.SETTINGS.SAVE_TEMPLATES)}
         </button>
       </div>
     </div>

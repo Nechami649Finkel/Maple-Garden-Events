@@ -8,9 +8,9 @@
   width: 100%;
   min-height: 0;
   height: 100%;
-  background: var(--maple-bg);
-  font-family: var(--maple-font);
-  padding: 0 var(--maple-page-padding) var(--maple-page-padding);
+  background: var(--brand-bg);
+  font-family: var(--brand-font);
+  padding: 0 var(--brand-page-padding) var(--brand-page-padding);
   box-sizing: border-box;
 }
 
@@ -25,15 +25,15 @@
 }
 
 .calendar-toolbar {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 12px 18px;
   display: flex;
   gap: 14px;
   align-items: center;
   direction: rtl;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .calendar-toolbar,
@@ -43,7 +43,7 @@
 }
 
 .calendar-toolbar-label {
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-weight: 600;
   font-size: 1.05rem;
   white-space: nowrap;
@@ -51,18 +51,18 @@
 
 .calendar-toolbar-select {
   padding: 10px 16px;
-  border-radius: var(--maple-radius-sm);
-  border: 1px solid var(--maple-border-strong);
+  border-radius: var(--brand-radius-sm);
+  border: 1px solid var(--brand-border-strong);
   font-size: 1.05rem;
-  background: var(--maple-surface);
-  color: var(--maple-text);
+  background: var(--brand-surface);
+  color: var(--brand-text);
   cursor: pointer;
   outline: none;
   min-width: 140px;
 }
 
 .calendar-toolbar-select:focus {
-  border-color: var(--maple-gold);
+  border-color: var(--brand-gold);
 }
 
 .calendar-legend {
@@ -79,15 +79,15 @@
   gap: 6px;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .calendar-legend-swatch {
   width: 14px;
   height: 14px;
-  border-radius: var(--maple-radius-full);
+  border-radius: var(--brand-radius-full);
   flex-shrink: 0;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 /* =========================================
@@ -115,30 +115,30 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: 6px;
-  border-radius: var(--maple-radius);
-  border: 1px solid var(--maple-border);
-  box-shadow: var(--maple-shadow-sm);
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-border);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .nav-btn {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 14px;
   font-size: 1.15rem;
   cursor: pointer;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   flex-shrink: 0;
-  transition: all var(--maple-transition);
+  transition: all var(--brand-transition);
   line-height: 1;
 }
 
 .nav-btn:hover {
-  background: var(--maple-gold-light);
-  color: var(--maple-gold-deep);
-  border-color: var(--maple-gold);
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
+  border-color: var(--brand-gold);
 }
 
 .year-btn { font-weight: 700; }
@@ -146,9 +146,9 @@
 .months-bar {
   display: flex;
   flex: 1;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   overflow: hidden;
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   gap: 2px;
   padding: 2px;
 }
@@ -159,29 +159,29 @@
   padding: 11px 4px;
   font-weight: 600;
   font-size: 0.95rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   cursor: pointer;
-  transition: all var(--maple-transition);
+  transition: all var(--brand-transition);
   border-radius: 4px;
   white-space: nowrap;
 }
 
 .month-tab:hover {
-  background: var(--maple-surface);
-  color: var(--maple-text);
+  background: var(--brand-surface);
+  color: var(--brand-text);
 }
 
 .month-tab.active {
-  background: var(--maple-tab-active-bg);
+  background: var(--brand-tab-active-bg);
   color: #fff;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .year-display {
   text-align: center;
   font-size: clamp(1.35rem, 2.2vh, 1.75rem);
   font-weight: 700;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   letter-spacing: 0.02em;
   margin-bottom: clamp(4px, 0.8vh, 10px);
 }
@@ -190,11 +190,11 @@
    גריד
 ========================================= */
 .calendar-grid-wrapper {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-lg);
   padding: clamp(16px, 2vh, 24px);
-  box-shadow: var(--maple-shadow);
+  box-shadow: var(--brand-shadow);
   width: 100%;
   flex: 1;
   min-height: 0;
@@ -224,8 +224,8 @@
   flex: 1;
   min-height: 0;
   align-content: stretch;
-  background: var(--maple-border);
-  border-radius: var(--maple-radius);
+  background: var(--brand-border);
+  border-radius: var(--brand-radius);
   overflow: hidden;
 }
 
@@ -237,7 +237,7 @@
 .week-day-label {
   text-align: center;
   font-weight: 700;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   padding: clamp(10px, 1.4vh, 16px) 6px 0;
   font-size: clamp(0.88rem, 1.2vh, 1.05rem);
   background: #fff;
@@ -248,7 +248,7 @@
    תא יום
 ========================================= */
 .calendar-cell {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: clamp(6px, 0.9vh, 10px) clamp(8px, 0.9vw, 12px);
   display: flex;
   flex-direction: column;
@@ -257,10 +257,10 @@
   border: none;
   border-radius: 0;
   cursor: pointer;
-  transition: box-shadow var(--maple-transition), background var(--maple-transition);
+  transition: box-shadow var(--brand-transition), background var(--brand-transition);
   direction: rtl;
   overflow: hidden;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
   text-align: inherit;
   width: 100%;
   min-height: clamp(72px, 10vh, 120px);
@@ -268,7 +268,7 @@
 
 .today-badge {
   font-size: 0.65rem;
-  background: var(--maple-gold);
+  background: var(--brand-gold);
   color: #fff;
   padding: 2px 6px;
   border-radius: 4px;
@@ -278,8 +278,8 @@
 }
 
 .calendar-cell:hover:not(.out-of-month):not(.status-blocked):not(.is-past) {
-  background: var(--maple-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--maple-gold);
+  background: var(--brand-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--brand-gold);
 }
 
 .calendar-cell:disabled {
@@ -287,22 +287,22 @@
 }
 
 .calendar-cell:focus-visible {
-  outline: var(--maple-focus-width) solid var(--maple-focus-ring);
+  outline: var(--brand-focus-width) solid var(--brand-focus-ring);
   outline-offset: -2px;
   z-index: 1;
 }
 
 .calendar-cell.out-of-month {
   background: transparent;
-  border: 1px dashed var(--maple-border);
+  border: 1px dashed var(--brand-border);
   opacity: 0.35;
   cursor: default;
   box-shadow: none;
 }
 
 .calendar-cell.selected-for-option {
-  border: 2px solid var(--maple-green) !important;
-  background: var(--maple-green-light) !important;
+  border: 2px solid var(--brand-green) !important;
+  background: var(--brand-green-light) !important;
   box-shadow: 0 0 0 3px rgba(196, 160, 82, 0.18);
 }
 
@@ -322,12 +322,12 @@
   flex-wrap: wrap;
   font-size: clamp(0.92rem, 1.35vh, 1.15rem);
   font-weight: 800;
-  color: var(--maple-text);
+  color: var(--brand-text);
   line-height: 1.1;
 }
 
 .hebrew-text {
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   font-weight: 500;
   font-size: clamp(0.68rem, 0.95vh, 0.82rem);
   line-height: 1.2;
@@ -336,10 +336,10 @@
 
 .candle-time {
   font-size: 0.65rem;
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   padding: 1px 5px;
   border-radius: 3px;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   font-weight: 600;
 }
 
@@ -434,15 +434,15 @@
    היום / עבר
 ========================================= */
 .is-today {
-  box-shadow: inset 0 0 0 2px var(--maple-gold) !important;
-  background: var(--maple-gold-light) !important;
+  box-shadow: inset 0 0 0 2px var(--brand-gold) !important;
+  background: var(--brand-gold-light) !important;
 }
 
 .is-past {
   opacity: 0.45 !important;
   cursor: not-allowed !important;
   filter: none;
-  background: var(--maple-surface-raised) !important;
+  background: var(--brand-surface-raised) !important;
 }
 
 .is-past.is-past-has-events {
@@ -454,30 +454,30 @@
 }
 
 .is-past.is-past-has-events:hover {
-  box-shadow: inset 0 0 0 1px var(--maple-gold) !important;
+  box-shadow: inset 0 0 0 1px var(--brand-gold) !important;
 }
 
 /* =========================================
    באנר אופציה + פאנל
 ========================================= */
 .option-mode-banner {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-inline-end: 4px solid var(--maple-gold);
-  border-radius: var(--maple-radius);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-inline-end: 4px solid var(--brand-gold);
+  border-radius: var(--brand-radius);
   padding: 14px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .option-mode-banner p {
   margin: 0;
   font-weight: 600;
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-size: 0.95rem;
 }
 
@@ -487,19 +487,19 @@
 }
 
 .confirm-options-btn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: white;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 22px;
   font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .confirm-options-btn:hover:not(:disabled) {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
 }
 
 .confirm-options-btn:disabled {
@@ -508,36 +508,36 @@
 }
 
 .cancel-btn {
-  background: var(--maple-surface);
-  color: var(--maple-text-muted);
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 18px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .cancel-btn:hover {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
 }
 
 .side-panel-overlay {
   position: fixed;
   inset: 0;
   background: rgba(26, 32, 44, 0.45);
-  z-index: var(--maple-z-panel);
+  z-index: var(--brand-z-panel);
   display: flex;
   justify-content: flex-start;
   direction: rtl;
 }
 
 .side-panel {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   width: 300px;
   max-width: 90vw;
   height: 100%;
-  box-shadow: var(--maple-shadow-lg);
+  box-shadow: var(--brand-shadow-lg);
   display: flex;
   flex-direction: column;
 }
@@ -547,20 +547,20 @@
   justify-content: space-between;
   align-items: center;
   padding: 18px 20px;
-  border-bottom: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--brand-border);
   font-weight: 600;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .side-panel-close {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   font-size: 1rem;
   cursor: pointer;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 .side-panel-body {
@@ -571,37 +571,37 @@
 }
 
 .book-btn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: white;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 14px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
-.book-btn:hover { background: var(--maple-green-dark); }
+.book-btn:hover { background: var(--brand-green-dark); }
 
 .option-btn {
-  background: var(--maple-surface);
-  color: var(--maple-green-dark);
-  border: 2px dashed var(--maple-green);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  color: var(--brand-green-dark);
+  border: 2px dashed var(--brand-green);
+  border-radius: var(--brand-radius-sm);
   padding: 14px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
-.option-btn:hover { background: var(--maple-green-light); }
+.option-btn:hover { background: var(--brand-green-light); }
 
 .calendar-loading {
   text-align: center;
   padding: 48px 24px;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   font-size: 1rem;
   display: flex;
   flex-direction: column;
@@ -613,8 +613,8 @@
   content: '';
   width: 36px;
   height: 36px;
-  border: 3px solid var(--maple-green-muted);
-  border-top-color: var(--maple-green-dark);
+  border: 3px solid var(--brand-green-muted);
+  border-top-color: var(--brand-green-dark);
   border-radius: 50%;
   animation: calendarSpin 0.8s linear infinite;
 }
@@ -733,7 +733,7 @@
 
 @media (min-width: 1400px) {
   .app-layout-viewport-fill .calendar-page-layout {
-    padding: 0 var(--maple-page-padding) var(--maple-page-padding);
+    padding: 0 var(--brand-page-padding) var(--brand-page-padding);
   }
 
   .calendar-grid-wrapper {

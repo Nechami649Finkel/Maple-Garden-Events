@@ -1,6 +1,14 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNavigationOverride } from '../../context/navigationContext';
+import { useTranslation } from '../../i18n/useTranslation';
+import { formatDate, formatDateTime, formatCurrency } from '@shared/i18n/formatters';
+import {
+  translateByValue,
+  EVENT_TYPE_KEY_BY_VALUE,
+  KASHRUT_KEY_BY_VALUE,
+} from '@shared/i18n/bookingLookups';
+import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';
@@ -133,11 +141,6 @@ const SectionIcon = ({ children }: { children: React.ReactNode }) => (
   <span className="maple-section-icon" aria-hidden="true">{children}</span>
 );
 
-const SEPARATE_MIXED_OPTIONS = [
-  { value: 'separate', label: 'נפרד' },
-  { value: 'mixed', label: 'מעורב' },
-];
-
 export interface EventFormDesignExportConfig {
   booking: Booking;
   formData: EventFormData;
@@ -152,8 +155,20 @@ interface EventFormManagerProps {
 }
 
 const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
+  const { t, T, locale } = useTranslation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+
+  const separateMixedOptions = useMemo(
+    () => [
+      { value: 'separate', label: t(T.EVENT_FORM.SEATING_SEPARATE) },
+      { value: 'mixed', label: t(T.EVENT_FORM.SEATING_MIXED) },
+    ],
+    [t],
+  );
+
+  const formatEventType = (value: string) => translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value);
+  const formatKashrut = (value: string) => translateByValue(t, KASHRUT_KEY_BY_VALUE, value);
   const [selected, setSelected] = useState<Booking | null>(designExport?.booking ?? null);
 
   const { data: bookingsData, isLoading: bookingsLoading } = useBookingsQuery({
@@ -317,7 +332,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const handleMenuSave = (menuSelections: Record<string, string[]>) => {
     setSelectedMenu(menuSelections);
     setIsMenuOpen(false); 
-    alert("התפריט נשמר כחלק מפרטי האירוע!");
+    alert(t(T.EVENT_FORM.MENU_SAVED));
   };
 
   // Fetch server form when a booking is selected; only setState after the async response.
@@ -403,15 +418,15 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       });
       const result = await response.json();
       if (!response.ok || !result.success) {
-        throw new Error(result.error || 'שגיאה בשמירה');
+        throw new Error(result.error || t(T.COMMON.ERRORS.SAVE_FAILED));
       }
       setSavedTables(tables);
       setTableLayoutImageUrl(imageDataUrl);
-      alert('סידור השולחנות נשמר בהצלחה!');
+      alert(t(T.EVENT_FORM.TABLE_LAYOUT_SAVED));
       setIsTableLayoutOpen(false);
     } catch (error) {
       console.error('Table layout save error:', error);
-      alert('שגיאה בשמירת סידור השולחנות');
+      alert(t(T.EVENT_FORM.TABLE_LAYOUT_SAVE_ERROR));
     } finally {
       setTableLayoutSaving(false);
     }
@@ -448,17 +463,17 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const pastForms = searchFilteredForms.filter(isPastForm);
   const displayedForms = showPastEvents ? pastForms : upcomingForms;
 
-  const dateStr = (b: Booking) => b.eventDate?.date ? new Date(b.eventDate.date).toLocaleDateString('he-IL') : '';
+  const dateStr = (b: Booking) => b.eventDate?.date ? formatDate(b.eventDate.date, locale) : '';
 
   const toEventCard = (b: Booking, hasForm: boolean): EventCardData => ({
     id: b.id,
     date: dateStr(b),
     clientName: b.clientAFullName,
     clientNameB: b.clientBFullName,
-    eventType: b.eventType,
+    eventType: formatEventType(b.eventType),
     guestCount: b.guestCount,
     status: hasForm ? 'confirmed' : 'gold',
-    statusLabel: hasForm ? 'טופס קיים' : 'ממתין למילוי',
+    statusLabel: hasForm ? t(T.EVENT_FORM.STATUS_EXISTS) : t(T.EVENT_FORM.STATUS_PENDING),
   });
 
   const handleInputChange = (
@@ -500,7 +515,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       handleInputChange('depositCheckUrl', dataUrl);
       await processCheckImage(dataUrl);
     } catch {
-      alert('שגיאה בטעינת קובץ הצ\'ק');
+      alert(t(T.EVENT_FORM.CHECK_LOAD_ERROR));
     }
   };
 
@@ -512,7 +527,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     } catch (error) {
       console.error('Check OCR failed:', error);
       handleInputChange('depositCheckDetails', { scannedAt: new Date().toISOString() });
-      alert('לא הצלחנו לזהות את כל פרטי הצ\'ק. ניתן למלא אותם ידנית.');
+      alert(t(T.EVENT_FORM.CHECK_PARSE_PARTIAL));
     } finally {
       setCheckScanning(false);
     }
@@ -540,15 +555,15 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     emailError?: string;
   }) => {
     if (result.emailSent) {
-      alert('הטופס נשמר והמייל נשלח בהצלחה!');
+      alert(t(T.EVENT_FORM.SAVED_EMAIL_SENT));
       return;
     }
     if (result.emailSkipped) {
-      alert('הטופס נשמר (מייל כבר נשלח לפני פחות מדקה)');
+      alert(t(T.EVENT_FORM.SAVED_EMAIL_RECENT));
       return;
     }
     if (result.emailError) {
-      alert(`הטופס נשמר, אך המייל לא נשלח: ${result.emailError}`);
+      alert(t(T.EVENT_FORM.SAVED_EMAIL_FAILED, { emailError: result.emailError }));
     }
   };
 
@@ -580,8 +595,18 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Download error:', error);
-      alert('שגיאה בהורדת PDF');
+      alert(t(T.EVENT_FORM.PDF_ERROR));
     }
+  };
+
+  const buildShareMessage = () => {
+    if (!selected) return '';
+    const clientName = `${selected.clientAFullName} ${selected.clientBFullName ? `ו${selected.clientBFullName}` : ''}`;
+    return t(T.EVENT_FORM.SHARE_WHATSAPP_BODY, {
+      clientName,
+      date: dateStr(selected),
+      guestCount: formData.finalGuestCount ?? t(T.EVENT_FORM.NOT_ENTERED),
+    });
   };
 
   const handleDeleteCheckImage = () => {
@@ -622,7 +647,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const handleSaveForm = async () => {
     if (!selected || actionBusy) return;
     if (!isFormValid()) {
-      alert('אנא מלא את כל השדות החובה:\n✓ שעה וקבלת פנים\n✓ סוג ישיבה\n✓ מוזמנים סופיים\n✓ חלוקה (כמות גברים/נשים)\n✓ צ"ק פיקדון\n✓ כשרות\n\nהערות = אופציונלי');
+      alert(t(T.EVENT_FORM.REQUIRED_FIELDS));
       return;
     }
     setSubmitting(true);
@@ -645,11 +670,11 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         setSelected(null);
         return;
       } else {
-        alert('שגיאה בשמירה: ' + (result.error || 'unknown'));
+        alert(`${t(T.UI.SAVE_ERROR)}: ${result.error || t(T.COMMON.ERRORS.GENERIC)}`);
       }
     } catch (error) {
       console.error('Save error:', error);
-      alert('שגיאה בשמירה: ' + (error instanceof Error ? error.message : 'unknown'));
+      alert(`${t(T.UI.SAVE_ERROR)}: ${error instanceof Error ? error.message : t(T.COMMON.ERRORS.GENERIC)}`);
     } finally {
       setSubmitting(false);
     }
@@ -669,7 +694,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       });
 
       if (!saveResponse.ok) {
-        alert('שגיאה בשמירת הנתונים טרם הורדת ה-PDF.');
+        alert(t(T.EVENT_FORM.SAVE_BEFORE_PDF_ERROR));
         return;
       }
 
@@ -681,7 +706,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       await handleDownloadPDF();
     } catch (error) {
       console.error(error);
-      alert('שגיאת תקשורת עם השרת בעת הפעולה.');
+      alert(t(T.EVENT_FORM.SERVER_ERROR));
     } finally {
       setSubmitting(false);
     }
@@ -701,7 +726,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       });
 
       if (!saveResponse.ok) {
-        alert('שגיאה בשמירת הנתונים, המייל לא נשלח.');
+        alert(t(T.UI.SAVE_ERROR));
         return;
       }
 
@@ -720,15 +745,17 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         !emailWasSent && (saveResult.emailSkipped || emailResult.skipped);
 
       if (emailWasSent) {
-        alert('הטופס נשמר והמייל נשלח בהצלחה!');
+        alert(t(T.EVENT_FORM.SAVED_EMAIL_SENT));
       } else if (emailWasSkipped) {
-        alert('הטופס נשמר (מייל כבר נשלח לפני פחות מדקה)');
+        alert(t(T.EVENT_FORM.SAVED_EMAIL_RECENT));
       } else {
-        alert(`שגיאה בשליחת המייל: ${saveResult.emailError || emailResult.error || 'אנא נסה שוב'}`);
+        alert(t(T.EVENT_FORM.EMAIL_ERROR, {
+          error: saveResult.emailError || emailResult.error || t(T.COMMON.ACTIONS.RETRY),
+        }));
       }
     } catch (error) {
       console.error(error);
-      alert('שגיאת תקשורת עם השרת בעת הפעולה.');
+      alert(t(T.EVENT_FORM.SERVER_ERROR));
     } finally {
       setEmailSending(false);
     }
@@ -739,8 +766,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       {!selected && (
       <div className={styles.listTop}>
         <PageHeader
-          title="טופס הפקת אירוע"
-          subtitle="ניהול טפסי הפקה — חיפוש הזמנות, מילוי פרטים ושליחה ללקוח"
+          title={t(T.EVENT_FORM.PAGE_TITLE)}
+          subtitle={t(T.EVENT_FORM.PAGE_SUBTITLE)}
         />
         <div className={styles.viewTabs}>
           <button
@@ -748,21 +775,21 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             onClick={() => { setViewMode('bookings'); setShowPastEvents(false); }}
             className={`${styles.tabBtn} ${viewMode === 'bookings' ? styles.tabBtnActive : ''}`}
           >
-            חיפוש הזמנה
+            {t(T.EVENT_FORM.TAB_SEARCH)}
           </button>
           <button
             type="button"
             onClick={() => { setViewMode('forms'); setShowPastEvents(false); }}
             className={`${styles.tabBtn} ${viewMode === 'forms' ? styles.tabBtnActive : ''}`}
           >
-            טפסים שמורים
+            {t(T.EVENT_FORM.TAB_SAVED)}
           </button>
           <button
             type="button"
             onClick={() => { setViewMode('stats'); setShowPastEvents(false); }}
             className={`${styles.tabBtn} ${styles.tabBtnStats} ${viewMode === 'stats' ? styles.tabBtnActive : ''}`}
           >
-            סטטיסטיקות
+            {t(T.EVENT_FORM.TAB_STATS)}
           </button>
         </div>
       </div>
@@ -774,10 +801,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             <>
               <Input
                 fieldClassName={styles.searchWrap}
-                placeholder="חיפוש לפי שם או תעודת זהות..."
+                placeholder={t(T.EVENT_FORM.SEARCH_BOOKINGS_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                aria-label="חיפוש הזמנות לטופס הפקה"
+                aria-label={t(T.EVENT_FORM.SEARCH_BOOKINGS_ARIA)}
               />
               <div className={styles.pastEventsBar}>
                 {showPastEvents ? (
@@ -786,7 +813,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     className={styles.pastEventsBtn}
                     onClick={() => setShowPastEvents(false)}
                   >
-                    חזרה לאירועים קרובים
+                    {t(T.EVENT_FORM.BACK_UPCOMING)}
                   </button>
                 ) : pastBookings.length > 0 ? (
                   <button
@@ -794,23 +821,23 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     className={styles.pastEventsBtn}
                     onClick={() => setShowPastEvents(true)}
                   >
-                    טפסי אירועים שעברו ({pastBookings.length})
+                    {t(T.EVENT_FORM.PAST_FORMS_COUNT, { count: pastBookings.length })}
                   </button>
                 ) : null}
               </div>
               {loading ? (
-                <p className={styles.empty}>טוען...</p>
+                <p className={styles.empty}>{t(T.COMMON.LABELS.LOADING)}</p>
               ) : displayedBookings.length === 0 ? (
                 <EmptyState
-                  title={search ? 'לא נמצאו תוצאות' : showPastEvents ? 'אין טפסי אירועים שעברו' : 'אין אירועים קרובים'}
-                  message={search ? 'נסה לחפש בשם אחר או בתעודת זהות' : undefined}
+                  title={search ? t(T.EVENT_FORM.NO_RESULTS) : showPastEvents ? t(T.EVENT_FORM.NO_PAST_FORMS) : t(T.EVENT_FORM.NO_UPCOMING)}
+                  message={search ? t(T.EVENT_FORM.SEARCH_HINT) : undefined}
                 />
               ) : (
                 <>
                   {displayedBookings.filter(b => !b.eventForm).length > 0 && (
                     <>
                       <SectionHeader
-                        title={showPastEvents ? 'ממתינות למילוי (עבר)' : 'ממתינות למילוי טופס'}
+                        title={showPastEvents ? t(T.EVENT_FORM.PENDING_PAST) : t(T.EVENT_FORM.PENDING_UPCOMING)}
                         count={displayedBookings.filter(b => !b.eventForm).length}
                       />
                       <div className={styles.cardsGrid}>
@@ -819,7 +846,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                             key={b.id}
                             event={toEventCard(b, false)}
                             onView={() => setSelected(b)}
-                            viewLabel="פתיחת טופס הפקה"
+                            viewLabel={t(T.EVENT_FORM.OPEN_FORM)}
                           />
                         ))}
                       </div>
@@ -828,7 +855,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   {displayedBookings.filter(b => b.eventForm).length > 0 && (
                     <>
                       <SectionHeader
-                        title={showPastEvents ? 'טפסים שמורים (עבר)' : 'טפסים שמורים'}
+                        title={showPastEvents ? t(T.EVENT_FORM.SAVED_PAST) : t(T.EVENT_FORM.SAVED_UPCOMING)}
                         count={displayedBookings.filter(b => b.eventForm).length}
                       />
                       <div className={styles.cardsGrid}>
@@ -837,7 +864,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                             key={b.id}
                             event={toEventCard(b, true)}
                             onView={() => setSelected(b)}
-                            viewLabel="עריכת טופס הפקה"
+                            viewLabel={t(T.EVENT_FORM.EDIT_FORM)}
                           />
                         ))}
                       </div>
@@ -852,10 +879,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             <>
               <Input
                 fieldClassName={styles.searchWrap}
-                placeholder="חיפוש לפי שם לקוח..."
+                placeholder={t(T.EVENT_FORM.SEARCH_FORMS_PLACEHOLDER)}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                aria-label="חיפוש טפסים שמורים"
+                aria-label={t(T.EVENT_FORM.SEARCH_FORMS_ARIA)}
               />
               <div className={styles.pastEventsBar}>
                 {showPastEvents ? (
@@ -864,7 +891,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     className={styles.pastEventsBtn}
                     onClick={() => setShowPastEvents(false)}
                   >
-                    חזרה לטפסים של אירועים קרובים
+                    {t(T.EVENT_FORM.BACK_UPCOMING_FORMS)}
                   </button>
                 ) : pastForms.length > 0 ? (
                   <button
@@ -872,19 +899,19 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     className={styles.pastEventsBtn}
                     onClick={() => setShowPastEvents(true)}
                   >
-                    טפסי אירועים שעברו ({pastForms.length})
+                    {t(T.EVENT_FORM.PAST_FORMS_COUNT, { count: pastForms.length })}
                   </button>
                 ) : null}
               </div>
               <p className={styles.listCount}>
                 {showPastEvents
-                  ? `טפסים של אירועים שעברו: ${displayedForms.length}`
-                  : `טפסים של אירועים קרובים: ${displayedForms.length}`}
+                  ? t(T.EVENT_FORM.FORMS_COUNT_PAST, { count: displayedForms.length })
+                  : t(T.EVENT_FORM.FORMS_COUNT_UPCOMING, { count: displayedForms.length })}
               </p>
               {displayedForms.length === 0 ? (
                 <EmptyState
-                  title={search ? 'לא נמצאו תוצאות' : showPastEvents ? 'אין טפסי אירועים שעברו' : 'אין טפסים של אירועים קרובים'}
-                  message={search ? 'נסה לחפש בשם לקוח אחר' : undefined}
+                  title={search ? t(T.EVENT_FORM.NO_RESULTS) : showPastEvents ? t(T.EVENT_FORM.NO_PAST_FORMS) : t(T.EVENT_FORM.NO_SAVED_FORMS)}
+                  message={search ? t(T.EVENT_FORM.SEARCH_FORMS_HINT) : undefined}
                 />
               ) : (
                 <div className={styles.savedFormsGrid}>
@@ -906,10 +933,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         }
                       }}
                     >
-                      <h4>{form.booking?.clientAFullName || '—'}</h4>
-                      <p>תאריך: {form.booking?.eventDate?.date ? new Date(form.booking.eventDate.date).toLocaleDateString('he-IL') : '—'}</p>
-                      <p>מוזמנים: {form.finalGuestCount || '—'}</p>
-                      <p>נשמר: {form.createdAt ? new Date(form.createdAt).toLocaleString('he-IL') : '—'}</p>
+                      <h4>{form.booking?.clientAFullName || t(T.COMMON.LABELS.EM_DASH)}</h4>
+                      <p>{t(T.EVENT_FORM.LABEL_DATE)} {form.booking?.eventDate?.date ? formatDate(form.booking.eventDate.date, locale) : t(T.COMMON.LABELS.EM_DASH)}</p>
+                      <p>{t(T.EVENT_FORM.LABEL_GUESTS)} {form.finalGuestCount || t(T.COMMON.LABELS.EM_DASH)}</p>
+                      <p>{t(T.EVENT_FORM.LABEL_SAVED)} {form.createdAt ? formatDateTime(form.createdAt, locale) : t(T.COMMON.LABELS.EM_DASH)}</p>
                     </div>
                   ))}
                 </div>
@@ -929,21 +956,21 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             <div className="d-flex flex-wrap justify-content-between align-items-start gap-3">
               <div>
                 <h3 className="h5 mb-1">{selected.clientAFullName} {selected.clientBFullName ? `+ ${selected.clientBFullName}` : ''}</h3>
-                <p className="maple-subtitle mb-0">{dateStr(selected)} · {selected.eventType} · {selected.timeOfDay} · {selected.guestCount} מוזמנים</p>
+                <p className="maple-subtitle mb-0">{dateStr(selected)} · {formatEventType(selected.eventType)} · {formatTimeOfDayDisplay(t, selected.timeOfDay)} · {t(T.EVENT_FORM.GUESTS_COUNT, { count: selected.guestCount })}</p>
               </div>
               <div className="flex-grow-1" style={{ maxWidth: 280 }}>
-                <div className="progress" role="progressbar" aria-valuenow={formProgress} aria-valuemin={0} aria-valuemax={100} aria-label="התקדמות מילוי הטופס">
+                <div className="progress" role="progressbar" aria-valuenow={formProgress} aria-valuemin={0} aria-valuemax={100} aria-label={t(T.EVENT_FORM.PROGRESS_ARIA)}>
                   <div className="progress-bar" style={{ width: `${formProgress}%` }} />
                 </div>
-                <span className="small text-muted">{formProgress}% מוכן</span>
+                <span className="small text-muted">{t(T.EVENT_FORM.PROGRESS_READY, { percent: formProgress })}</span>
               </div>
             </div>
             <div className="d-flex flex-wrap gap-2 mt-2">
-              <span className="maple-meta-chip">סופי: {formData.finalGuestCount || '—'}</span>
-              <span className="maple-meta-chip">כשרות: {normalizeKashrutValue(formData.kashrut)}</span>
+              <span className="maple-meta-chip">{t(T.EVENT_FORM.META_FINAL, { count: formData.finalGuestCount || t(T.COMMON.LABELS.EM_DASH) })}</span>
+              <span className="maple-meta-chip">{t(T.EVENT_FORM.META_KASHRUT, { value: formatKashrut(normalizeKashrutValue(formData.kashrut)) })}</span>
             </div>
             {!designExport && (
-              <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ סגור</button>
+              <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ {t(T.UI.CLOSE)}</button>
             )}
           </div>
 
@@ -959,12 +986,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       <SectionIcon>
                         <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 11h4v-2h-3V7h-2v6z"/></svg>
                       </SectionIcon>
-                      שעה וקבלת פנים
+                      {t(T.EVENT_FORM.SECTION_TIME_RECEPTION)}
                     </span>
                   </div>
                   <div className="row g-2">
                     <div className="col-12">
-                      <label className="form-label">שעת קבלת פנים</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_RECEPTION_TIME)}</label>
                       <input
                         type="time"
                         className="form-control"
@@ -973,12 +1000,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       />
                     </div>
                     <div className="col-12">
-                      <label className="form-label">סוג קבלת פנים</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_RECEPTION_TYPE)}</label>
                       <SegmentedControl
                         value={formData.receptionType || 'separate'}
-                        options={SEPARATE_MIXED_OPTIONS}
+                        options={separateMixedOptions}
                         onChange={(v) => handleInputChange('receptionType', v)}
-                        ariaLabel="סוג קבלת פנים"
+                        ariaLabel={t(T.EVENT_FORM.LABEL_RECEPTION_TYPE)}
                       />
                     </div>
                   </div>
@@ -990,53 +1017,53 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       <SectionIcon>
                         <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.8L20 8l-3.6 3.5.85 5L12 14.8 6.75 16.5 7.6 11.5 4 8l5.6-1.2L12 2z"/></svg>
                       </SectionIcon>
-                      עיצוב
+                      {t(T.EVENT_FORM.SECTION_DESIGN)}
                     </span>
                     <button
                       type="button"
                       onClick={() => navigate('/gallery')}
                       className="btn btn-sm btn-outline-secondary"
                     >
-                      גלריה
+                      {t(T.EVENT_FORM.SECTION_GALLERY)}
                     </button>
                   </div>
                   <div className="row g-2">
                     <div className="col-6">
-                      <label className="form-label">מפות</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_TABLECLOTHS)}</label>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="מפה..."
+                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_TABLECLOTH)}
                         value={formData.tableclothId || ''}
                         onChange={e => handleInputChange('tableclothId', e.target.value)}
                       />
                     </div>
                     <div className="col-6">
-                      <label className="form-label">מפיות</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_NAPKINS)}</label>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="מפית..."
+                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_NAPKIN)}
                         value={formData.napkinId || ''}
                         onChange={e => handleInputChange('napkinId', e.target.value)}
                       />
                     </div>
                     <div className="col-6">
-                      <label className="form-label">מרכזי שולחן</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_CENTERPIECES)}</label>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="מרכז..."
+                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_CENTERPIECE)}
                         value={formData.centerpiece || ''}
                         onChange={e => handleInputChange('centerpiece', e.target.value)}
                       />
                     </div>
                     <div className="col-6">
-                      <label className="form-label">כסא כלה</label>
+                      <label className="form-label">{t(T.EVENT_FORM.LABEL_BRIDE_CHAIR)}</label>
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="כסא..."
+                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_CHAIR)}
                         value={formData.bridgeChair || ''}
                         onChange={e => handleInputChange('bridgeChair', e.target.value)}
                       />
@@ -1050,7 +1077,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       <SectionIcon>
                         <svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03z"/></svg>
                       </SectionIcon>
-                      ציוד טכני
+                      {t(T.EVENT_FORM.SECTION_TECH)}
                     </span>
                   </div>
                   <div className="d-flex flex-wrap gap-2">
@@ -1062,7 +1089,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         checked={formData.hasLighting || false}
                         onChange={e => handleCheckboxChange('hasLighting', e.target.checked)}
                       />
-                      <label className="form-check-label" htmlFor="has-lighting">תאורה</label>
+                      <label className="form-check-label" htmlFor="has-lighting">{t(T.EVENT_FORM.UPGRADE_LIGHTING)}</label>
                     </div>
                     <div className="form-check">
                       <input
@@ -1072,7 +1099,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         checked={formData.hasSoundSystem || false}
                         onChange={e => handleCheckboxChange('hasSoundSystem', e.target.checked)}
                       />
-                      <label className="form-check-label" htmlFor="has-sound">הגברה</label>
+                      <label className="form-check-label" htmlFor="has-sound">{t(T.EVENT_FORM.UPGRADE_SOUND)}</label>
                     </div>
                     <div className="form-check">
                       <input
@@ -1082,7 +1109,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         checked={formData.hasScreens || false}
                         onChange={e => handleCheckboxChange('hasScreens', e.target.checked)}
                       />
-                      <label className="form-check-label" htmlFor="has-screens">מסכים</label>
+                      <label className="form-check-label" htmlFor="has-screens">{t(T.EVENT_FORM.UPGRADE_SCREENS)}</label>
                     </div>
                     <div className="form-check">
                       <input
@@ -1092,7 +1119,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         checked={formData.hasFireworks || false}
                         onChange={e => handleCheckboxChange('hasFireworks', e.target.checked)}
                       />
-                      <label className="form-check-label" htmlFor="has-fireworks">זיקוקים</label>
+                      <label className="form-check-label" htmlFor="has-fireworks">{t(T.EVENT_FORM.UPGRADE_FIREWORKS)}</label>
                     </div>
                   </div>
                 </div>
@@ -1105,12 +1132,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>
                   </SectionIcon>
-                  משמחים
+                  {t(T.EVENT_FORM.SECTION_ENTERTAINERS)}
                 </h4>
               </div>
               <div className="card-body">
               <div className="mb-3">
-                <label className="form-label">האם יש משמחים?</label>
+                <label className="form-label">{t(T.EVENT_FORM.LABEL_HAS_ENTERTAINERS)}</label>
                 <select
                   className="form-select"
                   value={hasEntertainers === null ? '' : hasEntertainers ? 'yes' : 'no'}
@@ -1133,9 +1160,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     }
                   }}
                 >
-                  <option value="">בחר...</option>
-                  <option value="yes">כן</option>
-                  <option value="no">לא</option>
+                  <option value="">{t(T.EVENT_FORM.SELECT_PLACEHOLDER)}</option>
+                  <option value="yes">{t(T.COMMON.LABELS.YES)}</option>
+                  <option value="no">{t(T.COMMON.LABELS.NO)}</option>
                 </select>
               </div>
 
@@ -1143,7 +1170,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               <>
               <div className="row g-2">
                 <div className="col-12">
-                  <label className="form-label">סוג משמחים</label>
+                  <label className="form-label">{t(T.EVENT_FORM.LABEL_ENTERTAINER_TYPE)}</label>
                   <select
                     className="form-select"
                     value={
@@ -1166,9 +1193,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       }
                     }}
                   >
-                    <option value="">בחר סוג...</option>
-                    <option value="bar">בר</option>
-                    <option value="sitting">ישיבה</option>
+                    <option value="">{t(T.EVENT_FORM.SELECT_TYPE)}</option>
+                    <option value="bar">{t(T.EVENT_FORM.ENTERTAINER_BAR)}</option>
+                    <option value="sitting">{t(T.EVENT_FORM.ENTERTAINER_SITTING)}</option>
                   </select>
                 </div>
               </div>
@@ -1180,7 +1207,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <>
                     <div className="row g-2">
                       <div className="col-6">
-                        <label className="form-label">סה&quot;כ משתתפים</label>
+                        <label className="form-label">{t(T.EVENT_FORM.LABEL_TOTAL_PARTICIPANTS)}</label>
                         <input
                           type="number"
                           className="form-control"
@@ -1195,7 +1222,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         />
                       </div>
                       <div className="col-6">
-                        <label className="form-label">גברים</label>
+                        <label className="form-label">{t(T.EVENT_FORM.LABEL_MEN)}</label>
                         <input
                           type="number"
                           className="form-control"
@@ -1209,7 +1236,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                         />
                       </div>
                       <div className="col-6">
-                        <label className="form-label">נשים</label>
+                        <label className="form-label">{t(T.EVENT_FORM.LABEL_WOMEN)}</label>
                         <input
                           type="number"
                           className="form-control bg-light"
@@ -1227,8 +1254,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       const entWomenPercent = 100 - entMenPercent;
                       return (
                         <div className={styles.splitBadge}>
-                          <span className={styles.splitMen}>ג {entMenPercent}% ({entMen})</span>
-                          <span className={styles.splitWomen}>נ {entWomenPercent}% ({entWomen})</span>
+                          <span className={styles.splitMen}>{t(T.EVENT_FORM.SPLIT_MEN, { percent: entMenPercent, count: entMen })}</span>
+                          <span className={styles.splitWomen}>{t(T.EVENT_FORM.SPLIT_WOMEN, { percent: entWomenPercent, count: entWomen })}</span>
                         </div>
                       );
                     })()}
@@ -1249,20 +1276,20 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
                   </SectionIcon>
-                  מוזמנים וישיבה
+                  {t(T.EVENT_FORM.SECTION_GUESTS)}
                 </h4>
                 <button
                   type="button"
                   onClick={() => setIsTableLayoutOpen(true)}
                   className={`btn btn-sm ${savedTables?.length ? 'btn-outline-primary' : 'btn-primary'}`}
                 >
-                  {savedTables?.length ? `${savedTables.length} שולחנות` : 'סידור שולחנות'}
+                  {savedTables?.length ? t(T.EVENT_FORM.TABLES_COUNT, { count: savedTables.length }) : t(T.EVENT_FORM.TABLE_LAYOUT)}
                 </button>
               </div>
               <div className="card-body">
               <div className="row g-2">
                 <div className="col-6">
-                  <label className="form-label">כמות מוזמנים סופית</label>
+                  <label className="form-label">{t(T.EVENT_FORM.LABEL_FINAL_GUESTS)}</label>
                   <input
                     type="number"
                     className="form-control"
@@ -1272,16 +1299,16 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   />
                 </div>
                 <div className="col-6">
-                  <label className="form-label">סוג ישיבה</label>
+                  <label className="form-label">{t(T.EVENT_FORM.LABEL_SEATING_TYPE)}</label>
                   <SegmentedControl
                     value={formData.seatingType || 'separate'}
-                    options={SEPARATE_MIXED_OPTIONS}
+                    options={separateMixedOptions}
                     onChange={(v) => handleInputChange('seatingType', v)}
-                    ariaLabel="סוג ישיבה"
+                    ariaLabel={t(T.EVENT_FORM.LABEL_SEATING_TYPE)}
                   />
                 </div>
                 <div className="col-6">
-                  <label className="form-label">שולחן כבוד</label>
+                  <label className="form-label">{t(T.EVENT_FORM.LABEL_HONOR_TABLE)}</label>
                   <select
                     className="form-select"
                     value={hasHonorTable === null ? '' : hasHonorTable ? 'yes' : 'no'}
@@ -1296,16 +1323,16 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       if (!yes) handleInputChange('honorTableCount', undefined);
                     }}
                   >
-                    <option value="">—</option>
-                    <option value="yes">כן</option>
-                    <option value="no">לא</option>
+                    <option value="">{t(T.COMMON.LABELS.EM_DASH)}</option>
+                    <option value="yes">{t(T.COMMON.LABELS.YES)}</option>
+                    <option value="no">{t(T.COMMON.LABELS.NO)}</option>
                   </select>
                 </div>
               </div>
               {hasHonorTable && (
                 <div className="row g-2">
                   <div className="col-6">
-                    <label className="form-label">כמות בשולחן כבוד</label>
+                    <label className="form-label">{t(T.EVENT_FORM.LABEL_HONOR_COUNT)}</label>
                     <input
                       type="number"
                       className="form-control"
@@ -1331,7 +1358,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   >
                     <img
                       src={tableLayoutImageUrl}
-                      alt="סקיצת סידור שולחנות"
+                      alt={t(T.EVENT_FORM.TABLE_SKETCH_ALT)}
                       className={styles.tableLayoutPreviewImg}
                     />
                     <span className={styles.tableLayoutPreviewHint}>לחץ להגדלה ולצפייה בסידור</span>
@@ -1342,7 +1369,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               {formData.seatingType === 'separate' && (
                 <div className="row g-2">
                   <div className="col-6">
-                    <label className="form-label">כמות גברים</label>
+                    <label className="form-label">{t(T.EVENT_FORM.LABEL_MEN_COUNT)}</label>
                     <input
                       type="number"
                       className="form-control"
@@ -1352,7 +1379,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     />
                   </div>
                   <div className="col-6">
-                    <label className="form-label">כמות נשים</label>
+                    <label className="form-label">{t(T.EVENT_FORM.LABEL_WOMEN_COUNT)}</label>
                     <input
                       type="number"
                       className="form-control"
@@ -1362,14 +1389,14 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     />
                   </div>
                   <div className="col-12">
-                    <label className="form-label">חלוקה (אחוזים)</label>
+                    <label className="form-label">{t(T.EVENT_FORM.LABEL_SPLIT_PERCENT)}</label>
                     {formData.menPercent != null && formData.womenPercent != null ? (
                       <div className={styles.splitBadge}>
-                        <span className={styles.splitMen}>ג {formData.menPercent}%</span>
-                        <span className={styles.splitWomen}>נ {formData.womenPercent}%</span>
+                        <span className={styles.splitMen}>{t(T.EVENT_FORM.SPLIT_MEN, { percent: formData.menPercent, count: formData.menCount ?? 0 })}</span>
+                        <span className={styles.splitWomen}>{t(T.EVENT_FORM.SPLIT_WOMEN, { percent: formData.womenPercent, count: formData.womenCount ?? 0 })}</span>
                       </div>
                     ) : (
-                      <div className={styles.splitBadgeEmpty}>—</div>
+                      <div className={styles.splitBadgeEmpty}>{t(T.COMMON.LABELS.EM_DASH)}</div>
                     )}
                   </div>
                 </div>
@@ -1380,13 +1407,16 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   className={styles.portionStrip}
                   title={
                     portionBilling.seatingType === 'separate'
-                      ? `גברים: ${portionBilling.menCount} → ${portionBilling.menBillablePortions} מנות · נשים: ${portionBilling.womenCount} → ${portionBilling.womenBillablePortions} מנות`
-                      : `מוזמנים: ${formData.finalGuestCount} → ${portionBilling.totalBillablePortions} מנות`
+                      ? `${t(T.EVENT_FORM.PORTIONS_MEN, { men: portionBilling.menCount, portions: portionBilling.menBillablePortions })} · ${t(T.EVENT_FORM.PORTIONS_WOMEN, { women: portionBilling.womenCount, portions: portionBilling.womenBillablePortions })}`
+                      : t(T.EVENT_FORM.PORTIONS_TOTAL, {
+                          guests: formData.finalGuestCount ?? 0,
+                          portions: portionBilling.totalBillablePortions,
+                        })
                   }
                 >
-                  <span className={styles.portionStripLabel}>מנות לחיוב:</span>
+                  <span className={styles.portionStripLabel}>{t(T.EVENT_FORM.PORTIONS_BILLABLE)}</span>
                   <span className={styles.portionStripStrong}>
-                    {portionBilling.totalBillablePortions} × {portionBilling.pricePerPortion} ₪ = {portionBilling.totalAmount.toLocaleString('he-IL')} ₪
+                    {portionBilling.totalBillablePortions} × {portionBilling.pricePerPortion} ₪ = {formatCurrency(portionBilling.totalAmount, locale)}
                   </span>
                 </div>
               )}
@@ -1400,19 +1430,19 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     <SectionIcon>
                       <svg viewBox="0 0 24 24"><path d="M8.1 13.34l2.83-2.83L3.91 3.5a4.008 4.008 0 0 0 0 5.66l4.19 4.18zm6.78-1.81a11.044 11.044 0 0 1-2.83 2.83l2.83 2.83 2.83-2.83-2.83-2.83zM20.49 19.63l-1.41-1.41-2.83 2.83 2.83 2.83 1.41-1.41-2.83-2.83 2.83-2.82z"/></svg>
                     </SectionIcon>
-                    תפריט האירוע
+                    {t(T.EVENT_FORM.SECTION_MENU)}
                   </h4>
                   {selectedMenu ? (
                     <>
-                      <span className="badge text-bg-success">✓ תפריט נבחר</span>
+                      <span className="badge text-bg-success">{t(T.EVENT_FORM.MENU_SELECTED)}</span>
                       {menuStats && (
                         <p className="small text-muted mb-0 mt-1">
-                          {menuStats.categories} קטגוריות · {menuStats.items} מנות
+                          {t(T.EVENT_FORM.MENU_STATS, { categories: menuStats.categories, items: menuStats.items })}
                         </p>
                       )}
                     </>
                   ) : (
-                    <span className="badge text-bg-warning">טרם נבחר תפריט</span>
+                    <span className="badge text-bg-warning">{t(T.EVENT_FORM.MENU_NOT_SELECTED)}</span>
                   )}
                 </div>
                 <button
@@ -1420,7 +1450,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   onClick={() => setIsMenuOpen(true)}
                   className={`btn ${selectedMenu ? 'btn-outline-primary' : 'btn-primary'}`}
                 >
-                  {selectedMenu ? 'ערוך תפריט' : 'בחירת תפריט'}
+                  {selectedMenu ? t(T.EVENT_FORM.EDIT_MENU) : t(T.EVENT_FORM.SELECT_MENU)}
                 </button>
               </div>
             </div>
@@ -1434,7 +1464,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4V6h16v12zM4 10h16v2H4v-2z"/></svg>
                   </SectionIcon>
-                  תשלומים וכשרות
+                  {t(T.EVENT_FORM.SECTION_PAYMENTS)}
                 </h4>
               </div>
 
@@ -1442,31 +1472,31 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               <div className={styles.payGrid}>
                 <div className="d-flex flex-wrap gap-2 mb-3">
                   {(depositCheckFile || formData.depositCheckUrl) ? (
-                    <span className={styles.payStatusOk}>✓ צ&apos;ק צורף</span>
+                    <span className={styles.payStatusOk}>{t(T.EVENT_FORM.CHECK_ATTACHED)}</span>
                   ) : (
-                    <span className={styles.payStatusWarn}>⚠ חסר צ&apos;ק פיקדון</span>
+                    <span className={styles.payStatusWarn}>{t(T.EVENT_FORM.CHECK_MISSING)}</span>
                   )}
-                  {normalizeKashrutValue(formData.kashrut) ? (
-                    <span className={styles.payStatusOk}>✓ כשרות: {normalizeKashrutValue(formData.kashrut)}</span>
+                  {formData.kashrut ? (
+                    <span className={styles.payStatusOk}>{t(T.EVENT_FORM.KASHRUT_SELECTED, { value: formatKashrut(normalizeKashrutValue(formData.kashrut)) })}</span>
                   ) : (
-                    <span className={styles.payStatusWarn}>⚠ יש לבחור כשרות</span>
+                    <span className={styles.payStatusWarn}>{t(T.EVENT_FORM.KASHRUT_REQUIRED)}</span>
                   )}
                 </div>
                 <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
                   <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowCamera(true)}>
-                    צלם
+                    {t(T.EVENT_FORM.PHOTO)}
                   </button>
                   <button type="button" className="btn btn-sm btn-primary" onClick={() => document.getElementById('fileInput')?.click()}>
-                    העלה
+                    {t(T.EVENT_FORM.UPLOAD)}
                   </button>
                   <input type="file" id="fileInput" accept="image/*" onChange={handleFileChange} className="d-none" />
                   <div className="form-check mb-0">
                     <input type="checkbox" className="form-check-input" id="deposit-received" checked={formData.depositCheckStatus || false} onChange={e => handleCheckboxChange('depositCheckStatus', e.target.checked)} />
-                    <label className="form-check-label" htmlFor="deposit-received">צ&apos;ק קיבל</label>
+                    <label className="form-check-label" htmlFor="deposit-received">{t(T.EVENT_FORM.CHECK_RECEIVED)}</label>
                   </div>
                   {(depositCheckFile || formData.depositCheckUrl) && (
                     <button type="button" onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">
-                      מחק צ&apos;ק
+                      {t(T.EVENT_FORM.DELETE_CHECK)}
                     </button>
                   )}
                 </div>
@@ -1482,11 +1512,11 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
 
                 <div className="row g-2">
                   <div className="col-6">
-                    <label className="form-label">קוד אקו&quot;ם</label>
-                    <input type="text" readOnly value={selected.akumApprovalCode || 'לא הוזן'} className={`form-control bg-light ${selected.akumApprovalCode ? 'text-success' : 'text-muted'}`} />
+                    <label className="form-label">{t(T.EVENT_FORM.LABEL_AKUM_CODE)}</label>
+                    <input type="text" readOnly value={selected.akumApprovalCode || t(T.EVENT_FORM.NOT_ENTERED)} className={`form-control bg-light ${selected.akumApprovalCode ? 'text-success' : 'text-muted'}`} />
                   </div>
                   <div className="col-6">
-                    <label className="form-label" htmlFor="event-kashrut">כשרות</label>
+                    <label className="form-label" htmlFor="event-kashrut">{t(T.EVENT_FORM.KASHRUT_ALT)}</label>
                     <KashrutSelector
                       id="event-kashrut"
                       value={formData.kashrut}
@@ -1498,10 +1528,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                 <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
                   <div className="form-check">
                     <input type="checkbox" className="form-check-input" id="akum-paid" checked={formData.akumPaid || !!selected.akumApprovalCode} onChange={e => handleCheckboxChange('akumPaid', e.target.checked)} />
-                    <label className="form-check-label" htmlFor="akum-paid">שילם לאקו&quot;ם</label>
+                    <label className="form-check-label" htmlFor="akum-paid">{t(T.EVENT_FORM.AKUM_PAID)}</label>
                   </div>
                   {selected.clientSignatureUrl && (
-                    <img src={selected.clientSignatureUrl} alt="חוזה" className={styles.signatureThumb} title="חוזה חתום" />
+                    <img src={selected.clientSignatureUrl} alt={t(T.EVENT_FORM.CONTRACT_ALT)} className={styles.signatureThumb} title={t(T.EVENT_FORM.CONTRACT_SIGNED)} />
                   )}
                 </div>
               </div>
@@ -1514,7 +1544,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <SectionIcon>
                     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
                   </SectionIcon>
-                  הערות
+                  {t(T.EVENT_FORM.SECTION_NOTES)}
                 </h4>
                 {notesList.length > 0 && <span className="badge text-bg-secondary">{notesList.length}</span>}
               </div>
@@ -1533,7 +1563,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               <div className="input-group">
                 <input
                   type="text"
-                  placeholder="הוסף הערה..."
+                  placeholder={t(T.EVENT_FORM.ADD_NOTE)}
                   value={newNote}
                   onChange={e => setNewNote(e.target.value)}
                   onKeyPress={e => e.key === 'Enter' && addNote()}
@@ -1570,9 +1600,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   <button 
                     onClick={() => setIsMenuOpen(false)}
                     className={styles.fullscreenCloseBtn}
-                    title="סגור חלון"
+                    title={t(T.UI.CLOSE)}
                   >
-                    ✕ סגור וחזור לטופס
+                    {t(T.EVENT_FORM.CLOSE_AND_RETURN)}
                   </button>
                   
                   <div className={styles.fullscreenScroll}>
@@ -1631,8 +1661,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               <div className={styles.tableLayoutOverlay}>
                 <div className={styles.tableLayoutInner}>
                   <div style={{ marginBottom: '8px', textAlign: 'center' }}>
-                    <h3 className={styles.tableLayoutTitle}>סידור שולחנות אולם</h3>
-                    {tableLayoutSaving && <span className={styles.tableLayoutSaving}>שומר...</span>}
+                    <h3 className={styles.tableLayoutTitle}>{t(T.EVENT_FORM.TABLE_LAYOUT_TITLE)}</h3>
+                    {tableLayoutSaving && <span className={styles.tableLayoutSaving}>{t(T.EVENT_FORM.SAVING)}</span>}
                   </div>
                   <div className={styles.tableLayoutBuilder}>
                     <FloorPlanBuilder
@@ -1656,18 +1686,18 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           </div>
 
             <p className="small text-muted px-3 mb-0">
-              * המחיר אינו כולל טיפ כמקובל במקום
+              {t(T.EVENT_FORM.TIP_DISCLAIMER)}
             </p>
 
             <div className="card-footer maple-form-footer d-flex flex-wrap gap-2 justify-content-between">
-                <button onClick={() => setSelected(null)} className="btn btn-outline-secondary">ביטול</button>
+                <button onClick={() => setSelected(null)} className="btn btn-outline-secondary">{t(T.EVENT_FORM.CANCEL)}</button>
 
                 <button
                   onClick={handleSaveForm}
                   className="btn btn-primary"
                   disabled={actionBusy}
                 >
-                  {submitting ? 'שומר...' : 'שמירת טופס'}
+                  {submitting ? t(T.EVENT_FORM.SAVING) : t(T.EVENT_FORM.SAVE_FORM)}
                 </button>
 
                 <div className="d-flex flex-wrap gap-2">
@@ -1675,29 +1705,28 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     onClick={handleSaveAndDownloadPDF}
                     disabled={actionBusy}
                     className="btn btn-outline-primary"
-                    title="שמור והורד טופס הפקה"
+                    title={t(T.EVENT_FORM.DOWNLOAD_FORM)}
                   >
-                    {submitting ? 'שומר...' : 'הורד טופס הפקה'}
+                    {submitting ? t(T.EVENT_FORM.SAVING) : t(T.EVENT_FORM.DOWNLOAD_FORM)}
                   </button>
 
                   <button
                     onClick={() => {
-                      const clientName = `${selected.clientAFullName} ${selected.clientBFullName ? `ו${selected.clientBFullName}` : ''}`;
-                      const textMsg = `שלום, מצורף עדכון לגבי טופס הפקת אירוע - משפחת ${clientName} בתאריך ${dateStr(selected)}.\nמוזמנים: ${formData.finalGuestCount || 'לא צוין'}.`;
+                      const textMsg = buildShareMessage();
                       window.open(`https://wa.me/?text=${encodeURIComponent(textMsg)}`, '_blank');
                     }}
                     className="btn btn-success"
-                    title={!isFormValid() ? 'יש למלא טופס לפני שיתוף' : 'שלח לווצאפ'}
+                    title={!isFormValid() ? t(T.EVENT_FORM.FILL_BEFORE_SHARE) : t(T.EVENT_FORM.SHARE_WHATSAPP)}
                   >
-                    שלח ווצאפ
+                    {t(T.EVENT_FORM.SHARE_WHATSAPP)}
                   </button>
                   <button
                     onClick={handleSendEmail}
                     disabled={actionBusy}
                     className="btn btn-outline-secondary"
-                    title="שמור ושלח למייל"
+                    title={t(T.EVENT_FORM.SHARE_EMAIL)}
                   >
-                    {emailSending ? 'שולח...' : 'שלח למייל'}
+                    {emailSending ? t(T.EVENT_FORM.SAVING) : t(T.EVENT_FORM.SHARE_EMAIL)}
                   </button>
                 </div>
             </div>

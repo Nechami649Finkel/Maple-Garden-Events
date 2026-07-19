@@ -1,23 +1,29 @@
 .app-header {
   grid-area: header;
-  background: var(--maple-surface);
-  border-bottom: 1px solid var(--maple-border);
-  box-shadow: var(--maple-shadow-sm);
-  padding: 0 var(--maple-space-5);
-  direction: rtl;
-  z-index: var(--maple-z-header);
+  background: var(--brand-surface);
+  border-bottom: 1px solid var(--brand-border);
+  box-shadow: var(--brand-shadow-sm);
+  padding: 0 var(--brand-space-5);
+  direction: inherit;
+  z-index: var(--brand-z-header);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--maple-space-3);
-  min-height: var(--maple-header-height);
+  gap: var(--brand-space-3);
+  min-height: var(--brand-header-height);
+  flex-shrink: 0;
+}
+
+.app-header-end {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
 }
 
 .app-header-start {
   display: flex;
   align-items: center;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
   justify-content: flex-start;
   min-width: 0;
   flex: 1;
@@ -30,7 +36,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: opacity var(--maple-transition);
+  transition: opacity var(--brand-transition);
   flex-shrink: 0;
 }
 
@@ -45,9 +51,43 @@
   object-fit: contain;
 }
 
+.app-header-hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  padding: 10px;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
+  cursor: pointer;
+  transition: all var(--brand-transition);
+  flex-shrink: 0;
+}
+
+.app-header-hamburger span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--brand-text);
+  border-radius: 2px;
+  transition: background var(--brand-transition);
+}
+
+.app-header-hamburger:hover {
+  background: var(--brand-gold-light);
+  border-color: var(--brand-gold);
+}
+
+.app-header-hamburger:hover span {
+  background: var(--brand-gold-deep);
+}
+
 @media (min-width: 1024px) {
   .app-header {
-    padding: 0 var(--maple-space-6);
+    padding: 0 var(--brand-space-6);
   }
 
   .app-header-hamburger {
@@ -59,43 +99,9 @@
   }
 
   .app-header-title {
-    font-size: var(--maple-text-lg);
+    font-size: var(--brand-text-lg);
     max-width: none;
   }
-}
-
-.app-header-hamburger {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
-  width: 42px;
-  height: 42px;
-  padding: 10px;
-  background: var(--maple-bg);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
-  cursor: pointer;
-  transition: all var(--maple-transition);
-  flex-shrink: 0;
-}
-
-.app-header-hamburger span {
-  display: block;
-  height: 2px;
-  width: 100%;
-  background: var(--maple-text);
-  border-radius: 2px;
-  transition: background var(--maple-transition);
-}
-
-.app-header-hamburger:hover {
-  background: var(--maple-gold-light);
-  border-color: var(--maple-gold);
-}
-
-.app-header-hamburger:hover span {
-  background: var(--maple-gold-deep);
 }
 
 .app-header-back {
@@ -104,23 +110,23 @@
   gap: 6px;
   height: 42px;
   padding: 0 14px;
-  background: var(--maple-green-light);
-  border: 1px solid var(--maple-green-muted);
-  border-radius: var(--maple-radius-sm);
-  color: var(--maple-green-deep);
-  font-size: var(--maple-text-sm);
+  background: var(--brand-green-light);
+  border: 1px solid var(--brand-green-muted);
+  border-radius: var(--brand-radius-sm);
+  color: var(--brand-green-deep);
+  font-size: var(--brand-text-sm);
   font-weight: 700;
   cursor: pointer;
-  transition: all var(--maple-transition);
-  font-family: var(--maple-font);
+  transition: all var(--brand-transition);
+  font-family: var(--brand-font);
   flex-shrink: 0;
   white-space: nowrap;
 }
 
 .app-header-back:hover {
-  background: var(--maple-green-muted);
-  border-color: var(--maple-green);
-  color: var(--maple-green-dark);
+  background: var(--brand-green-muted);
+  border-color: var(--brand-green);
+  color: var(--brand-green-dark);
 }
 
 .app-header-back-icon {
@@ -130,9 +136,9 @@
 
 .app-header-title {
   margin: 0;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 700;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -141,7 +147,7 @@
 
 @media (max-width: 768px) {
   .app-header {
-    padding: 0 var(--maple-space-3);
+    padding: 0 var(--brand-space-3);
   }
 
   .app-header-logo {
@@ -156,11 +162,11 @@
   .app-header-back {
     height: 38px;
     padding: 0 10px;
-    font-size: var(--maple-text-xs);
+    font-size: var(--brand-text-xs);
   }
 
   .app-header-title {
-    font-size: var(--maple-text-xs);
+    font-size: var(--brand-text-xs);
     max-width: 42vw;
   }
 }

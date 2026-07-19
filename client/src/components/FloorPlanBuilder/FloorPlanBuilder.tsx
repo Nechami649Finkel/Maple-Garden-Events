@@ -1,10 +1,9 @@
-import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import floorPlanImg from '../../assets/floor-plan.png';
 import {
   DEFAULT_TABLE_LAYOUT,
   DEFAULT_TABLE_SIZE,
   SECTION_BOUNDS,
-  SEATS_PER_TABLE,
   buildLayoutForGuestCount,
   clampToSection,
   createTableInSection,
@@ -19,6 +18,7 @@ import {
   saveFloorPlanDraft,
 } from '../../utils/floorPlanDraft';
 import './FloorPlanBuilder.css';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export type { TableData };
 
@@ -189,6 +189,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
   onClose,
   downloadFileName,
 }) => {
+  const { t, T } = useTranslation();
   const [tables, setTables] = useState<TableData[]>(initialTablesSeed);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [layoutKey, setLayoutKey] = useState(0);
@@ -223,7 +224,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
     const table = tables.find(t => t.id === selectedId);
     if (!table) return;
     if (table.isHonor && DEFAULT_TABLE_LAYOUT.some(d => d.id === table.id && d.isHonor)) {
-      alert('לא ניתן למחוק שולחן כבוד מברירת המחדל');
+      alert(t(T.FLOOR_PLAN.CANNOT_DELETE_HONOR));
       return;
     }
     setTables(prev => prev.filter(t => t.id !== selectedId));
@@ -233,11 +234,10 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
 
   const handleRebuildFromGuests = () => {
     if (guestCount <= 0) {
-      alert('יש להזין כמות מוזמנים סופית בטופס');
+      alert(t(T.FLOOR_PLAN.ENTER_GUEST_COUNT));
       return;
     }
-    const tableCount = Math.ceil(guestCount / SEATS_PER_TABLE);
-    if (!confirm(`ליצור סידור מחדש ל-${guestCount} מוזמנים (${tableCount} שולחנות)?`)) {
+    if (!confirm(t(T.FLOOR_PLAN.REGEN_CONFIRM))) {
       return;
     }
     setTables(buildLayoutForGuestCount({
@@ -252,8 +252,8 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
   };
 
   const handleReset = () => {
-    if (confirm('לאפס לסידור ברירת המחדל?')) {
-      setTables(DEFAULT_TABLE_LAYOUT.map(t => ({ ...t })));
+    if (confirm(t(T.FLOOR_PLAN.RESET_CONFIRM))) {
+      setTables(DEFAULT_TABLE_LAYOUT.map((table) => ({ ...table })));
       setSelectedId(null);
       setLayoutKey(k => k + 1);
     }
@@ -268,7 +268,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
         downloadFileName ?? 'sidur-shulchanot.png'
       );
     } catch {
-      alert('שגיאה ביצירת התמונה');
+      alert(t(T.FLOOR_PLAN.IMAGE_CREATE_ERROR));
     } finally {
       setExporting(false);
     }
@@ -281,7 +281,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
       if (draftEventId) clearFloorPlanDraft(draftEventId);
       onSave(tables, imageDataUrl);
     } catch {
-      alert('שגיאה בשמירת הסקיצה');
+      alert(t(T.FLOOR_PLAN.SAVE_ERROR));
     } finally {
       setSaving(false);
     }
@@ -293,14 +293,14 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
         <div className="toolbar-actions">
           {guestCount > 0 && (
             <button type="button" className="btn-rebuild" onClick={handleRebuildFromGuests}>
-              רענן לפי מוזמנים
+              {t(T.FLOOR_PLAN.REFRESH_BY_GUESTS)}
             </button>
           )}
           <button type="button" className="btn-add-women" onClick={() => handleAddTable('women')}>
-            + שולחן נשים
+            + {t(T.FLOOR_PLAN.ADD_WOMEN_TABLE)}
           </button>
           <button type="button" className="btn-add-men" onClick={() => handleAddTable('men')}>
-            + שולחן גברים
+            + {t(T.FLOOR_PLAN.ADD_MEN_TABLE)}
           </button>
           <button
             type="button"
@@ -308,10 +308,10 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
             onClick={handleDeleteSelected}
             disabled={selectedId === null}
           >
-            מחק שולחן נבחר
+            {t(T.FLOOR_PLAN.DELETE_SELECTED)}
           </button>
           <button type="button" className="btn-reset" onClick={handleReset}>
-            איפוס לברירת מחדל
+            {t(T.FLOOR_PLAN.RESET_DEFAULT)}
           </button>
           <button
             type="button"
@@ -319,16 +319,16 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
             onClick={handleDownload}
             disabled={exporting}
           >
-            {exporting ? 'מוריד...' : '⬇ הורדת תמונה'}
+            {exporting ? t(T.FLOOR_PLAN.DOWNLOADING) : `⬇ ${t(T.FLOOR_PLAN.DOWNLOAD_IMAGE)}`}
           </button>
         </div>
         <div className="toolbar-save">
           <button type="button" className="btn-save" onClick={handleSave} disabled={saving}>
-            {saving ? 'שומר...' : 'שמור סידור'}
+            {saving ? t(T.FLOOR_PLAN.SAVING) : t(T.FLOOR_PLAN.SAVE_LAYOUT)}
           </button>
           {onClose && (
             <button type="button" className="btn-close" onClick={onClose}>
-              סגור
+              {t(T.FLOOR_PLAN.CLOSE)}
             </button>
           )}
         </div>
@@ -338,7 +338,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
         <div className="hall-canvas" ref={canvasRef}>
           <img
             src={floorPlanImg}
-            alt="מפת אולם"
+            alt={t(T.FLOOR_PLAN.MAP_ALT)}
             className="hall-background"
             draggable={false}
           />
@@ -358,10 +358,10 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
       </div>
 
       <div className="floor-plan-legend">
-        <span className="legend-item"><span className="legend-dot women" /> נשים</span>
-        <span className="legend-item"><span className="legend-dot men" /> גברים</span>
-        <span className="legend-item"><span className="legend-dot honor" /> שולחן כבוד (R)</span>
-        <span className="legend-hint">גררי שולחן עם העכבר / האצבע · לחיצה לבחירה</span>
+        <span className="legend-item"><span className="legend-dot women" /> {t(T.FLOOR_PLAN.LEGEND_WOMEN)}</span>
+        <span className="legend-item"><span className="legend-dot men" /> {t(T.FLOOR_PLAN.LEGEND_MEN)}</span>
+        <span className="legend-item"><span className="legend-dot honor" /> {t(T.FLOOR_PLAN.LEGEND_HONOR)}</span>
+        <span className="legend-hint">{t(T.FLOOR_PLAN.LEGEND_HINT)}</span>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { T } from '../i18n/getServerTranslation';
 
-const dateStrParam = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'תאריך חייב להיות בפורמט YYYY-MM-DD');
+const dateStrParam = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, T.SERVER.VALIDATION.DATE_FORMAT);
 
 export const lockDateSchema = z.object({
   params: z.object({ dateStr: dateStrParam }),

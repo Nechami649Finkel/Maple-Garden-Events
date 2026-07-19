@@ -1,3 +1,4 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './SectionHeader.module.css';
 
 interface SectionHeaderProps {
@@ -8,12 +9,14 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ title, count, action, as: Tag = 'h2' }: SectionHeaderProps) {
+  const { t, T } = useTranslation();
+
   return (
     <div className={styles.wrap}>
       <Tag className={styles.title}>
         {title}
         {count !== undefined && (
-          <span className={styles.count} aria-label={`${count} פריטים`}>
+          <span className={styles.count} aria-label={t(T.UI.SECTION_ITEMS, { count })}>
             {count}
           </span>
         )}

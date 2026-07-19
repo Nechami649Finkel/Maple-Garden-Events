@@ -1,125 +1,125 @@
 :root {
   /* ── Surfaces ── */
-  --maple-bg: #F5F4F1;
-  --maple-surface: #FFFFFF;
-  --maple-surface-raised: #FAFAF8;
+  --brand-bg: #F5F4F1;
+  --brand-surface: #FFFFFF;
+  --brand-surface-raised: #FAFAF8;
 
   /* ── Text ── */
-  --maple-charcoal: #1C1F23;
-  --maple-text: #2A2E33;
-  --maple-text-secondary: #4A5058;
-  --maple-text-muted: #6B7280;
+  --brand-charcoal: #1C1F23;
+  --brand-text: #2A2E33;
+  --brand-text-secondary: #4A5058;
+  --brand-text-muted: #6B7280;
 
   /* ── Borders ── */
-  --maple-border: #E8E6E1;
-  --maple-border-strong: #D4D0C8;
+  --brand-border: #E8E6E1;
+  --brand-border-strong: #D4D0C8;
 
   /* ── Champagne gold accents ── */
-  --maple-gold: #B8956A;
-  --maple-gold-light: #F5EFE6;
-  --maple-gold-deep: #96784F;
+  --brand-gold: #B8956A;
+  --brand-gold-light: #F5EFE6;
+  --brand-gold-deep: #96784F;
 
   /* ── Sage brand (refined green) ── */
-  --maple-green: #6B9E6E;
-  --maple-green-dark: #4F7F52;
-  --maple-green-deep: #3D6340;
-  --maple-green-light: #EEF4EF;
-  --maple-green-muted: #C5D9C7;
+  --brand-green: #6B9E6E;
+  --brand-green-dark: #4F7F52;
+  --brand-green-deep: #3D6340;
+  --brand-green-light: #EEF4EF;
+  --brand-green-muted: #C5D9C7;
 
   /* ── Sidebar (light) ── */
-  --maple-sidebar-bg: #F4F7F4;
-  --maple-sidebar-text: #4A5058;
-  --maple-sidebar-text-active: #3D6340;
-  --maple-sidebar-active: #EEF4EF;
-  --maple-sidebar-border: #E8E6E1;
-  --maple-sidebar-width: 260px;
-  --maple-sidebar-collapsed: 72px;
+  --brand-sidebar-bg: #F4F7F4;
+  --brand-sidebar-text: #4A5058;
+  --brand-sidebar-text-active: #3D6340;
+  --brand-sidebar-active: #EEF4EF;
+  --brand-sidebar-border: #E8E6E1;
+  --brand-sidebar-width: 260px;
+  --brand-sidebar-collapsed: 72px;
 
   /* ── Panel headers & active tabs ── */
-  --maple-panel-header-bg: linear-gradient(135deg, #EEF4EF 0%, #F5EFE6 100%);
-  --maple-panel-header-text: #3D6340;
-  --maple-tab-active-bg: #4F7F52;
-  --maple-overlay: rgba(74, 80, 88, 0.22);
+  --brand-panel-header-bg: linear-gradient(135deg, #EEF4EF 0%, #F5EFE6 100%);
+  --brand-panel-header-text: #3D6340;
+  --brand-tab-active-bg: #4F7F52;
+  --brand-overlay: rgba(74, 80, 88, 0.22);
 
   /* ── Gradients ── */
-  --maple-accent-gradient: linear-gradient(135deg, #6B9E6E 0%, #4F7F52 100%);
+  --brand-accent-gradient: linear-gradient(135deg, #6B9E6E 0%, #4F7F52 100%);
 
   /* ── Semantic ── */
-  --maple-danger: #C53030;
-  --maple-warning: #C05621;
-  --maple-info: #3D6B9E;
-  --maple-success: #4F7F52;
+  --brand-danger: #C53030;
+  --brand-warning: #C05621;
+  --brand-info: #3D6B9E;
+  --brand-success: #4F7F52;
 
   /* ── Focus / a11y ── */
-  --maple-focus-ring: #B8956A;
-  --maple-focus-offset: 2px;
-  --maple-focus-width: 2px;
+  --brand-focus-ring: #B8956A;
+  --brand-focus-offset: 2px;
+  --brand-focus-width: 2px;
 
   /* ── Spacing (4px grid) ── */
-  --maple-space-1: 4px;
-  --maple-space-2: 8px;
-  --maple-space-3: 12px;
-  --maple-space-4: 16px;
-  --maple-space-5: 20px;
-  --maple-space-6: 24px;
-  --maple-space-8: 32px;
-  --maple-space-10: 40px;
-  --maple-space-12: 48px;
+  --brand-space-1: 4px;
+  --brand-space-2: 8px;
+  --brand-space-3: 12px;
+  --brand-space-4: 16px;
+  --brand-space-5: 20px;
+  --brand-space-6: 24px;
+  --brand-space-8: 32px;
+  --brand-space-10: 40px;
+  --brand-space-12: 48px;
 
   /* ── Layout ── */
-  --maple-page-padding: clamp(16px, 2vw, 32px);
-  --maple-header-height: 60px;
-  --maple-content-max: 1440px;
+  --brand-page-padding: clamp(16px, 2vw, 32px);
+  --brand-header-height: 60px;
+  --brand-content-max: 1440px;
 
   /* ── Shape ── */
-  --maple-radius: 10px;
-  --maple-radius-lg: 14px;
-  --maple-radius-sm: 6px;
-  --maple-radius-full: 9999px;
+  --brand-radius: 10px;
+  --brand-radius-lg: 14px;
+  --brand-radius-sm: 6px;
+  --brand-radius-full: 9999px;
 
   /* ── Shadows ── */
-  --maple-shadow-sm: 0 1px 3px rgba(28, 31, 35, 0.06);
-  --maple-shadow: 0 4px 12px rgba(28, 31, 35, 0.08);
-  --maple-shadow-lg: 0 8px 24px rgba(28, 31, 35, 0.12);
+  --brand-shadow-sm: 0 1px 3px rgba(28, 31, 35, 0.06);
+  --brand-shadow: 0 4px 12px rgba(28, 31, 35, 0.08);
+  --brand-shadow-lg: 0 8px 24px rgba(28, 31, 35, 0.12);
 
   /* ── Typography ── */
-  --maple-font: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --maple-text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem);
-  --maple-text-sm: clamp(0.8125rem, 0.78rem + 0.15vw, 0.875rem);
-  --maple-text-base: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem);
-  --maple-text-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.125rem);
-  --maple-text-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.375rem);
-  --maple-heading: clamp(1.35rem, 1.2rem + 0.7vw, 1.75rem);
-  --maple-display: clamp(1.75rem, 1.5rem + 1.2vw, 2.25rem);
+  --brand-font: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --brand-text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem);
+  --brand-text-sm: clamp(0.8125rem, 0.78rem + 0.15vw, 0.875rem);
+  --brand-text-base: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem);
+  --brand-text-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.125rem);
+  --brand-text-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.375rem);
+  --brand-heading: clamp(1.35rem, 1.2rem + 0.7vw, 1.75rem);
+  --brand-display: clamp(1.75rem, 1.5rem + 1.2vw, 2.25rem);
 
   /* ── Motion ── */
-  --maple-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  --brand-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── Z-index ── */
-  --maple-z-header: 200;
-  --maple-z-sidebar: 250;
-  --maple-z-drawer: 300;
-  --maple-z-panel: 500;
-  --maple-z-modal: 1000;
-  --maple-z-modal-top: 1100;
+  --brand-z-header: 200;
+  --brand-z-sidebar: 250;
+  --brand-z-drawer: 300;
+  --brand-z-panel: 500;
+  --brand-z-modal: 1000;
+  --brand-z-modal-top: 1100;
 
   /* ── Event form section accents ── */
-  --maple-section-time: #B8956A;
-  --maple-section-guests: #4F7F52;
-  --maple-section-design: #96784F;
-  --maple-section-equip: #3D6B9E;
-  --maple-section-ent: #7B6B9E;
-  --maple-section-pay: #96784F;
-  --maple-section-menu-bg: #EEF4EF;
-  --maple-section-notes: #6B7280;
+  --brand-section-time: #B8956A;
+  --brand-section-guests: #4F7F52;
+  --brand-section-design: #96784F;
+  --brand-section-equip: #3D6B9E;
+  --brand-section-ent: #7B6B9E;
+  --brand-section-pay: #96784F;
+  --brand-section-menu-bg: #EEF4EF;
+  --brand-section-notes: #6B7280;
 
   /* ── Event form density ── */
-  --maple-form-section-pad: clamp(8px, 1vw, 14px);
-  --maple-form-label-size: clamp(0.68rem, 0.65rem + 0.15vw, 0.76rem);
-  --maple-form-input-pad: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 12px);
-  --maple-form-input-size: clamp(0.8rem, 0.78rem + 0.1vw, 0.88rem);
-  --maple-form-input-height: clamp(30px, 4vw, 34px);
-  --maple-form-header-height: clamp(52px, 8vh, 64px);
+  --brand-form-section-pad: clamp(8px, 1vw, 14px);
+  --brand-form-label-size: clamp(0.68rem, 0.65rem + 0.15vw, 0.76rem);
+  --brand-form-input-pad: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 12px);
+  --brand-form-input-size: clamp(0.8rem, 0.78rem + 0.1vw, 0.88rem);
+  --brand-form-input-height: clamp(30px, 4vw, 34px);
+  --brand-form-header-height: clamp(52px, 8vh, 64px);
 }
 
 /* ── Global utilities ── */
@@ -127,82 +127,82 @@
 .maple-close-btn {
   width: 36px;
   height: 36px;
-  border: 1px solid var(--maple-border);
+  border: 1px solid var(--brand-border);
   border-radius: 50%;
-  background: var(--maple-surface);
-  color: var(--maple-text-muted);
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--maple-transition), color var(--maple-transition);
+  transition: background var(--brand-transition), color var(--brand-transition);
   flex-shrink: 0;
 }
 
 .maple-close-btn:hover {
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .maple-modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--maple-overlay);
+  background: var(--brand-overlay);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--maple-z-modal);
+  z-index: var(--brand-z-modal);
   direction: rtl;
   padding: 16px;
 }
 
 .maple-modal-header {
-  background: var(--maple-panel-header-bg);
-  color: var(--maple-panel-header-text);
+  background: var(--brand-panel-header-bg);
+  color: var(--brand-panel-header-text);
   padding: 18px 22px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  border-bottom: 3px solid var(--maple-gold);
+  border-bottom: 3px solid var(--brand-gold);
 }
 
 .maple-modal-header h3,
 .maple-modal-header h2 {
   margin: 0;
-  color: var(--maple-panel-header-text);
-  font-size: var(--maple-text-lg);
+  color: var(--brand-panel-header-text);
+  font-size: var(--brand-text-lg);
   font-weight: 700;
 }
 
 .maple-modal-header .maple-close-btn {
-  border-color: var(--maple-border-strong);
-  background: var(--maple-surface);
-  color: var(--maple-text-muted);
+  border-color: var(--brand-border-strong);
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
 }
 
 .maple-modal-header .maple-close-btn:hover {
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .maple-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: var(--maple-space-2);
+  gap: var(--brand-space-2);
   padding: 10px 18px;
-  border-radius: var(--maple-radius-sm);
-  font-size: var(--maple-text-sm);
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
   cursor: pointer;
   border: none;
-  transition: background var(--maple-transition), color var(--maple-transition),
-    border-color var(--maple-transition);
+  transition: background var(--brand-transition), color var(--brand-transition),
+    border-color var(--brand-transition);
 }
 
 .maple-btn:disabled {
@@ -211,37 +211,37 @@
 }
 
 .maple-btn-primary {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: #fff;
 }
 
 .maple-btn-primary:hover:not(:disabled) {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .maple-btn-secondary {
-  background: var(--maple-surface);
-  color: var(--maple-text-secondary);
-  border: 1px solid var(--maple-border-strong);
+  background: var(--brand-surface);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border-strong);
 }
 
 .maple-btn-secondary:hover:not(:disabled) {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
 }
 
 .maple-btn-danger {
-  background: var(--maple-surface);
-  color: var(--maple-danger);
-  border: 2px solid var(--maple-danger);
+  background: var(--brand-surface);
+  color: var(--brand-danger);
+  border: 2px solid var(--brand-danger);
 }
 
 .maple-btn-danger:hover:not(:disabled) {
-  background: var(--maple-danger);
+  background: var(--brand-danger);
   color: #fff;
 }
 
 .maple-btn-warning {
-  background: var(--maple-warning);
+  background: var(--brand-warning);
   color: #fff;
 }
 
@@ -251,7 +251,7 @@
 
 .maple-empty-state {
   text-align: center;
-  padding: var(--maple-space-12) var(--maple-space-6);
-  color: var(--maple-text-muted);
-  font-size: var(--maple-text-base);
+  padding: var(--brand-space-12) var(--brand-space-6);
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-base);
 }

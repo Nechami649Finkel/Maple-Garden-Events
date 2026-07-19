@@ -14,6 +14,7 @@ import {
 import { catchAsync } from '../middlewares/errorHandler';
 import { isValidRole } from '../middlewares/requireRole';
 import { logger } from '../utils/logger';
+import { getServerTranslation, resolveLocaleFromRequest, T } from '../i18n/getServerTranslation';
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -25,10 +26,12 @@ function issueSession(res: Response, email: string, name: string, role: string) 
 }
 
 export const login = async (req: Request, res: Response) => {
+  const locale = resolveLocaleFromRequest(req);
+  const { t } = getServerTranslation(locale);
   const { token } = req.body;
 
   if (!token) {
-    return res.status(400).json({ success: false, message: 'לא נשלח טוקן אימות.' });
+    return res.status(400).json({ success: false, message: t(T.SERVER.AUTH.NO_TOKEN) });
   }
 
   try {
@@ -39,11 +42,11 @@ export const login = async (req: Request, res: Response) => {
 
     const payload = ticket.getPayload();
     if (!payload?.email) {
-      return res.status(401).json({ success: false, message: 'טוקן אימות לא חוקי.' });
+      return res.status(401).json({ success: false, message: t(T.SERVER.AUTH.INVALID_TOKEN) });
     }
 
     const googleUserEmail = payload.email.toLowerCase().trim();
-    const userName = payload.name || 'מנהל מערכת';
+    const userName = payload.name || t(T.SERVER.AUTH.DEFAULT_ADMIN_NAME);
 
     const user = await prisma.authorizedUser.findUnique({
       where: { email: googleUserEmail },
@@ -52,14 +55,14 @@ export const login = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(403).json({
         success: false,
-        message: 'אין למשתמש זה הרשאות גישה למערכת.',
+        message: t(T.SERVER.AUTH.ACCESS_DENIED),
       });
     }
 
     if (!isValidRole(user.role)) {
       return res.status(403).json({
         success: false,
-        message: 'לחשבון זה לא הוקצה תפקיד תקף. פנה למנהל המערכת.',
+        message: t(T.SERVER.AUTH.INVALID_ROLE),
       });
     }
 
@@ -67,19 +70,21 @@ export const login = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       success: true,
-      message: 'התחברת בהצלחה',
+      message: t(T.SERVER.AUTH.LOGIN_SUCCESS),
       user: { role: user.role, name: userName, email: googleUserEmail },
     });
   } catch (error) {
     logger.error('Google authentication failed', { error });
-    return res.status(401).json({ success: false, message: 'ההתחברות מול גוגל נכשלה.' });
+    return res.status(401).json({ success: false, message: t(T.SERVER.AUTH.GOOGLE_FAILED) });
   }
 };
 
 export const refresh = async (req: Request, res: Response) => {
+  const locale = resolveLocaleFromRequest(req);
+  const { t } = getServerTranslation(locale);
   const refreshToken = extractRefreshToken(req);
   if (!refreshToken) {
-    return res.status(401).json({ success: false, message: 'Refresh token חסר.' });
+    return res.status(401).json({ success: false, message: t(T.SERVER.AUTH.REFRESH_MISSING) });
   }
 
   try {
@@ -90,25 +95,27 @@ export const refresh = async (req: Request, res: Response) => {
     });
     if (!authorized) {
       clearSessionCookies(res);
-      return res.status(403).json({ success: false, message: 'אין הרשאות גישה.' });
+      return res.status(403).json({ success: false, message: t(T.SERVER.AUTH.REFRESH_FORBIDDEN) });
     }
 
     if (!isValidRole(authorized.role)) {
       clearSessionCookies(res);
-      return res.status(403).json({ success: false, message: 'לחשבון זה אין תפקיד תקף.' });
+      return res.status(403).json({ success: false, message: t(T.SERVER.AUTH.REFRESH_INVALID_ROLE) });
     }
 
     issueSession(res, user.email, user.name, authorized.role);
     return res.status(200).json({ success: true });
   } catch {
     clearSessionCookies(res);
-    return res.status(401).json({ success: false, message: 'Refresh token לא תקין או שפג תוקפו.' });
+    return res.status(401).json({ success: false, message: t(T.SERVER.AUTH.REFRESH_INVALID) });
   }
 };
 
-export const logout = (_req: Request, res: Response) => {
+export const logout = (req: Request, res: Response) => {
+  const locale = resolveLocaleFromRequest(req);
+  const { t } = getServerTranslation(locale);
   clearSessionCookies(res);
-  res.status(200).json({ success: true, message: 'התנתקת בהצלחה.' });
+  res.status(200).json({ success: true, message: t(T.SERVER.AUTH.LOGOUT_SUCCESS) });
 };
 
 export const me = catchAsync(async (req: AuthRequest, res: Response) => {

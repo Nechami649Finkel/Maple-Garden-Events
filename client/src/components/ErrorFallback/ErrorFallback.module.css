@@ -6,9 +6,9 @@
   min-height: 100vh;
   padding: 2rem;
   text-align: center;
-  font-family: var(--maple-font);
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  font-family: var(--brand-font);
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .errorFallback h1 {
@@ -17,16 +17,16 @@
 }
 
 .errorFallback p {
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   margin-bottom: 1.5rem;
   max-width: 420px;
 }
 
 .errorFallback pre {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: 1rem;
-  border-radius: var(--maple-radius);
-  border: 1px solid var(--maple-border);
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-border);
   max-width: 600px;
   overflow: auto;
   font-size: 0.85rem;

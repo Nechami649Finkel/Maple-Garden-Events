@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
-// תיקון הנתיב כדי שיחזור תיקייה אחת אחורה ל-MenuDisplay
+import { useState } from 'react';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from '../MenuDisplay/MenuDisplay.module.css';
 import { menuData, CATEGORY_LIMITS } from '../MenuDisplay/menuData';
 
 interface MenuSelectionFormProps {
-  // נוסיף אפשרות לקבל בחירות קודמות כדי להציג אותן שוב
   initialSelections?: Record<string, string[]> | null;
   onSaveMenu?: (selections: Record<string, string[]>) => void;
 }
 
 const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections, onSaveMenu }) => {
-  // נאתחל את הסטייט עם הבחירות הקיימות אם ישנן
+  const { t, T } = useTranslation();
   const [selections, setSelections] = useState<Record<string, string[]>>(initialSelections || {});
 
   const handleToggleItem = (category: string, itemName: string) => {
@@ -27,7 +26,7 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
 
       const limit = CATEGORY_LIMITS[category] || Infinity;
       if (currentCategorySelections.length >= limit) {
-        alert(`שימי לב: בקטגוריה "${category}" ניתן לבחור מקסימום ${limit} פריטים.`);
+        alert(t(T.MENU.MAX_ITEMS_ALERT));
         return prev;
       }
 
@@ -42,8 +41,8 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
     if (onSaveMenu) {
       onSaveMenu(selections);
     } else {
-      console.log("נתוני התפריט שנבחרו:", selections);
-      alert("התפריט נשמר בהצלחה!");
+      console.log('Menu selections:', selections);
+      alert(t(T.MENU.SAVED_SUCCESS));
     }
   };
 
@@ -53,9 +52,9 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
         <div className={styles.logoContainer}>
           <img src="/logo.png" alt="Maple Logo" className={styles.menuLogo} />
         </div>
-        <h2 className={styles.mainTitle}>בחירת תפריט לאירוע</h2>
+        <h2 className={styles.mainTitle}>{t(T.MENU.SELECTION_TITLE)}</h2>
         <div className={styles.accentLine}></div>
-        <p style={{ textAlign: 'center', marginTop: '10px' }}>אנא סמנו את המנות הרצויות בהתאם למכסה של כל קטגוריה</p>
+        <p style={{ textAlign: 'center', marginTop: '10px' }}>{t(T.MENU.SELECTION_INSTRUCTIONS)}</p>
       </div>
 
       <div className={styles.menuContent}>
@@ -68,7 +67,11 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>
                   {section.category}
-                  {limit && <span style={{fontSize: '0.8em', color: '#888', marginRight: '10px'}}> (נבחרו {selectedCount}/{limit})</span>}
+                  {limit && (
+                    <span style={{ fontSize: '0.8em', color: '#888', marginRight: '10px' }}>
+                      {t(T.MENU.SELECTION_COUNT, { selected: selectedCount, limit })}
+                    </span>
+                  )}
                 </h3>
                 {section.subtitle && <p className={styles.sectionSubtitle}>{section.subtitle}</p>}
               </div>
@@ -80,17 +83,28 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
                     <ul className={styles.itemsList}>
                       {sub.items.map((item, itemIdx) => {
                         const isChecked = (selections[section.category] || []).includes(item.name);
-                        
+
                         return (
-                          <li key={itemIdx} className={styles.itemRow} style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '5px 0' }}
-                              onClick={() => handleToggleItem(section.category, item.name)}>
-                            <input 
-                              type="checkbox" 
+                          <li
+                            key={itemIdx}
+                            className={styles.itemRow}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              cursor: 'pointer',
+                              padding: '5px 0',
+                            }}
+                            onClick={() => handleToggleItem(section.category, item.name)}
+                          >
+                            <input
+                              type="checkbox"
                               checked={isChecked}
-                              readOnly 
+                              readOnly
                               style={{ marginLeft: '12px', transform: 'scale(1.3)', cursor: 'pointer' }}
                             />
-                            <p className={styles.itemText} style={{ margin: 0, userSelect: 'none' }}>{item.name}</p>
+                            <p className={styles.itemText} style={{ margin: 0, userSelect: 'none' }}>
+                              {item.name}
+                            </p>
                           </li>
                         );
                       })}
@@ -104,17 +118,26 @@ const MenuSelectionForm: React.FC<MenuSelectionFormProps> = ({ initialSelections
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'center', margin: '40px 0' }}>
-        <button 
+        <button
           onClick={handleFinalizeMenu}
-          style={{ padding: '15px 40px', fontSize: '18px', backgroundColor: '#d4af37', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}
+          style={{
+            padding: '15px 40px',
+            fontSize: '18px',
+            backgroundColor: '#d4af37',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+          }}
         >
-          אשר ושמור תפריט ללקוח
+          {t(T.MENU.CONFIRM_SAVE)}
         </button>
       </div>
 
       <div className={styles.footer}>
-        <p className={styles.footerInfo}>רח' מודיעין 18, א.ת. סגולה, פ"ת / טל. 03-6777772 / www.maple-g.co.il</p>
-        <p className={styles.footerNote}>אין להכניס לאולם מאכלים ומשקאות ללא אישור 24 שעות מראש עם המשגיח הכשרות של האולם</p>
+        <p className={styles.footerInfo}>{t(T.MENU.FOOTER_ADDRESS)}</p>
+        <p className={styles.footerNote}>{t(T.MENU.FOOTER_KASHRUT_NOTE)}</p>
       </div>
     </div>
   );
