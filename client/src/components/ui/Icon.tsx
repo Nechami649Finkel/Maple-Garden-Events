@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { NavIconName } from '../../utils/navConfig';
+import type { NavIconName } from '@shared/i18n/navigationLookups';
 
 const ICONS: Record<NavIconName, ReactNode> = {
   dashboard: (

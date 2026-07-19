@@ -54,7 +54,7 @@ body {
   .maple-modal-overlay > * {
     width: 100%;
     max-width: none;
-    border-radius: var(--maple-radius-lg) var(--maple-radius-lg) 0 0;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
     max-height: 92dvh;
     overflow-y: auto;
   }
@@ -73,7 +73,7 @@ body {
 
 @media (min-width: 1024px) {
   .page-content-full {
-    padding: var(--maple-page-padding);
+    padding: var(--brand-page-padding);
   }
 }
 

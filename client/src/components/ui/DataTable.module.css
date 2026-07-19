@@ -1,14 +1,14 @@
 .wrap {
   overflow-x: auto;
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
-  background: var(--maple-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  background: var(--brand-surface);
 }
 
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
 }
 
 .table thead {
@@ -18,19 +18,19 @@
 }
 
 .table th {
-  background: var(--maple-surface-raised);
-  color: var(--maple-text-secondary);
+  background: var(--brand-surface-raised);
+  color: var(--brand-text-secondary);
   font-weight: 600;
   text-align: right;
-  padding: var(--maple-space-3) var(--maple-space-4);
-  border-bottom: 1px solid var(--maple-border);
+  padding: var(--brand-space-3) var(--brand-space-4);
+  border-bottom: 1px solid var(--brand-border);
   white-space: nowrap;
 }
 
 .table td {
-  padding: var(--maple-space-3) var(--maple-space-4);
-  border-bottom: 1px solid var(--maple-border);
-  color: var(--maple-text);
+  padding: var(--brand-space-3) var(--brand-space-4);
+  border-bottom: 1px solid var(--brand-border);
+  color: var(--brand-text);
   vertical-align: middle;
 }
 
@@ -39,7 +39,7 @@
 }
 
 .table tbody tr:hover {
-  background: var(--maple-surface-raised);
+  background: var(--brand-surface-raised);
 }
 
 .clickable {
@@ -47,7 +47,7 @@
 }
 
 .clickable:focus-visible {
-  outline: var(--maple-focus-width) solid var(--maple-focus-ring);
+  outline: var(--brand-focus-width) solid var(--brand-focus-ring);
   outline-offset: -2px;
 }
 
@@ -65,12 +65,12 @@
 }
 
 .sortBtn:hover {
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .empty {
   text-align: center;
-  padding: var(--maple-space-8);
-  color: var(--maple-text-muted);
-  font-size: var(--maple-text-base);
+  padding: var(--brand-space-8);
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-base);
 }

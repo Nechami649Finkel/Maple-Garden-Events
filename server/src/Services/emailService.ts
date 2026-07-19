@@ -1,38 +1,42 @@
 import { deliverMail, getFromAddress } from '../utils/mailer';
 import { logger } from '../utils/logger';
+import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../i18n/getServerTranslation';
 
 export const sendPDFToClient = async (
   clientEmail: string,
   clientName: string,
   eventDate: string,
   pdfBuffer: Buffer,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<boolean> => {
-  const subject = `טופס הפקת אירוע - ${clientName} | ${new Date(eventDate).toLocaleDateString('he-IL')}`;
+  const { t } = getServerTranslation(locale);
+  const formattedDate = new Date(eventDate).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US');
+  const subject = t(T.SERVER.EMAIL.EVENT_FORM.SUBJECT, { clientName, date: formattedDate });
   const htmlBody = `
       <div style="direction: rtl; font-family: Arial, sans-serif;">
-        <h2>שלום ${clientName}!</h2>
-        <p>מצורף טופס הפקת האירוע שלך ב-PDF.</p>
-        <p>אנא שמור את הטופס הזה כדי להשתמש בו ביום האירוע.</p>
+        <h2>${t(T.SERVER.EMAIL.EVENT_FORM.GREETING, { clientName })}</h2>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.BODY)}</p>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.NOTE)}</p>
         <br/>
-        <p>גן מייפל אירועים</p>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.SIGNATURE)}</p>
       </div>
     `;
 
   const result = await deliverMail(
     {
-      from: getFromAddress(),
+      from: getFromAddress(locale),
       to: clientEmail,
       subject,
       html: htmlBody,
       attachments: [
         {
-          filename: `טופס_הפקה_${clientName}.pdf`,
+          filename: t(T.SERVER.EMAIL.EVENT_FORM.ATTACHMENT, { clientName }),
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
       ],
     },
-    `טופס PDF ל-${clientEmail}`,
+    t(T.SERVER.EMAIL.EVENT_FORM.LOG_LABEL, { email: clientEmail }),
   );
 
   return result.ok;

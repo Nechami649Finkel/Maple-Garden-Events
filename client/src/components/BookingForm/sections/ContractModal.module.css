@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--maple-z-modal-top);
+  z-index: var(--brand-z-modal-top);
   direction: rtl;
   padding: 16px;
 }
@@ -14,18 +14,18 @@
 .modal {
   max-width: 850px;
   width: 95%;
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
   overflow: hidden;
-  box-shadow: var(--maple-shadow-lg);
+  box-shadow: var(--brand-shadow-lg);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--maple-border);
+  border: 1px solid var(--brand-border);
 }
 
 .header {
-  background: linear-gradient(135deg, var(--maple-green) 0%, var(--maple-green-dark) 100%);
+  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
   color: #fff;
   padding: 18px 24px;
   display: flex;
@@ -90,7 +90,7 @@
 
 .toolbarTitle {
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-size: 1rem;
 }
 
@@ -102,19 +102,19 @@
 }
 
 .editBtn {
-  background: var(--maple-green-light);
-  color: var(--maple-green-deep);
-  border: 1px solid var(--maple-green-muted);
+  background: var(--brand-green-light);
+  color: var(--brand-green-deep);
+  border: 1px solid var(--brand-green-muted);
   padding: 8px 16px;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .editBtn:hover {
-  background: var(--maple-green-muted);
+  background: var(--brand-green-muted);
 }
 
 .editActions {
@@ -127,9 +127,9 @@
   height: 400px;
   padding: 20px;
   margin-bottom: 20px;
-  border: 2px solid var(--maple-green);
-  border-radius: var(--maple-radius);
-  color: var(--maple-text);
+  border: 2px solid var(--brand-green);
+  border-radius: var(--brand-radius);
+  color: var(--brand-text);
   line-height: 1.8;
   font-size: 1rem;
   resize: vertical;
@@ -141,12 +141,12 @@
 .textPanel {
   height: 400px;
   overflow-y: auto;
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: 24px;
   margin-bottom: 20px;
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
-  color: var(--maple-text);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  color: var(--brand-text);
   line-height: 1.8;
   font-size: 1rem;
   position: relative;
@@ -154,16 +154,16 @@
 }
 
 .disclaimer {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
   padding: 18px 20px;
-  border-radius: var(--maple-radius);
+  border-radius: var(--brand-radius);
   margin-bottom: 20px;
-  border: 1px solid var(--maple-green-muted);
+  border: 1px solid var(--brand-green-muted);
 }
 
 .disclaimer p {
   font-size: 0.95rem;
-  color: var(--maple-green-deep);
+  color: var(--brand-green-deep);
   margin: 0;
   font-weight: 600;
   line-height: 1.6;
@@ -176,14 +176,14 @@
 
 .signatureSection h4 {
   margin: 0 0 14px;
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-size: 1.05rem;
 }
 
 .signatureBox {
-  border: 2px solid var(--maple-border-strong);
-  background: var(--maple-bg);
-  border-radius: var(--maple-radius);
+  border: 2px solid var(--brand-border-strong);
+  background: var(--brand-bg);
+  border-radius: var(--brand-radius);
   display: inline-block;
   padding: 5px;
   max-width: 100%;
@@ -204,7 +204,7 @@
 }
 
 .emptyMsg {
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 @media (max-width: 768px) {
@@ -217,7 +217,7 @@
     width: 100%;
     max-width: none;
     max-height: 100dvh;
-    border-radius: var(--maple-radius-lg) var(--maple-radius-lg) 0 0;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
   }
 
   .header {

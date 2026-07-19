@@ -1,6 +1,6 @@
 .container {
   direction: rtl;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .searchInput {
@@ -28,18 +28,18 @@
 }
 
 .card {
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 16px 18px;
-  background: var(--maple-surface);
-  box-shadow: var(--maple-shadow-sm);
-  transition: all var(--maple-transition);
+  background: var(--brand-surface);
+  box-shadow: var(--brand-shadow-sm);
+  transition: all var(--brand-transition);
   cursor: pointer;
 }
 
 .card:hover {
-  border-color: var(--maple-green-muted);
-  box-shadow: var(--maple-shadow);
+  border-color: var(--brand-green-muted);
+  box-shadow: var(--brand-shadow);
   transform: translateY(-2px);
 }
 
@@ -114,7 +114,7 @@
 }
 
 .bumpBtn {
-  background-color: var(--maple-green);
+  background-color: var(--brand-green);
 }
 
 .notifyBtn {
@@ -130,7 +130,7 @@
   text-align: center;
   padding: 20px;
   font-size: 1.1rem;
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
 }
 /* כפתור סגירה סופית - ירוק בולט */
 .finalizeBtn {
@@ -164,7 +164,7 @@
 }
 
 .popupHeader {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: #ffffff;
   padding: 14px 16px;
   display: flex;

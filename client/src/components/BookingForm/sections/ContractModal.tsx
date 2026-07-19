@@ -4,6 +4,7 @@ import { getSignatureDataUrl } from '../../../utils/signature';
 import { openContractPdf } from '../../../utils/contractPrint';
 import ContractTextViewer from './ContractTextViewer';
 import modalStyles from './ContractModal.module.css';
+import { useTranslation } from '../../../i18n/useTranslation';
 
 interface ContractModalProps {
   isOpen: boolean;
@@ -32,6 +33,7 @@ const ContractModal = ({
   onContractTextChange,
   bookingId,
 }: ContractModalProps) => {
+  const { t, T } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [padGeneration, setPadGeneration] = useState(0);
@@ -63,12 +65,12 @@ const ContractModal = ({
 
   const handleConfirmSignature = () => {
     if (isEditing) {
-      alert('יש לשמור או לבטל את עריכת מלל החוזה לפני החתימה.');
+      alert(t(T.BOOKING.CONTRACT.SAVE_EDIT_BEFORE_SIGN));
       return;
     }
     const dataUrl = captureFromPad();
     if (!dataUrl) {
-      alert('נא לחתום לפני האישור');
+      alert(t(T.BOOKING.CONTRACT.SIGN_REQUIRED));
       return;
     }
     onSignatureSaved?.(dataUrl);
@@ -95,39 +97,39 @@ const ContractModal = ({
     <div className={modalStyles.overlay}>
       <div className={modalStyles.modal}>
         <div className={modalStyles.header}>
-          <h3>{isOption ? 'הצעת מחיר וחוזה (אופציה)' : 'חוזה התקשרות לאירוע'}</h3>
-          <button type="button" onClick={onClose} className={`maple-close-btn ${modalStyles.headerClose}`} aria-label="סגור">✕</button>
+          <h3>{isOption ? t(T.BOOKING.CONTRACT.TITLE_OPTION) : t(T.BOOKING.CONTRACT.TITLE_BOOKING)}</h3>
+          <button type="button" onClick={onClose} className={`maple-close-btn ${modalStyles.headerClose}`} aria-label={t(T.BOOKING.CONTRACT.CLOSE)}>✕</button>
         </div>
 
         <div className={modalStyles.body}>
           <div className={modalStyles.contentWrap}>
             {isOption && !isEditing && (
-              <div className={modalStyles.draftWatermark}>טיוטה - דוגמא</div>
+              <div className={modalStyles.draftWatermark}>{t(T.BOOKING.CONTRACT.DRAFT_WATERMARK)}</div>
             )}
 
             <div className={modalStyles.toolbar}>
-              <span className={modalStyles.toolbarTitle}>מלל החוזה לאירוע זה</span>
+              <span className={modalStyles.toolbarTitle}>{t(T.BOOKING.CONTRACT.TEXT_TITLE)}</span>
               <div className={modalStyles.toolbarActions}>
                 {bookingId && !isEditing && (
                   <button
                     type="button"
                     className="maple-btn maple-btn-secondary"
-                    onClick={() => void openContractPdf(bookingId)}
+                    onClick={() => void openContractPdf(bookingId, t)}
                   >
-                    צפייה ב-PDF החוזה
+                    {t(T.BOOKING.CONTRACT.VIEW_PDF)}
                   </button>
                 )}
                 {!isEditing ? (
                   <button type="button" onClick={startEditing} className={modalStyles.editBtn}>
-                    ✏️ עריכת מלל החוזה
+                    {t(T.BOOKING.CONTRACT.EDIT_TEXT)}
                   </button>
                 ) : (
                   <div className={modalStyles.editActions}>
                     <button type="button" onClick={saveEditing} className="maple-btn maple-btn-primary">
-                      שמירה
+                      {t(T.COMMON.ACTIONS.SAVE)}
                     </button>
                     <button type="button" onClick={cancelEditing} className="maple-btn maple-btn-secondary">
-                      ביטול
+                      {t(T.COMMON.ACTIONS.CANCEL)}
                     </button>
                   </div>
                 )}
@@ -146,7 +148,7 @@ const ContractModal = ({
                   <ContractTextViewer text={contractText} />
                 ) : (
                   <span className={modalStyles.emptyMsg}>
-                    לא ניתן לטעון את מלל החוזה — ודאי שהשרת פועל (פורט 5000)
+                    {t(T.BOOKING.CONTRACT.EMPTY)}
                   </span>
                 )}
               </div>
@@ -154,13 +156,11 @@ const ContractModal = ({
           </div>
 
           <div className={modalStyles.disclaimer}>
-            <p>
-              בחתימתי אני מאשר/ת את נכונות הפרטים המופיעים בטופס הפקת אירוע זה. כמו כן, אני מצהיר/ה כי קראתי והבנתי את תנאי ההתקשרות והתקנון של גן אירועים מייפל, ואני מסכים/ה להם במלואם.
-            </p>
+            <p>{t(T.BOOKING.CONTRACT.DISCLAIMER)}</p>
           </div>
 
           <div className={modalStyles.signatureSection}>
-            <h4>חתימת הלקוח:</h4>
+            <h4>{t(T.BOOKING.CONTRACT.SIGNATURE_TITLE)}</h4>
             <div className={modalStyles.signatureBox}>
               <SignatureCanvas
                 key={padGeneration}
@@ -188,7 +188,7 @@ const ContractModal = ({
               }}
               className="maple-btn maple-btn-danger"
             >
-              נקה חתימה 🗑️
+              {t(T.BOOKING.CONTRACT.CLEAR_SIGNATURE)}
             </button>
 
             <button
@@ -196,7 +196,7 @@ const ContractModal = ({
               onClick={handleConfirmSignature}
               className={`maple-btn maple-btn-primary ${modalStyles.signBtn}`}
             >
-              אני מאשר/ת וחותם/ת ✓
+              {t(T.BOOKING.CONTRACT.CONFIRM_SIGN)}
             </button>
           </div>
         </div>

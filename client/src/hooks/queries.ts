@@ -3,6 +3,7 @@ import { API_URL } from '../config/api';
 import { apiFetch } from '../services/api';
 import { type BookingApi } from '../utils/bookingApi';
 import { type CalendarDayApi } from '../utils/optionDateApi';
+import { tClient, T } from '../i18n/clientTranslation';
 
 export interface PaginationMeta {
   page: number;
@@ -35,7 +36,7 @@ export function useBookingsQuery(params: BookingsParams) {
 
       const res = await apiFetch(`${API_URL}/bookings?${qs}`);
       const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'שגיאה בטעינת הזמנות');
+      if (!json.success) throw new Error(json.message || tClient(T.BOOKINGS.LOAD_ERROR));
       return { data: json.data as BookingApi[], pagination: json.pagination };
     },
   });
@@ -49,7 +50,7 @@ export function useCalendarDatesQuery(start: string, end: string, eventType: str
       const res = await apiFetch(`${API_URL}/calendar/dates?${qs}`);
       const json = await res.json();
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'שגיאה בטעינת לוח שנה');
+        throw new Error(typeof json?.error === 'string' ? json.error : tClient(T.CALENDAR.LOAD_ERROR));
       }
       if (Array.isArray(json)) return json as CalendarDayApi[];
       if (Array.isArray(json?.data)) return json.data as CalendarDayApi[];
@@ -66,7 +67,7 @@ export function useFeedbackAdminQuery(page: number, limit = 20) {
       const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
       const res = await apiFetch(`${API_URL}/feedback/admin/list?${qs}`);
       const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'שגיאה בטעינת משובים');
+      if (!json.success) throw new Error(json.message || tClient(T.FEEDBACK.LOAD_ERROR));
       return { data: json.data, pagination: json.pagination as PaginationMeta };
     },
     refetchInterval: 15_000,
@@ -122,7 +123,7 @@ export function useFeedbackStatsQuery(year: string, month: string) {
       if (month) url += `&month=${month}`;
       const res = await apiFetch(url);
       const json = await res.json();
-      if (!json.success) throw new Error(json.message || 'שגיאה בטעינת סטטיסטיקות');
+      if (!json.success) throw new Error(json.message || tClient(T.FEEDBACK.STATS_LOAD_ERROR));
       return json.data as FeedbackStatsData;
     },
   });
@@ -191,7 +192,7 @@ export function useCancellationStatsQuery(year: string, month: string) {
       if (month) url += `&month=${month}`;
       const res = await apiFetch(url);
       const data = await res.json();
-      if (!data.success) throw new Error('שגיאה בטעינת סטטיסטיקה');
+      if (!data.success) throw new Error(tClient(T.OPTIONS.STATS_LOAD_ERROR));
       return data.data as { reason: string; count: number }[];
     },
   });
@@ -220,7 +221,7 @@ export function useCheckInQuery(bookingId: string | null | undefined) {
     queryFn: async (): Promise<CheckInQueryData> => {
       const res = await apiFetch(`${API_URL}/check-in/${bookingId}`);
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'שגיאה בטעינת הטופס');
+      if (!json.success) throw new Error(json.error || tClient(T.LIVE_EVENT.FORM_LOAD_ERROR));
       return json.data;
     },
     enabled: Boolean(bookingId),

@@ -5,6 +5,12 @@ import {
   useCalendarDatesQuery,
   useFeedbackStatsQuery,
 } from '../../hooks/queries';
+import { useTranslation } from '../../i18n/useTranslation';
+import { formatDate } from '@shared/i18n/formatters';
+import {
+  EVENT_TYPE_KEY_BY_VALUE,
+  translateByValue,
+} from '@shared/i18n/bookingLookups';
 import {
   StatCard,
   Card,
@@ -32,6 +38,7 @@ const getEventDay = (b: BookingApi) =>
   b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null;
 
 const Dashboard = () => {
+  const { t, T, locale } = useTranslation();
   const now = new Date();
   const year = String(now.getFullYear());
   const month = String(now.getMonth() + 1);
@@ -94,7 +101,7 @@ const Dashboard = () => {
 
   const avgScore = feedbackStats?.averages?.combined;
   const avgScoreDisplay =
-    avgScore != null ? avgScore.toFixed(1) : '—';
+    avgScore != null ? avgScore.toFixed(1) : t(T.COMMON.LABELS.EM_DASH);
 
   const recentActivity = useMemo(() => {
     const booked = (bookedData?.data ?? []).filter((b) => !b.isOption);
@@ -111,42 +118,45 @@ const Dashboard = () => {
 
   const metricsLoading = bookedLoading || optionsLoading || calendarLoading || feedbackLoading;
 
+  const formatEventType = (value: string) =>
+    translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value);
+
   return (
     <div className={styles.dashboard}>
       <header className={styles.pageHeader}>
         <div>
-          <h1 className={styles.title}>לוח בקרה</h1>
-          <p className={styles.subtitle}>סקירה כללית של האירועים וההזמנות במתחם</p>
+          <h1 className={styles.title}>{t(T.DASHBOARD.TITLE)}</h1>
+          <p className={styles.subtitle}>{t(T.DASHBOARD.SUBTITLE)}</p>
         </div>
         <Link to="/calendar">
-          <Button variant="primary">לוח שנה מלא</Button>
+          <Button variant="primary">{t(T.DASHBOARD.FULL_CALENDAR)}</Button>
         </Link>
       </header>
 
-      <section className={styles.metrics} aria-label="מדדי ביצוע">
+      <section className={styles.metrics} aria-label={t(T.DASHBOARD.METRICS_ARIA)}>
         <StatCard
-          label="אירועים קרובים (30 יום)"
+          label={t(T.DASHBOARD.UPCOMING_30)}
           value={upcomingCount}
           icon="calendar"
           loading={metricsLoading}
         />
         <StatCard
-          label="אופציות פתוחות"
+          label={t(T.DASHBOARD.OPEN_OPTIONS)}
           value={openOptionsCount}
           icon="clipboard"
           loading={metricsLoading}
         />
         <StatCard
-          label="אירועים החודש"
+          label={t(T.DASHBOARD.EVENTS_THIS_MONTH)}
           value={eventsThisMonth}
           icon="event"
           loading={metricsLoading}
         />
         <StatCard
-          label="ציון משוב ממוצע"
+          label={t(T.DASHBOARD.AVG_FEEDBACK)}
           value={avgScoreDisplay}
           icon="star"
-          trend={avgScore != null ? 'מתוך 5' : undefined}
+          trend={avgScore != null ? t(T.COMMON.LABELS.OUT_OF_FIVE) : undefined}
           loading={metricsLoading}
         />
       </section>
@@ -157,10 +167,10 @@ const Dashboard = () => {
 
       <section className={styles.miniCal}>
         <Card>
-          <CardHeader title="לוח שנה — החודש">
+          <CardHeader title={t(T.DASHBOARD.MINI_CALENDAR_TITLE)}>
             <Link to="/calendar">
               <Button variant="secondary" size="sm">
-                פתיחה
+                {t(T.COMMON.ACTIONS.OPEN)}
               </Button>
             </Link>
           </CardHeader>
@@ -176,12 +186,12 @@ const Dashboard = () => {
 
       <section className={styles.activity}>
         <Card compact>
-          <CardHeader title="פעילות אחרונה" />
+          <CardHeader title={t(T.DASHBOARD.RECENT_ACTIVITY)} />
           <CardBody>
             {metricsLoading ? (
               <SkeletonGroup rows={4} />
             ) : recentActivity.length === 0 ? (
-              <p className={styles.emptyActivity}>אין פעילות להצגה</p>
+              <p className={styles.emptyActivity}>{t(T.DASHBOARD.NO_ACTIVITY)}</p>
             ) : (
               <ul className={styles.activityList}>
                 {recentActivity.map((b) => (
@@ -189,11 +199,14 @@ const Dashboard = () => {
                     <div className={styles.activityInfo}>
                       <span className={styles.activityName}>{b.clientAFullName}</span>
                       <span className={styles.activityMeta}>
-                        {getEventDay(b)?.toLocaleDateString('he-IL')} · {b.eventType}
+                        {b.eventDate?.date
+                          ? formatDate(b.eventDate.date, locale)
+                          : t(T.COMMON.LABELS.EM_DASH)}{' '}
+                        · {formatEventType(b.eventType)}
                       </span>
                     </div>
                     <Badge variant={b._type === 'option' ? 'option' : 'confirmed'}>
-                      {b._type === 'option' ? 'אופציה' : 'מאושר'}
+                      {b._type === 'option' ? t(T.STATUS.OPTION) : t(T.STATUS.CONFIRMED)}
                     </Badge>
                   </li>
                 ))}

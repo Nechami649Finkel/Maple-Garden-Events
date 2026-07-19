@@ -1,4 +1,5 @@
-import type { NavIconName } from '../../utils/navConfig';
+import type { NavIconName } from '@shared/i18n/navigationLookups';
+import { useTranslation } from '../../i18n/useTranslation';
 import { Icon } from './Icon';
 import styles from './StatCard.module.css';
 
@@ -11,10 +12,13 @@ interface StatCardProps {
 }
 
 export function StatCard({ label, value, icon, trend, loading }: StatCardProps) {
+  const { t, T } = useTranslation();
+  const ariaValue = loading ? t(T.UI.STAT_LOADING) : String(value);
+
   return (
     <article
       className={styles.card}
-      aria-label={`${label}: ${loading ? 'טוען' : value}${trend ? `, ${trend}` : ''}`}
+      aria-label={`${label}: ${ariaValue}${trend ? `, ${trend}` : ''}`}
     >
       <div className={styles.accent} aria-hidden="true" />
       {icon && (

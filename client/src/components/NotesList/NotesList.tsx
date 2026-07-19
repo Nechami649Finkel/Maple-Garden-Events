@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './NotesList.module.css';
 
 interface NotesListProps {
@@ -11,11 +12,13 @@ interface NotesListProps {
 export const NotesList = ({
   notes,
   onChange,
-  placeholder = 'הוסף הערה חדשה...',
+  placeholder,
   emptyText,
 }: NotesListProps) => {
+  const { t, T } = useTranslation();
   const [newNote, setNewNote] = useState('');
   const readOnly = !onChange;
+  const resolvedPlaceholder = placeholder ?? t(T.BOOKING.NOTES.INTERNAL_PLACEHOLDER);
 
   const addNote = () => {
     const trimmed = newNote.trim();
@@ -42,7 +45,7 @@ export const NotesList = ({
                   type="button"
                   onClick={() => removeNote(idx)}
                   className={styles.removeNoteBtn}
-                  aria-label="הסר הערה"
+                  aria-label={t(T.UI.REMOVE)}
                 >
                   ✕
                 </button>
@@ -58,7 +61,7 @@ export const NotesList = ({
         <div className={styles.addNoteRow}>
           <input
             type="text"
-            placeholder={placeholder}
+            placeholder={resolvedPlaceholder}
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             onKeyDown={(e) => {
@@ -70,7 +73,7 @@ export const NotesList = ({
             className={styles.noteInput}
           />
           <button type="button" onClick={addNote} className={styles.addNoteBtn}>
-            + הוסף
+            + {t(T.EVENT_FORM.ADD_NOTE)}
           </button>
         </div>
       )}

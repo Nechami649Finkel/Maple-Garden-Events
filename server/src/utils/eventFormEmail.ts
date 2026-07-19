@@ -1,6 +1,7 @@
 import prisma from '../config/prisma';
 import { sendPDFToClient, sendWhatsAppMessage } from '../Services/emailService';
 import { buildBookingPdfData, generateEventProductionPDF } from './pdfGenerator';
+import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../i18n/getServerTranslation';
 
 export const EVENT_FORM_EMAIL_COOLDOWN_MS = 60 * 1000;
 
@@ -11,7 +12,9 @@ export type SendEventFormEmailResult =
 
 export async function sendEventFormEmailIfAllowed(
   bookingId: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<SendEventFormEmailResult> {
+  const { t } = getServerTranslation(locale);
   const cutoff = new Date(Date.now() - EVENT_FORM_EMAIL_COOLDOWN_MS);
 
   const claimed = await prisma.eventForm.updateMany({
@@ -48,7 +51,7 @@ export async function sendEventFormEmailIfAllowed(
 
     if (!booking?.eventForm) {
       await prisma.eventForm.update({ where: { bookingId }, data: { contractSentAt: null } });
-      return { sent: false, skipped: false, error: 'הזמנה או טופס לא נמצאו' };
+      return { sent: false, skipped: false, error: t(T.SERVER.EVENT_FORM.BOOKING_NOT_FOUND) };
     }
 
     const emails: string[] = [];
@@ -64,10 +67,10 @@ export async function sendEventFormEmailIfAllowed(
 
     if (emails.length === 0) {
       await prisma.eventForm.update({ where: { bookingId }, data: { contractSentAt: null } });
-      return { sent: false, skipped: false, error: 'לא מוגדרות כתובות אימייל ללקוחות אלו' };
+      return { sent: false, skipped: false, error: t(T.SERVER.EVENT_FORM.NO_EMAILS) };
     }
 
-    const pdfBuffer = await generateEventProductionPDF(buildBookingPdfData(booking));
+    const pdfBuffer = await generateEventProductionPDF(buildBookingPdfData(booking), locale);
 
     for (const email of emails) {
       await sendPDFToClient(
@@ -75,6 +78,7 @@ export async function sendEventFormEmailIfAllowed(
         booking.clientAFullName,
         booking.eventDate.date.toString(),
         pdfBuffer,
+        locale,
       );
     }
 

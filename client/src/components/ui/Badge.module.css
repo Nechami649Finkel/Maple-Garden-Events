@@ -2,45 +2,45 @@
   display: inline-flex;
   align-items: center;
   padding: 3px 10px;
-  border-radius: var(--maple-radius-full);
-  font-size: var(--maple-text-xs);
+  border-radius: var(--brand-radius-full);
+  font-size: var(--brand-text-xs);
   font-weight: 600;
   line-height: 1.4;
   white-space: nowrap;
 }
 
 .confirmed {
-  background: var(--maple-green-light);
-  color: var(--maple-green-deep);
-  border: 1px solid var(--maple-green-muted);
+  background: var(--brand-green-light);
+  color: var(--brand-green-deep);
+  border: 1px solid var(--brand-green-muted);
 }
 
 .option {
-  background: var(--maple-gold-light);
-  color: var(--maple-gold-deep);
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
   border: 1px solid rgba(184, 149, 106, 0.35);
 }
 
 .past {
-  background: var(--maple-bg);
-  color: var(--maple-text-muted);
-  border: 1px solid var(--maple-border);
+  background: var(--brand-bg);
+  color: var(--brand-text-muted);
+  border: 1px solid var(--brand-border);
 }
 
 .live {
   background: rgba(61, 107, 158, 0.1);
-  color: var(--maple-info);
+  color: var(--brand-info);
   border: 1px solid rgba(61, 107, 158, 0.25);
 }
 
 .neutral {
-  background: var(--maple-surface-raised);
-  color: var(--maple-text-secondary);
-  border: 1px solid var(--maple-border);
+  background: var(--brand-surface-raised);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border);
 }
 
 .gold {
-  background: var(--maple-gold-light);
-  color: var(--maple-gold-deep);
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
   border: 1px solid rgba(184, 149, 106, 0.35);
 }

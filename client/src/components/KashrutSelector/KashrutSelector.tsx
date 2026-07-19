@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useKashrutQuery } from '../../hooks/queries';
+import { useTranslation } from '../../i18n/useTranslation';
+import { translateByValue, KASHRUT_KEY_BY_VALUE } from '@shared/i18n/bookingLookups';
 import {
   EVENT_KASHRUT_OPTIONS,
   normalizeKashrutValue,
@@ -21,6 +23,7 @@ export default function KashrutSelector({
   className = 'form-select',
   'aria-label': ariaLabel = 'בחירת סוג כשרות',
 }: Props) {
+  const { t, T } = useTranslation();
   const { data: kashruts = [] } = useKashrutQuery();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
@@ -28,6 +31,7 @@ export default function KashrutSelector({
   const selected = normalizeKashrutValue(value);
   const certImage = kashruts.length > 0 ? kashruts[0].imageUrl ?? null : null;
   const imageError = certImage != null && failedImageUrl === certImage;
+  const formatKashrut = (kName: string) => translateByValue(t, KASHRUT_KEY_BY_VALUE, kName);
 
   return (
     <div className="kashrut-selector">
@@ -41,7 +45,7 @@ export default function KashrutSelector({
         >
           {EVENT_KASHRUT_OPTIONS.map((kName) => (
             <option key={kName} value={kName}>
-              {kName}
+              {formatKashrut(kName)}
             </option>
           ))}
         </select>
@@ -52,12 +56,12 @@ export default function KashrutSelector({
           type="button"
           className="kashrut-selector__thumb"
           onClick={() => setIsModalOpen(true)}
-          title="לחץ להגדלת תעודת הכשר"
-          aria-label="הגדלת תעודת כשרות"
+          title={t(T.EVENT_FORM.ENLARGE_CERT)}
+          aria-label={t(T.EVENT_FORM.ENLARGE_CERT)}
         >
           <img
             src={certImage}
-            alt="תעודת הכשר"
+            alt={t(T.EVENT_FORM.KASHRUT_ALT)}
             onError={() => certImage && setFailedImageUrl(certImage)}
           />
         </button>
@@ -73,12 +77,12 @@ export default function KashrutSelector({
           onClick={() => setIsModalOpen(false)}
           role="dialog"
           aria-modal="true"
-          aria-label="תעודת כשרות מוגדלת"
+          aria-label={t(T.EVENT_FORM.ENLARGED_CERT_ALT)}
         >
           <div onClick={(e) => e.stopPropagation()} className="kashrut-selector__modal-content">
-            <img src={certImage} alt="תעודת הכשר מוגדלת" />
+            <img src={certImage} alt={t(T.EVENT_FORM.ENLARGED_CERT_ALT)} />
             <button type="button" onClick={() => setIsModalOpen(false)}>
-              סגור
+              {t(T.UI.CLOSE)}
             </button>
           </div>
         </div>

@@ -1,5 +1,12 @@
 // src/utils/whatsapp.ts
 import { logger } from './logger';
+import {
+  DEFAULT_LOCALE,
+  getServerTranslation,
+  T,
+  type Locale,
+  type Translator,
+} from '../i18n/getServerTranslation';
 
 export type WhatsAppSendResult = {
   sent: boolean;
@@ -80,15 +87,30 @@ async function sendGreenApiMessage(rawPhone: string, message: string): Promise<b
   }
 }
 
+function formatLocaleDate(dateInput: string | Date, locale: Locale): string {
+  return new Date(dateInput).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US');
+}
+
+function formatLocaleDateTime(date: Date, locale: Locale): string {
+  return date.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+function whatsappFooter(t: Translator['t']): string {
+  return `\n--------------------------\n🤖 _${t(T.SERVER.COMMON.AUTO_FOOTER)}_\n_${t(T.SERVER.COMMON.AUTO_FOOTER_REPLY)}_`;
+}
+
 async function deliverWhatsApp(
   phone: string,
   message: string,
   type: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> {
+  const { t } = getServerTranslation(locale);
+
   if (isGreenApiConfigured()) {
     const hasWhatsApp = await checkHasWhatsApp(phone);
     if (hasWhatsApp === false) {
-      logger.info('WhatsApp skipped — no WhatsApp on number', { phone, type });
+      logger.info(t(T.SERVER.WHATSAPP.NO_WHATSAPP, { type }), { phone, type });
       return { sent: false, simulated: false, hasWhatsApp: false };
     }
 
@@ -96,160 +118,210 @@ async function deliverWhatsApp(
     return { sent, simulated: false, hasWhatsApp: hasWhatsApp ?? true };
   }
 
-  logger.info('WhatsApp simulation (API not configured)', { type, phone, message });
+  logger.info(t(T.SERVER.WHATSAPP.SIMULATION), { type, phone, message });
   return { sent: false, simulated: true, hasWhatsApp: null };
 }
 
-// ==========================================
-// 1. הקפצת אופציה (Bump Option)
-// ==========================================
 export const sendBumpWhatsApp = async (
   clientPhone: string,
   clientName: string,
   eventDate: string,
   deadline: Date,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> => {
-  const deadlineStr = deadline.toLocaleString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = new Date(eventDate).toLocaleDateString('he-IL');
+  const { t } = getServerTranslation(locale);
+  const deadlineStr = formatLocaleDateTime(deadline, locale);
+  const dateStr = formatLocaleDate(eventDate, locale);
+  const team = t(T.SERVER.COMMON.TEAM_CITY);
+  const phone = t(T.SERVER.COMMON.PHONE);
 
-  // בוואטסאפ אנחנו משתמשים בכוכבית (*) כדי להדגיש טקסט (Bold)
-  const message = `שלום *${clientName}*,\n\n` +
-    `אנו מודים לך שבחרת להתעניין בקיום האירוע שלך בגן האירועים *מייפל* 🍁.\n` +
-    `התאריך ששמרת כאופציה (*${dateStr}*) הינו מבוקש מאוד, וכרגע יש לקוח נוסף שמעוניין לסגור אירוע במועד זה.\n\n` +
-    `⏳ *החלטה דחופה נדרשת:*\n` +
-    `על מנת להבטיח את התאריך שלך, אנא צור איתנו קשר עד השעה *${deadlineStr}*.\n` +
-    `לאחר שעה זו, האופציה תשתחרר אוטומטית והתאריך יהיה פנוי ללקוח הבא.\n\n` +
-    `נשמח לחגוג איתכם!\n` +
-    `*צוות מייפל - גן אירועים בעיר*\n` +
-    `טלפון: 03-6777772\n` +
-    `--------------------------\n` +
-    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._\n` +
-    `_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+  const message =
+    `${t(T.SERVER.WHATSAPP.BUMP.GREETING, { clientName })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.BUMP.BODY, { date: dateStr })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.BUMP.URGENT)}\n` +
+    `${t(T.SERVER.WHATSAPP.BUMP.DEADLINE, { deadline: deadlineStr })}\n` +
+    `${t(T.SERVER.WHATSAPP.BUMP.RELEASE)}\n\n` +
+    `${t(T.SERVER.WHATSAPP.BUMP.CLOSING, { team, phone })}` +
+    whatsappFooter(t);
 
-  return deliverWhatsApp(clientPhone, message, 'הקפצת אופציה');
+  return deliverWhatsApp(clientPhone, message, t(T.SERVER.WHATSAPP.BUMP.LOG_TYPE), locale);
 };
 
-const simulateWhatsApp = async (phone: string, message: string, type: string): Promise<boolean> => {
-  const result = await deliverWhatsApp(phone, message, type);
+const simulateWhatsApp = async (
+  phone: string,
+  message: string,
+  type: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<boolean> => {
+  const result = await deliverWhatsApp(phone, message, type, locale);
   return result.sent;
 };
 
-// ==========================================
-// 2. התראה על אי השלמת בחירות - נודניק לקוח
-// ==========================================
-export const sendSelectionReminderWhatsApp = async (clientPhone: string, clientName: string, missingItems: string[]) => {
-  const message = `שלום *${clientName}*,\n\n` +
-    `האירוע שלכם ב-*מייפל* הולך ומתקרב, ואנחנו מתרגשים יחד איתכם! 🎉\n` +
-    `שמנו לב שטרם סיימתם לבחור את הפרטים הבאים למערכת:\n` +
-    `*${missingItems.join(', ')}*\n\n` +
-    `אנא היכנסו למערכת או צרו איתנו קשר בהקדם כדי שנוכל להיערך מראש ולהפיק לכם אירוע מושלם.\n\n` +
-    `צוות מייפל 🍁\n` +
-    `--------------------------\n` +
-    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._\n` +
-    `_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+export const sendSelectionReminderWhatsApp = async (
+  clientPhone: string,
+  clientName: string,
+  missingItems: string[],
+  locale: Locale = DEFAULT_LOCALE,
+) => {
+  const { t } = getServerTranslation(locale);
+  const message =
+    `${t(T.SERVER.WHATSAPP.SELECTION_REMINDER.GREETING, { clientName })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.SELECTION_REMINDER.BODY, { items: missingItems.join(', ') })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.SELECTION_REMINDER.CLOSING, { team: t(T.SERVER.COMMON.TEAM) })}` +
+    whatsappFooter(t);
 
-  return simulateWhatsApp(clientPhone, message, 'בחירות חסרות');
+  return simulateWhatsApp(
+    clientPhone,
+    message,
+    t(T.SERVER.WHATSAPP.SELECTION_REMINDER.LOG_TYPE),
+    locale,
+  );
 };
 
-// ==========================================
-// 3. התראה על חוסר בצ'ק ביטחון - נודניק לקוח
-// ==========================================
-export const sendSecurityCheckReminderWhatsApp = async (clientPhone: string, clientName: string) => {
-  const message = `שלום *${clientName}*,\n\n` +
-    `מזל טוב על סגירת האירוע בגן האירועים *מייפל*! 🍁\n` +
-    `שמנו לב שעברו 24 שעות מחתימת החוזה וטרם התקבל צ'ק ביטחון כנדרש בחוזה.\n` +
-    `נשמח לקבלו בהקדם כדי שנוכל להבטיח את שריון התאריך באופן סופי.\n\n` +
-    `תודה,\nצוות מייפל\n` +
-    `--------------------------\n` +
-    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._\n` +
-    `_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+export const sendSecurityCheckReminderWhatsApp = async (
+  clientPhone: string,
+  clientName: string,
+  locale: Locale = DEFAULT_LOCALE,
+) => {
+  const { t } = getServerTranslation(locale);
+  const message =
+    `${t(T.SERVER.WHATSAPP.SECURITY_CHECK.GREETING, { clientName })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.SECURITY_CHECK.BODY)}\n` +
+    `${t(T.SERVER.WHATSAPP.SECURITY_CHECK.ACTION)}\n\n` +
+    `${t(T.SERVER.WHATSAPP.SECURITY_CHECK.CLOSING, { team: t(T.SERVER.COMMON.TEAM) })}` +
+    whatsappFooter(t);
 
-  return simulateWhatsApp(clientPhone, message, 'צ\'ק ביטחון - לקוח');
+  return simulateWhatsApp(
+    clientPhone,
+    message,
+    t(T.SERVER.WHATSAPP.SECURITY_CHECK.LOG_TYPE),
+    locale,
+  );
 };
 
-// ==========================================
-// 4. התראות פיננסיות פנימיות - למנהל האולם
-// ==========================================
-export const sendManagerFinancialAlert = async (managerPhone: string, alertType: string, clientName: string, details: string) => {
-  // התראות למנהל הן קצרות ופנימיות, לא צריך את הערת ה"הודעה אוטומטית"
-  const message = `⚠️ *התראת מערכת - ניהול כספים* ⚠️\n\n` +
-    `*לקוח:* ${clientName}\n` +
-    `*סוג התראה:* ${alertType}\n` +
-    `*פרטים:* ${details}\n\n` +
-    `יש ליצור קשר עם הלקוח לטיפול מיידי.`;
+export const sendManagerFinancialAlert = async (
+  managerPhone: string,
+  alertType: string,
+  clientName: string,
+  details: string,
+  locale: Locale = DEFAULT_LOCALE,
+) => {
+  const { t } = getServerTranslation(locale);
+  const message =
+    `${t(T.SERVER.WHATSAPP.MANAGER_ALERT.HEADING)}\n\n` +
+    `${t(T.SERVER.WHATSAPP.MANAGER_ALERT.CLIENT)} ${clientName}\n` +
+    `${t(T.SERVER.WHATSAPP.MANAGER_ALERT.ALERT_TYPE)} ${alertType}\n` +
+    `${t(T.SERVER.WHATSAPP.MANAGER_ALERT.DETAILS)} ${details}\n\n` +
+    `${t(T.SERVER.WHATSAPP.MANAGER_ALERT.ACTION)}`;
 
-  return simulateWhatsApp(managerPhone, message, 'התראת מנהל');
+  return simulateWhatsApp(
+    managerPhone,
+    message,
+    t(T.SERVER.WHATSAPP.MANAGER_ALERT.LOG_TYPE),
+    locale,
+  );
 };
 
-// ==========================================
-// 4b. תזכורת תשלום בפיגור — ללקוח
-// ==========================================
 export const sendPaymentOverdueReminderWhatsApp = async (
   clientPhone: string,
   clientName: string,
   bodyText: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> => {
-  const firstName = clientName?.split(' ')[0] || 'יקרים שלנו';
+  const { t } = getServerTranslation(locale);
+  const firstName = clientName?.split(' ')[0] || t(T.SERVER.COMMON.DEAR_GUEST);
   const message =
-    `שלום *${firstName}*,\n\n${bodyText}\n\n` +
-    `*צוות מייפל - גן אירועים*\nטלפון: 03-6777772\n` +
-    `--------------------------\n` +
-    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._\n` +
-    `_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+    `${t(T.SERVER.WHATSAPP.PAYMENT_OVERDUE.GREETING, { name: firstName })}\n\n${bodyText}\n\n` +
+    `${t(T.SERVER.WHATSAPP.PAYMENT_OVERDUE.CLOSING, {
+      team: t(T.SERVER.COMMON.TEAM_CITY),
+      phone: t(T.SERVER.COMMON.PHONE),
+    })}` +
+    whatsappFooter(t);
 
-  return deliverWhatsApp(clientPhone, message, 'תזכורת תשלום');
+  return deliverWhatsApp(
+    clientPhone,
+    message,
+    t(T.SERVER.WHATSAPP.PAYMENT_OVERDUE.LOG_TYPE),
+    locale,
+  );
 };
 
-// ==========================================
-// 5. בקשת משוב לאחר סיום אירוע (חדש!)
-// ==========================================
 export const sendFeedbackRequestWhatsApp = async (
   clientPhone: string,
   clientName: string | null,
   link: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> => {
-  const name = clientName ? clientName.split(' ')[0] : 'יקרים שלנו';
-  const message = `היי *${name}*, תודה שחגגתם איתנו! 🎉\n\n` +
-    `היה לנו לעונג לארח אתכם בגן האירועים *מייפל* 🍁.\n` +
-    `נשמח מאוד אם תוכלו להקדיש דקה קטנה מזמנכם כדי לשתף אותנו איך היה, ולעזור לנו להמשיך להשתפר:\n\n` +
-    `${link}\n\n` +
-    `_(שימו לב: הקישור אישי וניתן למילוי פעם אחת בלבד)_\n\n` +
-    `צוות האולם ❤️\n` +
-    `--------------------------\n` +
-    `🤖 _הודעה זו נשלחה אוטומטית מהמערכת._`;
+  const { t } = getServerTranslation(locale);
+  const name = clientName ? clientName.split(' ')[0] : t(T.SERVER.COMMON.DEAR_GUEST);
+  const message =
+    `${t(T.SERVER.WHATSAPP.FEEDBACK.GREETING, { name })}\n\n` +
+    `${t(T.SERVER.WHATSAPP.FEEDBACK.BODY, { link })}\n` +
+    `${t(T.SERVER.WHATSAPP.FEEDBACK.SECURITY_NOTE)}\n\n` +
+    `${t(T.SERVER.WHATSAPP.FEEDBACK.CLOSING)}\n` +
+    `\n--------------------------\n🤖 _${t(T.SERVER.COMMON.AUTO_FOOTER)}_`;
 
-  return deliverWhatsApp(clientPhone, message, 'בקשת משוב');
+  return deliverWhatsApp(
+    clientPhone,
+    message,
+    t(T.SERVER.WHATSAPP.FEEDBACK.LOG_TYPE),
+    locale,
+  );
 };
 
 export const sendGreetingWhatsApp = async (
   clientPhone: string,
   clientName: string,
   message: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> => {
-  const formatted = `שלום *${clientName}*,\n\n${message}\n\n*צוות מייפל - גן אירועים*\nטלפון: 03-6777772\n--------------------------\n🤖 _הודעה זו נשלחה מהמערכת._`;
-  return deliverWhatsApp(clientPhone, formatted, 'ברכה ללקוח');
+  const { t } = getServerTranslation(locale);
+  const formatted =
+    `${t(T.SERVER.WHATSAPP.GREETING.GREETING, { clientName })}\n\n${message}\n\n` +
+    `${t(T.SERVER.WHATSAPP.GREETING.CLOSING, {
+      team: t(T.SERVER.COMMON.TEAM_CITY),
+      phone: t(T.SERVER.COMMON.PHONE),
+    })}\n--------------------------\n🤖 _${t(T.SERVER.COMMON.AUTO_FOOTER)}_`;
+
+  return deliverWhatsApp(
+    clientPhone,
+    formatted,
+    t(T.SERVER.WHATSAPP.GREETING.LOG_TYPE),
+    locale,
+  );
 };
 
-// ==========================================
-// פונקציית עזר להדפסת הלוגים (סימולציה של שליחה)
-// ==========================================
-function buildOptionInterestText(clientName: string, eventDate: string, customMessage?: string): string {
+function buildOptionInterestText(
+  t: Translator['t'],
+  clientName: string,
+  eventDate: string,
+  locale: Locale,
+  customMessage?: string,
+): string {
   if (customMessage?.trim()) return customMessage.trim();
-  const dateStr = new Date(eventDate).toLocaleDateString('he-IL');
-  return `שלום ${clientName}, מתענינים בתאריך שלך (${dateStr}) בגן האירועים מייפל. נשמח לשמוע ממך בהקדם.`;
+  const dateStr = formatLocaleDate(eventDate, locale);
+  return t(T.SERVER.WHATSAPP.OPTION_INTEREST.DEFAULT_BODY, { clientName, date: dateStr });
 }
 
-// ==========================================
-// 6. הודעת עניין באופציה (מתענינים בתאריך שלך)
-// ==========================================
 export const sendOptionInterestWhatsApp = async (
   clientPhone: string,
   clientName: string,
   eventDate: string,
   customMessage?: string,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> => {
-  const bodyText = buildOptionInterestText(clientName, eventDate, customMessage);
-  const message = `${bodyText}\n\n*צוות מייפל - גן אירועים בעיר*\nטלפון: 03-6777772\n--------------------------\n🤖 _הודעה זו נשלחה מהמערכת._\n_ניתן להשיב להודעה זו בכל שאלה ונציג יחזור אליכם._`;
+  const { t } = getServerTranslation(locale);
+  const bodyText = buildOptionInterestText(t, clientName, eventDate, locale, customMessage);
+  const message =
+    `${bodyText}\n\n${t(T.SERVER.WHATSAPP.OPTION_INTEREST.CLOSING, {
+      team: t(T.SERVER.COMMON.TEAM_CITY),
+      phone: t(T.SERVER.COMMON.PHONE),
+    })}\n--------------------------\n🤖 _${t(T.SERVER.COMMON.AUTO_FOOTER)}_\n_${t(T.SERVER.COMMON.AUTO_FOOTER_REPLY)}_`;
 
-  return deliverWhatsApp(clientPhone, message, 'עניין באופציה');
+  return deliverWhatsApp(
+    clientPhone,
+    message,
+    t(T.SERVER.WHATSAPP.OPTION_INTEREST.LOG_TYPE),
+    locale,
+  );
 };

@@ -9,11 +9,11 @@
 
 body {
   margin: 0;
-  font-family: var(--maple-font);
-  font-size: var(--maple-text-base);
+  font-family: var(--brand-font);
+  font-size: var(--brand-text-base);
   line-height: 1.5;
-  color: var(--maple-text);
-  background: var(--maple-bg);
+  color: var(--brand-text);
+  background: var(--brand-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -25,12 +25,12 @@ body {
 }
 
 h1, h2, h3, h4 {
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-weight: 600;
 }
 
 button, input, select, textarea {
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 /* ── Screen reader only ── */
@@ -50,26 +50,26 @@ button, input, select, textarea {
 .skip-link {
   position: absolute;
   top: -100%;
-  inset-inline-start: var(--maple-space-4);
+  inset-inline-start: var(--brand-space-4);
   z-index: 9999;
-  padding: var(--maple-space-3) var(--maple-space-4);
-  background: var(--maple-green-dark);
+  padding: var(--brand-space-3) var(--brand-space-4);
+  background: var(--brand-green-dark);
   color: #fff;
   font-weight: 600;
-  font-size: var(--maple-text-sm);
-  border-radius: var(--maple-radius-sm);
+  font-size: var(--brand-text-sm);
+  border-radius: var(--brand-radius-sm);
   text-decoration: none;
-  transition: top var(--maple-transition);
+  transition: top var(--brand-transition);
 }
 
 .skip-link:focus {
-  top: var(--maple-space-4);
+  top: var(--brand-space-4);
 }
 
 /* ── Focus visible ── */
 :focus-visible {
-  outline: var(--maple-focus-width) solid var(--maple-focus-ring);
-  outline-offset: var(--maple-focus-offset);
+  outline: var(--brand-focus-width) solid var(--brand-focus-ring);
+  outline-offset: var(--brand-focus-offset);
 }
 
 /* ── Reduced motion ── */

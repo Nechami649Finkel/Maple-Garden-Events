@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
+import { useTranslation } from '../../i18n/useTranslation';
 import { secureFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import './LiveAdditionForm.css';
@@ -10,6 +11,7 @@ interface LiveAdditionFormProps {
 }
 
 const LiveAdditionForm: React.FC<LiveAdditionFormProps> = ({ bookingId, onSuccess }) => {
+  const { t, T } = useTranslation();
   const [description, setDescription] = useState('');
   const [cost, setCost] = useState<number | ''>('');
   const [staffName, setStaffName] = useState('');
@@ -26,25 +28,25 @@ const LiveAdditionForm: React.FC<LiveAdditionFormProps> = ({ bookingId, onSucces
     e.preventDefault();
 
     if (!agreed) {
-      alert('חובה לסמן את תיבת ההסכמה לתשלום.');
+      alert(t(T.LIVE_EVENT.ADDITION_CONSENT_REQUIRED));
       return;
     }
 
     if (sigCanvas.current?.isEmpty()) {
-      alert('חובה להוסיף חתימת לקוח.');
+      alert(t(T.LIVE_EVENT.ADDITION_SIGNATURE_REQUIRED));
       return;
     }
 
     setLoading(true);
 
-const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
+    const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
     const payload = {
       bookingId,
       description,
       cost: Number(cost),
       staffName,
       signature: signatureData,
-      agreedToTerms: agreed
+      agreedToTerms: agreed,
     };
 
     try {
@@ -52,17 +54,17 @@ const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        onSuccess(); // הקריאה לפונקציה שסוגרת את החלון ומקפיצה התראה כבר מוגדרת בקומפוננטת האב
+        onSuccess();
       } else {
-        alert('שגיאה בשמירת התוספת');
+        alert(t(T.LIVE_EVENT.ADDITION_SAVE_ERROR));
       }
     } catch (error) {
       console.error('Error saving addition:', error);
-      alert('שגיאת תקשורת');
+      alert(t(T.LIVE_EVENT.ADDITION_NETWORK_ERROR));
     } finally {
       setLoading(false);
     }
@@ -70,28 +72,26 @@ const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
 
   return (
     <div className="addition-form-container">
-      <h2 className="addition-form-title">אישור תוספות בזמן אירוע</h2>
-      
+      <h2 className="addition-form-title">{t(T.LIVE_EVENT.ADDITION_TITLE)}</h2>
+
       <form onSubmit={handleSubmit} className="addition-form">
-        
-        {/* כאן בוצע השינוי: הפכנו את ה-input ל-textarea */}
         <div className="form-group">
-          <label className="form-label">מה התוספת?</label>
-          <textarea 
+          <label className="form-label">{t(T.LIVE_EVENT.ADDITION_DESCRIPTION_LABEL)}</label>
+          <textarea
             required
-            placeholder="פירוט התוספות (למשל:&#10;1- תוספת 2 שולחנות נשים&#10;2- הארכת הבר בשעה)"
+            placeholder={t(T.LIVE_EVENT.ADDITION_DESCRIPTION_PLACEHOLDER)}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="form-input"
-            rows={4} /* קובע את גובה התיבה ל-4 שורות מראש */
-            style={{ resize: 'vertical' }} /* מאפשר לגרור ולהגדיל את התיבה במידת הצורך */
+            rows={4}
+            style={{ resize: 'vertical' }}
           />
         </div>
 
         <div className="form-group">
-          <label className="form-label">עלות התוספת הכוללת (₪)</label>
-          <input 
-            type="number" 
+          <label className="form-label">{t(T.LIVE_EVENT.ADDITION_COST_LABEL)}</label>
+          <input
+            type="number"
             required
             min="0"
             value={cost}
@@ -101,9 +101,9 @@ const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
         </div>
 
         <div className="form-group">
-          <label className="form-label">שם איש הצוות (אחראי אירוע)</label>
-          <input 
-            type="text" 
+          <label className="form-label">{t(T.LIVE_EVENT.ADDITION_STAFF_LABEL)}</label>
+          <input
+            type="text"
             required
             value={staffName}
             onChange={(e) => setStaffName(e.target.value)}
@@ -112,8 +112,8 @@ const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
         </div>
 
         <div className="agreement-box">
-          <input 
-            type="checkbox" 
+          <input
+            type="checkbox"
             id="agreement-check"
             required
             checked={agreed}
@@ -121,37 +121,29 @@ const signatureData = sigCanvas.current?.getCanvas().toDataURL('image/png');
             className="agreement-checkbox"
           />
           <label htmlFor="agreement-check" className="agreement-text">
-            אני בעל השמחה מאשר בזאת את קבלת התוספות הנ"ל, וידוע לי כי עלות זו תתווסף לחשבון הסופי של האירוע ושאדרש לשלם אותה.
+            {t(T.LIVE_EVENT.ADDITION_CONSENT_TEXT)}
           </label>
         </div>
 
         <div className="signature-section">
-          <label className="form-label">חתימת בעל השמחה:</label>
+          <label className="form-label">{t(T.LIVE_EVENT.ADDITION_SIGNATURE_LABEL)}:</label>
           <div className="signature-canvas-container">
-            <SignatureCanvas 
+            <SignatureCanvas
               ref={sigCanvas}
-              canvasProps={{ 
-                width: 350, 
-                height: 150, 
-                className: 'sigCanvas' 
+              canvasProps={{
+                width: 350,
+                height: 150,
+                className: 'sigCanvas',
               }}
             />
           </div>
-          <button 
-            type="button" 
-            onClick={clearSignature}
-            className="clear-signature-btn"
-          >
-            נקה חתימה
+          <button type="button" onClick={clearSignature} className="clear-signature-btn">
+            {t(T.LIVE_EVENT.CLEAR_SIGNATURE)}
           </button>
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading}
-          className="submit-btn"
-        >
-          {loading ? 'שומר...' : 'שמור ואשר תוספת'}
+        <button type="submit" disabled={loading} className="submit-btn">
+          {loading ? t(T.LIVE_EVENT.SAVING) : t(T.LIVE_EVENT.ADDITION_SUBMIT)}
         </button>
       </form>
     </div>

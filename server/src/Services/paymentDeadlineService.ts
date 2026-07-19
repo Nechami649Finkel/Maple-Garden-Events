@@ -27,6 +27,12 @@ import {
   sendManagerFinancialAlertEmail,
   sendPaymentOverdueReminderEmail,
 } from '../utils/mailer';
+import {
+  DEFAULT_LOCALE,
+  getServerTranslation,
+  T,
+  type Locale,
+} from '../i18n/getServerTranslation';
 
 /** תוצאות סריקה יומית — ללוגים וניטור */
 export interface PaymentDeadlineRunResult {
@@ -139,39 +145,47 @@ export async function syncBookingPaymentMetadata(bookingId: string): Promise<voi
 }
 
 /** תבנית הודעה למנהל — איחור תשלום */
-export function buildManagerOverdueAlert(ctx: OverdueBookingContext): {
+export function buildManagerOverdueAlert(
+  ctx: OverdueBookingContext,
+  locale: Locale = DEFAULT_LOCALE,
+): {
   alertType: string;
   details: string;
 } {
+  const { t } = getServerTranslation(locale);
   const { balance, obligation, missedDeadline } = ctx;
   const pendingNote =
     balance.pendingTotal > 0
-      ? ` (₪${formatMoney(balance.pendingTotal)} ממתין לגבייה ב-Easy Count)`
+      ? t(T.SERVER.PAYMENT.PENDING_NOTE, { amount: formatMoney(balance.pendingTotal) })
       : '';
 
   return {
-    alertType: 'איחור בתשלום',
-    details:
-      `התרעה: הלקוח ${ctx.clientName} (אירוע ${ctx.eventCode}) עבר את מועד התשלום ` +
-      `(${formatHebrewDate(missedDeadline)}). ` +
-      `נדרש עד כה: ₪${formatMoney(obligation.requiredByNow)}, ` +
-      `שולם/בתהליך: ₪${formatMoney(balance.committedTotal)}${pendingNote}, ` +
-      `יתרה פתוחה: ₪${formatMoney(balance.remaining)}. ` +
-      `תאריך אירוע: ${formatHebrewDate(ctx.eventDate)}.`,
+    alertType: t(T.SERVER.PAYMENT.MANAGER_ALERT_TYPE),
+    details: t(T.SERVER.PAYMENT.MANAGER_ALERT_DETAILS, {
+      clientName: ctx.clientName,
+      eventCode: ctx.eventCode,
+      deadline: formatHebrewDate(missedDeadline),
+      required: formatMoney(obligation.requiredByNow),
+      committed: formatMoney(balance.committedTotal),
+      pendingNote,
+      remaining: formatMoney(balance.remaining),
+      eventDate: formatHebrewDate(ctx.eventDate),
+    }),
   };
 }
 
 /** תבנית הודעה מנומסת ללקוח */
-export function buildClientOverdueReminder(ctx: OverdueBookingContext): string {
-  return (
-    `רצינו להזכיר בנימוס כי לפי תנאי ההזמנה שלכם, מועד התשלום ` +
-    `(${formatHebrewDate(ctx.missedDeadline)}) חלף.\n\n` +
-    `יתרה לתשלום לאולם: ₪${formatMoney(ctx.balance.remaining)}.\n` +
-    `אירוע: ${ctx.eventCode} · ${formatHebrewDate(ctx.eventDate)}.\n\n` +
-    `נשמח אם תוכלו להסדיר את התשלום בהקדם, או ליצור קשר עם צוות מייפל ` +
-    `לתיאום תשלום / חשבונית.\n\n` +
-    `תודה רבה על שיתוף הפעולה 🍁`
-  );
+export function buildClientOverdueReminder(
+  ctx: OverdueBookingContext,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  const { t } = getServerTranslation(locale);
+  return t(T.SERVER.PAYMENT.CLIENT_REMINDER, {
+    deadline: formatHebrewDate(ctx.missedDeadline),
+    remaining: formatMoney(ctx.balance.remaining),
+    eventCode: ctx.eventCode,
+    eventDate: formatHebrewDate(ctx.eventDate),
+  });
 }
 
 /**

@@ -10,6 +10,7 @@ import {
   useKashrutQuery,
 } from '../../hooks/queries';
 import { AuthorizedUsers } from './AuthorizedUsers';
+import { LanguageSwitcher } from '../../i18n/LanguageSwitcher';
 import { PageLoader } from '../PageLoader/PageLoader';
 import PaymentTemplatesSettings from './PaymentTemplatesSettings';
 import { getPaymentTemplatesFromSettings } from '../../utils/paymentTerms';
@@ -17,9 +18,13 @@ import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import {
   getHiddenSystemPriceFields,
   getVisibleSystemPriceFields,
+  getPriceFieldLabel,
   NON_REMOVABLE_PRICE_FIELDS,
   parseHiddenPriceFields,
 } from '../../utils/pricing';
+import { useTranslation } from '../../i18n/useTranslation';
+import { translateByValue } from '@shared/i18n/bookingLookups';
+import { T, type TranslationKey } from '@shared/i18n/keys';
 
 /** Editable global settings draft (price fields + catalog meta). */
 type GlobalSettingsDraft = Record<string, unknown>;
@@ -30,7 +35,15 @@ interface KashrutRecord {
   validUntil?: string | Date | null;
 }
 
+const EXTRA_CATEGORY_KEY_BY_VALUE: Record<string, TranslationKey> = {
+  עיצוב: T.SETTINGS.CATEGORY_DESIGN,
+  טכני: T.SETTINGS.CATEGORY_TECH,
+  צוות: T.SETTINGS.CATEGORY_STAFF,
+  אחר: T.SETTINGS.CATEGORY_OTHER,
+};
+
 export const SettingsManager = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: globalSettingsData, isLoading: settingsLoading } = useGlobalSettingsQuery();
   const { data: extras = [], isLoading: extrasLoading } = useExtrasQuery();
@@ -56,6 +69,9 @@ export const SettingsManager = () => {
   const [newExtra, setNewExtra] = useState({ name: '', category: 'עיצוב', price: '' });
   const [newStaffName, setNewStaffName] = useState('');
 
+  const formatExtraCategory = (value: string) =>
+    translateByValue(t, EXTRA_CATEGORY_KEY_BY_VALUE, value);
+
   const loading = settingsLoading || extrasLoading || kashrutLoading || staffLoading;
   const saveGlobalSettings = async () => {
     try {
@@ -65,9 +81,9 @@ export const SettingsManager = () => {
         body: JSON.stringify(globalSettings)
       });
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
-      alert('הגדרות נשמרו בהצלחה!');
+      alert(t(T.SETTINGS.SAVED));
     } catch {
-      alert('שגיאה בשמירת הגדרות');
+      alert(t(T.SETTINGS.SAVE_ERROR));
     }
   };
 
@@ -89,13 +105,13 @@ export const SettingsManager = () => {
       setGlobalSettings((prev) => ({ ...prev, hiddenPriceFields }));
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
     } catch {
-      alert('שגיאה בעדכון המחירון');
+      alert(t(T.SETTINGS.PRICING_UPDATE_ERROR));
     }
   };
 
-  const hidePriceField = async (field: string, label: string) => {
+  const hidePriceField = async (field: string) => {
     if (NON_REMOVABLE_PRICE_FIELDS.has(field)) return;
-    if (!window.confirm(`להסיר את "${label}" מהמחירון?`)) return;
+    if (!window.confirm(t(T.SETTINGS.REMOVE_PRICE_CONFIRM))) return;
     const hidden = [...new Set([...parseHiddenPriceFields(globalSettings), field])];
     await persistHiddenPriceFields(hidden);
   };
@@ -114,17 +130,17 @@ export const SettingsManager = () => {
       });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
     } catch {
-      alert('שגיאה בעדכון פריט');
+      alert(t(T.SETTINGS.ITEM_UPDATE_ERROR));
     }
   };
 
-  const deleteExtra = async (id: string, name: string) => {
-    if (!window.confirm(`להסיר את "${name}" מהקטלוג?`)) return;
+  const deleteExtra = async (id: string) => {
+    if (!window.confirm(t(T.SETTINGS.REMOVE_CATALOG_CONFIRM))) return;
     try {
       await apiFetch(`${API_URL}/settings/extras/${id}`, { method: 'DELETE' });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
     } catch {
-      alert('שגיאה בהסרת פריט');
+      alert(t(T.SETTINGS.ITEM_UPDATE_ERROR));
     }
   };
 
@@ -137,11 +153,11 @@ export const SettingsManager = () => {
       });
       
       if (!response.ok) {
-        alert(`השרת סירב לשמור! קוד שגיאה: ${response.status}. תבדקי את החלון השחור של השרת.`);
+        alert(`${t(T.SETTINGS.SERVER_REJECT)} (${response.status})`);
         return;
       }
     } catch {
-      alert('שגיאה בתקשורת מול השרת');
+      alert(t(T.SETTINGS.COMM_ERROR));
     }
   };  
   
@@ -157,7 +173,7 @@ export const SettingsManager = () => {
 
   const handleAddExtra = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExtra.name || !newExtra.price) return alert('נא למלא שם ומחיר');
+    if (!newExtra.name || !newExtra.price) return alert(t(T.SETTINGS.EXTRA_FILL_REQUIRED));
 
     try {
       await apiFetch(`${API_URL}/settings/extras`, {
@@ -168,7 +184,7 @@ export const SettingsManager = () => {
       setNewExtra({ name: '', category: 'עיצוב', price: '' });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
     } catch {
-      alert('שגיאה בהוספת תוספת');
+      alert(t(T.SETTINGS.EXTRA_ADD_ERROR));
     }
   };
 
@@ -181,14 +197,14 @@ export const SettingsManager = () => {
       });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
     } catch {
-      alert('שגיאה בעדכון סטטוס');
+      alert(t(T.SETTINGS.STATUS_UPDATE_ERROR));
     }
   };
 
   const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     const name = newStaffName.trim();
-    if (!name) return alert('נא להזין שם עובד');
+    if (!name) return alert(t(T.SETTINGS.STAFF_NAME_REQUIRED));
 
     try {
       const res = await apiFetch(`${API_URL}/settings/staff`, {
@@ -198,21 +214,21 @@ export const SettingsManager = () => {
       });
       if (!res.ok) {
         const err = await res.json();
-        alert(err.message || 'שגיאה בהוספת עובד');
+        alert(err.message || t(T.SETTINGS.STAFF_ADD_ERROR));
         return;
       }
       setNewStaffName('');
     } catch {
-      alert('שגיאה בהוספת עובד');
+      alert(t(T.SETTINGS.STAFF_ADD_ERROR));
     }
   };
 
-  const handleDeleteStaff = async (id: string, name: string) => {
-    if (!window.confirm(`להסיר את ${name} מרשימת הנציגים?`)) return;
+  const handleDeleteStaff = async (id: string) => {
+    if (!window.confirm(t(T.SETTINGS.STAFF_REMOVE_CONFIRM))) return;
     try {
       await apiFetch(`${API_URL}/settings/staff/${id}`, { method: 'DELETE' });
     } catch {
-      alert('שגיאה במחיקת עובד');
+      alert(t(T.SETTINGS.STAFF_REMOVE_ERROR));
     }
   };
 
@@ -235,32 +251,39 @@ export const SettingsManager = () => {
   return (
     <div className="settings-container">
       <div className="settings-header">
-        <h1>הגדרות מערכת ומחירון</h1>
-        <p>ניהול תעריפי בסיס, מע"מ וקטלוג תוספות דינמי</p>
+        <h1>{t(T.SETTINGS.PAGE_TITLE)}</h1>
+        <p>{t(T.SETTINGS.PAGE_SUBTITLE)}</p>
       </div>
 
       <div className="settings-grid">
-        {/* מחירון מאוחד — כל הפריטים הקיימים במערכת */}
-        <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
-          <h2>מחירון מערכת</h2>
+        <div className="settings-card">
+          <h2>{t(T.SETTINGS.LANGUAGE_TITLE)}</h2>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '12px' }}>
-            שינוי מחיר כאן מתעדכן מיד בטופס הזמנה, בחוזה ובכל המסכים הפתוחים.
+            {t(T.SETTINGS.LANGUAGE_HINT)}
+          </p>
+          <LanguageSwitcher />
+        </div>
+
+        <div className="settings-card" style={{ gridColumn: '1 / -1' }}>
+          <h2>{t(T.SETTINGS.PRICING_TITLE)}</h2>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '12px' }}>
+            {t(T.SETTINGS.PRICING_HINT)}
           </p>
 
-          <h3 className="price-group-title">תעריפי בסיס</h3>
+          <h3 className="price-group-title">{t(T.SETTINGS.BASE_RATES)}</h3>
           <table className="extras-table price-catalog-table">
             <thead>
               <tr>
-                <th>פריט</th>
-                <th>מחיר</th>
-                <th>הערה</th>
-                <th>פעולות</th>
+                <th>{t(T.COMMON.LABELS.NAME)}</th>
+                <th>{t(T.UI.PRICE)}</th>
+                <th>{t(T.UI.NOTES)}</th>
+                <th>{t(T.COMMON.LABELS.ACTIONS)}</th>
               </tr>
             </thead>
             <tbody>
               {visiblePriceFields.filter((f) => f.group === 'system').map((item) => (
                 <tr key={item.field}>
-                  <td>{item.label}</td>
+                  <td>{getPriceFieldLabel(t, item)}</td>
                   <td>
                     <input
                       type="number"
@@ -270,15 +293,17 @@ export const SettingsManager = () => {
                     />
                     {item.suffix && <span className="price-suffix">{item.suffix}</span>}
                   </td>
-                  <td style={{ fontSize: '12px', color: '#666' }}>{item.hint || '—'}</td>
+                  <td style={{ fontSize: '12px', color: '#666' }}>
+                    {item.hintKey ? t(item.hintKey) : t(T.COMMON.LABELS.EM_DASH)}
+                  </td>
                   <td>
                     {!item.required && (
                       <button
                         type="button"
                         className="extra-delete-btn"
-                        onClick={() => hidePriceField(item.field, item.label)}
+                        onClick={() => hidePriceField(item.field)}
                       >
-                        הסר
+                        {t(T.UI.REMOVE)}
                       </button>
                     )}
                   </td>
@@ -287,19 +312,19 @@ export const SettingsManager = () => {
             </tbody>
           </table>
 
-          <h3 className="price-group-title">שדרוגים בטופס הזמנה</h3>
+          <h3 className="price-group-title">{t(T.SETTINGS.UPGRADES)}</h3>
           <table className="extras-table price-catalog-table">
             <thead>
               <tr>
-                <th>פריט</th>
-                <th>מחיר (₪)</th>
-                <th>פעולות</th>
+                <th>{t(T.COMMON.LABELS.NAME)}</th>
+                <th>{t(T.UI.PRICE)} (₪)</th>
+                <th>{t(T.COMMON.LABELS.ACTIONS)}</th>
               </tr>
             </thead>
             <tbody>
               {visiblePriceFields.filter((f) => f.group === 'upgrades').map((item) => (
                 <tr key={item.field}>
-                  <td>{item.label}</td>
+                  <td>{getPriceFieldLabel(t, item)}</td>
                   <td>
                     <input
                       type="number"
@@ -312,9 +337,9 @@ export const SettingsManager = () => {
                     <button
                       type="button"
                       className="extra-delete-btn"
-                      onClick={() => hidePriceField(item.field, item.label)}
+                      onClick={() => hidePriceField(item.field)}
                     >
-                      הסר
+                      {t(T.UI.REMOVE)}
                     </button>
                   </td>
                 </tr>
@@ -324,7 +349,7 @@ export const SettingsManager = () => {
 
           {hiddenPriceFields.length > 0 && (
             <>
-              <h3 className="price-group-title">פריטים שהוסרו מהמחירון</h3>
+              <h3 className="price-group-title">{t(T.SETTINGS.REMOVED_ITEMS)}</h3>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px' }}>
                 {hiddenPriceFields.map((item) => (
                   <li
@@ -337,14 +362,14 @@ export const SettingsManager = () => {
                       borderBottom: '1px solid #eee',
                     }}
                   >
-                    <span style={{ color: '#666' }}>{item.label}</span>
+                    <span style={{ color: '#666' }}>{getPriceFieldLabel(t, item)}</span>
                     <button
                       type="button"
                       className="add-btn"
                       style={{ padding: '6px 12px', fontSize: '13px' }}
                       onClick={() => restorePriceField(item.field)}
                     >
-                      החזר למחירון
+                      {t(T.SETTINGS.RESTORE)}
                     </button>
                   </li>
                 ))}
@@ -352,32 +377,31 @@ export const SettingsManager = () => {
             </>
           )}
 
-          <button className="save-btn" onClick={saveGlobalSettings}>שמור מחירון מערכת</button>
+          <button className="save-btn" onClick={saveGlobalSettings}>{t(T.SETTINGS.SAVE_PRICING)}</button>
         </div>
 
-        {/* כרטיס קטלוג תוספות */}
         <div className="settings-card">
-          <h2>קטלוג תוספות נוספות</h2>
+          <h2>{t(T.SETTINGS.CATALOG_TITLE)}</h2>
           <form className="add-extra-form" onSubmit={handleAddExtra}>
             <div className="form-group" style={{marginBottom: 0}}>
-              <label>שם הפריט</label>
+              <label>{t(T.COMMON.LABELS.NAME)}</label>
               <input 
-                placeholder="לדוג': מכונת עשן" 
+                placeholder={t(T.COMMON.LABELS.NAME)}
                 value={newExtra.name} 
                 onChange={e => setNewExtra({...newExtra, name: e.target.value})} 
               />
             </div>
             <div className="form-group" style={{marginBottom: 0}}>
-              <label>קטגוריה</label>
+              <label>{t(T.COMMON.LABELS.TYPE)}</label>
               <select value={newExtra.category} onChange={e => setNewExtra({...newExtra, category: e.target.value})}>
-                <option value="עיצוב">עיצוב</option>
-                <option value="טכני">ציוד טכני</option>
-                <option value="צוות">צוות והפקה</option>
-                <option value="אחר">אחר</option>
+                <option value="עיצוב">{t(T.SETTINGS.CATEGORY_DESIGN)}</option>
+                <option value="טכני">{t(T.SETTINGS.CATEGORY_TECH)}</option>
+                <option value="צוות">{t(T.SETTINGS.CATEGORY_STAFF)}</option>
+                <option value="אחר">{t(T.SETTINGS.CATEGORY_OTHER)}</option>
               </select>
             </div>
             <div className="form-group" style={{marginBottom: 0}}>
-              <label>מחיר (₪)</label>
+              <label>{t(T.UI.PRICE)} (₪)</label>
               <input 
                 type="number" 
                 value={newExtra.price} 
@@ -390,11 +414,11 @@ export const SettingsManager = () => {
           <table className="extras-table">
             <thead>
               <tr>
-                <th>שם פריט</th>
-                <th>קטגוריה</th>
-                <th>מחיר (₪)</th>
-                <th>סטטוס</th>
-                <th>פעולות</th>
+                <th>{t(T.COMMON.LABELS.NAME)}</th>
+                <th>{t(T.COMMON.LABELS.TYPE)}</th>
+                <th>{t(T.UI.PRICE)} (₪)</th>
+                <th>{t(T.COMMON.LABELS.STATUS)}</th>
+                <th>{t(T.COMMON.LABELS.ACTIONS)}</th>
               </tr>
             </thead>
             <tbody>
@@ -411,7 +435,7 @@ export const SettingsManager = () => {
                       }}
                     />
                   </td>
-                  <td>{extra.category}</td>
+                  <td>{formatExtraCategory(extra.category)}</td>
                   <td>
                     <input
                       type="number"
@@ -430,16 +454,16 @@ export const SettingsManager = () => {
                       onClick={() => toggleExtraStatus(extra.id, extra.isActive)}
                       className={`status-toggle ${extra.isActive ? 'status-active' : 'status-inactive'}`}
                     >
-                      {extra.isActive ? 'פעיל' : 'מוסתר'}
+                      {extra.isActive ? t(T.SETTINGS.STATUS_ACTIVE) : t(T.SETTINGS.STATUS_HIDDEN)}
                     </button>
                   </td>
                   <td>
                     <button
                       type="button"
                       className="extra-delete-btn"
-                      onClick={() => deleteExtra(extra.id, extra.name)}
+                      onClick={() => deleteExtra(extra.id)}
                     >
-                      הסר
+                      {t(T.UI.REMOVE)}
                     </button>
                   </td>
                 </tr>
@@ -448,17 +472,16 @@ export const SettingsManager = () => {
           </table>
         </div>
 
-        {/* ניהול נציגי מכירות */}
         <div className="settings-card">
-          <h2>ניהול נציגי מכירות</h2>
+          <h2>{t(T.SETTINGS.STAFF_TITLE)}</h2>
           <p style={{ color: '#666', fontSize: '14px', marginBottom: '12px' }}>
-            הרשימה מוצגת בטופס הזמנה ואופציה — ניתן להוסיף או להסיר עובדים.
+            {t(T.SETTINGS.STAFF_HINT)}
           </p>
           <form className="add-extra-form" onSubmit={handleAddStaff}>
             <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-              <label>שם עובד / נציג</label>
+              <label>{t(T.COMMON.LABELS.NAME)}</label>
               <input
-                placeholder="לדוגמה: שמעון"
+                placeholder={t(T.SETTINGS.STAFF_PLACEHOLDER)}
                 value={newStaffName}
                 onChange={e => setNewStaffName(e.target.value)}
               />
@@ -480,7 +503,7 @@ export const SettingsManager = () => {
                 <span>{member.name}</span>
                 <button
                   type="button"
-                  onClick={() => handleDeleteStaff(member.id, member.name)}
+                  onClick={() => handleDeleteStaff(member.id)}
                   style={{
                     background: '#fee2e2',
                     color: '#b91c1c',
@@ -490,26 +513,25 @@ export const SettingsManager = () => {
                     cursor: 'pointer',
                   }}
                 >
-                  הסר
+                  {t(T.UI.REMOVE)}
                 </button>
               </li>
             ))}
             {staffMembers.length === 0 && (
-              <li style={{ color: '#888', padding: '12px' }}>אין נציגים — הוסיפי עובד ראשון.</li>
+              <li style={{ color: '#888', padding: '12px' }}>{t(T.SETTINGS.NO_STAFF)}</li>
             )}
           </ul>
         </div>
 
-        {/* חלון ניהול תעודת כשרות */}
         <div className="settings-card" style={{gridColumn: '1 / -1'}}>
-          <h2>ניהול תעודת כשרות האולם</h2>
-          <p style={{color: '#666', fontSize: '14px', marginBottom: '15px'}}>התעודה המועלת כאן תוצג אוטומטית בתוסף הפקת האירועים עבור הלקוח.</p>
+          <h2>{t(T.SETTINGS.KASHRUT_TITLE)}</h2>
+          <p style={{color: '#666', fontSize: '14px', marginBottom: '15px'}}>{t(T.SETTINGS.KASHRUT_HINT)}</p>
           
           {mainKashrut ? (
             <div style={{ display: 'flex', gap: '30px', flexWrap: 'wrap', alignItems: 'center', backgroundColor: '#fdfdfd', padding: '20px', borderRadius: '8px', border: '1px solid #eaeaea' }}>
               
               <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
-                <label style={{fontWeight: 'bold'}}>תאריך תוקף התעודה:</label>
+                <label style={{fontWeight: 'bold'}}>{t(T.SETTINGS.CERT_EXPIRY)}</label>
                 <input 
                   type="date" 
                   value={formatDateForInput(mainKashrut.validUntil)} 
@@ -520,7 +542,7 @@ export const SettingsManager = () => {
               </div>
 
               <div className="form-group" style={{ flex: '1', minWidth: '250px' }}>
-                <label style={{fontWeight: 'bold'}}>העלאת קובץ תעודה חדש:</label>
+                <label style={{fontWeight: 'bold'}}>{t(T.SETTINGS.CERT_UPLOAD)}</label>
                 <input 
                   type="file" 
                   accept="image/*"
@@ -530,21 +552,21 @@ export const SettingsManager = () => {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '120px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#555', marginBottom: '5px' }}>תצוגה מקדימה:</span>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#555', marginBottom: '5px' }}>{t(T.SETTINGS.PREVIEW)}</span>
                 {mainKashrut.imageUrl ? (
                   <img 
                     src={mainKashrut.imageUrl} 
-                    alt="תעודת כשרות" 
+                    alt={t(T.EVENT_FORM.KASHRUT_ALT)} 
                     style={{ width: '80px', height: '80px', objectFit: 'contain', borderRadius: '6px', border: '1px solid #ddd', boxShadow: '0 2px 4px rgba(0,0,0,0.05)', backgroundColor: '#fff', padding: '4px' }} 
                   />
                 ) : (
-                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', borderRadius: '6px', color: '#999', fontSize: '12px' }}>אין תמונה</div>
+                  <div style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px dashed #ccc', borderRadius: '6px', color: '#999', fontSize: '12px' }}>{t(T.UI.NO_IMAGE)}</div>
                 )}
               </div>
 
             </div>
           ) : (
-            <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>טוען נתוני תעודת כשרות...</div>
+            <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>{t(T.SETTINGS.KASHRUT_LOADING)}</div>
           )}
         </div>
 

@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { formatDateTime } from '@shared/i18n/formatters';
 import { API_URL } from '../../config/api';
+import { useTranslation } from '../../i18n/useTranslation';
 import { secureFetch } from '../../services/api';
 import styles from './GreetingBlast.module.css';
 
@@ -26,25 +28,9 @@ type ScheduledGreetingItem = {
 
 type StatusFilter = 'ALL' | 'PENDING' | 'SENT' | 'FAILED';
 
-const STATUS_LABELS: Record<GreetingStatus, string> = {
-  PENDING: 'ממתין',
-  PROCESSING: 'נשלח עכשיו',
-  SENT: 'נשלח',
-  FAILED: 'נכשל',
-  CANCELLED: 'בוטל',
-};
-
-const formatDateTime = (iso: string) =>
-  new Date(iso).toLocaleString('he-IL', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
 const GreetingBlast = () => {
   const navigate = useNavigate();
+  const { t, T, locale } = useTranslation();
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [scheduledDate, setScheduledDate] = useState('');
@@ -80,6 +66,28 @@ const GreetingBlast = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
 
+  const statusLabels = useMemo<Record<GreetingStatus, string>>(
+    () => ({
+      PENDING: t(T.GREETING.STATUS_PENDING),
+      PROCESSING: t(T.GREETING.STATUS_PROCESSING),
+      SENT: t(T.GREETING.STATUS_SENT),
+      FAILED: t(T.GREETING.STATUS_FAILED),
+      CANCELLED: t(T.GREETING.STATUS_CANCELLED),
+    }),
+    [t, T],
+  );
+
+  const filterOptions = useMemo(
+    () =>
+      [
+        ['ALL', t(T.FEEDBACK.FILTER_ALL)],
+        ['PENDING', t(T.GREETING.STATUS_PENDING)],
+        ['SENT', t(T.GREETING.STATUS_SENT)],
+        ['FAILED', t(T.GREETING.STATUS_FAILED)],
+      ] as const,
+    [t, T],
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -100,24 +108,24 @@ const GreetingBlast = () => {
 
       const result = await res.json();
       if (result.success) {
-        setResultMessage(result.message || 'הברכה נשלחה לכל הלקוחות');
+        setResultMessage(result.message || t(T.GREETING.SENT_TO_ALL));
         setSent(true);
         await refetchScheduledGreetings();
       } else {
         const detail = result.skippedReasons?.length
           ? `${result.message}\n\n${result.skippedReasons.join('\n')}`
-          : result.message || 'שגיאה בשליחה';
+          : result.message || t(T.GREETING.SEND_ERROR);
         alert(detail);
       }
     } catch {
-      alert('שגיאת תקשורת עם השרת');
+      alert(t(T.GREETING.SERVER_ERROR));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = async (id: string) => {
-    if (!window.confirm('לבטל את הברכה המתוזמנת?')) return;
+    if (!window.confirm(t(T.GREETING.CANCEL_CONFIRM))) return;
     setCancellingId(id);
     try {
       const res = await secureFetch(`${API_URL}/bookings/scheduled-greetings/${id}`, {
@@ -128,10 +136,10 @@ const GreetingBlast = () => {
       if (data.success) {
         await refetchScheduledGreetings();
       } else {
-        alert(data.message || 'לא ניתן לבטל');
+        alert(data.message || t(T.GREETING.CANCEL_ERROR));
       }
     } catch {
-      alert('שגיאת תקשורת עם השרת');
+      alert(t(T.GREETING.SERVER_ERROR));
     } finally {
       setCancellingId(null);
     }
@@ -156,8 +164,12 @@ const GreetingBlast = () => {
   const renderStats = (item: ScheduledGreetingItem) => {
     if (item.status !== 'SENT' || !item.sendStats) return null;
     const parts: string[] = [];
-    if (item.sendStats.emailSent) parts.push(`${item.sendStats.emailSent} מיילים`);
-    if (item.sendStats.whatsappSent) parts.push(`${item.sendStats.whatsappSent} וואטסאפ`);
+    if (item.sendStats.emailSent) {
+      parts.push(t(T.GREETING.STAT_EMAILS, { count: item.sendStats.emailSent }));
+    }
+    if (item.sendStats.whatsappSent) {
+      parts.push(t(T.GREETING.STAT_WHATSAPP, { count: item.sendStats.whatsappSent }));
+    }
     return parts.length ? parts.join(' · ') : null;
   };
 
@@ -166,20 +178,20 @@ const GreetingBlast = () => {
       <div className={styles.container}>
         <div className={styles.successBox}>
           <div className={styles.successIcon}>✅</div>
-          <h2>הברכה תישלח בהצלחה!</h2>
+          <h2>{t(T.GREETING.SUCCESS_TITLE)}</h2>
           <p>
             {scheduledDate && scheduledTime
-              ? `מתוזמנת לשליחה בתאריך ${scheduledDate.split('-').reverse().join('/')} בשעה ${scheduledTime}. השליחה תתבצע אוטומטית — גם אם השרת יופעל מחדש.`
-              : resultMessage || 'הברכה נשלחה לכל הלקוחות'}
+              ? t(T.GREETING.SCHEDULED_MESSAGE)
+              : resultMessage || t(T.GREETING.SENT_TO_ALL)}
           </p>
           <div className={styles.successActions}>
             {scheduledDate && scheduledTime && (
               <button type="button" className={styles.secondaryBtn} onClick={resetForm}>
-                חזרה לרשימה
+                {t(T.GREETING.BACK_TO_LIST)}
               </button>
             )}
             <button type="button" className={styles.backBtn} onClick={() => navigate('/calendar')}>
-              חזרה ללוח
+              {t(T.GREETING.BACK_TO_DASHBOARD)}
             </button>
           </div>
         </div>
@@ -192,15 +204,15 @@ const GreetingBlast = () => {
       <div className={styles.layout}>
         <div className={styles.card}>
           <div className={styles.header}>
-            <h2 className={styles.title}>שליחת ברכה ללקוחות 💌</h2>
+            <h2 className={styles.title}>{t(T.GREETING.PAGE_TITLE)}</h2>
           </div>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>תזמון שליחה</h3>
+              <h3 className={styles.sectionTitle}>{t(T.GREETING.SECTION_SCHEDULE)}</h3>
               <div className={styles.row}>
                 <div className={styles.inputGroup}>
-                  <label>תאריך שליחה</label>
+                  <label>{t(T.GREETING.LABEL_SEND_DATE)}</label>
                   <input
                     type="date"
                     className={styles.input}
@@ -209,7 +221,7 @@ const GreetingBlast = () => {
                   />
                 </div>
                 <div className={styles.inputGroup}>
-                  <label>שעת שליחה</label>
+                  <label>{t(T.GREETING.LABEL_SEND_TIME)}</label>
                   <input
                     type="time"
                     className={styles.input}
@@ -220,39 +232,39 @@ const GreetingBlast = () => {
               </div>
               <p className={styles.hint}>
                 {scheduledDate && scheduledTime
-                  ? `📅 תישלח בתאריך ${scheduledDate.split('-').reverse().join('/')} בשעה ${scheduledTime}`
-                  : 'אם לא תבחרי תאריך ושעה - הברכה תישלח מיד'}
+                  ? t(T.GREETING.SCHEDULE_HINT)
+                  : t(T.GREETING.SEND_NOW_HINT)}
               </p>
             </div>
 
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>תוכן הברכה</h3>
+              <h3 className={styles.sectionTitle}>{t(T.GREETING.SECTION_CONTENT)}</h3>
               <div className={styles.inputGroup}>
-                <label>נושא המייל *</label>
+                <label>{t(T.GREETING.LABEL_SUBJECT)} *</label>
                 <input
                   type="text"
                   required
                   className={styles.input}
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
-                  placeholder="לדוגמה: ברכות לחג הפסח מגן אירועים מייפל 🌸"
+                  placeholder={t(T.GREETING.SUBJECT_PLACEHOLDER)}
                 />
               </div>
               <div className={styles.inputGroup}>
-                <label>תוכן הברכה *</label>
+                <label>{t(T.GREETING.LABEL_BODY)} *</label>
                 <textarea
                   required
                   className={styles.textarea}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   rows={6}
-                  placeholder="כתבי כאן את תוכן הברכה שתישלח לכל הלקוחות..."
+                  placeholder={t(T.GREETING.BODY_PLACEHOLDER)}
                 />
               </div>
             </div>
 
             <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>קובץ מצורף (אופציונלי)</h3>
+              <h3 className={styles.sectionTitle}>{t(T.GREETING.SECTION_ATTACHMENT)}</h3>
               <div className={styles.fileArea}>
                 <input
                   type="file"
@@ -262,11 +274,11 @@ const GreetingBlast = () => {
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
                 <label htmlFor="fileInput" className={styles.fileLabel}>
-                  {file ? `📎 ${file.name}` : '+ לחצי להוספת קובץ (תמונה / PDF / Word)'}
+                  {file ? `📎 ${file.name}` : `+ ${t(T.GREETING.ADD_FILE)}`}
                 </label>
                 {file && (
                   <button type="button" className={styles.removeFile} onClick={() => setFile(null)}>
-                    ✕ הסר קובץ
+                    ✕ {t(T.GREETING.REMOVE_FILE)}
                   </button>
                 )}
               </div>
@@ -275,10 +287,10 @@ const GreetingBlast = () => {
             <div className={styles.footer}>
               <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
                 {isSubmitting
-                  ? 'שולח...'
+                  ? t(T.GREETING.SENDING)
                   : scheduledDate && scheduledTime
-                    ? '📅 תזמן שליחה'
-                    : '📨 שלח עכשיו לכל הלקוחות'}
+                    ? t(T.GREETING.SUBMIT_SCHEDULE)
+                    : t(T.GREETING.SUBMIT_NOW)}
               </button>
             </div>
           </form>
@@ -286,19 +298,14 @@ const GreetingBlast = () => {
 
         <div className={styles.listCard}>
           <div className={styles.listHeader}>
-            <h2 className={styles.listTitle}>ברכות מתוזמנות</h2>
+            <h2 className={styles.listTitle}>{t(T.GREETING.SCHEDULED_TITLE)}</h2>
             <button type="button" className={styles.refreshBtn} onClick={() => refetchScheduledGreetings()}>
-              רענון
+              {t(T.GREETING.REFRESH)}
             </button>
           </div>
 
           <div className={styles.filterRow}>
-            {([
-              ['ALL', 'הכל'],
-              ['PENDING', 'ממתינות'],
-              ['SENT', 'נשלחו'],
-              ['FAILED', 'נכשלו'],
-            ] as const).map(([key, label]) => (
+            {filterOptions.map(([key, label]) => (
               <button
                 key={key}
                 type="button"
@@ -311,9 +318,9 @@ const GreetingBlast = () => {
           </div>
 
           {listLoading ? (
-            <p className={styles.listEmpty}>טוען...</p>
+            <p className={styles.listEmpty}>{t(T.GREETING.LIST_LOADING)}</p>
           ) : filteredItems.length === 0 ? (
-            <p className={styles.listEmpty}>אין ברכות מתוזמנות להצגה.</p>
+            <p className={styles.listEmpty}>{t(T.GREETING.LIST_EMPTY)}</p>
           ) : (
             <ul className={styles.list}>
               {filteredItems.map((item) => (
@@ -321,14 +328,18 @@ const GreetingBlast = () => {
                   <div className={styles.listItemTop}>
                     <strong className={styles.listSubject}>{item.subject}</strong>
                     <span className={`${styles.statusBadge} ${styles[`status_${item.status}`]}`}>
-                      {STATUS_LABELS[item.status]}
+                      {statusLabels[item.status]}
                     </span>
                   </div>
                   <p className={styles.listMessage}>{item.message}</p>
                   <div className={styles.listMeta}>
-                    <span>📅 {formatDateTime(item.scheduledAt)}</span>
+                    <span>📅 {formatDateTime(item.scheduledAt, locale)}</span>
                     {item.attachmentName && <span>📎 {item.attachmentName}</span>}
-                    {item.sentAt && <span>✅ נשלח: {formatDateTime(item.sentAt)}</span>}
+                    {item.sentAt && (
+                      <span>
+                        ✅ {t(T.GREETING.SENT_AT)} {formatDateTime(item.sentAt, locale)}
+                      </span>
+                    )}
                     {renderStats(item) && <span>{renderStats(item)}</span>}
                     {item.createdBy && <span>👤 {item.createdBy}</span>}
                   </div>
@@ -342,7 +353,9 @@ const GreetingBlast = () => {
                       disabled={cancellingId === item.id}
                       onClick={() => handleCancel(item.id)}
                     >
-                      {cancellingId === item.id ? 'מבטל...' : 'ביטול תזמון'}
+                      {cancellingId === item.id
+                        ? t(T.GREETING.CANCELLING)
+                        : t(T.GREETING.CANCEL_SCHEDULE)}
                     </button>
                   )}
                 </li>
