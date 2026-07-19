@@ -1,6 +1,13 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useBookingsQuery } from '../../hooks/queries';
+import { useTranslation } from '../../i18n/useTranslation';
+import { formatDate } from '@shared/i18n/formatters';
+import {
+  EVENT_TYPE_KEY_BY_VALUE,
+  HALL_ONLY_EVENT_TYPE,
+  translateByValue,
+} from '@shared/i18n/bookingLookups';
 import {
   SectionHeader,
   DataTable,
@@ -22,30 +29,34 @@ const startOfDay = (d: Date) => {
 const getEventDay = (b: any) =>
   b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null;
 
-const dateStr = (b: any) =>
-  b.eventDate?.date ? new Date(b.eventDate.date).toLocaleDateString('he-IL') : '—';
-
-const toEventCard = (b: any): EventCardData => ({
-  id: b.id,
-  date: dateStr(b),
-  code: b.eventCode,
-  clientName: b.clientAFullName,
-  clientNameB: b.clientBFullName,
-  eventType: b.eventType,
-  timeOfDay: b.timeOfDay,
-  guestCount:
-    b.eventType === 'השכרת אולם בלי אוכל'
-      ? 'השכרת אולם (ללא מנות)'
-      : b.guestCount,
-  status: 'confirmed',
-  statusLabel: 'מאושר',
-});
-
 export function UpcomingEventsPanel() {
+  const { t, T, locale } = useTranslation();
   const { data, isLoading } = useBookingsQuery({
     status: 'BOOKED',
     page: 1,
     limit: 500,
+  });
+
+  const formatEventType = (value: string) =>
+    translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value);
+
+  const dateStr = (b: any) =>
+    b.eventDate?.date ? formatDate(b.eventDate.date, locale) : t(T.COMMON.LABELS.EM_DASH);
+
+  const toEventCard = (b: any): EventCardData => ({
+    id: b.id,
+    date: dateStr(b),
+    code: b.eventCode,
+    clientName: b.clientAFullName,
+    clientNameB: b.clientBFullName,
+    eventType: formatEventType(b.eventType),
+    timeOfDay: b.timeOfDay,
+    guestCount:
+      b.eventType === HALL_ONLY_EVENT_TYPE
+        ? t(T.STATUS.HALL_RENTAL_NO_PORTIONS)
+        : b.guestCount,
+    status: 'confirmed',
+    statusLabel: t(T.STATUS.CONFIRMED),
   });
 
   const upcoming = useMemo(() => {
@@ -61,32 +72,38 @@ export function UpcomingEventsPanel() {
   }, [data]);
 
   const columns: DataTableColumn<any>[] = [
-    { key: 'date', header: 'תאריך', render: (b) => dateStr(b) },
-    { key: 'code', header: 'קוד', render: (b) => b.eventCode ? `#${b.eventCode}` : '—' },
-    { key: 'client', header: 'לקוח', render: (b) => b.clientAFullName },
-    { key: 'type', header: 'סוג', render: (b) => b.eventType },
+    { key: 'date', header: t(T.COMMON.LABELS.DATE), render: (b) => dateStr(b) },
+    {
+      key: 'code',
+      header: t(T.COMMON.LABELS.CODE),
+      render: (b) => (b.eventCode ? `#${b.eventCode}` : t(T.COMMON.LABELS.EM_DASH)),
+    },
+    { key: 'client', header: t(T.COMMON.LABELS.CLIENT), render: (b) => b.clientAFullName },
+    { key: 'type', header: t(T.COMMON.LABELS.TYPE), render: (b) => formatEventType(b.eventType) },
     {
       key: 'guests',
-      header: 'מוזמנים',
+      header: t(T.COMMON.LABELS.GUESTS),
       render: (b) =>
-        b.eventType === 'השכרת אולם בלי אוכל' ? '—' : b.guestCount ?? '—',
+        b.eventType === HALL_ONLY_EVENT_TYPE
+          ? t(T.COMMON.LABELS.EM_DASH)
+          : (b.guestCount ?? t(T.COMMON.LABELS.EM_DASH)),
     },
     {
       key: 'status',
-      header: 'סטטוס',
-      render: () => <Badge variant="confirmed">מאושר</Badge>,
+      header: t(T.COMMON.LABELS.STATUS),
+      render: () => <Badge variant="confirmed">{t(T.STATUS.CONFIRMED)}</Badge>,
     },
   ];
 
   return (
     <div className={styles.panel}>
       <SectionHeader
-        title="אירועים קרובים"
+        title={t(T.DASHBOARD.UPCOMING_EVENTS)}
         count={upcoming.length}
         action={
           <Link to="/bookings-manager">
             <Button variant="secondary" size="sm">
-              הצג הכל
+              {t(T.COMMON.ACTIONS.VIEW_ALL)}
             </Button>
           </Link>
         }
@@ -95,12 +112,12 @@ export function UpcomingEventsPanel() {
       {isLoading ? (
         <SkeletonGroup rows={3} />
       ) : upcoming.length === 0 ? (
-        <p className={styles.empty}>אין אירועים קרובים</p>
+        <p className={styles.empty}>{t(T.DASHBOARD.NO_UPCOMING)}</p>
       ) : (
         <>
           <div className={styles.tableWrap}>
             <DataTable
-              caption="אירועים קרובים"
+              caption={t(T.DASHBOARD.UPCOMING_EVENTS)}
               columns={columns}
               data={upcoming}
               rowKey={(b: any) => b.id}

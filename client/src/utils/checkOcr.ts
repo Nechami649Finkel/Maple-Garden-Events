@@ -114,18 +114,18 @@ function canvasToJpeg(canvas: HTMLCanvasElement): string {
 async function recognizeNumbers(
   imageSrc: string,
   worker: Tesseract.Worker,
-  psm: string
+  psm: string | number
 ): Promise<string> {
   await worker.setParameters({
     tessedit_char_whitelist: '0123456789 /',
     tessedit_pageseg_mode: psm,
-  });
+  } as Record<string, string | number>);
   const { data } = await worker.recognize(imageSrc);
   return data.text;
 }
 
 async function recognizeBankLabels(imageSrc: string, worker: Tesseract.Worker): Promise<string> {
-  await worker.setParameters({ tessedit_pageseg_mode: '3' });
+  await worker.setParameters({ tessedit_pageseg_mode: '3' } as Record<string, string>);
   const { data } = await worker.recognize(imageSrc);
   return data.text;
 }

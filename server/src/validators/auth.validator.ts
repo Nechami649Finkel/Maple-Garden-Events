@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { USER_ROLES } from '../middlewares/requireRole';
+import { T } from '../i18n/getServerTranslation';
 
 const roleSchema = z.enum(USER_ROLES);
 
 export const addAuthorizedUserSchema = z.object({
   body: z.object({
-    email: z.string().trim().email('כתובת אימייל לא תקינה'),
+    email: z.string().trim().email(T.SERVER.VALIDATION.EMAIL_INVALID),
     role: roleSchema.optional(),
   }),
 });

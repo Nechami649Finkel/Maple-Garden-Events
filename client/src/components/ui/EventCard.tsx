@@ -1,3 +1,4 @@
+import { useTranslation } from '../../i18n/useTranslation';
 import { Badge, type BadgeVariant } from './Badge';
 import { Button } from './Button';
 import styles from './EventCard.module.css';
@@ -21,7 +22,10 @@ interface EventCardProps {
   viewLabel?: string;
 }
 
-export function EventCard({ event, onView, viewLabel = 'הצגת פרטים' }: EventCardProps) {
+export function EventCard({ event, onView, viewLabel }: EventCardProps) {
+  const { t, T } = useTranslation();
+  const resolvedViewLabel = viewLabel ?? t(T.UI.VIEW_DETAILS);
+
   return (
     <article className={styles.card}>
       <div className={styles.header}>
@@ -39,12 +43,12 @@ export function EventCard({ event, onView, viewLabel = 'הצגת פרטים' }: 
 
       <dl className={styles.details}>
         <div className={styles.detailRow}>
-          <dt>סוג</dt>
+          <dt>{t(T.COMMON.LABELS.TYPE)}</dt>
           <dd>{event.eventType}{event.timeOfDay ? ` | ${event.timeOfDay}` : ''}</dd>
         </div>
         {event.guestCount !== undefined && (
           <div className={styles.detailRow}>
-            <dt>מוזמנים</dt>
+            <dt>{t(T.COMMON.LABELS.GUESTS)}</dt>
             <dd>{event.guestCount}</dd>
           </div>
         )}
@@ -52,7 +56,7 @@ export function EventCard({ event, onView, viewLabel = 'הצגת פרטים' }: 
 
       {onView && (
         <Button variant="primary" size="sm" fullWidth onClick={onView}>
-          {viewLabel}
+          {resolvedViewLabel}
         </Button>
       )}
     </article>

@@ -7,7 +7,7 @@
   min-height: 100vh;
   min-height: 100dvh;
   background: linear-gradient(160deg, var(--maple-green-light) 0%, var(--maple-bg) 45%, var(--maple-bg) 100%);
-  direction: rtl;
+  direction: inherit;
   font-family: var(--maple-font);
   padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
 }

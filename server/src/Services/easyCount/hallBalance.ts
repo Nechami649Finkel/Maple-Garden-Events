@@ -1,14 +1,7 @@
-/**
- * C5 — חישוב יתרת חיוב לאולם (Easy Count)
- *
- * מונע חריגה מתקרת ההזמנה על ידי ספירת:
- * - סכומים ששולמו בפועל (booking.totalPaid)
- * - חשבוניות במצב pending/draft שטרם נקלטו ב-totalPaid אך כבר "שמורות" מול התקרה
- */
-
 import prisma from '../../config/prisma';
 import { getHallBillableAmount, type HallBillableBooking } from '../../utils/hallBilling';
 import type { EasyCountInvoiceStatus } from './types';
+import { createServerError, T } from '../../i18n/getServerTranslation';
 
 /** סטטוסים שמייצגים כסף שכבר נגבה / אושר סופית */
 export const FINALIZED_INVOICE_STATUSES: readonly EasyCountInvoiceStatus[] = ['paid'];
@@ -124,9 +117,7 @@ export async function loadHallBalanceForBooking(bookingId: string): Promise<{
 }> {
   const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
   if (!booking) {
-    const err: Error & { statusCode?: number } = new Error('ההזמנה לא נמצאה.');
-    err.statusCode = 404;
-    throw err;
+    throw createServerError(T.SERVER.HALL_BALANCE.BOOKING_NOT_FOUND, 404);
   }
 
   const invoices = await prisma.hallInvoice.findMany({
@@ -149,39 +140,37 @@ export function assertInvoiceAmountWithinBalance(
   const amount = roundMoney(Number(requestedAmount));
 
   if (balance.remaining <= 0.01) {
-    const err: Error & { statusCode?: number } = new Error(
+    throw createServerError(
       balance.pendingTotal > 0
-        ? 'לא ניתן להפיק חשבונית נוספת — קיימות חשבוניות ממתינות לגבייה שמכסות את יתרת האולם.'
-        : 'אין יתרה לחיוב מול האולם.',
+        ? T.SERVER.HALL_BALANCE.NO_REMAINING_PENDING
+        : T.SERVER.HALL_BALANCE.NO_REMAINING,
+      400,
     );
-    err.statusCode = 400;
-    throw err;
   }
 
   if (!Number.isFinite(amount) || amount <= 0) {
-    const err: Error & { statusCode?: number } = new Error('סכום החשבונית חייב להיות גדול מ-0.');
-    err.statusCode = 400;
-    throw err;
+    throw createServerError(T.SERVER.HALL_BALANCE.AMOUNT_POSITIVE, 400);
   }
 
   if (amount > balance.remaining + 0.01) {
-    const pendingNote =
-      balance.pendingTotal > 0
-        ? ` (כולל ₪${balance.pendingTotal.toLocaleString('he-IL')} ממתין לגבייה)`
-        : '';
-    const err: Error & { statusCode?: number } = new Error(
-      `סכום החשבונית (₪${amount.toLocaleString('he-IL')}) גבוה מהיתרה לאולם (₪${balance.remaining.toLocaleString('he-IL')})${pendingNote}.`,
-    );
-    err.statusCode = 400;
-    throw err;
+    if (balance.pendingTotal > 0) {
+      throw createServerError(T.SERVER.HALL_BALANCE.AMOUNT_EXCEEDS_WITH_PENDING, 400, {
+        amount: amount.toLocaleString('he-IL'),
+        remaining: balance.remaining.toLocaleString('he-IL'),
+        pending: balance.pendingTotal.toLocaleString('he-IL'),
+      });
+    }
+    throw createServerError(T.SERVER.HALL_BALANCE.AMOUNT_EXCEEDS, 400, {
+      amount: amount.toLocaleString('he-IL'),
+      remaining: balance.remaining.toLocaleString('he-IL'),
+    });
   }
 
   if (balance.committedTotal + amount > balance.hallAmount + 0.01) {
-    const err: Error & { statusCode?: number } = new Error(
-      `הפקת חשבונית זו תחרוג מתקרת האולם (₪${balance.hallAmount.toLocaleString('he-IL')}). ` +
-        `שולם: ₪${balance.paidTotal.toLocaleString('he-IL')}, ממתין: ₪${balance.pendingTotal.toLocaleString('he-IL')}.`,
-    );
-    err.statusCode = 409;
-    throw err;
+    throw createServerError(T.SERVER.HALL_BALANCE.CEILING_EXCEEDED, 409, {
+      ceiling: balance.hallAmount.toLocaleString('he-IL'),
+      paid: balance.paidTotal.toLocaleString('he-IL'),
+      pending: balance.pendingTotal.toLocaleString('he-IL'),
+    });
   }
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { T } from '../i18n/getServerTranslation';
 
 export const HALL_ONLY_EVENT_TYPE = 'השכרת אולם בלי אוכל';
 
@@ -25,7 +26,7 @@ export const createBookingSchema = z.object({
     hallRentalPrice: optionalNumber,
     servingStyle: z.string().optional(),
     
-    clientAEmail: z.string().email("כתובת אימייל לא תקינה").optional().or(z.literal('')),
+    clientAEmail: z.string().email(T.SERVER.VALIDATION.EMAIL_INVALID).optional().or(z.literal('')),
     clientBFullName: z.string().optional(),
 
     timeOfDay: z.string().optional(),
@@ -50,7 +51,7 @@ export const createBookingSchema = z.object({
         if (name.length < 2) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "יש להזין שם פרטי ושם משפחה",
+            message: T.SERVER.VALIDATION.FIRST_LAST_NAME_REQUIRED,
             path: ["clientAFullName"],
           });
         }
@@ -58,14 +59,14 @@ export const createBookingSchema = z.object({
         if (phone.length < 9) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "מספר טלפון לא תקין",
+            message: T.SERVER.VALIDATION.PHONE_INVALID,
             path: ["clientAPhone"],
           });
         }
         if (!(data.createdBy || '').trim()) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "יש לבחור נציג מהרשימה",
+            message: T.SERVER.VALIDATION.REPRESENTATIVE_REQUIRED,
             path: ["createdBy"],
           });
         }
@@ -75,7 +76,7 @@ export const createBookingSchema = z.object({
       if (!(data.clientAFullName || '').trim() || (data.clientAFullName || '').trim().length < 2) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "שם לקוח הוא חובה",
+          message: T.SERVER.VALIDATION.CLIENT_NAME_REQUIRED,
           path: ["clientAFullName"],
         });
       }
@@ -83,21 +84,21 @@ export const createBookingSchema = z.object({
       if (phone.length < 9) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "מספר טלפון לא תקין",
+          message: T.SERVER.VALIDATION.PHONE_INVALID,
           path: ["clientAPhone"],
         });
       }
       if (!(data.timeOfDay || '').trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "חובה לבחור שעת אירוע",
+          message: T.SERVER.VALIDATION.TIME_SLOT_REQUIRED,
           path: ["timeOfDay"],
         });
       }
       if (!(data.eventType || '').trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "חובה לבחור סוג אירוע",
+          message: T.SERVER.VALIDATION.EVENT_TYPE_REQUIRED,
           path: ["eventType"],
         });
       }
@@ -105,7 +106,7 @@ export const createBookingSchema = z.object({
       if (!data.allSelectedDates?.length && !data.calendarDateId) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "חובה לבחור לפחות תאריך אחד לאירוע",
+          message: T.SERVER.VALIDATION.DATE_REQUIRED,
           path: ["allSelectedDates"],
         });
       }
@@ -115,7 +116,7 @@ export const createBookingSchema = z.object({
         if (!Number.isFinite(price) || price <= 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "יש להזין מחיר השכרת אולם",
+            message: T.SERVER.VALIDATION.HALL_RENTAL_PRICE_REQUIRED,
             path: ["hallRentalPrice"],
           });
         }
@@ -126,7 +127,7 @@ export const createBookingSchema = z.object({
       if (!Number.isFinite(guestCount) || guestCount <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "חובה להזין מספר אורחים",
+          message: T.SERVER.VALIDATION.GUEST_COUNT_REQUIRED,
           path: ["guestCount"],
         });
       }
@@ -135,7 +136,7 @@ export const createBookingSchema = z.object({
       if (!Number.isFinite(portionPrice) || portionPrice <= 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "חובה להזין מחיר מנה",
+          message: T.SERVER.VALIDATION.PORTION_PRICE_REQUIRED,
           path: ["finalPricePortion"],
         });
       }
@@ -151,14 +152,14 @@ export const updateBookingSchema = z.object({
       clientAIdNumber: z.string().optional(),
       clientAPhone: z.string().optional(),
       clientAPhone2: z.string().optional(),
-      clientAEmail: z.string().email('כתובת אימייל לא תקינה').optional().or(z.literal('')),
+      clientAEmail: z.string().email(T.SERVER.VALIDATION.EMAIL_INVALID).optional().or(z.literal('')),
       clientACity: z.string().optional(),
       clientAAddress: z.string().optional(),
       clientBFullName: z.string().optional(),
       clientBIdNumber: z.string().optional(),
       clientBPhone: z.string().optional(),
       clientBPhone2: z.string().optional(),
-      clientBEmail: z.string().email('כתובת אימייל לא תקינה').optional().or(z.literal('')),
+      clientBEmail: z.string().email(T.SERVER.VALIDATION.EMAIL_INVALID).optional().or(z.literal('')),
       clientBCity: z.string().optional(),
       clientBAddress: z.string().optional(),
       eventType: z.string().optional(),

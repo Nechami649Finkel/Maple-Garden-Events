@@ -1,4 +1,4 @@
-import React from 'react';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './MenuDisplay.module.css';
 
 const menuData = [
@@ -219,18 +219,18 @@ const menuData = [
 ];
 
 const MenuDisplay = () => {
+  const { t, T } = useTranslation();
+
   return (
     <div className={styles.menuWrapper}>
-      {/* לוגו כותרת עליונה */}
       <div className={styles.header}>
         <div className={styles.logoContainer}>
           <img src="/logo.png" alt="Maple Logo" className={styles.menuLogo} />
         </div>
-        <h2 className={styles.mainTitle}>התפריט שלנו</h2>
+        <h2 className={styles.mainTitle}>{t(T.MENU.PAGE_TITLE)}</h2>
         <div className={styles.accentLine}></div>
       </div>
 
-      {/* תוכן התפריט - פריסה לשתי עמודות במסכים רחבים */}
       <div className={styles.menuContent}>
         {menuData.map((section, index) => (
           <div key={index} className={styles.sectionBlock}>
@@ -258,10 +258,9 @@ const MenuDisplay = () => {
         ))}
       </div>
 
-      {/* כותרת תחתונה קבועה מילה במילה מהדפים */}
       <div className={styles.footer}>
-        <p className={styles.footerInfo}>רח' מודיעין 18, א.ת. סגולה, פ"ת / טל. 03-6777772 / www.maple-g.co.il</p>
-        <p className={styles.footerNote}>אין להכניס לאולם מאכלים ומשקאות ללא אישור 24 שעות מראש עם המשגיח הכשרות של האולם</p>
+        <p className={styles.footerInfo}>{t(T.MENU.FOOTER_ADDRESS)}</p>
+        <p className={styles.footerNote}>{t(T.MENU.FOOTER_KASHRUT_NOTE)}</p>
       </div>
     </div>
   );

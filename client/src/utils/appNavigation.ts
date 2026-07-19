@@ -1,25 +1,4 @@
-export const ROUTE_TITLES: Record<string, string> = {
-  '/dashboard': 'לוח בקרה',
-  '/calendar': 'לוח שנה',
-  '/booking': 'סגירת הזמנה',
-  '/options-manager': 'ניהול אופציות',
-  '/bookings-manager': 'ניהול הזמנות',
-  '/greeting': 'שליחת ברכה',
-  '/event-form-manager': 'טופס הפקת אירוע',
-  '/option': 'שמירת אופציה',
-  '/menu': 'תפריט',
-  '/settings': 'הגדרות מתחם',
-  '/feedback-manager': 'משובי לקוחות',
-  '/feedback-stats': 'סטטיסטיקות וחישובים',
-  '/gallery': 'גלריה',
-};
-
-export function resolveRouteTitle(pathname: string): string {
-  if (pathname.startsWith('/booking/close-option/')) return 'סגירת הזמנה מאופציה';
-  if (pathname.startsWith('/booking/edit/')) return 'עריכת הזמנה';
-  if (pathname.startsWith('/feedback/')) return 'משוב לקוח';
-  return ROUTE_TITLES[pathname] || '';
-}
+export { resolveRouteTitleKey } from '@shared/i18n/navigationLookups';
 
 export function resolveDefaultBackPath(pathname: string): string {
   if (pathname.startsWith('/booking/close-option/')) return '/options-manager';

@@ -1,21 +1,48 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './MiniCalendar.module.css';
-
-const HEBREW_DAYS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
-const HEBREW_MONTHS = [
-  'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
-  'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
-];
 
 interface MiniCalendarProps {
   days: any[];
 }
 
 export function MiniCalendar({ days }: MiniCalendarProps) {
+  const { t, T } = useTranslation();
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
+
+  const monthKeys = useMemo(
+    () => [
+      T.BOOKING.OPTION_DATES.MONTH_JAN,
+      T.BOOKING.OPTION_DATES.MONTH_FEB,
+      T.BOOKING.OPTION_DATES.MONTH_MAR,
+      T.BOOKING.OPTION_DATES.MONTH_APR,
+      T.BOOKING.OPTION_DATES.MONTH_MAY,
+      T.BOOKING.OPTION_DATES.MONTH_JUN,
+      T.BOOKING.OPTION_DATES.MONTH_JUL,
+      T.BOOKING.OPTION_DATES.MONTH_AUG,
+      T.BOOKING.OPTION_DATES.MONTH_SEP,
+      T.BOOKING.OPTION_DATES.MONTH_OCT,
+      T.BOOKING.OPTION_DATES.MONTH_NOV,
+      T.BOOKING.OPTION_DATES.MONTH_DEC,
+    ],
+    [T],
+  );
+
+  const weekdayKeys = useMemo(
+    () => [
+      T.BOOKING.OPTION_DATES.WEEKDAY_SUN,
+      T.BOOKING.OPTION_DATES.WEEKDAY_MON,
+      T.BOOKING.OPTION_DATES.WEEKDAY_TUE,
+      T.BOOKING.OPTION_DATES.WEEKDAY_WED,
+      T.BOOKING.OPTION_DATES.WEEKDAY_THU,
+      T.BOOKING.OPTION_DATES.WEEKDAY_FRI,
+      T.BOOKING.OPTION_DATES.WEEKDAY_SAT,
+    ],
+    [T],
+  );
 
   const dayMap = useMemo(() => {
     const map = new Map<string, any>();
@@ -34,16 +61,21 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
   for (let d = 1; d <= daysInMonth; d++) cells.push(d);
 
   const todayStr = now.toISOString().slice(0, 10);
+  const monthLabel = t(monthKeys[month]);
 
   return (
     <div className={styles.wrap}>
       <p className={styles.monthLabel}>
-        {HEBREW_MONTHS[month]} {year}
+        {monthLabel} {year}
       </p>
-      <div className={styles.grid} role="grid" aria-label={`לוח שנה ${HEBREW_MONTHS[month]} ${year}`}>
-        {HEBREW_DAYS.map((d) => (
-          <div key={d} className={styles.dayHeader} role="columnheader">
-            {d}
+      <div
+        className={styles.grid}
+        role="grid"
+        aria-label={t(T.DASHBOARD.CALENDAR_MONTH_ARIA, { month: monthLabel, year })}
+      >
+        {weekdayKeys.map((key) => (
+          <div key={key} className={styles.dayHeader} role="columnheader">
+            {t(key)}
           </div>
         ))}
         {cells.map((day, i) => {
@@ -60,7 +92,11 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
               key={dateStr}
               to="/calendar"
               className={`${styles.cell} ${isToday ? styles.today : ''} ${bookingCount > 0 ? styles.hasBookings : ''}`}
-              aria-label={`${day} ${HEBREW_MONTHS[month]}, ${bookingCount} אירועים`}
+              aria-label={t(T.DASHBOARD.CALENDAR_DAY_ARIA, {
+                day,
+                month: monthLabel,
+                count: bookingCount,
+              })}
             >
               <span className={styles.dayNum}>{day}</span>
               {bookingCount > 0 && (

@@ -1,5 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
+import { useTranslation } from '../../i18n/useTranslation';
 import styles from './LiveEvent.module.css';
 
 export interface ReserveTableRow {
@@ -33,6 +34,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
   onSave,
   onCancel,
 }) => {
+  const { t, T } = useTranslation();
   const [form, setForm] = useState<CheckInFormData>(initialData);
   const [saving, setSaving] = useState(false);
   const sigCanvas = useRef<SignatureCanvas>(null);
@@ -54,7 +56,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
     setForm((prev) => ({
       ...prev,
       reserveTables: prev.reserveTables.map((row) =>
-        row.number === num ? { ...row, value } : row
+        row.number === num ? { ...row, value } : row,
       ),
     }));
   };
@@ -68,7 +70,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
       : sigCanvas.current?.getCanvas().toDataURL('image/png') ?? null;
 
     if (!signature?.trim()) {
-      alert('חובה לחתום לפני שמירת הטופס');
+      alert(t(T.LIVE_EVENT.SIGNATURE_REQUIRED));
       return;
     }
 
@@ -82,16 +84,16 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
 
   return (
     <form className={styles.checkInBoard} onSubmit={handleSubmit}>
-      <p className={styles.checkInBsd}>בס&quot;ד</p>
+      <p className={styles.checkInBsd}>{t(T.LIVE_EVENT.BSD)}</p>
 
       <div className={styles.checkInHeader}>
-        <img src="/logo.png" alt="מייפל" className={styles.checkInLogo} />
-        <p className={styles.checkInBrand}>מייפל</p>
-        <p className={styles.checkInSubtitle}>גן אירועים בעיר</p>
+        <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.checkInLogo} />
+        <p className={styles.checkInBrand}>{t(T.UI.BRAND_NAME)}</p>
+        <p className={styles.checkInSubtitle}>{t(T.UI.VENUE_TAGLINE)}</p>
       </div>
 
       <div className={styles.checkInInlineRow}>
-        <span className={styles.checkInInlineLabel}>משפחות:</span>
+        <span className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_FAMILIES)}:</span>
         <input
           type="text"
           className={styles.checkInInlineInput}
@@ -102,21 +104,14 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
       </div>
 
       <div className={styles.checkInInlineRow}>
-        <span className={styles.checkInInlineLabel}>תאריך:</span>
-        <input
-          type="text"
-          className={styles.checkInInlineInput}
-          value={dateDisplay}
-          readOnly
-        />
+        <span className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_DATE)}:</span>
+        <input type="text" className={styles.checkInInlineInput} value={dateDisplay} readOnly />
       </div>
 
-      <p className={styles.checkInConfirmText}>
-        הריני לאשר בזאת שקיבלתי את האולם לפי שביעות רצוני,
-      </p>
+      <p className={styles.checkInConfirmText}>{t(T.LIVE_EVENT.ACCEPTANCE_TEXT)}</p>
 
       <div className={styles.checkInInlineRow}>
-        <span className={styles.checkInInlineLabel}>מספר המנות שהזמנתי:</span>
+        <span className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_ORDERED_PORTIONS)}:</span>
         <input
           type="number"
           min="0"
@@ -133,7 +128,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
       </div>
 
       <div className={styles.checkInInlineRow}>
-        <span className={styles.checkInInlineLabel}>מספר מנות משמחים:</span>
+        <span className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_ENTERTAINER_PORTIONS)}:</span>
         <input
           type="number"
           min="0"
@@ -153,7 +148,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
         {form.reserveTables.map((row) => (
           <div key={row.number} className={styles.checkInInlineRow}>
             <span className={styles.checkInInlineLabel}>
-              הריני לאשר שפתחתי שולחן רזרבה מספר {row.number}:
+              {t(T.LIVE_EVENT.RESERVE_TABLE_TEXT)} {row.number}:
             </span>
             <input
               type="text"
@@ -167,7 +162,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
       </div>
 
       <div className={styles.checkInSpecialSection}>
-        <p className={styles.checkInInlineLabel}>תוספות מיוחדות:</p>
+        <p className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_SPECIAL_ADDITIONS)}:</p>
         <input
           type="text"
           className={styles.checkInLineInput}
@@ -185,15 +180,15 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
       </div>
 
       <div className={`${styles.checkInField} ${styles.signatureSection}`}>
-        <p className={styles.checkInInlineLabel}>חתימת הלקוח (חובה):</p>
+        <p className={styles.checkInInlineLabel}>{t(T.LIVE_EVENT.LABEL_SIGNATURE)}:</p>
         {readOnly && form.customerSignature ? (
           <img
             src={form.customerSignature}
-            alt="חתימת הלקוח"
+            alt={t(T.LIVE_EVENT.SIGNATURE_ALT)}
             className={styles.signaturePreview}
           />
         ) : readOnly ? (
-          <p className={styles.checkInConfirmText}>לא נחתם</p>
+          <p className={styles.checkInConfirmText}>{t(T.LIVE_EVENT.NOT_SIGNED)}</p>
         ) : (
           <>
             <div className={styles.signatureCanvasWrap}>
@@ -207,7 +202,7 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
               className={styles.clearSigBtn}
               onClick={() => sigCanvas.current?.clear()}
             >
-              נקה חתימה
+              {t(T.LIVE_EVENT.CLEAR_SIGNATURE)}
             </button>
           </>
         )}
@@ -215,11 +210,11 @@ const EventCheckInBoard: React.FC<EventCheckInBoardProps> = ({
 
       <div className={styles.checkInActions}>
         <button type="button" className={styles.checkInCancelBtn} onClick={onCancel}>
-          סגירה
+          {t(T.LIVE_EVENT.CLOSE)}
         </button>
         {!readOnly && (
           <button type="submit" className={styles.checkInSaveBtn} disabled={saving}>
-            {saving ? 'שומר...' : 'שמירה'}
+            {saving ? t(T.LIVE_EVENT.SAVING) : t(T.LIVE_EVENT.SAVE)}
           </button>
         )}
       </div>

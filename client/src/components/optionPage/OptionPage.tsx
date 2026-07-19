@@ -1,11 +1,13 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import BookingForm from '../BookingForm/BookingForm';
 import { EmptyState, Button } from '../ui';
+import { useTranslation } from '../../i18n/useTranslation';
 import './OptionPage.css';
 
 const OptionPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, T } = useTranslation();
 
   const selectedDates = location.state?.selectedDates || [];
 
@@ -13,11 +15,11 @@ const OptionPage = () => {
     return (
       <div className="option-page-container">
         <EmptyState
-          title="לא נבחרו תאריכים"
-          message="חזרו ללוח השנה ובחרו תאריכים לשמירת אופציה"
+          title={t(T.OPTIONS.PAGE_NO_DATES)}
+          message={t(T.OPTIONS.PAGE_NO_DATES_HINT)}
         />
         <Button variant="primary" onClick={() => navigate('/calendar')}>
-          חזרה ללוח שנה
+          {t(T.NAV.CALENDAR)}
         </Button>
       </div>
     );

@@ -1,15 +1,21 @@
+import { T, type TranslationKey, type TranslationParams } from '@shared/i18n';
 import {
   type TimeSlot,
-  SLOT_LABELS,
-  getTakenSlots,
   getBlockedSlotsForDate,
   getBookableSlotsForDate,
+  getTakenSlots,
   normalizeTimeSlot,
+  formatSlotLabel,
 } from './timeSlot';
 
 type OptionDayBooking = {
   timeOfDay?: string | null;
   isOption?: boolean;
+};
+
+export type ValidationError = {
+  key: TranslationKey;
+  params?: TranslationParams;
 };
 
 function formatDateLocal(date: Date): string {
@@ -19,29 +25,44 @@ function formatDateLocal(date: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-function validateSlotOnDate(dateStr: string, slot: TimeSlot): string | null {
+function validateSlotOnDate(dateStr: string, slot: TimeSlot): ValidationError | null {
   const blocked = getBlockedSlotsForDate(dateStr);
   if (blocked.includes(slot)) {
     const jsDay = new Date(`${dateStr}T12:00:00`).getDay();
-    if (jsDay === 5) {
-      return 'ביום שישי ניתן לשמור אופציה בבוקר בלבד.';
-    }
-    if (jsDay === 6) {
-      return 'לא ניתן לשמור אופציה בשבת.';
-    }
-    return `משבצת ${SLOT_LABELS[slot]} אינה זמינה בתאריך זה.`;
+    if (jsDay === 5) return { key: T.VALIDATION.FRIDAY_MORNING_ONLY };
+    if (jsDay === 6) return { key: T.VALIDATION.NO_OPTION_SHABBAT };
+    return {
+      key: T.VALIDATION.SLOT_UNAVAILABLE,
+      params: { slot: slot },
+    };
   }
   return null;
 }
 
-function slotConflictMessage(slot: TimeSlot, bookings: OptionDayBooking[]): string {
+function slotConflictMessage(slot: TimeSlot, bookings: OptionDayBooking[]): ValidationError {
   const optionHeld = bookings.some(
     (b) => b.isOption && normalizeTimeSlot(b.timeOfDay) === slot,
   );
   if (optionHeld) {
-    return `משבצת ${SLOT_LABELS[slot]} תפוסה על ידי אופציה. לחצי "סגירת אירוע במקום האופציה" בלוח השנה.`;
+    return {
+      key: T.VALIDATION.SLOT_OPTION_HELD,
+      params: { slot },
+    };
   }
-  return `משבצת ${SLOT_LABELS[slot]} תפוסה בתאריך זה (אירוע מאושר).`;
+  return {
+    key: T.VALIDATION.SLOT_BOOKED,
+    params: { slot },
+  };
+}
+
+export function formatValidationError(
+  translate: (key: TranslationKey, params?: TranslationParams) => string,
+  error: ValidationError,
+): string {
+  const params = error.params?.slot
+    ? { ...error.params, slot: formatSlotLabel(translate, error.params.slot as TimeSlot) }
+    : error.params;
+  return translate(error.key, params);
 }
 
 export function validateOptionDateSelection(
@@ -49,20 +70,22 @@ export function validateOptionDateSelection(
   dayData: { status?: string; bookings?: OptionDayBooking[]; reason?: string | null } | undefined,
   slot: TimeSlot,
   excludeDates: string[] = [],
-): string | null {
+): ValidationError | null {
   const todayStr = formatDateLocal(new Date());
   if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return 'יש לבחור תאריך תקין.';
+    return { key: T.VALIDATION.INVALID_DATE };
   }
-  if (dateStr < todayStr) return 'לא ניתן לבחור תאריך בעבר.';
-  if (excludeDates.includes(dateStr)) return 'התאריך כבר נבחר באופציה.';
+  if (dateStr < todayStr) return { key: T.VALIDATION.PAST_DATE };
+  if (excludeDates.includes(dateStr)) return { key: T.VALIDATION.DATE_ALREADY_SELECTED };
 
   const jsDay = new Date(`${dateStr}T12:00:00`).getDay();
-  if (jsDay === 6) return 'לא ניתן לשמור אופציה בשבת.';
+  if (jsDay === 6) return { key: T.VALIDATION.NO_OPTION_SHABBAT };
 
   const status = dayData?.status ?? 'AVAILABLE';
   if (status === 'BLOCKED' || status === 'FORBIDDEN') {
-    return dayData?.reason ? `תאריך אסור: ${dayData.reason}` : 'התאריך חסום בלוח.';
+    return dayData?.reason
+      ? { key: T.VALIDATION.FORBIDDEN_DATE, params: { reason: dayData.reason } }
+      : { key: T.VALIDATION.DATE_BLOCKED };
   }
 
   const slotError = validateSlotOnDate(dateStr, slot);
@@ -72,14 +95,14 @@ export function validateOptionDateSelection(
     const bookings = dayData.bookings ?? [];
     const bookable = getBookableSlotsForDate(dateStr, bookings);
     if (bookable.length === 0) {
-      return 'התאריך מלא — אין משבצות זמן פנויות.';
+      return { key: T.VALIDATION.DATE_FULL };
     }
     if (!bookable.includes(slot)) {
       const taken = getTakenSlots(bookings);
       if (taken.has(slot)) {
         return slotConflictMessage(slot, bookings);
       }
-      return `משבצת ${SLOT_LABELS[slot]} אינה זמינה בתאריך זה.`;
+      return { key: T.VALIDATION.SLOT_UNAVAILABLE, params: { slot } };
     }
   }
 

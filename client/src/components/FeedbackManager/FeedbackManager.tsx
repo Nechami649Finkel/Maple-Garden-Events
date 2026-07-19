@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { formatDate, formatDateTime } from '@shared/i18n/formatters';
 import { useFeedbackAdminQuery } from '../../hooks/queries';
 import { API_URL } from '../../config/api';
 import { apiFetch } from '../../services/api';
+import { useTranslation } from '../../i18n/useTranslation';
 import { PaginationBar } from '../PaginationBar/PaginationBar';
 import styles from './FeedbackManager.module.css';
 
@@ -45,48 +47,9 @@ type SendResult = {
   results?: Array<{ link: string; clientSide: string; emailSent: boolean; whatsappSent: boolean; skippedReasons: string[] }>;
 };
 
-function formatDate(iso: string | null) {
-  if (!iso) return '—';
-  return new Date(iso + 'T12:00:00').toLocaleDateString('he-IL');
-}
-
-function stars(score: number | null) {
-  if (score == null) return '—';
+function stars(score: number | null, emDash: string) {
+  if (score == null) return emDash;
   return '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));
-}
-
-function statusLabel(status: FeedbackGroup['feedbackStatus'], sides: FeedbackSide[]) {
-  const anyNotified = sides.some((s) => s.lastNotifiedAt);
-  if (status === 'not_sent') return 'טרם נשלח';
-  if (status === 'completed') return 'הושלם';
-  if (anyNotified) return 'נשלח · ממתין למילוי';
-  return 'ממתין למילוי';
-}
-
-function formatSentChannels(side: FeedbackSide): string {
-  const parts: string[] = ['נשלח'];
-  if (side.lastEmailSent) parts.push('במייל ✓');
-  if (side.lastWhatsappSent) parts.push('בוואטסאפ ✓');
-  return parts.join(' ');
-}
-
-function formatSentTime(iso: string | null): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleString('he-IL', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function sendLabel(sides: FeedbackSide[], isBusy: boolean): string {
-  if (isBusy) return 'שולח...';
-  return sides.some((s) => s.lastNotifiedAt) ? 'שלח שוב' : 'שלח';
-}
-
-function sideLabel(clientSide: string): string {
-  return clientSide === 'B' ? "צד ב'" : "צד א'";
 }
 
 async function sendFeedbackRequest(
@@ -103,26 +66,68 @@ async function sendFeedbackRequest(
     }),
   });
   const json = await res.json();
-  if (!json.success) throw new Error(json.message || 'שגיאה בשליחה');
+  if (!json.success) throw new Error(json.message || 'SEND_FAILED');
   return json;
 }
 
-function formatDeliveryResult(result: SendResult): string {
-  const parts: string[] = [];
-  if (result.emailSent) parts.push('נשלח במייל ✓');
-  if (result.whatsappSent) parts.push('נשלח בוואטסאפ ✓');
-  if (result.skippedReasons?.length) {
-    parts.push(...result.skippedReasons);
-  }
-  return parts.length > 0 ? parts.join('\n') : result.message;
-}
-
 const FeedbackManager = () => {
+  const { t, T, locale } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<'all' | 'pending' | 'done'>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deliveryNote, setDeliveryNote] = useState<{ bookingId: string; text: string } | null>(null);
+
+  const emDash = t(T.COMMON.LABELS.EM_DASH);
+
+  const formatEventDate = (iso: string | null) => {
+    if (!iso) return emDash;
+    return formatDate(iso + 'T12:00:00', locale);
+  };
+
+  const formatSentTime = (iso: string | null): string => {
+    if (!iso) return '';
+    return formatDateTime(iso, locale, {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const statusLabel = (status: FeedbackGroup['feedbackStatus'], sides: FeedbackSide[]) => {
+    const anyNotified = sides.some((s) => s.lastNotifiedAt);
+    if (status === 'not_sent') return t(T.FEEDBACK.STATUS_NOT_SENT);
+    if (status === 'completed') return t(T.FEEDBACK.STATUS_COMPLETED);
+    if (anyNotified) return t(T.FEEDBACK.STATUS_SENT_PENDING);
+    return t(T.FEEDBACK.STATUS_PENDING);
+  };
+
+  const formatSentChannels = (side: FeedbackSide): string => {
+    const parts: string[] = [];
+    if (side.lastEmailSent) parts.push(t(T.COMMON.LABELS.SENT_EMAIL));
+    if (side.lastWhatsappSent) parts.push(t(T.COMMON.LABELS.SENT_WHATSAPP));
+    if (parts.length === 0) parts.push(t(T.COMMON.LABELS.SENT));
+    return parts.join(' ');
+  };
+
+  const sendLabel = (sides: FeedbackSide[], isBusy: boolean): string => {
+    if (isBusy) return t(T.FEEDBACK.SENDING);
+    return sides.some((s) => s.lastNotifiedAt) ? t(T.FEEDBACK.SEND_AGAIN) : t(T.FEEDBACK.SEND);
+  };
+
+  const sideLabel = (clientSide: string): string =>
+    clientSide === 'B' ? t(T.BOOKINGS.SIDE_B) : t(T.BOOKINGS.SIDE_A);
+
+  const formatDeliveryResult = (result: SendResult): string => {
+    const parts: string[] = [];
+    if (result.emailSent) parts.push(t(T.COMMON.LABELS.SENT_EMAIL));
+    if (result.whatsappSent) parts.push(t(T.COMMON.LABELS.SENT_WHATSAPP));
+    if (result.skippedReasons?.length) {
+      parts.push(...result.skippedReasons);
+    }
+    return parts.length > 0 ? parts.join('\n') : result.message;
+  };
 
   const { data, isLoading: loading } = useFeedbackAdminQuery(page, 20);
   const groups = data?.data ?? [];
@@ -145,7 +150,8 @@ const FeedbackManager = () => {
       setDeliveryNote({ bookingId, text: formatDeliveryResult(result) });
       await queryClient.invalidateQueries({ queryKey: ['feedback-admin'] });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'שגיאה בשליחה');
+      const msg = err instanceof Error && err.message !== 'SEND_FAILED' ? err.message : t(T.FEEDBACK.SEND_ERROR);
+      alert(msg);
     } finally {
       setBusyId(null);
     }
@@ -158,14 +164,15 @@ const FeedbackManager = () => {
       const result = await sendFeedbackRequest(bookingId, { clientSide, sendNotifications: false });
       const link = result.results?.[0]?.link;
       if (!link) {
-        alert('לא ניתן ליצור קישור — בדקי שיש פרטי קשר ללקוח.');
+        alert(t(T.FEEDBACK.LINK_ERROR));
         return;
       }
       await navigator.clipboard.writeText(link);
-      alert('הקישור הועתק!');
+      alert(t(T.FEEDBACK.LINK_COPIED));
       await queryClient.invalidateQueries({ queryKey: ['feedback-admin'] });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'שגיאה ביצירת קישור');
+      const msg = err instanceof Error && err.message !== 'SEND_FAILED' ? err.message : t(T.FEEDBACK.LINK_ERROR);
+      alert(msg);
     } finally {
       setBusyId(null);
     }
@@ -175,14 +182,11 @@ const FeedbackManager = () => {
     <div className={styles.container}>
         <div className={styles.header}>
         <div>
-          <h2 className={styles.title}>משובי לקוחות</h2>
-          <p className={styles.subtitle}>
-            משובים נשלחים אוטומטית למייל/וואטסאפ בסיום כל אירוע (לפי שעת הסיום). בחתונה/אירוסין — נשלח לשני הצדדים.
-            ניתן גם לשלוח ידנית מכאן.
-          </p>
+          <h2 className={styles.title}>{t(T.FEEDBACK.PAGE_TITLE)}</h2>
+          <p className={styles.subtitle}>{t(T.FEEDBACK.PAGE_SUBTITLE)}</p>
         </div>
         <Link to="/feedback-stats" className={styles.statsLink}>
-          📊 סטטיסטיקות וחישובים
+          📊 {t(T.FEEDBACK.STATS_LINK)}
         </Link>
       </div>
 
@@ -192,31 +196,31 @@ const FeedbackManager = () => {
           className={filter === 'all' ? styles.filterActive : styles.filterBtn}
           onClick={() => setFilter('all')}
         >
-          הכל
+          {t(T.FEEDBACK.FILTER_ALL)}
         </button>
         <button
           type="button"
           className={filter === 'pending' ? styles.filterActive : styles.filterBtn}
           onClick={() => setFilter('pending')}
         >
-          ממתין למילוי
+          {t(T.FEEDBACK.FILTER_PENDING)}
         </button>
         <button
           type="button"
           className={filter === 'done' ? styles.filterActive : styles.filterBtn}
           onClick={() => setFilter('done')}
         >
-          הושלם
+          {t(T.FEEDBACK.FILTER_COMPLETED)}
         </button>
       </div>
 
       {loading ? (
-        <p className={styles.empty}>טוען...</p>
+        <p className={styles.empty}>{t(T.UI.LOADING)}</p>
       ) : filtered.length === 0 ? (
         <p className={styles.empty}>
           {groups.length === 0
-            ? 'אין אירועים שהסתיימו. משובים יופיעו לאחר אירועים סגורים (BOOKED) שעברו.'
-            : 'אין תוצאות לפילטר הנבחר.'}
+            ? t(T.FEEDBACK.EMPTY_NO_EVENTS)
+            : t(T.FEEDBACK.EMPTY_FILTER)}
         </p>
       ) : (
         <>
@@ -232,7 +236,7 @@ const FeedbackManager = () => {
                   <div>
                     <span className={styles.eventCode}>#{g.eventCode}</span>
                     <h3 className={styles.eventTitle}>
-                      {g.eventType} — {formatDate(g.eventDate)}
+                      {g.eventType} — {formatEventDate(g.eventDate)}
                     </h3>
                     <p className={styles.clients}>
                       {g.clientAFullName}
@@ -246,7 +250,7 @@ const FeedbackManager = () => {
                     {g.combinedAverage != null && (
                       <>
                         <span className={styles.combinedLabel}>
-                          {dualSide ? 'ממוצע משולב' : 'ממוצע'}
+                          {dualSide ? t(T.FEEDBACK.AVERAGE_COMBINED) : t(T.FEEDBACK.AVERAGE)}
                         </span>
                         <strong className={styles.combinedScore}>
                           {g.combinedAverage.toFixed(1)}
@@ -254,10 +258,10 @@ const FeedbackManager = () => {
                       </>
                     )}
                     {g.allCompleted && dualSide && (
-                      <span className={styles.badgeDone}>שני הצדדים מילאו</span>
+                      <span className={styles.badgeDone}>{t(T.FEEDBACK.BOTH_COMPLETED)}</span>
                     )}
                     {!dualSide && singleSide?.isCompleted && (
-                      <span className={styles.badgeDone}>הושלם</span>
+                      <span className={styles.badgeDone}>{t(T.FEEDBACK.STATUS_COMPLETED)}</span>
                     )}
                     {!g.allCompleted && dualSide && g.sides.length > 0 && (
                       <button
@@ -277,7 +281,7 @@ const FeedbackManager = () => {
                             <span className={styles.sentTime}>{formatSentTime(singleSide.lastNotifiedAt)}</span>
                           </div>
                         ) : (
-                          <p className={styles.waiting}>טרם נשלח</p>
+                          <p className={styles.waiting}>{t(T.FEEDBACK.STATUS_NOT_SENT)}</p>
                         )}
                         <div className={styles.sideActions}>
                           <button
@@ -286,7 +290,7 @@ const FeedbackManager = () => {
                             disabled={busyId === `copy-${g.bookingId}-A`}
                             onClick={() => handleCopyLink(g.bookingId, 'A')}
                           >
-                            העתק קישור
+                            {t(T.FEEDBACK.COPY_LINK)}
                           </button>
                           <button
                             type="button"
@@ -309,9 +313,9 @@ const FeedbackManager = () => {
                 {!dualSide && singleSide?.isCompleted && (
                   <div className={`${styles.sideCard} ${styles.sideDone}`}>
                     <div className={styles.ratings}>
-                      <span>אוכל: {stars(singleSide.foodRating)}</span>
-                      <span>שירות: {stars(singleSide.serviceRating)}</span>
-                      <span>אולם: {stars(singleSide.venueRating)}</span>
+                      <span>{t(T.FEEDBACK.RATING_FOOD)}: {stars(singleSide.foodRating, emDash)}</span>
+                      <span>{t(T.FEEDBACK.RATING_SERVICE)}: {stars(singleSide.serviceRating, emDash)}</span>
+                      <span>{t(T.FEEDBACK.RATING_VENUE)}: {stars(singleSide.venueRating, emDash)}</span>
                     </div>
                     {singleSide.comments && (
                       <p className={styles.comments}>"{singleSide.comments}"</p>
@@ -331,23 +335,23 @@ const FeedbackManager = () => {
                       >
                         <div className={styles.sideHeader}>
                           <strong>{sideLabel(side.clientSide)}</strong>
-                          <span>{side.clientName || '—'}</span>
+                          <span>{side.clientName || emDash}</span>
                           <span className={side.isCompleted ? styles.statusDone : styles.statusPending}>
                             {side.isCompleted
-                              ? 'הושלם'
+                              ? t(T.FEEDBACK.STATUS_COMPLETED)
                               : side.lastNotifiedAt
-                                ? 'ממתין למילוי'
-                                : 'טרם נשלח'}
+                                ? t(T.FEEDBACK.STATUS_PENDING)
+                                : t(T.FEEDBACK.STATUS_NOT_SENT)}
                           </span>
                         </div>
                         {side.isCompleted ? (
                           <>
                             <div className={styles.ratings}>
-                              <span>אוכל: {stars(side.foodRating)}</span>
-                              <span>שירות: {stars(side.serviceRating)}</span>
-                              <span>אולם: {stars(side.venueRating)}</span>
+                              <span>{t(T.FEEDBACK.RATING_FOOD)}: {stars(side.foodRating, emDash)}</span>
+                              <span>{t(T.FEEDBACK.RATING_SERVICE)}: {stars(side.serviceRating, emDash)}</span>
+                              <span>{t(T.FEEDBACK.RATING_VENUE)}: {stars(side.venueRating, emDash)}</span>
                             </div>
-                            <p className={styles.avg}>ממוצע: {side.averageScore?.toFixed(1)}</p>
+                            <p className={styles.avg}>{t(T.FEEDBACK.AVERAGE)}: {side.averageScore?.toFixed(1)}</p>
                             {side.comments && (
                               <p className={styles.comments}>"{side.comments}"</p>
                             )}
@@ -360,7 +364,7 @@ const FeedbackManager = () => {
                                 <span className={styles.sentTime}>{formatSentTime(side.lastNotifiedAt)}</span>
                               </div>
                             ) : (
-                              <p className={styles.waiting}>טרם נשלח</p>
+                              <p className={styles.waiting}>{t(T.FEEDBACK.STATUS_NOT_SENT)}</p>
                             )}
                             <div className={styles.sideActions}>
                               <button
@@ -371,7 +375,7 @@ const FeedbackManager = () => {
                                   handleCopyLink(g.bookingId, side.clientSide as 'A' | 'B')
                                 }
                               >
-                                העתק קישור
+                                {t(T.FEEDBACK.COPY_LINK)}
                               </button>
                               <button
                                 type="button"

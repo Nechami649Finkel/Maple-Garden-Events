@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google';
 import { API_BASE } from '../../config/api';
+import { useTranslation } from '../../i18n/useTranslation';
 import './Login.css';
 
 interface LoginProps {
@@ -8,11 +9,12 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+  const { t, T } = useTranslation();
   const [error, setError] = useState('');
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
-      setError('לא התקבל טוקן מגוגל');
+      setError(t(T.AUTH.LOGIN.ERROR_NO_GOOGLE_TOKEN));
       return;
     }
 
@@ -29,10 +31,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       if (response.ok && data.success) {
         onLoginSuccess();
       } else {
-        setError(data.message || 'אין הרשאת גישה למערכת');
+        setError(data.message || t(T.AUTH.LOGIN.ERROR_ACCESS_DENIED));
       }
     } catch {
-      setError('שגיאת תקשורת מול השרת - ודא שהוא פועל');
+      setError(t(T.AUTH.LOGIN.ERROR_NETWORK));
     }
   };
 
@@ -40,9 +42,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-form">
         <div className="login-brand">
-          <img src="/logo.png" alt="מייפל אירועים" className="login-logo" />
-          <h2>כניסת מנהל</h2>
-          <p className="login-subtitle">גן אירועים מייפל — מערכת ניהול</p>
+          <img src="/logo.png" alt={t(T.AUTH.LOGIN.BRAND_ALT)} className="login-logo" />
+          <h2>{t(T.AUTH.LOGIN.TITLE)}</h2>
+          <p className="login-subtitle">{t(T.AUTH.LOGIN.SUBTITLE)}</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -50,7 +52,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         <div className="login-google-wrap">
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
-            onError={() => setError('שגיאה בטעינת ממשק גוגל')}
+            onError={() => setError(t(T.AUTH.LOGIN.ERROR_GOOGLE_WIDGET))}
             theme="outline"
             size="large"
             text="signin_with"

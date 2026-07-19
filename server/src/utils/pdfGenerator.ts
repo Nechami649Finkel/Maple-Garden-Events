@@ -2,10 +2,10 @@
 import fs from 'fs';
 import path from 'path';
 import { format } from 'date-fns';
-import { he } from 'date-fns/locale';
+import { he, enUS } from 'date-fns/locale';
 import { formatContractTextForHtml } from './defaultContractText';
 import { getContractText } from './getContractText';
-import { SLOT_LABELS, type TimeSlot } from './timeSlot';
+import { type TimeSlot } from './timeSlot';
 import {
   buildAvailableLineItems,
   buildSelectedLineItems,
@@ -15,6 +15,13 @@ import {
 import { renderUpgradesSectionsHtml } from './contract/upgradeTablesHtml';
 import { DEFAULT_UPGRADES_PRICING } from './pricing';
 import { HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
+import {
+  DEFAULT_LOCALE,
+  getServerTranslation,
+  T,
+  type Locale,
+  type Translator,
+} from '../i18n/getServerTranslation';
 
 type DepositCheckDetails = {
   payee?: string;
@@ -126,6 +133,23 @@ type BookingForPdf = {
 
 const PHONE_EXTRA_MARKER = ' | נוסף: ';
 
+function dateFnsLocale(locale: Locale) {
+  return locale === 'he' ? he : enUS;
+}
+
+function intlLocale(locale: Locale) {
+  return locale === 'he' ? 'he-IL' : 'en-US';
+}
+
+function slotLabel(slot: TimeSlot, t: Translator['t']): string {
+  const map: Record<TimeSlot, string> = {
+    morning: t(T.BOOKING.TIME_SLOTS.MORNING),
+    noon: t(T.BOOKING.TIME_SLOTS.NOON),
+    evening: t(T.BOOKING.TIME_SLOTS.EVENING),
+  };
+  return map[slot];
+}
+
 const PDF_STYLES = `
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body { font-family: Arial, 'Segoe UI', sans-serif; direction: rtl; color: #111; font-size: 12px; line-height: 1.45; position: relative; overflow-wrap: break-word; word-break: normal; hyphens: none; }
@@ -205,17 +229,24 @@ export function formatHebrewDate(dateInput: string | Date): string {
   }
 }
 
-export function formatTimeOfDayDisplay(timeOfDay?: string | null): string {
-  if (!timeOfDay?.trim()) return '—';
+export function formatTimeOfDayDisplay(
+  timeOfDay?: string | null,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  const { t } = getServerTranslation(locale);
+  const dash = '—';
+  if (!timeOfDay?.trim()) return dash;
   const raw = timeOfDay.trim();
   if (raw.includes('|')) {
     const [slotPart, timesPart] = raw.split('|').map((p) => p.trim());
     const slotKey = slotPart.toLowerCase() as TimeSlot;
-    const label = SLOT_LABELS[slotKey] || slotPart;
+    const label = ['morning', 'noon', 'evening'].includes(slotKey)
+      ? slotLabel(slotKey, t)
+      : slotPart;
     return timesPart ? `${label} (${timesPart})` : label;
   }
   const slotKey = raw.toLowerCase() as TimeSlot;
-  return SLOT_LABELS[slotKey] || raw;
+  return ['morning', 'noon', 'evening'].includes(slotKey) ? slotLabel(slotKey, t) : raw;
 }
 
 export function buildBookingPdfData(
@@ -260,37 +291,50 @@ export function buildBookingPdfData(
   };
 }
 
-const translateReceptionType = (type?: string | null) =>
-  ({ separate: 'נפרד', mixed: 'מעורב' }[type || ''] || 'לא צוין');
+const translateReceptionType = (type: string | null | undefined, t: Translator['t']) =>
+  ({
+    separate: t(T.SERVER.PDF.RECEPTION_SEPARATE),
+    mixed: t(T.SERVER.PDF.RECEPTION_MIXED),
+  }[type || ''] || t(T.SERVER.COMMON.NOT_SPECIFIED));
 
-const translateSeatingType = (type?: string | null, men?: number | null, women?: number | null) => {
-  const base = ({ separate: 'נפרד', mixed: 'מעורב' }[type || ''] || 'לא צוין');
+const translateSeatingType = (
+  type: string | null | undefined,
+  men: number | null | undefined,
+  women: number | null | undefined,
+  t: Translator['t'],
+) => {
+  const base = ({
+    separate: t(T.SERVER.PDF.SEATING_SEPARATE),
+    mixed: t(T.SERVER.PDF.SEATING_MIXED),
+  }[type || ''] || t(T.SERVER.COMMON.NOT_SPECIFIED));
   if (type === 'separate' && (men || women)) {
-    return `${base} (גברים: ${men ?? 0}, נשים: ${women ?? 0})`;
+    return t(T.SERVER.PDF.SEATING_SPLIT, { base, men: men ?? 0, women: women ?? 0 });
   }
   return base;
 };
 
-const translateKashrut = (k?: string | null) =>
-  ({
-    bad_reuven: 'בד רובין',
-    machpud: 'מחפוד',
-    other: 'אחר',
-    rubin: 'הרב רובין',
-    kehilot: 'קהילות',
-    gross: 'הרב גרוס',
-    landa: 'הרב לנדא',
-    badatz: 'בד"ץ העדה החרדית',
-  }[k || ''] || k || 'לא צוין');
+const translateKashrut = (k: string | null | undefined, t: Translator['t']) => {
+  const map: Record<string, string> = {
+    bad_reuven: t(T.BOOKING.KOSHER_TYPES.RUBIN),
+    machpud: t(T.BOOKING.KOSHER_TYPES.MACHPUD),
+    other: t(T.SERVER.COMMON.NOT_SPECIFIED),
+    rubin: t(T.BOOKING.KOSHER_TYPES.RUBIN),
+    kehilot: t(T.BOOKING.KOSHER_TYPES.KEHILOT),
+    gross: t(T.BOOKING.KOSHER_TYPES.GROSS),
+    landa: t(T.BOOKING.KOSHER_TYPES.LANDA),
+    badatz: t(T.BOOKING.KOSHER_TYPES.BADATZ),
+  };
+  return map[k || ''] || k || t(T.SERVER.COMMON.NOT_SPECIFIED);
+};
 
 const esc = (value: string) => escapeHtml(value);
 
 const row = (label: string, value: string) =>
   `<tr><td class="label">${esc(label)}</td><td>${value}</td></tr>`;
 
-const formatMoney = (amount?: number | null) => {
+const formatMoney = (amount: number | null | undefined, locale: Locale) => {
   if (amount == null || Number.isNaN(Number(amount))) return '—';
-  return `₪${Math.round(Number(amount)).toLocaleString('he-IL')}`;
+  return `₪${Math.round(Number(amount)).toLocaleString(intlLocale(locale))}`;
 };
 
 const PUPPETEER_ARGS = ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu', '--disable-dev-shm-usage'];
@@ -331,6 +375,7 @@ function renderClientBlock(
   sideLabel: string,
   name: string,
   idNumber: string,
+  t: Translator['t'],
   phone?: string | null,
   email?: string | null,
   address?: string | null,
@@ -338,44 +383,42 @@ function renderClientBlock(
   const phoneParts = splitStoredPhone(phone);
   const addrParts = splitStoredAddress(address);
   const phoneLine = phoneParts.secondary
-    ? `טלפון: ${esc(phoneParts.primary)} | טלפון נוסף: ${esc(phoneParts.secondary)}`
-    : `טלפון: ${esc(phoneParts.primary)}`;
+    ? `${t(T.SERVER.PDF.PHONE)} ${esc(phoneParts.primary)} | ${t(T.SERVER.PDF.PHONE_EXTRA)} ${esc(phoneParts.secondary)}`
+    : `${t(T.SERVER.PDF.PHONE)} ${esc(phoneParts.primary)}`;
   const addrLine = addrParts.city
-    ? `עיר: ${esc(addrParts.city)} | כתובת: ${esc(addrParts.street)}`
+    ? `${t(T.SERVER.PDF.CITY)} ${esc(addrParts.city)} | ${t(T.SERVER.PDF.ADDRESS)} ${esc(addrParts.street)}`
     : addrParts.street !== '—'
-      ? `כתובת: ${esc(addrParts.street)}`
+      ? `${t(T.SERVER.PDF.ADDRESS)} ${esc(addrParts.street)}`
       : '';
 
   return [
-    row(sideLabel, `<strong>${esc(name)}</strong> | ת&quot;ז: ${esc(idNumber || '—')}`),
-    row('פרטי קשר', `${phoneLine}<br/>אימייל: ${esc(email || '—')}${addrLine ? `<br/>${addrLine}` : ''}`),
+    row(sideLabel, `<strong>${esc(name)}</strong> | ${t(T.SERVER.PDF.ID_NUMBER)} ${esc(idNumber || '—')}`),
+    row(t(T.SERVER.PDF.CONTACT_DETAILS), `${phoneLine}<br/>${t(T.SERVER.PDF.EMAIL)} ${esc(email || '—')}${addrLine ? `<br/>${addrLine}` : ''}`),
   ].join('');
 }
 
-function docHeader(subtitle: string): string {
+function docHeader(subtitle: string, t: Translator['t']): string {
   return `
   <header class="doc-header">
     <div class="doc-header-text">
-      <h1>גן מייפל אירועים</h1>
+      <h1>${esc(t(T.SERVER.PDF.VENUE_NAME))}</h1>
       <div class="doc-subtitle">${esc(subtitle)}</div>
     </div>
   </header>`;
 }
 
-function watermarkHtml(isOption?: boolean): string {
-  return isOption ? '<div class="watermark">טיוטה - דוגמא</div>' : '';
+function watermarkHtml(isOption: boolean | undefined, t: Translator['t']): string {
+  return isOption ? `<div class="watermark">${esc(t(T.SERVER.PDF.DRAFT_WATERMARK))}</div>` : '';
 }
 
-function signatureFooter(data: EventFormPDFData): string {
+function signatureFooter(data: EventFormPDFData, t: Translator['t']): string {
   if (!data.clientSignatureUrl) return '';
   return `
   <div class="signature-footer">
     <div class="signature-box">
-      <p class="signature-text">
-        בחתימתי אני מאשר/ת את נכונות הפרטים המופיעים בחוזה זה. כמו כן, אני מצהיר/ה כי קראתי והבנתי את תנאי ההתקשרות והתקנון של גן אירועים מייפל לעיל, ואני מסכים/ה להם במלואם.
-      </p>
-      <img class="signature-img" src="${data.clientSignatureUrl}" alt="חתימת הלקוח" />
-      <p class="signature-name">נחתם על ידי: ${esc(data.clientAFullName)}</p>
+      <p class="signature-text">${esc(t(T.SERVER.PDF.SIGNATURE_TEXT))}</p>
+      <img class="signature-img" src="${data.clientSignatureUrl}" alt="${esc(t(T.SERVER.PDF.SIGNATURE_ALT))}" />
+      <p class="signature-name">${t(T.SERVER.PDF.SIGNED_BY)} ${esc(data.clientAFullName)}</p>
     </div>
   </div>`;
 }
@@ -388,7 +431,7 @@ function parseEventFormNotes(notes?: string | null): string[] {
   }
 }
 
-function parseMenuRows(menuSelections: unknown): string {
+function parseMenuRows(menuSelections: unknown, t: Translator['t']): string {
   try {
     let parsedMenu: Record<string, string[]> = {};
     if (typeof menuSelections === 'string' && menuSelections.trim() !== '') {
@@ -398,38 +441,44 @@ function parseMenuRows(menuSelections: unknown): string {
     }
     return Object.keys(parsedMenu).map((category) => {
       const items = parsedMenu[category];
-      const itemsList = Array.isArray(items) && items.length > 0 ? items.join(', ') : 'לא נבחרו מנות';
+      const itemsList = Array.isArray(items) && items.length > 0 ? items.join(', ') : t(T.SERVER.PDF.NO_MENU_ITEMS);
       return row(category, esc(itemsList));
     }).join('');
   } catch (err) {
-    console.error('שגיאה בפענוח התפריט ל-PDF:', err);
+    console.error('Menu parse error for PDF:', err);
     return '';
   }
 }
 
-function buildEventFormSummaries(f: EventFormPDFData['eventForm']) {
+function buildEventFormSummaries(f: EventFormPDFData['eventForm'], t: Translator['t']) {
   const equipment = [
-    f.hasLighting && 'תאורה',
-    f.hasSoundSystem && 'הגברה',
-    f.hasScreens && 'מסכים',
-    f.hasFireworks && 'זיקוקים',
-  ].filter(Boolean).join(', ') || 'לא צוין';
+    f.hasLighting && t(T.SERVER.PDF.EQUIPMENT_LIGHTING),
+    f.hasSoundSystem && t(T.SERVER.PDF.EQUIPMENT_SOUND),
+    f.hasScreens && t(T.SERVER.PDF.EQUIPMENT_SCREENS),
+    f.hasFireworks && t(T.SERVER.PDF.EQUIPMENT_FIREWORKS),
+  ].filter(Boolean).join(', ') || t(T.SERVER.COMMON.NOT_SPECIFIED);
 
   const designSummary = [
-    f.tableclothId && `מפות שולחן: ${f.tableclothId}`,
-    f.napkinId && `מפיות: ${f.napkinId}`,
-    f.centerpiece && `מרכזי שולחן: ${f.centerpiece}`,
-    f.bridgeChair && `כסא כלה: ${f.bridgeChair}`,
+    f.tableclothId && t(T.SERVER.PDF.DESIGN_TABLECLOTH, { value: f.tableclothId }),
+    f.napkinId && t(T.SERVER.PDF.DESIGN_NAPKIN, { value: f.napkinId }),
+    f.centerpiece && t(T.SERVER.PDF.DESIGN_CENTERPIECE, { value: f.centerpiece }),
+    f.bridgeChair && t(T.SERVER.PDF.DESIGN_BRIDGE_CHAIR, { value: f.bridgeChair }),
   ].filter(Boolean).join(', ') || '—';
 
   let entertainersSummary = '—';
   if (f.entertainersBar || f.entertainersSitting) {
     const parts: string[] = [];
     if (f.entertainersBar) {
-      parts.push(`משמחים בר: ${f.entertainersBar} (גברים: ${f.entertainersMen || 0}, נשים: ${f.entertainersWomen || 0})`);
+      parts.push(
+        t(T.SERVER.PDF.ENTERTAINERS_BAR, {
+          count: f.entertainersBar,
+          men: f.entertainersMen || 0,
+          women: f.entertainersWomen || 0,
+        }),
+      );
     }
     if (f.entertainersSitting) {
-      parts.push(`משמחים ישיבה: ${f.entertainersSitting}`);
+      parts.push(t(T.SERVER.PDF.ENTERTAINERS_SITTING, { count: f.entertainersSitting }));
     }
     entertainersSummary = parts.join(' | ');
   }
@@ -437,12 +486,18 @@ function buildEventFormSummaries(f: EventFormPDFData['eventForm']) {
   return { equipment, designSummary, entertainersSummary };
 }
 
-async function buildContractPdfHtml(data: EventFormPDFData): Promise<string> {
-  const formattedDate = format(new Date(data.eventDate), 'd בMMMM yyyy', { locale: he });
-  const hebrewDate = formatHebrewDate(data.eventDate);
+async function buildContractPdfHtml(
+  data: EventFormPDFData,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<string> {
+  const { t } = getServerTranslation(locale);
+  const dfLocale = dateFnsLocale(locale);
+  const formattedDate = format(new Date(data.eventDate), 'd MMMM yyyy', { locale: dfLocale });
+  const hebrewDate = locale === 'he' ? formatHebrewDate(data.eventDate) : '';
   const contractText = data.contractText?.trim() || await getContractText();
   const contractHtml = formatContractTextForHtml(stripAnnexUpgradeSections(contractText));
-  const producedDate = format(new Date(), 'd.M.yyyy', { locale: he });
+  const producedDate = format(new Date(), 'd.M.yyyy', { locale: dfLocale });
+  const notSpecified = t(T.SERVER.COMMON.NOT_SPECIFIED);
 
   const balanceDue = (data.totalPrice ?? 0) - (data.advancePaid ?? 0);
   const showPaymentTerms =
@@ -460,154 +515,160 @@ async function buildContractPdfHtml(data: EventFormPDFData): Promise<string> {
   };
   const selectedExtras = buildSelectedLineItems(lineItemOptions);
   const availableExtras = buildAvailableLineItems(lineItemOptions);
-  const upgradesHtml = renderUpgradesSectionsHtml({ selectedExtras, availableExtras });
+  const upgradesHtml = renderUpgradesSectionsHtml({ selectedExtras, availableExtras }, locale);
 
   return `<!DOCTYPE html>
-<html dir="rtl" lang="he">
+<html dir="${locale === 'he' ? 'rtl' : 'ltr'}" lang="${locale}">
 <head>
 <meta charset="UTF-8"/>
 <style>${PDF_STYLES}</style>
 </head>
 <body>
-  ${watermarkHtml(data.isOption)}
+  ${watermarkHtml(data.isOption, t)}
   <div class="page-wrap">
   <div class="contract-body">
 
-  ${docHeader('חוזה התקשרות')}
-  <div class="meta-bar">הופק: ${esc(producedDate)} | קוד הזמנה: ${esc(data.eventCode || 'לא צוין')}</div>
+  ${docHeader(t(T.SERVER.PDF.CONTRACT_TITLE), t)}
+  <div class="meta-bar">${t(T.SERVER.PDF.PRODUCED)} ${esc(producedDate)} | ${t(T.SERVER.PDF.ORDER_CODE)} ${esc(data.eventCode || notSpecified)}</div>
 
   <div class="section">
-    <div class="section-title">פרטי לקוחות ופרטי אירוע</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.CLIENTS_AND_EVENT))}</div>
     <table class="data-table">
-      ${row('קוד הזמנה', `<strong>${esc(data.eventCode || '—')}</strong>`)}
-      ${renderClientBlock("צד א' (הלקוח)", data.clientAFullName, data.clientAIdNumber, data.clientAPhone, data.clientAEmail, data.clientAAddress)}
-      ${data.clientBFullName ? renderClientBlock("צד ב' (הנציג)", data.clientBFullName, data.clientBIdNumber || '', data.clientBPhone, data.clientBEmail, data.clientBAddress) : ''}
-      ${row('תאריך אירוע', `${esc(formattedDate)}${hebrewDate ? `<br/>${esc(hebrewDate)}` : ''}`)}
-      ${row('זמן ביום', esc(formatTimeOfDayDisplay(data.timeOfDay)))}
-      ${row('סוג אירוע', esc(data.eventType))}
-      ${row('כמות מנות (בפועל)', esc(String(data.guestCount)))}
-      ${row('מינימום מנות', esc(String(data.minimumGuestCount ?? data.guestCount)))}
-      ${row('כשרות', esc(translateKashrut(data.kosherType)))}
+      ${row(t(T.SERVER.PDF.ORDER_CODE), `<strong>${esc(data.eventCode || '—')}</strong>`)}
+      ${renderClientBlock(t(T.SERVER.PDF.CLIENT_SIDE_A), data.clientAFullName, data.clientAIdNumber, t, data.clientAPhone, data.clientAEmail, data.clientAAddress)}
+      ${data.clientBFullName ? renderClientBlock(t(T.SERVER.PDF.CLIENT_SIDE_B), data.clientBFullName, data.clientBIdNumber || '', t, data.clientBPhone, data.clientBEmail, data.clientBAddress) : ''}
+      ${row(t(T.SERVER.PDF.EVENT_DATE), `${esc(formattedDate)}${hebrewDate ? `<br/>${esc(hebrewDate)}` : ''}`)}
+      ${row(t(T.SERVER.PDF.TIME_OF_DAY), esc(formatTimeOfDayDisplay(data.timeOfDay, locale)))}
+      ${row(t(T.SERVER.PDF.EVENT_TYPE), esc(data.eventType))}
+      ${row(t(T.SERVER.PDF.GUEST_COUNT), esc(String(data.guestCount)))}
+      ${row(t(T.SERVER.PDF.MINIMUM_GUESTS), esc(String(data.minimumGuestCount ?? data.guestCount)))}
+      ${row(t(T.SERVER.PDF.KASHRUT), esc(translateKashrut(data.kosherType, t)))}
     </table>
   </div>
 
   <div class="section">
-    <div class="section-title">סיכום פיננסי</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.FINANCIAL_SUMMARY))}</div>
     <table class="data-table">
-      ${data.basePrice != null ? row('מחיר בסיס', formatMoney(data.basePrice)) : ''}
-      ${data.extrasPrice != null && data.extrasPrice > 0 ? row('תוספות', formatMoney(data.extrasPrice)) : ''}
-      ${data.hallRentalPrice != null && data.hallRentalPrice > 0 ? row('שכירות אולם', formatMoney(data.hallRentalPrice)) : ''}
-      ${data.totalPrice != null ? row('סה&quot;כ להזמנה', `<strong>${formatMoney(data.totalPrice)}</strong>`) : ''}
-      ${data.advancePaid != null && data.advancePaid > 0 ? row('מקדמה ששולמה', formatMoney(data.advancePaid)) : ''}
-      ${data.totalPrice != null ? row('יתרה לתשלום', formatMoney(Math.max(0, balanceDue))) : ''}
-      ${showPaymentTerms ? row('תנאי תשלום', esc(data.paymentTermsText!.trim())) : ''}
+      ${data.basePrice != null ? row(t(T.SERVER.PDF.BASE_PRICE), formatMoney(data.basePrice, locale)) : ''}
+      ${data.extrasPrice != null && data.extrasPrice > 0 ? row(t(T.SERVER.PDF.EXTRAS), formatMoney(data.extrasPrice, locale)) : ''}
+      ${data.hallRentalPrice != null && data.hallRentalPrice > 0 ? row(t(T.SERVER.PDF.HALL_RENTAL), formatMoney(data.hallRentalPrice, locale)) : ''}
+      ${data.totalPrice != null ? row(t(T.SERVER.PDF.TOTAL), `<strong>${formatMoney(data.totalPrice, locale)}</strong>`) : ''}
+      ${data.advancePaid != null && data.advancePaid > 0 ? row(t(T.SERVER.PDF.ADVANCE_PAID), formatMoney(data.advancePaid, locale)) : ''}
+      ${data.totalPrice != null ? row(t(T.SERVER.PDF.BALANCE_DUE), formatMoney(Math.max(0, balanceDue), locale)) : ''}
+      ${showPaymentTerms ? row(t(T.SERVER.PDF.PAYMENT_TERMS), esc(data.paymentTermsText!.trim())) : ''}
     </table>
   </div>
 
   ${upgradesHtml}
 
   <div class="section contract-section">
-    <div class="section-title">תנאים כלליים להזמנה — גן אירועים מייפל</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.TERMS_TITLE))}</div>
     <div class="contract-box">${contractHtml}</div>
   </div>
 
   </div>
-  ${signatureFooter(data)}
+  ${signatureFooter(data, t)}
   </div>
 </body>
 </html>`;
 }
 
-function buildEventProductionPdfHtml(data: EventFormPDFData): string {
+function buildEventProductionPdfHtml(
+  data: EventFormPDFData,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  const { t } = getServerTranslation(locale);
+  const dfLocale = dateFnsLocale(locale);
   const f = data.eventForm;
-  const formattedDate = format(new Date(data.eventDate), 'd בMMMM yyyy', { locale: he });
-  const hebrewDate = formatHebrewDate(data.eventDate);
-  const producedDate = format(new Date(), 'd.M.yyyy', { locale: he });
+  const formattedDate = format(new Date(data.eventDate), 'd MMMM yyyy', { locale: dfLocale });
+  const hebrewDate = locale === 'he' ? formatHebrewDate(data.eventDate) : '';
+  const producedDate = format(new Date(), 'd.M.yyyy', { locale: dfLocale });
+  const notSpecified = t(T.SERVER.COMMON.NOT_SPECIFIED);
 
   const checkDetails = f.depositCheckDetails as DepositCheckDetails | null | undefined;
   const akumCode = f.akumCode || data.akumApprovalCode;
-  const { equipment, designSummary, entertainersSummary } = buildEventFormSummaries(f);
+  const { equipment, designSummary, entertainersSummary } = buildEventFormSummaries(f, t);
   const notesList = parseEventFormNotes(f.notes);
-  const menuRows = parseMenuRows(f.menuSelections);
+  const menuRows = parseMenuRows(f.menuSelections, t);
 
   return `<!DOCTYPE html>
-<html dir="rtl" lang="he">
+<html dir="${locale === 'he' ? 'rtl' : 'ltr'}" lang="${locale}">
 <head>
 <meta charset="UTF-8"/>
 <style>${PDF_STYLES}</style>
 </head>
 <body>
-  ${watermarkHtml(data.isOption)}
+  ${watermarkHtml(data.isOption, t)}
   <div class="page-wrap">
   <div class="contract-body">
 
-  ${docHeader('טופס הפקת אירוע')}
-  <div class="meta-bar">הופק: ${esc(producedDate)} | קוד הזמנה: ${esc(data.eventCode || 'לא צוין')}</div>
+  ${docHeader(t(T.SERVER.PDF.EVENT_FORM_TITLE), t)}
+  <div class="meta-bar">${t(T.SERVER.PDF.PRODUCED)} ${esc(producedDate)} | ${t(T.SERVER.PDF.ORDER_CODE)} ${esc(data.eventCode || notSpecified)}</div>
 
   <div class="section">
-    <div class="section-title">פרטי אירוע</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.EVENT_DETAILS))}</div>
     <table class="data-table">
-      ${row('קוד הזמנה', `<strong>${esc(data.eventCode || '—')}</strong>`)}
-      ${row('שם הלקוח', esc(data.clientAFullName))}
-      ${row('תאריך אירוע', `${esc(formattedDate)}${hebrewDate ? `<br/>${esc(hebrewDate)}` : ''}`)}
-      ${row('סוג אירוע', esc(data.eventType))}
-      ${row('זמן ביום', esc(formatTimeOfDayDisplay(data.timeOfDay)))}
+      ${row(t(T.SERVER.PDF.ORDER_CODE), `<strong>${esc(data.eventCode || '—')}</strong>`)}
+      ${row(t(T.SERVER.PDF.CLIENT_NAME), esc(data.clientAFullName))}
+      ${row(t(T.SERVER.PDF.EVENT_DATE), `${esc(formattedDate)}${hebrewDate ? `<br/>${esc(hebrewDate)}` : ''}`)}
+      ${row(t(T.SERVER.PDF.EVENT_TYPE), esc(data.eventType))}
+      ${row(t(T.SERVER.PDF.TIME_OF_DAY), esc(formatTimeOfDayDisplay(data.timeOfDay, locale)))}
     </table>
   </div>
 
   <div class="section">
-    <div class="section-title">סידור האירוע ועיצוב</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.LAYOUT_AND_DESIGN))}</div>
     <table class="data-table">
-      ${row('סוג ישיבה', esc(translateSeatingType(f.seatingType, f.menPercent, f.womenPercent)))}
-      ${row('מוזמנים סופי', f.finalGuestCount ? esc(String(f.finalGuestCount)) : '—')}
-      ${row('שעת קבלת פנים', esc(f.eventTime || 'לא צוין'))}
-      ${row('סוג קבלת פנים', esc(translateReceptionType(f.receptionType)))}
-      ${f.honorTableCount ? row('שולחן כבוד', esc(`${f.honorTableCount} אנשים`)) : ''}
-      ${row('עיצוב', esc(designSummary))}
-      ${row('ציוד טכני', esc(equipment))}
-      ${row('משמחים ובר', esc(entertainersSummary))}
+      ${row(t(T.SERVER.PDF.SEATING_TYPE), esc(translateSeatingType(f.seatingType, f.menPercent, f.womenPercent, t)))}
+      ${row(t(T.SERVER.PDF.FINAL_GUESTS), f.finalGuestCount ? esc(String(f.finalGuestCount)) : '—')}
+      ${row(t(T.SERVER.PDF.RECEPTION_TIME), esc(f.eventTime || notSpecified))}
+      ${row(t(T.SERVER.PDF.RECEPTION_TYPE), esc(translateReceptionType(f.receptionType, t)))}
+      ${f.honorTableCount ? row(t(T.SERVER.PDF.HONOR_TABLE), esc(t(T.SERVER.PDF.HONOR_TABLE_PEOPLE, { count: f.honorTableCount }))) : ''}
+      ${row(t(T.SERVER.PDF.DESIGN), esc(designSummary))}
+      ${row(t(T.SERVER.PDF.EQUIPMENT), esc(equipment))}
+      ${row(t(T.SERVER.PDF.ENTERTAINERS), esc(entertainersSummary))}
     </table>
   </div>
 
   ${menuRows ? `
   <div class="section">
-    <div class="section-title">תפריט האירוע (מנות נבחרות)</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.MENU_TITLE))}</div>
     <table class="data-table">${menuRows}</table>
   </div>` : ''}
 
   <div class="section">
-    <div class="section-title">אישורים ופרטי הפקה</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.APPROVALS))}</div>
     <table class="data-table">
-      ${row('צ\'ק פיקדון', f.depositCheckStatus ? 'התקבל' : 'טרם התקבל')}
-      ${checkDetails?.checkNumber ? row("מספר צ'ק", esc(checkDetails.checkNumber)) : ''}
-      ${checkDetails?.bank ? row('בנק', esc(checkDetails.bank)) : ''}
-      ${checkDetails?.branch ? row('סניף', esc(checkDetails.branch)) : ''}
-      ${checkDetails?.account ? row('חשבון', esc(checkDetails.account)) : ''}
-      ${checkDetails?.payee ? row('לפקודת', esc(checkDetails.payee)) : ''}
-      ${checkDetails?.amount ? row('סכום צ\'ק', esc(`₪${checkDetails.amount}`)) : ''}
-      ${checkDetails?.date ? row('תאריך על הגבי', esc(checkDetails.date)) : ''}
-      ${akumCode ? row('קוד אקו&quot;ם', esc(String(akumCode))) : ''}
-      ${row('כשרות', esc(translateKashrut(f.kashrut)))}
+      ${row(t(T.SERVER.PDF.DEPOSIT_CHECK), f.depositCheckStatus ? t(T.SERVER.PDF.DEPOSIT_RECEIVED) : t(T.SERVER.PDF.DEPOSIT_PENDING))}
+      ${checkDetails?.checkNumber ? row(t(T.SERVER.PDF.CHECK_NUMBER), esc(checkDetails.checkNumber)) : ''}
+      ${checkDetails?.bank ? row(t(T.SERVER.PDF.BANK), esc(checkDetails.bank)) : ''}
+      ${checkDetails?.branch ? row(t(T.SERVER.PDF.BRANCH), esc(checkDetails.branch)) : ''}
+      ${checkDetails?.account ? row(t(T.SERVER.PDF.ACCOUNT), esc(checkDetails.account)) : ''}
+      ${checkDetails?.payee ? row(t(T.SERVER.PDF.PAYEE), esc(checkDetails.payee)) : ''}
+      ${checkDetails?.amount ? row(t(T.SERVER.PDF.CHECK_AMOUNT), esc(`₪${checkDetails.amount}`)) : ''}
+      ${checkDetails?.date ? row(t(T.SERVER.PDF.CHECK_DATE), esc(checkDetails.date)) : ''}
+      ${akumCode ? row(t(T.SERVER.PDF.AKUM_CODE), esc(String(akumCode))) : ''}
+      ${row(t(T.SERVER.PDF.KASHRUT), esc(translateKashrut(f.kashrut, t)))}
     </table>
-    ${f.depositCheckUrl ? `<img class="check-img" src="${f.depositCheckUrl}" alt="צ'ק פיקדון"/>` : ''}
+    ${f.depositCheckUrl ? `<img class="check-img" src="${f.depositCheckUrl}" alt="${esc(t(T.SERVER.PDF.DEPOSIT_CHECK_ALT))}"/>` : ''}
   </div>
 
   ${f.tableLayoutImageUrl ? `
   <div class="section">
-    <div class="section-title">סידור שולחנות</div>
-    <img class="layout-img" src="${f.tableLayoutImageUrl}" alt="סידור שולחנות"/>
+    <div class="section-title">${esc(t(T.SERVER.PDF.TABLE_LAYOUT))}</div>
+    <img class="layout-img" src="${f.tableLayoutImageUrl}" alt="${esc(t(T.SERVER.PDF.TABLE_LAYOUT_ALT))}"/>
   </div>` : ''}
 
   ${notesList.length > 0 ? `
   <div class="section">
-    <div class="section-title">הערות לאירוע</div>
+    <div class="section-title">${esc(t(T.SERVER.PDF.EVENT_NOTES))}</div>
     <ol class="notes-list">${notesList.map((n) => `<li>${esc(n)}</li>`).join('')}</ol>
   </div>` : ''}
 
   ${data.managerComments?.trim() ? `
   <div class="section">
-    <div class="section-title">הערות מנהל</div>
-    <table class="data-table">${row('הערות', esc(data.managerComments.trim()))}</table>
+    <div class="section-title">${esc(t(T.SERVER.PDF.MANAGER_NOTES))}</div>
+    <table class="data-table">${row(t(T.SERVER.PDF.NOTES), esc(data.managerComments.trim()))}</table>
   </div>` : ''}
 
   </div>
@@ -616,7 +677,8 @@ function buildEventProductionPdfHtml(data: EventFormPDFData): string {
 </html>`;
 }
 
-async function renderPdfFromHtml(html: string): Promise<Buffer> {
+async function renderPdfFromHtml(html: string, locale: Locale = DEFAULT_LOCALE): Promise<Buffer> {
+  const { t } = getServerTranslation(locale);
   const logoUri = getLogoDataUri();
   const browser = await launchPdfBrowser();
   try {
@@ -629,12 +691,12 @@ async function renderPdfFromHtml(html: string): Promise<Buffer> {
       displayHeaderFooter: true,
       footerTemplate: `
         <div style="width:100%;font-size:9px;color:#666;text-align:center;font-family:Arial,sans-serif;padding:0 12mm;">
-          גן מייפל אירועים | עמוד <span class="pageNumber"></span> מתוך <span class="totalPages"></span>
+          ${t(T.SERVER.PDF.FOOTER)} <span class="pageNumber"></span> ${t(T.SERVER.PDF.PAGE_OF)} <span class="totalPages"></span>
         </div>`,
       headerTemplate: logoUri
         ? `<div style="width:100%;padding:0 12mm;direction:rtl;font-size:0;">
             <div style="text-align:right;">
-              <img src="${logoUri}" style="height:36px;width:auto;" alt="מייפל" />
+              <img src="${logoUri}" style="height:36px;width:auto;" alt="${t(T.SERVER.PDF.VENUE_NAME)}" />
             </div>
           </div>`
         : '<div></div>',
@@ -646,15 +708,21 @@ async function renderPdfFromHtml(html: string): Promise<Buffer> {
 }
 
 /** חוזה התקשרות — לקוח, מחירים, שדרוגים, תנאים וחתימה */
-export const generateContractPDF = async (data: EventFormPDFData): Promise<Buffer> => {
-  const html = await buildContractPdfHtml(data);
-  return renderPdfFromHtml(html);
+export const generateContractPDF = async (
+  data: EventFormPDFData,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<Buffer> => {
+  const html = await buildContractPdfHtml(data, locale);
+  return renderPdfFromHtml(html, locale);
 };
 
 /** טופס הפקת אירוע — סידור, תפריט, ציוד, אישורים והערות */
-export const generateEventProductionPDF = async (data: EventFormPDFData): Promise<Buffer> => {
-  const html = buildEventProductionPdfHtml(data);
-  return renderPdfFromHtml(html);
+export const generateEventProductionPDF = async (
+  data: EventFormPDFData,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<Buffer> => {
+  const html = buildEventProductionPdfHtml(data, locale);
+  return renderPdfFromHtml(html, locale);
 };
 
 /** @deprecated use generateEventProductionPDF */

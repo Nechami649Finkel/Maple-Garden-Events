@@ -1,6 +1,7 @@
 import { API_BASE } from '../config/api';
 import { Sentry } from '../config/sentry';
 import { disconnectSocket, connectSocket } from './socketService';
+import { tClient, T } from '../i18n/clientTranslation';
 
 const CSRF_COOKIE = 'maple_csrf';
 const CSRF_HEADER = 'X-CSRF-Token';
@@ -81,7 +82,7 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       Sentry.captureException(error, { extra: { url, method } });
     }
     if (isNetworkError) {
-      throw new Error('לא ניתן להתחבר לשרver — ודאי שהשרver רץ על פורט 5000');
+      throw new Error(tClient(T.UI.SERVER_CONNECTION_ERROR));
     }
     throw error;
   }

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import EventCheckInBoard, {
@@ -6,6 +6,7 @@ import EventCheckInBoard, {
   type ReserveTableRow,
 } from './EventCheckInBoard';
 import { API_URL } from '../../config/api';
+import { useTranslation } from '../../i18n/useTranslation';
 import { secureFetch } from '../../services/api';
 import { useCheckInQuery } from '../../hooks/queries';
 import {
@@ -70,6 +71,7 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
   onSaved,
 }) => {
   const queryClient = useQueryClient();
+  const { t, T } = useTranslation();
   const { data, isLoading, error: queryError } = useCheckInQuery(bookingId);
   const [pendingQueueCount, setPendingQueueCount] = useState(getPendingCheckInCount());
 
@@ -78,7 +80,12 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
     return toFormData(data.checkIn);
   }, [data]);
 
-  const error = queryError instanceof Error ? queryError.message : queryError ? 'שגיאה בטעינת הטופס' : '';
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? t(T.LIVE_EVENT.FORM_LOAD_ERROR)
+        : '';
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -119,16 +126,16 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
       const res = await response.json();
       if (response.ok && res.success) {
         await queryClient.invalidateQueries({ queryKey: ['check-in', bookingId] });
-        alert('טופס קבלת האולם נשמר בהצלחה');
+        alert(t(T.LIVE_EVENT.FORM_SAVED));
         onSaved?.();
         onClose();
         return;
       }
-      alert(res.error || 'שגיאה בשמירה');
+      alert(res.error || t(T.UI.SAVE_ERROR));
     } catch {
       enqueueCheckIn(bookingId, payload);
       setPendingQueueCount(getPendingCheckInCount());
-      alert('אין חיבור לשרת — הנתונים נשמרו מקומית ויסונכרנו כשהחיבור יחזור.');
+      alert(t(T.LIVE_EVENT.OFFLINE_SAVED));
       onSaved?.();
       onClose();
     }
@@ -138,18 +145,27 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
     <div className={styles.checkInModalOverlay} onClick={onClose}>
       <div className={styles.checkInModalBox} onClick={(e) => e.stopPropagation()}>
         <div className={styles.checkInModalHeader}>
-          <h2>טופס קבלת אולם{readOnly ? ' (צפייה בלבד)' : ''}</h2>
+          <h2>
+            {t(T.LIVE_EVENT.FORM_TITLE, {
+              readOnly: readOnly ? t(T.LIVE_EVENT.READ_ONLY_SUFFIX) : '',
+            })}
+          </h2>
           {pendingQueueCount > 0 && (
             <span className={styles.checkInPendingBadge}>
-              {pendingQueueCount} ממתינים לסנכרון
+              {t(T.LIVE_EVENT.PENDING_SYNC, { count: pendingQueueCount })}
             </span>
           )}
-          <button type="button" className={styles.checkInModalClose} onClick={onClose}>
+          <button
+            type="button"
+            className={styles.checkInModalClose}
+            onClick={onClose}
+            aria-label={t(T.UI.CLOSE)}
+          >
             ✕
           </button>
         </div>
 
-        {isLoading && <div className={styles.checkInLoading}>טוען טופס...</div>}
+        {isLoading && <div className={styles.checkInLoading}>{t(T.LIVE_EVENT.FORM_LOADING)}</div>}
         {error && <div className={styles.checkInError}>{error}</div>}
         {!isLoading && !error && formData && (
           <EventCheckInBoard
@@ -162,7 +178,7 @@ const EventCheckInModal: React.FC<EventCheckInModalProps> = ({
         )}
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

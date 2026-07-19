@@ -2,6 +2,7 @@ import { AppHeader } from '../AppHeader/AppHeader';
 import { AppSidebar } from '../AppSidebar/AppSidebar';
 import { NavigationProvider } from '../../context/NavigationContext';
 import { SidebarProvider } from '../../context/SidebarContext';
+import { useTranslation } from '../../i18n/useTranslation';
 import './AppLayout.css';
 
 export type AppLayoutMode = 'default' | 'viewportFill' | 'fullWidth';
@@ -35,12 +36,13 @@ export const AppLayout = ({
   const mode = resolveLayout(layout, viewportFill, fullHeight);
   const isViewportFill = mode === 'viewportFill';
   const isFullWidth = mode === 'fullWidth';
+  const { t, T } = useTranslation();
 
   return (
     <NavigationProvider>
       <SidebarProvider>
         <a href="#main-content" className="skip-link">
-          דלג לתוכן ראשי
+          {t(T.COMMON.A11Y.SKIP_TO_CONTENT)}
         </a>
         <div
           className={[

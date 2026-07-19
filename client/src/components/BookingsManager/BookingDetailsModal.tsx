@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
@@ -8,12 +8,21 @@ import {
   canForceReissueEasyCountReceipt,
   canRetryEasyCountReceipt,
   formatEasyCountStatusLabel,
+  formatDepositMethodLabel,
 } from '../../utils/easycount';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import { canEditBooking } from '../../utils/bookingEdit';
 import { NotesList } from '../NotesList/NotesList';
 import HallInvoicesPanel from './HallInvoicesPanel';
+import { useTranslation } from '../../i18n/useTranslation';
+import { formatDate, formatDateTime, formatCurrency } from '@shared/i18n/formatters';
+import {
+  DEFAULT_EVENT_TYPE,
+  EVENT_TYPE_KEY_BY_VALUE,
+  HALL_ONLY_EVENT_TYPE,
+  translateByValue,
+} from '@shared/i18n/bookingLookups';
 import styles from './BookingsManager.module.css';
 
 interface BookingDetailsModalProps {
@@ -24,17 +33,23 @@ interface BookingDetailsModalProps {
 
 const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDetailsModalProps) => {
   const navigate = useNavigate();
+  const { t, T, locale } = useTranslation();
   const [issuingReceipt, setIssuingReceipt] = useState(false);
+
+  const dash = t(T.COMMON.LABELS.EM_DASH);
+  const formatEventType = (value: string) => translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value);
+  const money = (value?: number | null) =>
+    formatCurrency(Number(value ?? 0), locale);
 
   const eventDateStr = booking.eventDate?.date
     ? calendarKeyFromDbDate(new Date(booking.eventDate.date))
     : '';
   const dateDisplay = booking.eventDate?.date
-    ? new Date(booking.eventDate.date).toLocaleDateString('he-IL')
+    ? formatDate(booking.eventDate.date, locale)
     : '';
   const editable = eventDateStr ? canEditBooking(eventDateStr) : false;
-  const isWedding = booking.eventType === 'חתונה';
-  const isHallOnly = booking.eventType === 'השכרת אולם בלי אוכל';
+  const isWedding = booking.eventType === DEFAULT_EVENT_TYPE;
+  const isHallOnly = booking.eventType === HALL_ONLY_EVENT_TYPE;
   const clientNotes = parseNotesBundle(booking.clientComments);
   const managerNotes = parseNotes(booking.managerComments);
   const showRetry = canRetryEasyCountReceipt(booking);
@@ -54,145 +69,214 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
         body: JSON.stringify({ force }),
       });
       const json = await res.json();
-      alert(json.message || (json.success ? 'קבלה הופקה בהצלחה' : 'שגיאה בהפקת קבלה'));
+      alert(
+        json.message ||
+          (json.success ? t(T.BOOKINGS.RECEIPT_SUCCESS) : t(T.BOOKINGS.RECEIPT_ERROR)),
+      );
       if (json.success && json.data && onBookingUpdated) {
         onBookingUpdated(json.data);
       }
     } catch {
-      alert('שגיאת תקשורת עם השרת');
+      alert(t(T.COMMON.ERRORS.CONNECTION));
     } finally {
       setIssuingReceipt(false);
     }
   };
 
+  const titleParts = [
+    t(T.BOOKINGS.DETAILS_TITLE),
+    booking.eventCode ? `#${booking.eventCode}` : '',
+    dateDisplay || '',
+  ].filter(Boolean);
+
   return (
     <div className={styles.popupOverlay} onClick={onClose}>
-      <div className={`${styles.popupBox} ${styles.detailsBox}`} onClick={e => e.stopPropagation()}>
+      <div className={`${styles.popupBox} ${styles.detailsBox}`} onClick={(e) => e.stopPropagation()}>
         <div className={styles.popupHeader}>
-          <span>
-            פרטי הזמנה
-            {booking.eventCode && ` #${booking.eventCode}`}
-            {dateDisplay && ` · ${dateDisplay}`}
-          </span>
-          <button type="button" className={styles.popupClose} onClick={onClose}>✕</button>
+          <span>{titleParts.join(' · ')}</span>
+          <button
+            type="button"
+            className={styles.popupClose}
+            onClick={onClose}
+            aria-label={t(T.COMMON.ACTIONS.CLOSE)}
+          >
+            ✕
+          </button>
         </div>
 
         <div className={styles.popupBody}>
           <section className={styles.detailsSection}>
-            <h3 className={styles.sectionTitle}>פרטי האירוע</h3>
-            <div className={styles.popupRow}><label>קוד אירוע:</label><span>{booking.eventCode || '—'}</span></div>
-            <div className={styles.popupRow}><label>תאריך:</label><span>{dateDisplay || '—'}</span></div>
-            <div className={styles.popupRow}><label>סוג אירוע:</label><span>{booking.eventType || '—'}</span></div>
-            <div className={styles.popupRow}><label>מועד:</label><span>{formatTimeOfDayDisplay(booking.timeOfDay)}</span></div>
+            <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.EVENT_DETAILS)}</h3>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_EVENT_CODE)}</label>
+              <span>{booking.eventCode || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.UI.LABEL_DATE)}</label>
+              <span>{dateDisplay || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_EVENT_TYPE)}</label>
+              <span>{booking.eventType ? formatEventType(booking.eventType) : dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_TIME_SLOT)}</label>
+              <span>{formatTimeOfDayDisplay(t, booking.timeOfDay)}</span>
+            </div>
             {booking.leadSource && (
-              <div className={styles.popupRow}><label>מקור ליד:</label><span>{booking.leadSource}</span></div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_LEAD_SOURCE)}</label>
+                <span>{booking.leadSource}</span>
+              </div>
             )}
           </section>
 
           <section className={styles.detailsSection}>
-            <h3 className={styles.sectionTitle}>צד א'</h3>
-            <div className={styles.popupRow}><label>שם:</label><span>{booking.clientAFullName || '—'}</span></div>
-            <div className={styles.popupRow}><label>ת.ז:</label><span>{booking.clientAIdNumber || '—'}</span></div>
-            <div className={styles.popupRow}><label>טלפון:</label><span>{booking.clientAPhone || '—'}</span></div>
-            <div className={styles.popupRow}><label>אימייל:</label><span>{booking.clientAEmail || '—'}</span></div>
-            <div className={styles.popupRow}><label>כתובת:</label><span>{booking.clientAAddress || '—'}</span></div>
+            <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.SIDE_A)}</h3>
+            <div className={styles.popupRow}>
+              <label>{t(T.UI.LABEL_NAME)}</label>
+              <span>{booking.clientAFullName || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_ID)}</label>
+              <span>{booking.clientAIdNumber || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.UI.LABEL_PHONE)}</label>
+              <span>{booking.clientAPhone || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.UI.LABEL_EMAIL)}</label>
+              <span>{booking.clientAEmail || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.UI.LABEL_ADDRESS)}</label>
+              <span>{booking.clientAAddress || dash}</span>
+            </div>
           </section>
 
           {(isWedding || booking.clientBFullName) && (
             <section className={styles.detailsSection}>
-              <h3 className={styles.sectionTitle}>צד ב'</h3>
-              <div className={styles.popupRow}><label>שם:</label><span>{booking.clientBFullName || '—'}</span></div>
-              <div className={styles.popupRow}><label>ת.ז:</label><span>{booking.clientBIdNumber || '—'}</span></div>
-              <div className={styles.popupRow}><label>טלפון:</label><span>{booking.clientBPhone || '—'}</span></div>
-              <div className={styles.popupRow}><label>אימייל:</label><span>{booking.clientBEmail || '—'}</span></div>
-              <div className={styles.popupRow}><label>כתובת:</label><span>{booking.clientBAddress || '—'}</span></div>
+              <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.SIDE_B)}</h3>
+              <div className={styles.popupRow}>
+                <label>{t(T.UI.LABEL_NAME)}</label>
+                <span>{booking.clientBFullName || dash}</span>
+              </div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_ID)}</label>
+                <span>{booking.clientBIdNumber || dash}</span>
+              </div>
+              <div className={styles.popupRow}>
+                <label>{t(T.UI.LABEL_PHONE)}</label>
+                <span>{booking.clientBPhone || dash}</span>
+              </div>
+              <div className={styles.popupRow}>
+                <label>{t(T.UI.LABEL_EMAIL)}</label>
+                <span>{booking.clientBEmail || dash}</span>
+              </div>
+              <div className={styles.popupRow}>
+                <label>{t(T.UI.LABEL_ADDRESS)}</label>
+                <span>{booking.clientBAddress || dash}</span>
+              </div>
             </section>
           )}
 
           <section className={styles.detailsSection}>
-            <h3 className={styles.sectionTitle}>פרטי עסקה</h3>
+            <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.DEAL_DETAILS)}</h3>
             {isHallOnly ? (
               <div className={styles.popupRow}>
-                <label>מחיר השכרה:</label>
-                <span>₪{booking.hallRentalPrice?.toLocaleString() || 0}</span>
+                <label>{t(T.BOOKINGS.LABEL_HALL_RENTAL)}</label>
+                <span>{money(booking.hallRentalPrice)}</span>
               </div>
             ) : (
               <>
-                <div className={styles.popupRow}><label>מוזמנים:</label><span>{booking.guestCount ?? '—'}</span></div>
-                <div className={styles.popupRow}><label>מחיר מנה:</label><span>₪{booking.finalPricePortion ?? 0}</span></div>
+                <div className={styles.popupRow}>
+                  <label>{t(T.BOOKINGS.LABEL_GUESTS)}</label>
+                  <span>{booking.guestCount ?? dash}</span>
+                </div>
+                <div className={styles.popupRow}>
+                  <label>{t(T.BOOKINGS.LABEL_PORTION_PRICE)}</label>
+                  <span>{money(booking.finalPricePortion)}</span>
+                </div>
               </>
             )}
             <div className={styles.popupRow}>
-              <label>תשלום בסיסי:</label>
-              <span>₪{(booking.basePrice ?? booking.totalPrice)?.toLocaleString() ?? 0}</span>
+              <label>{t(T.BOOKINGS.LABEL_BASE_PAYMENT)}</label>
+              <span>{money(booking.basePrice ?? booking.totalPrice)}</span>
             </div>
             {(booking.extrasPrice ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>תוספות לאולם:</label>
-                <span>₪{booking.extrasPrice?.toLocaleString() ?? 0}</span>
+                <label>{t(T.BOOKINGS.LABEL_HALL_EXTRAS)}</label>
+                <span>{money(booking.extrasPrice)}</span>
               </div>
             )}
             {(booking.externalExtrasPrice ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>ספקים חיצוניים (לידיעה):</label>
-                <span>₪{booking.externalExtrasPrice?.toLocaleString() ?? 0}</span>
+                <label>{t(T.BOOKINGS.LABEL_EXTERNAL_SUPPLIERS)}</label>
+                <span>{money(booking.externalExtrasPrice)}</span>
               </div>
             )}
             {(booking.liveAdditionsTotal ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>תוספות בזמן האירוע:</label>
-                <span>₪{booking.liveAdditionsTotal?.toLocaleString() ?? 0}</span>
+                <label>{t(T.BOOKINGS.LABEL_LIVE_ADDITIONS)}</label>
+                <span>{money(booking.liveAdditionsTotal)}</span>
               </div>
             )}
             <div className={styles.popupRow}>
-              <label>סה&quot;כ חשבון לאולם:</label>
-              <span className={styles.totalPrice}>₪{booking.totalPrice?.toLocaleString() ?? 0}</span>
+              <label>{t(T.BOOKINGS.LABEL_HALL_TOTAL)}</label>
+              <span className={styles.totalPrice}>{money(booking.totalPrice)}</span>
             </div>
-            <div className={styles.popupRow}><label>שולם:</label><span>₪{booking.paidAmount?.toLocaleString() ?? 0}</span></div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_PAID)}</label>
+              <span>{money(booking.paidAmount)}</span>
+            </div>
             {booking.advancePaid > 0 && (
-              <div className={styles.popupRow}><label>מקדמה:</label><span>₪{booking.advancePaid?.toLocaleString()}</span></div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_ADVANCE)}</label>
+                <span>{money(booking.advancePaid)}</span>
+              </div>
             )}
             {booking.totalPaid > 0 && (
-              <div className={styles.popupRow}><label>סה"כ שולם:</label><span>₪{booking.totalPaid?.toLocaleString()}</span></div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_TOTAL_PAID)}</label>
+                <span>{money(booking.totalPaid)}</span>
+              </div>
             )}
-            <div className={styles.popupRow}><label>סטטוס תשלום:</label><span>{booking.paymentStatus || '—'}</span></div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_PAYMENT_STATUS)}</label>
+              <span>{booking.paymentStatus || dash}</span>
+            </div>
             {booking.depositMethod && (
               <div className={styles.popupRow}>
-                <label>אמצעי תשלום מקדמה:</label>
-                <span>
-                  {booking.depositMethod === 'credit_card'
-                    ? 'אשראי / מזומן'
-                    : booking.depositMethod === 'check_capture'
-                      ? "צ'ק (צילום)"
-                      : booking.depositMethod === 'check_upload'
-                        ? "צ'ק (העלאה)"
-                        : booking.depositMethod}
-                </span>
+                <label>{t(T.BOOKINGS.LABEL_ADVANCE_METHOD)}</label>
+                <span>{formatDepositMethodLabel(t, booking.depositMethod)}</span>
               </div>
             )}
             {(booking.advancePaid ?? 0) > 0 && (
               <div className={styles.popupRow}>
-                <label>EZCount:</label>
-                <span>{formatEasyCountStatusLabel(booking.easycountStatus)}</span>
+                <label>{t(T.BOOKINGS.EZCOUNT)}</label>
+                <span>{formatEasyCountStatusLabel(t, booking.easycountStatus)}</span>
               </div>
             )}
             {booking.easycountDocId && (
               <div className={styles.popupRow}>
-                <label>מזהה קבלה:</label>
+                <label>{t(T.BOOKINGS.LABEL_RECEIPT_ID)}</label>
                 <span>{booking.easycountDocId}</span>
               </div>
             )}
             {booking.easycountError && (
               <div className={styles.popupRow}>
-                <label>שגיאת EZCount:</label>
+                <label>{t(T.BOOKINGS.LABEL_EZCOUNT_ERROR)}</label>
                 <span style={{ color: '#b91c1c' }}>{booking.easycountError}</span>
               </div>
             )}
             {booking.easycountDocUrl && (
               <div className={styles.popupRow}>
-                <label>קישור קבלה:</label>
+                <label>{t(T.BOOKINGS.LABEL_RECEIPT_LINK)}</label>
                 <span>
-                  <a href={booking.easycountDocUrl} target="_blank" rel="noreferrer">פתיחת PDF</a>
+                  <a href={booking.easycountDocUrl} target="_blank" rel="noreferrer">
+                    {t(T.BOOKINGS.OPEN_PDF)}
+                  </a>
                 </span>
               </div>
             )}
@@ -205,7 +289,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
                     disabled={issuingReceipt}
                     onClick={() => handleIssueReceipt(false)}
                   >
-                    {issuingReceipt ? 'מפיקה קבלה...' : 'הפק/י קבלה מחדש'}
+                    {issuingReceipt ? t(T.BOOKINGS.ISSUING_RECEIPT) : t(T.BOOKINGS.REISSUE_RECEIPT)}
                   </button>
                 )}
                 {showForceReissue && (
@@ -214,12 +298,12 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
                     className={styles.btnSecondary}
                     disabled={issuingReceipt}
                     onClick={() => {
-                      if (window.confirm('להפיק קבלה חדשה? פעולה זו מתאימה למעבר מסימולציה ל-EZCount אמיתי.')) {
+                      if (window.confirm(t(T.BOOKINGS.FORCE_CONFIRM))) {
                         handleIssueReceipt(true);
                       }
                     }}
                   >
-                    הפקה מחדש (Force)
+                    {t(T.BOOKINGS.FORCE_REISSUE)}
                   </button>
                 )}
               </div>
@@ -227,42 +311,62 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
 
             <HallInvoicesPanel bookingId={booking.id} isOption={booking.isOption} />
 
-            <div className={styles.popupRow}><label>מוזיקה:</label><span>{booking.hasMusic ? 'כן' : 'לא'}</span></div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_MUSIC)}</label>
+              <span>{booking.hasMusic ? t(T.COMMON.LABELS.YES) : t(T.COMMON.LABELS.NO)}</span>
+            </div>
             {booking.akumApprovalCode && (
-              <div className={styles.popupRow}><label>קוד ע.ח:</label><span>{booking.akumApprovalCode}</span></div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_AKUM_CODE)}</label>
+                <span>{booking.akumApprovalCode}</span>
+              </div>
             )}
-            <div className={styles.popupRow}><label>חוזה נחתם:</label><span>{booking.isContractSigned ? 'כן' : 'לא'}</span></div>
-            <div className={styles.popupRow}><label>בדיקת אבטחה:</label><span>{booking.securityCheckStatus || '—'}</span></div>
-            <div className={styles.popupRow}><label>נציג:</label><span>{booking.createdBy || '—'}</span></div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_CONTRACT_SIGNED)}</label>
+              <span>
+                {booking.isContractSigned ? t(T.COMMON.LABELS.YES) : t(T.COMMON.LABELS.NO)}
+              </span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_SECURITY_CHECK)}</label>
+              <span>{booking.securityCheckStatus || dash}</span>
+            </div>
+            <div className={styles.popupRow}>
+              <label>{t(T.BOOKINGS.LABEL_REP)}</label>
+              <span>{booking.createdBy || dash}</span>
+            </div>
             {booking.updatedBy && (
-              <div className={styles.popupRow}><label>עודכן ע"י:</label><span>{booking.updatedBy}</span></div>
+              <div className={styles.popupRow}>
+                <label>{t(T.BOOKINGS.LABEL_UPDATED_BY)}</label>
+                <span>{booking.updatedBy}</span>
+              </div>
             )}
             {booking.createdAt && (
               <div className={styles.popupRow}>
-                <label>נוצר:</label>
-                <span>{new Date(booking.createdAt).toLocaleString('he-IL')}</span>
+                <label>{t(T.BOOKINGS.LABEL_CREATED)}</label>
+                <span>{formatDateTime(booking.createdAt, locale)}</span>
               </div>
             )}
           </section>
 
           {(managerNotes.length > 0 || clientNotes.menu.length > 0 || clientNotes.internal.length > 0) && (
             <section className={styles.detailsSection}>
-              <h3 className={styles.sectionTitle}>הערות</h3>
+              <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.NOTES)}</h3>
               {managerNotes.length > 0 && (
                 <div className={styles.notesBlock}>
-                  <strong>הערות מנהל:</strong>
+                  <strong>{t(T.BOOKINGS.MANAGER_NOTES)}</strong>
                   <NotesList notes={managerNotes} />
                 </div>
               )}
               {clientNotes.menu.length > 0 && (
                 <div className={styles.notesBlock}>
-                  <strong>הערות לתפריט:</strong>
+                  <strong>{t(T.BOOKINGS.MENU_NOTES)}</strong>
                   <NotesList notes={clientNotes.menu} />
                 </div>
               )}
               {clientNotes.internal.length > 0 && (
                 <div className={styles.notesBlock}>
-                  <strong>הערות פנימיות:</strong>
+                  <strong>{t(T.BOOKINGS.INTERNAL_NOTES)}</strong>
                   <NotesList notes={clientNotes.internal} />
                 </div>
               )}
@@ -271,18 +375,28 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
 
           {booking.additions?.length > 0 && (
             <section className={styles.detailsSection}>
-              <h3 className={styles.sectionTitle}>תוספות במהלך האירוע</h3>
+              <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.LIVE_ADDITIONS_SECTION)}</h3>
               {booking.additions.map((add: any) => (
                 <div key={add.id} className={styles.additionItem}>
                   <div className={styles.additionMeta}>
-                    🕒 {new Date(add.createdAt).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' })}
+                    🕒 {formatDateTime(add.createdAt, locale, { dateStyle: 'short', timeStyle: 'short' })}
                   </div>
-                  <div><strong>פירוט:</strong> <span>{add.description}</span></div>
-                  <div><strong>עלות:</strong> ₪{add.cost} (אחראי: {add.staffName})</div>
+                  <div>
+                    <strong>{t(T.BOOKINGS.ADDITION_DETAILS)}</strong>{' '}
+                    <span>{add.description}</span>
+                  </div>
+                  <div>
+                    <strong>{t(T.BOOKINGS.ADDITION_COST)}</strong> {money(add.cost)} (
+                    {t(T.BOOKINGS.STAFF)}: {add.staffName})
+                  </div>
                   {add.signature && (
                     <div className={styles.signatureBlock}>
-                      <span>חתימת לקוח:</span>
-                      <img src={add.signature} alt="חתימת לקוח" className={styles.signatureImg} />
+                      <span>{t(T.BOOKINGS.CLIENT_SIGNATURE)}</span>
+                      <img
+                        src={add.signature}
+                        alt={t(T.BOOKINGS.SIGNATURE_ALT)}
+                        className={styles.signatureImg}
+                      />
                     </div>
                   )}
                 </div>
@@ -295,41 +409,45 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               type="button"
               className={styles.btnPrimary}
               disabled={!editable}
-              title={editable ? 'עריכת פרטי ההזמנה' : 'לא ניתן לערוך ביום האירוע או לאחריו'}
+              title={editable ? t(T.BOOKINGS.EDIT_TITLE) : t(T.BOOKINGS.EDIT_BLOCKED)}
               onClick={handleEdit}
             >
-              עריכת פרטי ההזמנה
+              {t(T.BOOKINGS.EDIT_BOOKING)}
             </button>
 
             {booking.id && (
               <>
-                <button type="button" className={styles.btnSecondary} onClick={() => void openContractPdf(booking.id)}>
-                  צפייה בחוזה
+                <button
+                  type="button"
+                  className={styles.btnSecondary}
+                  onClick={() => void openContractPdf(booking.id, t)}
+                >
+                  {t(T.BOOKINGS.VIEW_CONTRACT)}
                 </button>
                 <button
                   type="button"
                   className={styles.btnSecondary}
                   onClick={async () => {
                     try {
-                      await printContract(booking.id);
+                      await printContract(booking.id, t);
                     } catch (e) {
-                      alert(e instanceof Error ? e.message : 'לא הצלחנו להדפיס את החוזה.');
+                      alert(
+                        e instanceof Error ? e.message : t(T.BOOKINGS.CONTRACT_PRINT_FAILED),
+                      );
                     }
                   }}
                 >
-                  הדפסת חוזה
+                  {t(T.BOOKINGS.PRINT_CONTRACT)}
                 </button>
               </>
             )}
 
             {booking.isContractSigned && !booking.clientSignatureUrl && (
-              <p className={styles.editBlockedMsg}>
-                החוזה מסומן כחתום, אך תמונת החתימה חסרה. יש לחתום מחדש בעריכת ההזמנה.
-              </p>
+              <p className={styles.editBlockedMsg}>{t(T.BOOKINGS.CONTRACT_SIGNED_NO_IMAGE)}</p>
             )}
 
             {!editable && (
-              <p className={styles.editBlockedMsg}>לא ניתן לערוך ביום האירוע או לאחריו</p>
+              <p className={styles.editBlockedMsg}>{t(T.BOOKINGS.EDIT_BLOCKED)}</p>
             )}
           </div>
         </div>

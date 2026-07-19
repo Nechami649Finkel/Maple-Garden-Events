@@ -1,3 +1,5 @@
+import { T, type TranslationKey } from '@shared/i18n/keys';
+
 export type PaymentDueType = 'WEEK_BEFORE_EVENT' | 'HOURS_24_AFTER_EVENT';
 
 export interface PaymentInstallment {
@@ -18,6 +20,42 @@ export const LEGACY_PAYMENT_SENTENCE =
 export const PAYMENT_TERMS_PLACEHOLDER = '{{PAYMENT_TERMS}}';
 
 export const DEFAULT_PAYMENT_TEMPLATE_ID = '50-50';
+
+export const PAYMENT_TEMPLATE_I18N_KEYS: Record<
+  string,
+  { name: TranslationKey; body: TranslationKey }
+> = {
+  'full-before-week': {
+    name: T.PAYMENT_TERMS.FULL_BEFORE_WEEK_NAME,
+    body: T.PAYMENT_TERMS.FULL_BEFORE_WEEK_BODY,
+  },
+  '50-50': {
+    name: T.PAYMENT_TERMS.SPLIT_50_50_NAME,
+    body: T.PAYMENT_TERMS.SPLIT_BODY,
+  },
+  '70-30': {
+    name: T.PAYMENT_TERMS.SPLIT_70_30_NAME,
+    body: T.PAYMENT_TERMS.SPLIT_BODY,
+  },
+  'full-after-24h': {
+    name: T.PAYMENT_TERMS.FULL_AFTER_NAME,
+    body: T.PAYMENT_TERMS.FULL_AFTER_BODY,
+  },
+};
+
+export function getLocalizedPaymentTemplateDisplay(
+  translate: (key: TranslationKey) => string,
+  template: PaymentTermsTemplate,
+): Pick<PaymentTermsTemplate, 'name' | 'bodyTemplate'> {
+  const keys = PAYMENT_TEMPLATE_I18N_KEYS[template.id];
+  if (!keys) {
+    return { name: template.name, bodyTemplate: template.bodyTemplate };
+  }
+  return {
+    name: translate(keys.name),
+    bodyTemplate: translate(keys.body),
+  };
+}
 
 export const DEFAULT_PAYMENT_TEMPLATES: PaymentTermsTemplate[] = [
   {

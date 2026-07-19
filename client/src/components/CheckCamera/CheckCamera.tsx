@@ -1,5 +1,6 @@
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Webcam from 'react-webcam';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface CheckCameraProps {
   onCapture: (imageSrc: string) => void;
@@ -10,6 +11,7 @@ interface CheckCameraProps {
 const CheckCamera: React.FC<CheckCameraProps> = ({ onCapture, onRetake, disabled }) => {
   const webcamRef = useRef<Webcam>(null);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const { t, T } = useTranslation();
 
   const videoConstraints = {
     width: 1280,
@@ -49,24 +51,19 @@ const CheckCamera: React.FC<CheckCameraProps> = ({ onCapture, onRetake, disabled
             disabled={disabled}
             style={{ padding: '8px 16px', fontSize: '14px', marginTop: '10px', cursor: disabled ? 'not-allowed' : 'pointer', background: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px' }}
           >
-            {disabled ? '⏳ סורק...' : '📸 צלם עכשיו'}
+            {disabled ? t(T.CHECK.SCANNING) : t(T.BOOKING.PAYMENT.DEPOSIT_CHECK_CAPTURE)}
           </button>
         </div>
       ) : (
         <div>
           <img
             src={capturedImage}
-            alt="צ'ק מצולם"
-            style={{ width: '100%', maxWidth: '400px', borderRadius: '8px', border: '2px solid #4CAF50' }}
+            alt={t(T.CHECK.IMAGE_ALT)}
+            style={{ width: '100%', maxWidth: '400px', borderRadius: '8px' }}
           />
           <br />
-          <button
-            type="button"
-            onClick={retake}
-            disabled={disabled}
-            style={{ padding: '8px 16px', fontSize: '14px', marginTop: '10px', cursor: disabled ? 'not-allowed' : 'pointer', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px' }}
-          >
-            🔄 צלם מחדש
+          <button type="button" onClick={retake} style={{ padding: '8px 16px', fontSize: '14px', marginTop: '10px', cursor: 'pointer' }}>
+            {t(T.COMMON.ACTIONS.RETRY)}
           </button>
         </div>
       )}

@@ -3,6 +3,17 @@ import {
   computeHallBalanceBreakdown,
   computeRemainingHallBalance,
 } from '../src/Services/easyCount/hallBalance';
+import { DEFAULT_LOCALE, resolveServerMessage } from '../src/i18n/getServerTranslation';
+
+function expectHallBalanceError(amount: number, balance: ReturnType<typeof computeHallBalanceBreakdown>, pattern: RegExp) {
+  try {
+    assertInvoiceAmountWithinBalance(amount, balance);
+    throw new Error('Expected assertInvoiceAmountWithinBalance to throw');
+  } catch (error) {
+    const message = resolveServerMessage(DEFAULT_LOCALE, (error as Error).message, (error as { i18nParams?: Record<string, string> }).i18nParams);
+    expect(message).toMatch(pattern);
+  }
+}
 
 describe('C5 — חישוב יתרת אולם (pending + paid)', () => {
   const baseBooking = {
@@ -86,7 +97,7 @@ describe('C5 — חישוב יתרת אולם (pending + paid)', () => {
       { amount: 9000, status: 'pending' },
     ]);
 
-    expect(() => assertInvoiceAmountWithinBalance(2000, balance)).toThrow(/גבוה מהיתרה/);
+    expectHallBalanceError(2000, balance, /גבוה מהיתרה/);
     expect(() => assertInvoiceAmountWithinBalance(500, balance)).not.toThrow();
   });
 
@@ -96,6 +107,6 @@ describe('C5 — חישוב יתרת אולם (pending + paid)', () => {
       [{ amount: 1000, status: 'pending' }],
     );
 
-    expect(() => assertInvoiceAmountWithinBalance(100, balance)).toThrow(/ממתינות לגבייה/);
+    expectHallBalanceError(100, balance, /ממתינות לגבייה/);
   });
 });

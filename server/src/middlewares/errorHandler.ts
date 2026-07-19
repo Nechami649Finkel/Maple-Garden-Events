@@ -1,6 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { captureException } from '../config/sentry';
 import { logger } from '../utils/logger';
+import {
+  DEFAULT_LOCALE,
+  resolveLocaleFromRequest,
+  resolveServerMessage,
+  T,
+  type ServerError,
+} from '../i18n/getServerTranslation';
 
 export const catchAsync = (fn: Function) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -8,9 +15,14 @@ export const catchAsync = (fn: Function) => {
   };
 };
 
-export const errorHandler = (err: any, req: Request, res: Response, _next: NextFunction) => {
+export const errorHandler = (err: ServerError, req: Request, res: Response, _next: NextFunction) => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'שגיאת שרת פנימית';
+  const locale = resolveLocaleFromRequest(req, DEFAULT_LOCALE);
+  const message = resolveServerMessage(
+    locale,
+    err.message || T.SERVER.ERROR.INTERNAL,
+    err.i18nParams,
+  );
 
   logger.error('Unhandled error', {
     message,

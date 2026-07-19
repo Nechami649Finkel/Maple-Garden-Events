@@ -1,19 +1,20 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from '../BookingForm.module.css';
-import { type TimeSlot, SLOT_LABELS, normalizeTimeSlot } from '../../../utils/timeSlot';
-import { validateOptionDateSelection } from '../../../utils/optionDateValidation';
+import { type TimeSlot, normalizeTimeSlot } from '../../../utils/timeSlot';
+import { validateOptionDateSelection, formatValidationError } from '../../../utils/optionDateValidation';
 import {
   type OptionDateItem,
   fetchCalendarDays,
   resolveOptionDate,
 } from '../../../utils/optionDateApi';
 import { REALTIME_DATE_UPDATED_EVENT } from '../../../services/realtimeSync';
+import { useTranslation } from '../../../i18n/useTranslation';
+import { formatDate } from '@shared/i18n/formatters';
+import { TIME_SLOT_KEYS } from '@shared/i18n/bookingLookups';
 
 export type { OptionDateItem };
 
 const MAX_OPTION_DATES = 3;
-const MONTH_NAMES = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
-const COL_HEADERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 
 function formatDateLocal(date: Date): string {
   const yyyy = date.getFullYear();
@@ -26,12 +27,6 @@ function formatDisplay(dateStr: string): string {
   const [y, m, d] = dateStr.split('-');
   return `${d}/${m}/${y}`;
 }
-
-function getDayOfWeek(dateStr: string): string {
-  const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-  return days[new Date(dateStr + 'T12:00:00').getDay()];
-}
-
 
 export function normalizeOptionDate(d: string | OptionDateItem): OptionDateItem {
   if (typeof d === 'object' && d?.date) return d;
@@ -55,6 +50,7 @@ export const OptionDatePickerModal = ({
   eventType,
   timeSlot,
 }: OptionDatePickerModalProps) => {
+  const { t, T } = useTranslation();
   const [current, setCurrent] = useState(() => new Date());
   const [days, setDays] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -63,6 +59,31 @@ export const OptionDatePickerModal = ({
   const [manualAdding, setManualAdding] = useState(false);
   const [selectingDate, setSelectingDate] = useState<string | null>(null);
   const [pickerError, setPickerError] = useState('');
+
+  const monthKeys = useMemo(() => [
+    T.BOOKING.OPTION_DATES.MONTH_JAN,
+    T.BOOKING.OPTION_DATES.MONTH_FEB,
+    T.BOOKING.OPTION_DATES.MONTH_MAR,
+    T.BOOKING.OPTION_DATES.MONTH_APR,
+    T.BOOKING.OPTION_DATES.MONTH_MAY,
+    T.BOOKING.OPTION_DATES.MONTH_JUN,
+    T.BOOKING.OPTION_DATES.MONTH_JUL,
+    T.BOOKING.OPTION_DATES.MONTH_AUG,
+    T.BOOKING.OPTION_DATES.MONTH_SEP,
+    T.BOOKING.OPTION_DATES.MONTH_OCT,
+    T.BOOKING.OPTION_DATES.MONTH_NOV,
+    T.BOOKING.OPTION_DATES.MONTH_DEC,
+  ], [T]);
+
+  const weekdayKeys = useMemo(() => [
+    T.BOOKING.OPTION_DATES.WEEKDAY_SUN,
+    T.BOOKING.OPTION_DATES.WEEKDAY_MON,
+    T.BOOKING.OPTION_DATES.WEEKDAY_TUE,
+    T.BOOKING.OPTION_DATES.WEEKDAY_WED,
+    T.BOOKING.OPTION_DATES.WEEKDAY_THU,
+    T.BOOKING.OPTION_DATES.WEEKDAY_FRI,
+    T.BOOKING.OPTION_DATES.WEEKDAY_SAT,
+  ], [T]);
 
   const todayStr = formatDateLocal(new Date());
 
@@ -111,9 +132,12 @@ export const OptionDatePickerModal = ({
   for (let day = 1; day <= daysInMonth; day++) {
     const date = formatDateLocal(new Date(year, month, day));
     const srv = serverMap.get(date);
-    const validationError = timeSlot
+    const validationResult = timeSlot
       ? validateOptionDateSelection(date, srv, timeSlot, excludeDates)
-      : 'יש לבחור זמן ביום לפני בחירת תאריך.';
+      : null;
+    const validationError = validationResult
+      ? formatValidationError(t, validationResult)
+      : t(T.BOOKING.OPTION_DATES.SELECT_SLOT_BEFORE_DATE);
     const disabled = !!validationError;
     cells.push({
       date,
@@ -126,7 +150,7 @@ export const OptionDatePickerModal = ({
   const handleManualAdd = async () => {
     setManualError('');
     setManualAdding(true);
-    const result = await resolveOptionDate(manualDate, eventType, excludeDates, timeSlot);
+    const result = await resolveOptionDate(manualDate, eventType, excludeDates, timeSlot, t);
     setManualAdding(false);
     if (!result.ok) {
       setManualError(result.error);
@@ -141,7 +165,7 @@ export const OptionDatePickerModal = ({
     if (selectingDate) return;
     setPickerError('');
     setSelectingDate(cell.date);
-    const result = await resolveOptionDate(cell.date, eventType, excludeDates, timeSlot);
+    const result = await resolveOptionDate(cell.date, eventType, excludeDates, timeSlot, t);
     setSelectingDate(null);
     if (!result.ok) {
       setPickerError(result.error);
@@ -156,12 +180,12 @@ export const OptionDatePickerModal = ({
     <div className={styles.optionPickerOverlay} onClick={onClose}>
       <div className={styles.optionPickerModal} onClick={e => e.stopPropagation()}>
         <div className={styles.optionPickerHeader}>
-          <h4>בחירת תאריך לאופציה</h4>
+          <h4>{t(T.BOOKING.OPTION_DATES.PICKER_TITLE)}</h4>
           <button type="button" className={styles.optionPickerClose} onClick={onClose}>✕</button>
         </div>
 
         <div className={styles.optionPickerManual}>
-          <label className={styles.optionPickerManualLabel}>הזנה ידנית</label>
+          <label className={styles.optionPickerManualLabel}>{t(T.BOOKING.OPTION_DATES.MANUAL_ENTRY)}</label>
           <div className={styles.optionDatesAddRow}>
             <input
               type="date"
@@ -179,26 +203,26 @@ export const OptionDatePickerModal = ({
               onClick={handleManualAdd}
               disabled={!manualDate || manualAdding}
             >
-              {manualAdding ? 'בודק...' : 'הוסף'}
+              {manualAdding ? t(T.BOOKING.OPTION_DATES.CHECKING) : t(T.BOOKING.OPTION_DATES.ADD)}
             </button>
           </div>
           {manualError && <p className={styles.optionManualError}>{manualError}</p>}
         </div>
 
-        <p className={styles.optionPickerOr}>או בחרי מהלוח</p>
+        <p className={styles.optionPickerOr}>{t(T.BOOKING.OPTION_DATES.OR_FROM_CALENDAR)}</p>
 
         <div className={styles.optionPickerNav}>
           <button type="button" onClick={() => setCurrent(new Date(year, month + 1, 1))}>‹</button>
-          <span>{MONTH_NAMES[month]} {year}</span>
+          <span>{t(monthKeys[month])} {year}</span>
           <button type="button" onClick={() => setCurrent(new Date(year, month - 1, 1))}>›</button>
         </div>
         {loading ? (
-          <p className={styles.optionPickerLoading}>טוען...</p>
+          <p className={styles.optionPickerLoading}>{t(T.BOOKING.OPTION_DATES.LOADING)}</p>
         ) : (
           <>
             {pickerError && <p className={styles.optionManualError}>{pickerError}</p>}
             <div className={styles.optionPickerWeekdays}>
-              {COL_HEADERS.map(d => <span key={d}>{d}</span>)}
+              {weekdayKeys.map(d => <span key={d}>{t(d)}</span>)}
             </div>
             <div className={styles.optionPickerGrid}>
               {cells.map((cell, idx) =>
@@ -237,6 +261,7 @@ interface OptionDatesBarProps {
 }
 
 const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlotProp, slotWarning }: OptionDatesBarProps) => {
+  const { t, T, locale } = useTranslation();
   const resolvedSlot = normalizeTimeSlot(timeSlotProp as string);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [manualDate, setManualDate] = useState('');
@@ -245,11 +270,16 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
   const normalized = selectedDates.map(normalizeOptionDate);
   const canAdd = normalized.length < MAX_OPTION_DATES && !!resolvedSlot;
   const todayStr = formatDateLocal(new Date());
-  const slotLabel = resolvedSlot ? SLOT_LABELS[resolvedSlot] : '';
+  const slotLabel = resolvedSlot ? t(TIME_SLOT_KEYS[resolvedSlot]) : '';
+
+  const formatWeekdayLabel = (dateString: string) => {
+    const formatted = formatDate(dateString + 'T12:00:00', locale, { weekday: 'long' });
+    return locale === 'he' ? formatted : `${t(T.BOOKING.OPTION_DATES.DAY_PREFIX)}${formatted}`;
+  };
 
   const removeDate = (date: string) => {
     if (normalized.length <= 1) {
-      alert('חייב להישאר לפחות תאריך אחד באופציה.');
+      alert(t(T.BOOKING.OPTION_DATES.MIN_ONE_DATE));
       return;
     }
     onChange(normalized.filter(d => d.date !== date));
@@ -269,7 +299,8 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
       manualDate,
       eventType,
       normalized.map(d => d.date),
-      resolvedSlot
+      resolvedSlot,
+      t,
     );
     setManualAdding(false);
     if (!result.ok) {
@@ -283,11 +314,13 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
     <>
       <div className={styles.optionDatesBar}>
         <div className={styles.optionDatesBarHead}>
-          <strong>תאריכי האופציה ({normalized.length}/{MAX_OPTION_DATES})</strong>
+          <strong>
+            {t(T.BOOKING.OPTION_DATES.DATE_COUNT, { dateCount: normalized.length, maxDates: MAX_OPTION_DATES })}
+          </strong>
           <span className={styles.optionDatesBarHint}>
             {resolvedSlot
-              ? `ניתן לשמור עד 3 תאריכים · משבצת ${slotLabel}`
-              : 'יש לבחור זמן ביום (בוקר / צהריים / ערב) לפני הוספת תאריכים'}
+              ? t(T.BOOKING.OPTION_DATES.HINT_WITH_SLOT, { maxDates: MAX_OPTION_DATES, slot: slotLabel })
+              : t(T.BOOKING.OPTION_DATES.HINT_SELECT_SLOT)}
           </span>
         </div>
 
@@ -295,13 +328,15 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
           {normalized.map((d, i) => (
             <div key={d.date} className={styles.optionDateChip}>
               <span className={styles.optionDateChipMain}>
-                <span className={styles.optionDateChipIndex}>תאריך {i + 1}</span>
+                <span className={styles.optionDateChipIndex}>
+                  {t(T.BOOKING.OPTION_DATES.DATE_INDEX, { dateIndex: i + 1 })}
+                </span>
                 <span className={styles.optionDateChipGreg}>{formatDisplay(d.date)}</span>
-                <span className={styles.optionDateChipDow}>יום {getDayOfWeek(d.date)}</span>
+                <span className={styles.optionDateChipDow}>{formatWeekdayLabel(d.date)}</span>
                 {d.hebrewDate && <span className={styles.optionDateChipHeb}>{d.hebrewDate}</span>}
               </span>
               {normalized.length > 1 && (
-                <button type="button" className={styles.optionDateChipRemove} onClick={() => removeDate(d.date)} aria-label="הסר תאריך">
+                <button type="button" className={styles.optionDateChipRemove} onClick={() => removeDate(d.date)} aria-label={t(T.BOOKING.OPTION_DATES.REMOVE_DATE_ARIA)}>
                   ✕
                 </button>
               )}
@@ -315,9 +350,9 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
           <div className={styles.optionDatesAddSection}>
             <div className={styles.optionDatesAddRow}>
               <button type="button" className={styles.optionAddDateBtn} onClick={() => setPickerOpen(true)}>
-                + בחירה מלוח שנה
+                {t(T.BOOKING.OPTION_DATES.ADD_FROM_CALENDAR)}
               </button>
-              <span className={styles.optionDatesOr}>או</span>
+              <span className={styles.optionDatesOr}>{t(T.BOOKING.OPTION_DATES.OR)}</span>
               <input
                 type="date"
                 className={styles.optionManualInput}
@@ -334,15 +369,17 @@ const OptionDatesBar = ({ selectedDates, onChange, eventType, timeSlot: timeSlot
                 onClick={handleManualAdd}
                 disabled={!manualDate || manualAdding}
               >
-                {manualAdding ? 'בודק...' : 'הוסף ידנית'}
+                {manualAdding ? t(T.BOOKING.OPTION_DATES.CHECKING) : t(T.BOOKING.OPTION_DATES.ADD_MANUALLY)}
               </button>
             </div>
             {manualError && <p className={styles.optionManualError}>{manualError}</p>}
           </div>
         ) : normalized.length >= MAX_OPTION_DATES ? (
-          <p className={styles.optionDatesMaxMsg}>נבחרו 3 תאריכים — מקסימום לאופציה.</p>
+          <p className={styles.optionDatesMaxMsg}>
+            {t(T.BOOKING.OPTION_DATES.MAX_DATES_REACHED, { maxDates: MAX_OPTION_DATES })}
+          </p>
         ) : (
-          <p className={styles.optionDatesMaxMsg}>בחרי משבצת זמן ביום לפני הוספת תאריך.</p>
+          <p className={styles.optionDatesMaxMsg}>{t(T.BOOKING.OPTION_DATES.SELECT_SLOT_FIRST)}</p>
         )}
       </div>
 

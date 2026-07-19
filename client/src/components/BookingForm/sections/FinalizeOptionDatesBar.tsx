@@ -1,4 +1,6 @@
 import { calendarKeyFromDbDate } from '../../../utils/dateLocal';
+import { useTranslation } from '../../../i18n/useTranslation';
+import { formatDate } from '@shared/i18n/formatters';
 
 interface RelatedOption {
   id: string;
@@ -17,25 +19,25 @@ function formatDisplay(dateStr: string): string {
   return `${d}/${m}/${y}`;
 }
 
-function getHebrewDateLabel(dateStr: string): string {
-  try {
-    return new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long' }).format(
-      new Date(dateStr + 'T12:00:00')
-    );
-  } catch {
-    return '';
-  }
-}
-
 const FinalizeOptionDatesBar = ({ relatedOptions, selectedBookingId, onSelect }: FinalizeOptionDatesBarProps) => {
+  const { t, T, locale } = useTranslation();
+
   if (relatedOptions.length <= 1) return null;
+
+  const getHebrewDateLabel = (dateStr: string): string => {
+    try {
+      return formatDate(dateStr + 'T12:00:00', locale, { calendar: 'hebrew', day: 'numeric', month: 'long' });
+    } catch {
+      return '';
+    }
+  };
 
   return (
     <div className="alert alert-info mb-3">
       <div className="mb-2">
-        <strong>בחירת תאריך סופי לאירוע</strong>
+        <strong>{t(T.BOOKING.FINALIZE.TITLE)}</strong>
         <div className="small text-muted">
-          באופציה נשמרו {relatedOptions.length} תאריכים — יש לבחור תאריך אחד. שאר התאריכים ישוחררו אוטומטית.
+          {t(T.BOOKING.FINALIZE.DESCRIPTION, { dateCount: relatedOptions.length })}
         </div>
       </div>
       <div className="d-flex flex-wrap gap-2">
