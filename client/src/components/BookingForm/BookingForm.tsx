@@ -220,6 +220,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     datesToProcess.map(normalizeOptionDate)
   );
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
+  const calendarEventTypeFilter = location.state?.eventTypeFilter || '';
   const [isOption, setIsOption] = useState(isOptionMode);
   const defaultEventTypeForForm = '';
   const [optionDurationHours, setOptionDurationHours] = useState(48);
@@ -1133,7 +1134,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         )}
 
         <form className="card-body" onSubmit={handleSubmit}>
-          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} />
+          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} calendarEventTypeFilter={calendarEventTypeFilter} />
           {convertFromOption && relatedOptions.length > 1 && (
             <FinalizeOptionDatesBar
               relatedOptions={relatedOptions}
