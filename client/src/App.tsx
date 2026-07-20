@@ -37,13 +37,14 @@ const CalendarWrapper = () => {
   return (
     <AppLayout layout="viewportFill">
       <Calendar
-        onDateSelect={(day) => {
+        onDateSelect={(day, filter) => {
           navigate('/booking', {
             state: {
               date: day.date,
               hebrewDate: day.hebrewDate,
               takenSlots: Array.from(getTakenSlots(day.bookings || [])),
               blockedSlots: (day.blockedSlots || []) as TimeSlot[],
+              eventTypeFilter: filter,
             },
           });
         }}

@@ -33,7 +33,7 @@ interface DayData {
 }
 
 interface CalendarProps {
-  onDateSelect: (day: DayData) => void;
+  onDateSelect: (day: DayData, filter: string) => void;
 }
 
 const DOW_TO_COL: Record<number, number> = { 0:7, 1:6, 2:5, 3:4, 4:3, 5:2, 6:1 };
@@ -293,7 +293,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     if (!sidePanelDay) return;
     const dayToBook = sidePanelDay;
     setSidePanelDay(null);
-    onDateSelect(dayToBook);
+    onDateSelect(dayToBook, eventTypeFilter);
   };
 
   const handleOpenOptionFromPanel = () => {
@@ -458,7 +458,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
           onAddEvent={() => {
             const dayToBook = eventPopupDay;
             setEventPopupDay(null);
-            onDateSelect(dayToBook);
+            onDateSelect(dayToBook, eventTypeFilter);
           }}
           onAddOption={() => {
             setOptionModalDay(eventPopupDay);
