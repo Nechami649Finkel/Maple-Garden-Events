@@ -5,7 +5,7 @@ import { isValidRole } from './requireRole';
 import { catchAsync } from './errorHandler';
 
 export interface AuthRequest extends Request {
-  user?: AuthUser & { userId?: string };
+  user?: AuthUser & { userId?: string; tenantId: string };
 }
 
 /**
@@ -61,12 +61,21 @@ export const requireAuth = catchAsync(async (req: AuthRequest, res: Response, ne
     return;
   }
 
-  // תפקיד ואימייל תמיד מה-DB — לא מה-JWT (מונע הרחבת הרשאות)
+  if (!dbUser.tenantId) {
+    res.status(403).json({
+      success: false,
+      message: 'חשבון זה אינו משויך לאולם (Tenant) קיים.',
+    });
+    return;
+  }
+
+  // תפקיד, אימייל וזיהוי ה-Tenant תמיד מה-DB — לא מה-JWT (מונע הרחבת הרשאות וזיופים)
   req.user = {
     userId: dbUser.id,
     email: dbUser.email,
     role: dbUser.role,
     name: payload.name || dbUser.email,
+    tenantId: dbUser.tenantId,
   };
 
   next();

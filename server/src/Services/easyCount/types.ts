@@ -1,6 +1,7 @@
 export type EasyCountInvoiceStatus = 'draft' | 'pending' | 'paid' | 'cancelled' | 'failed';
 
 export interface EasyCountInvoiceRequest {
+  tenantId: string;
   bookingId: string;
   eventCode: string;
   clientName: string;

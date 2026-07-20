@@ -1,1 +1,0 @@
-ALTER TABLE "EventForm" ADD COLUMN IF NOT EXISTS "tableLayoutImageUrl" TEXT;

@@ -17,6 +17,7 @@ export const EVENT_TYPE_VALUES = [
   'הרמת כוסית',
   'כנס מקצועי',
   'אירוע חברה/עסקי',
+  'אירוע אחר',
   HALL_ONLY_EVENT_TYPE,
 ] as const;
 

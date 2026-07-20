@@ -156,6 +156,7 @@ export async function getOrCreateCheckIn(
   try {
     const checkIn = await prisma.eventCheckIn.create({
       data: {
+        tenantId: booking.tenantId,
         bookingId,
         ...defaults,
         reserveTables: toPrismaJson(defaults.reserveTables),

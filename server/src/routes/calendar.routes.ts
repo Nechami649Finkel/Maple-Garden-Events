@@ -28,6 +28,7 @@ router.post('/options', requireRole(...RBAC.CALENDAR_WRITE), validate(saveOption
     const { dates, clientName, clientPhone, clientEmail } = req.body;
 
     const result = await calendarService.saveOptionHold(
+      (req as any).user.tenantId,
       dates,
       clientName,
       clientPhone,
