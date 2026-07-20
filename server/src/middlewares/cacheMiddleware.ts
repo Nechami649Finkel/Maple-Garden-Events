@@ -28,11 +28,16 @@ export const cacheMiddleware = (prefix: string, expireSeconds: number = 3600) =>
       }
 
       if (redisClient.status === 'ready') {
-        const cachedData = await redisClient.get(cacheKey);
+        const fetchPromise = redisClient.get(cacheKey);
+        const timeoutPromise = new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error('Redis timeout')), 1000)
+        );
+
+        const cachedData = await Promise.race([fetchPromise, timeoutPromise]);
         
         if (cachedData) {
           logger.info(`Cache HIT for ${cacheKey}`);
-          return res.json(JSON.parse(cachedData));
+          return res.json(JSON.parse(cachedData as string));
         }
       }
     } catch (err) {
@@ -65,11 +70,19 @@ export const cacheMiddleware = (prefix: string, expireSeconds: number = 3600) =>
 export const invalidateCache = async (prefix: string) => {
   if (!redisClient || redisClient.status !== 'ready') return;
   try {
-    const keys = await redisClient.keys(`${prefix}:*`);
-    if (keys.length > 0) {
-      await redisClient.del(...keys);
-      logger.info(`Invalidated cache for prefix ${prefix}`);
-    }
+    let cursor = '0';
+    do {
+      // ioredis returns [cursor, keys] for scan
+      const res = await redisClient.scan(cursor, 'MATCH', `${prefix}:*`, 'COUNT', 100);
+      cursor = res[0];
+      const keys = res[1];
+      
+      if (keys.length > 0) {
+        await redisClient.del(...keys);
+      }
+    } while (cursor !== '0');
+    
+    logger.info(`Invalidated cache for prefix ${prefix}`);
   } catch (err) {
     logger.warn(`Failed to invalidate cache for ${prefix}`, { error: err });
   }
