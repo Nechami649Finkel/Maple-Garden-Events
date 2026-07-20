@@ -23,6 +23,7 @@ import {
   parseHiddenPriceFields,
 } from '../../utils/pricing';
 import { useTranslation } from '../../i18n/useTranslation';
+import { Icon } from '../ui/Icon';
 import { translateByValue } from '@shared/i18n/bookingLookups';
 import { T, type TranslationKey } from '@shared/i18n/keys';
 
@@ -236,7 +237,12 @@ export const SettingsManager = () => {
   return (
     <div className="settings-container">
       <div className="settings-header">
-        <h1>{t(T.SETTINGS.PAGE_TITLE)}</h1>
+        <h1>
+          <span className="settings-title-icon" aria-hidden="true">
+            <Icon name="settings" size={24} />
+          </span>
+          {t(T.SETTINGS.PAGE_TITLE)}
+        </h1>
         <p>{t(T.SETTINGS.PAGE_SUBTITLE)}</p>
       </div>
 

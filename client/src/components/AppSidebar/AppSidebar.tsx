@@ -19,6 +19,10 @@ export const AppSidebar = () => {
     };
   }, [isOpen]);
 
+  useEffect(() => {
+    close();
+  }, [location.pathname, close]);
+
   const goTo = (path: string) => {
     close();
     navigate(path);
@@ -87,6 +91,7 @@ export const AppSidebar = () => {
         className={`app-sidebar app-sidebar-drawer ${isOpen ? 'app-sidebar-drawer-open' : ''}`}
         aria-label={t(T.NAV.SIDEBAR_MAIN_NAV)}
         aria-hidden={!isOpen}
+        inert={!isOpen}
       >
         {navContent}
       </nav>

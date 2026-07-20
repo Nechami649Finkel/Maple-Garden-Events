@@ -5,15 +5,15 @@ import './Calendar.css';
 import { EventPopup } from '../EventPopup/EventPopup';
 import {
   getSlotColor,
-  SLOT_COLORS,
-  TIME_SLOTS,
   getTakenSlots,
   getBookableSlotsForDate,
   hasOptionOnDay,
   normalizeTimeSlot,
-  formatSlotLabel,
   type TimeSlot,
 } from '../../utils/timeSlot';
+import { CalendarLegendBar } from './CalendarLegendBar';
+import { CalendarDaySidePanel } from './CalendarDaySidePanel';
+import { OptionFormModal } from './OptionFormModal';
 import { isEventLive } from '../../utils/eventStart';
 import { useTranslation } from '../../i18n/useTranslation';
 import { DEFAULT_EVENT_TYPE, translateByValue, EVENT_TYPE_KEY_BY_VALUE } from '@shared/i18n/bookingLookups';
@@ -95,9 +95,9 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   };
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<any>(null);
-  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
-  const [selectedDateForAction, setSelectedDateForAction] = useState<string | null>(null);
+  const [sidePanelDay, setSidePanelDay] = useState<DayData | null>(null);
+  const [eventPopupDay, setEventPopupDay] = useState<DayData | null>(null);
+  const [optionModalDay, setOptionModalDay] = useState<DayData | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState(DEFAULT_EVENT_TYPE);
   const [, setLiveTick] = useState(0);
 
@@ -158,10 +158,20 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const prevYear  = () => setCurrentDate(new Date(year - 1, month, 1));
   const nextYear  = () => setCurrentDate(new Date(year + 1, month, 1));
 
-  const handleBookEvent = () => {
-    setIsActionModalOpen(false);
-    const dayObj = grid.find(d => d.date === selectedDateForAction);
-    if (dayObj) onDateSelect(dayObj);
+  const handleBookEventFromPanel = () => {
+    if (!sidePanelDay) return;
+    const dayToBook = sidePanelDay;
+    setSidePanelDay(null);
+    onDateSelect(dayToBook);
+  };
+
+  const handleOpenOptionFromPanel = () => {
+    if (!sidePanelDay) return;
+    setOptionModalDay(sidePanelDay);
+  };
+
+  const openDayPanel = (day: DayData) => {
+    setSidePanelDay(day);
   };
 
   const handleOverrideOptionBook = (day: DayData) => {
@@ -199,37 +209,62 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     <div className="calendar-page-layout">
       <div className="calendar-container">
       
-      <div className="calendar-toolbar">
-        <span className="calendar-toolbar-label">{t(T.CALENDAR.AVAILABILITY_LABEL)}</span>
-        <select className="calendar-toolbar-select" value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}>
-          <option value="חתונה">{t(T.CALENDAR.FILTER_WEDDING)}</option>
-          <option value="אירוע אחר">{t(T.CALENDAR.FILTER_OTHER)}</option>
-        </select>
-        <div className="calendar-legend">
-          {TIME_SLOTS.map((slot) => (
-            <span key={slot} className="calendar-legend-item">
-              <span className="calendar-legend-swatch" style={{ backgroundColor: SLOT_COLORS[slot] }} />
-              {formatSlotLabel(t, slot)}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="calendar-header-nav">
-        <div className="year-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn year-btn" onClick={prevYear} aria-label={t(T.CALENDAR.PREV_YEAR)}>»</button>
-          <span className="year-display">{year}</span>
-          <button className="nav-btn year-btn" onClick={nextYear} aria-label={t(T.CALENDAR.NEXT_YEAR)}>«</button>
-        </div>
-
-        <div className="calendar-nav" style={{ direction: 'rtl' }}>
-          <button className="nav-btn" onClick={prevMonth} aria-label={t(T.CALENDAR.PREV_MONTH)}>›</button>
-          <div className="months-bar">
-            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
-              <div key={i} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{t(T.CALENDAR.MONTHS[i as keyof typeof T.CALENDAR.MONTHS])}</div>
-            ))}
+      <div className="calendar-top-card">
+        <div className="calendar-control-bar">
+          <div className="calendar-availability-group">
+            <span className="calendar-toolbar-label">{t(T.CALENDAR.AVAILABILITY_LABEL)}</span>
+            <select
+              className="calendar-toolbar-select"
+              value={eventTypeFilter}
+              onChange={(e) => setEventTypeFilter(e.target.value)}
+            >
+              <option value="חתונה">{t(T.CALENDAR.FILTER_WEDDING)}</option>
+              <option value="אירוע אחר">{t(T.CALENDAR.FILTER_OTHER)}</option>
+            </select>
           </div>
-          <button className="nav-btn" onClick={nextMonth} aria-label={t(T.CALENDAR.NEXT_MONTH)}>‹</button>
+
+          <div className="calendar-inline-nav">
+            <div className="inline-date-nav">
+              <button
+                type="button"
+                className="inline-nav-btn"
+                onClick={prevMonth}
+                aria-label={t(T.CALENDAR.PREV_MONTH)}
+              >
+                ‹
+              </button>
+              <span className="inline-date-label">
+                {t(T.CALENDAR.MONTHS[month as keyof typeof T.CALENDAR.MONTHS])}
+              </span>
+              <button
+                type="button"
+                className="inline-nav-btn"
+                onClick={nextMonth}
+                aria-label={t(T.CALENDAR.NEXT_MONTH)}
+              >
+                ›
+              </button>
+              <button
+                type="button"
+                className="inline-nav-btn"
+                onClick={prevYear}
+                aria-label={t(T.CALENDAR.PREV_YEAR)}
+              >
+                ‹
+              </button>
+              <span className="inline-date-label">{year}</span>
+              <button
+                type="button"
+                className="inline-nav-btn"
+                onClick={nextYear}
+                aria-label={t(T.CALENDAR.NEXT_YEAR)}
+              >
+                ›
+              </button>
+            </div>
+          </div>
+
+          <CalendarLegendBar showWeddingRestrictions={eventTypeFilter === DEFAULT_EVENT_TYPE} />
         </div>
       </div>
 
@@ -253,9 +288,15 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
               const dayNum = new Date(day.date + 'T12:00:00').getDate();
 
               const bookingCount = day.bookings?.length ?? 0;
+              const isWeddingFilter = eventTypeFilter === DEFAULT_EVENT_TYPE;
+              const hasRestrictionMarker =
+                isWeddingFilter
+                && day.isCurrentMonth
+                && (day.status === 'FORBIDDEN' || day.status === 'PROBLEMATIC');
               const cls = [
                 'calendar-cell',
                 `status-${day.status.toLowerCase()}`,
+                hasRestrictionMarker ? 'has-restriction-marker' : '',
                 !day.isCurrentMonth ? 'out-of-month' : '',
                 isToday ? 'is-today' : '',
                 isPast && day.isCurrentMonth ? 'is-past' : '',
@@ -285,13 +326,8 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                   disabled={isCellDisabled}
                   onClick={() => {
                   if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked) return;
-                  if (isPast) {
-                    if (bookingCount > 0) setSelectedDay(day);
-                    return;
-                  }
-
-                  if (day.bookings.length > 0) { setSelectedDay(day); return; }
-                  setSelectedDateForAction(day.date); setIsActionModalOpen(true);
+                  if (isPast && bookingCount === 0) return;
+                  openDayPanel(day);
                 }}>
                   <div className="cell-header-row">
                       <span className="gregorian-num">
@@ -335,7 +371,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                           style={eventStyle}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedDay(day);
+                            openDayPanel(day);
                           }}
                         >
                           {isLive && <span className={liveStyles.liveBadge}>{t(T.CALENDAR.LIVE_BADGE)}</span>}
@@ -350,64 +386,50 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
           </div>
         </div>
       )}
-      {selectedDay && (
-        <EventPopup
-          day={selectedDay}
-          onClose={() => setSelectedDay(null)}
-          onAddEvent={() => {
-            const dayToBook = selectedDay;
-            setSelectedDay(null);
-            onDateSelect(dayToBook);
-          }}
-          onAddOption={() => {
-            const dayToOption = selectedDay;
-            setSelectedDay(null);
-            navigate('/option', {
-              state: {
-                selectedDates: [{ date: dayToOption.date, hebrewDate: dayToOption.hebrewDate || '' }],
-                takenSlots: Array.from(getTakenSlots(dayToOption.bookings || [])),
-                blockedSlots: (dayToOption.blockedSlots || []) as TimeSlot[],
-              },
-            });
-          }}
-          onOverrideOptionBook={
-            hasOptionOnDay(selectedDay)
-              ? () => handleOverrideOptionBook(selectedDay)
+      {sidePanelDay && (
+        <CalendarDaySidePanel
+          day={sidePanelDay}
+          onClose={() => setSidePanelDay(null)}
+          onBookEvent={handleBookEventFromPanel}
+          onOpenOption={handleOpenOptionFromPanel}
+          onViewEvents={
+            (sidePanelDay.bookings?.length ?? 0) > 0
+              ? () => {
+                  setEventPopupDay(sidePanelDay);
+                  setSidePanelDay(null);
+                }
               : undefined
           }
         />
       )}
 
-      {isActionModalOpen && (
-        <div className="side-panel-overlay" onClick={() => setIsActionModalOpen(false)}>
-          <div className="side-panel" onClick={e => e.stopPropagation()}>
-            <div className="side-panel-header">
-              <span>{t(T.CALENDAR.SELECTED_DATE, { date: selectedDateForAction?.split('-').reverse().join('-') ?? '' })}</span>
-              <button className="side-panel-close" onClick={() => setIsActionModalOpen(false)}>✕</button>
-            </div>
-            <div className="side-panel-body">
-              <button className="book-btn" onClick={handleBookEvent}>{t(T.CALENDAR.BOOK_EVENT)}</button>
-              <button
-                className="option-btn"
-                onClick={() => {
-                  if (!selectedDateForAction) return;
-                  const dayData = datesList.find((d: any) => d.date === selectedDateForAction);
-                  setIsActionModalOpen(false);
-                  navigate('/option', {
-                    state: {
-                      selectedDates: [{
-                        date: selectedDateForAction,
-                        hebrewDate: dayData?.hebrewDate || '',
-                      }],
-                    },
-                  });
-                }}
-              >
-                {t(T.CALENDAR.OPEN_OPTION)}
-              </button>
-            </div>
-          </div>
-        </div>
+      {eventPopupDay && (
+        <EventPopup
+          day={eventPopupDay}
+          onClose={() => setEventPopupDay(null)}
+          onAddEvent={() => {
+            const dayToBook = eventPopupDay;
+            setEventPopupDay(null);
+            onDateSelect(dayToBook);
+          }}
+          onAddOption={() => {
+            setOptionModalDay(eventPopupDay);
+            setEventPopupDay(null);
+          }}
+          onOverrideOptionBook={
+            hasOptionOnDay(eventPopupDay)
+              ? () => handleOverrideOptionBook(eventPopupDay)
+              : undefined
+          }
+        />
+      )}
+
+      {optionModalDay && (
+        <OptionFormModal
+          date={optionModalDay.date}
+          hebrewDate={optionModalDay.hebrewDate || ''}
+          onClose={() => setOptionModalDay(null)}
+        />
       )}
       </div>
     </div>

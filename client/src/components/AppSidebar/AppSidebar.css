@@ -38,12 +38,18 @@
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.28s;
   direction: rtl;
 }
 
 .app-sidebar-drawer-open {
   transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .app-sidebar-overlay {
@@ -125,10 +131,10 @@
 .app-sidebar-list {
   list-style: none;
   margin: 0;
-  padding: var(--maple-space-3) var(--maple-space-2);
+  padding: var(--maple-space-4) var(--maple-space-3);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--maple-space-2);
   overflow-y: auto;
   flex: 1;
 }
@@ -138,7 +144,7 @@
   display: flex;
   align-items: center;
   gap: var(--maple-space-3);
-  padding: 11px var(--maple-space-3);
+  padding: 14px var(--maple-space-4);
   background: none;
   border: none;
   border-radius: var(--maple-radius-sm);

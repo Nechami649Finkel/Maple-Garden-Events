@@ -6,7 +6,9 @@ import { useSidebar } from '../../context/SidebarContext';
 
 import { useTranslation } from '../../i18n/useTranslation';
 
-import { resolveRouteTitleKey } from '@shared/i18n/navigationLookups';
+import { resolveRouteTitleKey, resolveRouteIcon } from '@shared/i18n/navigationLookups';
+
+import { Icon } from '../ui/Icon';
 
 import {
 
@@ -37,8 +39,8 @@ export const AppHeader = () => {
   const showBack = shouldShowGlobalBack(location.pathname) || !!override;
 
   const titleKey = resolveRouteTitleKey(location.pathname);
-
   const pageTitle = titleKey ? t(titleKey) : '';
+  const pageIcon = resolveRouteIcon(location.pathname);
 
 
 
@@ -133,32 +135,17 @@ export const AppHeader = () => {
 
 
         {pageTitle && (
-
           <p className="app-header-title" title={pageTitle}>
-
+            {pageIcon && (
+              <span className="app-header-title-icon" aria-hidden="true">
+                <Icon name={pageIcon} size={18} />
+              </span>
+            )}
             {pageTitle}
-
           </p>
-
         )}
 
       </div>
-
-      <button
-
-        type="button"
-
-        className="app-header-brand"
-
-        onClick={() => navigate('/dashboard')}
-
-        aria-label={t(T.NAV.HEADER_BACK_DASHBOARD)}
-
-      >
-
-        <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className="app-header-logo" />
-
-      </button>
 
     </header>
 

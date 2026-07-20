@@ -2,12 +2,12 @@
 
 /* Maple Bootstrap theme overrides */
 :root {
-  --bs-primary: #4F7F52;
-  --bs-primary-rgb: 79, 127, 82;
-  --bs-secondary: #B8956A;
-  --bs-secondary-rgb: 184, 149, 106;
-  --bs-success: #4F7F52;
-  --bs-success-rgb: 79, 127, 82;
+  --bs-primary: #29443F;
+  --bs-primary-rgb: 41, 68, 63;
+  --bs-secondary: #EDF0F8;
+  --bs-secondary-rgb: 237, 240, 248;
+  --bs-success: #29443F;
+  --bs-success-rgb: 41, 68, 63;
   --bs-danger: #C53030;
   --bs-danger-rgb: 197, 48, 48;
   --bs-warning: #C05621;
@@ -23,7 +23,7 @@
   --bs-border-radius-lg: var(--maple-radius-lg);
   --bs-link-color: var(--maple-green-dark);
   --bs-link-hover-color: var(--maple-green-deep);
-  --bs-focus-ring-color: rgba(184, 149, 106, 0.45);
+  --bs-focus-ring-color: rgba(41, 68, 63, 0.35);
 }
 
 .maple-bs-form {

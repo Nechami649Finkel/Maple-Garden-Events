@@ -272,7 +272,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
   useEffect(() => {
     if (isEditMode || !userEmail || draftRestored) return;
-    const draft = loadBookingDraft(userEmail);
+    const draft = loadBookingDraft(userEmail, isOptionMode);
     if (!draft) {
       setDraftRestored(true);
       return;
@@ -288,16 +288,15 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       setDepositMethod(draft.depositMethod);
       setContractSigned(draft.contractSigned);
       setSelectedDatesDisplay(draft.selectedDatesDisplay as typeof selectedDatesDisplay);
-      setIsOption(draft.isOption);
       setOptionDurationHours(draft.optionDurationHours);
       setPaymentTemplateId(draft.paymentTemplateId);
       setPaymentTermsCustom(draft.paymentTermsCustom);
       setPaymentTermsText(draft.paymentTermsText);
     } else {
-      clearBookingDraft();
+      clearBookingDraft(isOptionMode);
     }
     setDraftRestored(true);
-  }, [isEditMode, userEmail, draftRestored]);
+  }, [isEditMode, userEmail, draftRestored, isOptionMode]);
 
   const buildDraftSnapshot = (): BookingDraftSnapshot => ({
     formData: { ...formData },
@@ -319,13 +318,14 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   useEffect(() => {
     if (isEditMode || !userEmail || !draftRestored) return;
     const timer = setTimeout(() => {
-      saveBookingDraft(userEmail, buildDraftSnapshot());
+      saveBookingDraft(userEmail, isOptionMode, buildDraftSnapshot());
     }, 800);
     return () => clearTimeout(timer);
   }, [
     isEditMode,
     userEmail,
     draftRestored,
+    isOptionMode,
     formData,
     menuNotesList,
     internalNotesList,
@@ -1057,7 +1057,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       const resData = await response.json();
 
       if (response.ok) {
-        clearBookingDraft();
+        clearBookingDraft(isOption);
         const savedBooking = Array.isArray(resData.data) ? resData.data[0] : resData.data;
         const savedCode = savedBooking?.eventCode;
         const savedId = savedBooking?.id || submitId;
