@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../config/prisma';
-import { AuthUser, extractBearerToken, verifyAuthToken } from '../utils/authCookie';
+import { AuthUser, extractBearerToken, verifyAuthToken, CSRF_COOKIE_NAME, CSRF_HEADER_NAME } from '../utils/authCookie';
 import { isValidRole } from './requireRole';
 import { catchAsync } from './errorHandler';
 
@@ -14,6 +14,15 @@ export interface AuthRequest extends Request {
  * עם תפקיד תקף (מונע שימוש ב-JWT אחרי מחיקה/שינוי תפקיד).
  */
 export const requireAuth = catchAsync(async (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+    const csrfCookie = req.cookies?.[CSRF_COOKIE_NAME];
+    const csrfHeader = req.headers[CSRF_HEADER_NAME] || req.headers[CSRF_HEADER_NAME.toLowerCase()];
+    if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+      res.status(403).json({ success: false, message: 'CSRF token missing or invalid.' });
+      return;
+    }
+  }
+
   const token = extractBearerToken(req);
 
   if (!token) {
