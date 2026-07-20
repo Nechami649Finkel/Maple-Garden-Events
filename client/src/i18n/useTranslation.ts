@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useCallback, useContext, useMemo } from 'react';
 import {
   T,
   TP,
@@ -16,9 +16,18 @@ export function useTranslation() {
 
   const { t: translate, tp: translatePlural, locale, setLocale } = ctx;
 
-  const t = (key: TranslationKey, params?: TranslationParams) => translate(key, params);
-  const tp = (key: PluralKey, count: number, params?: TranslationParams) =>
-    translatePlural(key, count, params);
+  const t = useCallback(
+    (key: TranslationKey, params?: TranslationParams) => translate(key, params),
+    [translate],
+  );
+  const tp = useCallback(
+    (key: PluralKey, count: number, params?: TranslationParams) =>
+      translatePlural(key, count, params),
+    [translatePlural],
+  );
 
-  return { t, tp, locale, setLocale, T, TP };
+  return useMemo(
+    () => ({ t, tp, locale, setLocale, T, TP }),
+    [t, tp, locale, setLocale],
+  );
 }

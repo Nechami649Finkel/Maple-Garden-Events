@@ -13,3 +13,7 @@ export { DataTable } from './DataTable';
 export type { DataTableColumn } from './DataTable';
 export { EventCard } from './EventCard';
 export type { EventCardData } from './EventCard';
+export { HebrewDatePicker } from './HebrewDatePicker';
+export type { HebrewDatePickerProps } from './HebrewDatePicker';
+export { HebrewDatePicker } from './HebrewDatePicker';
+export type { HebrewDatePickerProps } from './HebrewDatePicker';

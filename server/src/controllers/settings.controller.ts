@@ -40,10 +40,26 @@ export const settingsController = {
   updateSettings: catchAsync(async (req: Request, res: Response) => {
       const tenantId = (req as any).user?.tenantId;
       if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
-    const settings = await prisma.systemSettings.updateMany({
-      where: { id: 'global',
-          tenantId: tenantId
-    },
+
+    const existing = await prisma.systemSettings.findFirst({
+      where: { tenantId },
+    });
+
+    if (!existing) {
+      const created = await prisma.systemSettings.create({
+        data: {
+          ...req.body,
+          tenantId,
+          contractText: req.body.contractText?.trim() || DEFAULT_CONTRACT_TEXT,
+        },
+      });
+      res.json(created);
+      emitSettingsUpdated();
+      return;
+    }
+
+    const settings = await prisma.systemSettings.update({
+      where: { id: existing.id },
       data: req.body,
     });
     res.json(settings);

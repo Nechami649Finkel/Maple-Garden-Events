@@ -185,6 +185,7 @@ export function useGlobalSettingsQuery() {
     queryKey: ['settings', 'global'],
     queryFn: async () => {
       const res = await apiFetch(`${API_URL}/settings/global`);
+      if (!res.ok) throw new Error(tClient(T.SETTINGS.SAVE_ERROR));
       return res.json();
     },
     staleTime: 0,
@@ -196,6 +197,7 @@ export function useExtrasQuery() {
     queryKey: ['settings', 'extras'],
     queryFn: async () => {
       const res = await apiFetch(`${API_URL}/settings/extras`);
+      if (!res.ok) throw new Error(`extras ${res.status}`);
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },
@@ -207,6 +209,7 @@ export function useStaffQuery() {
     queryKey: ['settings', 'staff'],
     queryFn: async () => {
       const res = await apiFetch(`${API_URL}/settings/staff`);
+      if (!res.ok) throw new Error(`staff ${res.status}`);
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },
@@ -218,6 +221,7 @@ export function useKashrutQuery() {
     queryKey: ['kashrut'],
     queryFn: async () => {
       const res = await apiFetch(`${API_URL}/kashrut`);
+      if (!res.ok) throw new Error(`kashrut ${res.status}`);
       const data = await res.json();
       return Array.isArray(data) ? data : [];
     },

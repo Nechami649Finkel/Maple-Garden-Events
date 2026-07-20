@@ -13,6 +13,7 @@
       "CONFIRM": "אישור",
       "EDIT": "עריכה",
       "DELETE": "מחיקה",
+      "CLEAR": "ניקוי",
       "SEND": "שליחה",
       "SAVE_CHANGES": "שמירת שינויים"
     },
@@ -1864,6 +1865,7 @@
     "CERT_UPLOAD": "העלאת תעודה",
     "PREVIEW": "תצוגה מקדימה",
     "KASHRUT_LOADING": "טוען...",
+    "KASHRUT_EMPTY": "לא נמצאה תעודת כשרות למתחם. רענני את הדף או פני למנהל המערכת.",
     "ROLE_MANAGER": "מנהל",
     "ROLE_STAFF": "צוות",
     "ROLE_PRODUCTION": "הפקה",
