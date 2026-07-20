@@ -24,6 +24,7 @@ export {
 export { verifyEasyCountWebhookSignature } from './helpers';
 
 type BookingForInvoice = {
+  tenantId: string;
   id: string;
   eventCode: string;
   clientAFullName: string;
@@ -81,7 +82,7 @@ export async function createHallInvoice(
   assertInvoiceAmountWithinBalance(amount, balance);
 
   const payload: EasyCountInvoiceRequest = {
-    bookingId: booking.id,
+    tenantId: booking.tenantId, bookingId: booking.id,
     eventCode: booking.eventCode,
     clientName: booking.clientAFullName,
     clientEmail: booking.clientAEmail,
@@ -96,7 +97,7 @@ export async function createHallInvoice(
   const stored = await prisma.hallInvoice.create({
     data: {
       id: randomUUID(),
-      bookingId: booking.id,
+      tenantId: booking.tenantId, bookingId: booking.id,
       externalId: remote.externalId,
       amount,
       status: remote.status,

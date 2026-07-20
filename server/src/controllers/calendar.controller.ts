@@ -37,7 +37,8 @@ export const calendarController = {
     try {
       const dateStr = req.params.dateStr as string;
       const { employeeName } = req.body;
-      const result = await calendarService.lockDateForChecking(dateStr, employeeName);
+      const tenantId = (req as any).user?.tenantId;
+      const result = await calendarService.lockDateForChecking(dateStr, employeeName, tenantId);
       await invalidateCache('calendar');
       res.json(result);
     } catch (error: any) {

@@ -221,8 +221,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   );
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
   const [isOption, setIsOption] = useState(isOptionMode);
-  const defaultEventTypeForForm =
-    convertFromOption || (!activeEditId && !isOptionMode) ? DEFAULT_EVENT_TYPE : '';
+  const defaultEventTypeForForm = '';
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
   const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
@@ -400,7 +399,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     let cancelled = false;
     verifyAllOptionDates(
       selectedDatesDisplay.map(normalizeOptionDate),
-      formData.eventType || DEFAULT_EVENT_TYPE,
+      formData.eventType,
       slot,
       t,
     ).then((verify) => {
@@ -465,7 +464,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       clientALastName: nameParts.last,
       clientAFullName: b.clientAFullName || '', clientAIdNumber: b.clientAIdNumber || '', clientAPhone: phoneA.phone, clientAPhone2: phoneA.phone2, clientAEmail: b.clientAEmail || '', clientACity: addrA.city, clientAAddress: addrA.address,
       clientBFullName: b.clientBFullName || '', clientBIdNumber: b.clientBIdNumber || '', clientBPhone: phoneB.phone, clientBPhone2: phoneB.phone2, clientBEmail: b.clientBEmail || '', clientBCity: addrB.city, clientBAddress: addrB.address,
-      calendarDateId: eventDateStr, eventType: convertFromOption ? DEFAULT_EVENT_TYPE : (b.eventType || ''), timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
+      calendarDateId: eventDateStr, eventType: b.eventType || '', timeOfDay: loadedSlot || 'evening', startTime: parsedTime.startTime || defaultHours?.start || '', endTime: parsedTime.endTime || defaultHours?.end || '',
       guestCount: String(b.guestCount ?? ''), minimumGuestCount: String(b.minimumGuestCount ?? b.guestCount ?? ''), optionalGuestCount: calcOptionalGuestCount(b.guestCount ?? ''), finalPricePortion: String(b.finalPricePortion ?? '200'), discountPercent: '', discountAmount: '', vatType: b.vatType === 'not_included' ? 'not_included' : DEFAULT_VAT_TYPE, paymentTerms: '', leadSource: b.leadSource || '', clientSignatureUrl: b.clientSignatureUrl || '',
       akumApprovalCode: b.akumApprovalCode || '', hasMusic: !!b.hasMusic,
       hallRentalPrice: b.hallRentalPrice ? String(b.hallRentalPrice) : '',
@@ -962,7 +961,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       }
       const verify = await verifyAllOptionDates(
         selectedDatesDisplay.map(normalizeOptionDate),
-        formData.eventType || DEFAULT_EVENT_TYPE,
+        formData.eventType,
         slot,
         t,
       );
@@ -1146,7 +1145,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
             <OptionDatesBar
               selectedDates={selectedDatesDisplay}
               onChange={setSelectedDatesDisplay}
-              eventType={formData.eventType || DEFAULT_EVENT_TYPE}
+              eventType={formData.eventType}
               timeSlot={formData.timeOfDay}
               slotWarning={optionDatesSlotWarning}
             />

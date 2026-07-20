@@ -14,8 +14,9 @@ function mapTableCreate(table: {
   isHonor?: boolean;
   width?: number | null;
   height?: number | null;
-}) {
+}, tenantId: string) {
   return {
+    tenantId,
     tableNumber: table.id,
     positionX: table.x,
     positionY: table.y,
@@ -207,14 +208,14 @@ export const eventFormController = {
           ...(typeof tableLayoutImageUrl === 'string' ? { tableLayoutImageUrl } : {}),
           tables: {
             deleteMany: {},
-            create: tables.map(mapTableCreate),
+            create: tables.map(t => mapTableCreate(t, tenantId)),
           },
         },
         create: {
           bookingId,
           ...(typeof tableLayoutImageUrl === 'string' ? { tableLayoutImageUrl } : {}),
           tables: {
-            create: tables.map(mapTableCreate),
+            create: tables.map(t => mapTableCreate(t, tenantId)),
           },
         },
         include: { tables: true },

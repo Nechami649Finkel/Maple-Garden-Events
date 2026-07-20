@@ -66,7 +66,7 @@ export async function initOrderSequence(): Promise<void> {
 
     if (!settings) {
       await prisma.systemSettings.create({
-        data: { id: SETTINGS_ID, nextEventNumber: maxFromCodes },
+        data: { id: SETTINGS_ID, tenantId: 'global', nextEventNumber: maxFromCodes },
       });
       return;
     }
@@ -90,7 +90,7 @@ async function allocateEventCodeInTx(
 
   if (!settings) {
     settings = await tx.systemSettings.create({
-      data: { id: SETTINGS_ID, nextEventNumber: 0 },
+      data: { id: SETTINGS_ID, tenantId: 'global', nextEventNumber: 0 },
     });
   }
 

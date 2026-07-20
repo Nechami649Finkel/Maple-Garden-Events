@@ -5,17 +5,24 @@ import { catchAsync } from '../middlewares/errorHandler'; // <-- ייבוא עו
 
 // 1. שליפת התפריט
 export const getMenu = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const menu = await prisma.menuCategory.findMany({
-    include: { dishes: true }
-  });
+    include: { dishes: true },
+      where: { tenantId }
+});
   res.status(200).json({ success: true, data: menu });
 });
 
 // 2. הוספת מנה
 export const addDish = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { name, description, price, categoryId } = req.body;
   const newDish = await prisma.dish.create({
-    data: { name, description, price, categoryId }
+    data: { name, description, price, categoryId,
+        tenantId: tenantId
+    }
   });
   
   // שליחת עדכון לכל הלקוחות המחוברים
@@ -26,11 +33,15 @@ export const addDish = catchAsync(async (req: Request, res: Response) => {
 
 // 3. עדכון מנה
 export const updateDish = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { id } = req.params;
   const { name, description, price } = req.body;
   
-  const updatedDish = await prisma.dish.update({
-    where: { id: id as string },
+  const updatedDish = await prisma.dish.updateMany({
+    where: { id: id as string,
+        tenantId: tenantId
+    },
     data: { name, description, price }
   });
   
@@ -42,10 +53,14 @@ export const updateDish = catchAsync(async (req: Request, res: Response) => {
 
 // 4. מחיקת מנה
 export const deleteDish = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { id } = req.params;
   
-  await prisma.dish.delete({ 
-    where: { id: id as string } 
+  await prisma.dish.deleteMany({ 
+    where: { id: id as string,
+        tenantId: tenantId
+    } 
   });
   
   // שליחת עדכון לכל הלקוחות המחוברים שהמנה נמחקה

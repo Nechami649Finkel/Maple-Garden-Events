@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "upgrades" JSONB;
-ALTER TABLE "Booking" ADD COLUMN IF NOT EXISTS "kosherType" TEXT;
