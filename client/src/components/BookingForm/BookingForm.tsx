@@ -142,6 +142,10 @@ function splitFullName(fullName: string): { first: string; last: string } {
 }
 
 const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProps) => {
+  const isMounted = useRef(true);
+  useEffect(() => {
+    return () => { isMounted.current = false; };
+  }, []);
   const { t, T } = useTranslation();
   const navigate = useNavigate();
 
@@ -1081,7 +1085,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         alert(t(T.BOOKING.ALERTS.CONFLICT_UPDATED, {
           updatedBy: resData.updatedBy ? ` (${resData.updatedBy})` : '',
         }));
-        setIsSubmitting(false);
+        if (isMounted.current) setIsSubmitting(false);
       } else {
         const fieldErrors = Array.isArray(resData.errors)
           ? resData.errors.map((e: { message?: string }) => e.message).filter(Boolean).join('\n')
@@ -1089,11 +1093,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         alert(t(T.BOOKING.ALERTS.SAVE_ERROR, {
           fieldErrors: fieldErrors || resData.message || t(T.BOOKING.ALERTS.SAVE_UNKNOWN_ERROR),
         }));
-        setIsSubmitting(false);
+        if (isMounted.current) setIsSubmitting(false);
       }
     } catch (error) {
       alert(t(T.BOOKING.ALERTS.SERVER_CONNECTION_ERROR));
-      setIsSubmitting(false);
+      if (isMounted.current) setIsSubmitting(false);
     }
   };
 

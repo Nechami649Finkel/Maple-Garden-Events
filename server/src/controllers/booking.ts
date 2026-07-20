@@ -586,7 +586,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   if (createdBookings.length > 0) {
     emitBookingUpdated(createdBookings[0].id);
     if (!isOption) {
-      void syncBookingPaymentMetadata(createdBookings[0].id);
+      syncBookingPaymentMetadata(createdBookings[0].id).catch(err => {
+        logger.error(`Background payment sync failed for booking ${createdBookings[0].id}`, { error: err });
+      });
     }
   }
 
@@ -1266,7 +1268,13 @@ export const addEventAddition = async (req: Request, res: Response) => {
         }
       });
 
-      const currentBooking = await tx.booking.findUnique({ where: { id: bookingId } });
+      const currentBookingList = await tx.$queryRaw<any[]>`
+        SELECT "liveAdditionsTotal", "basePrice", "extrasPrice" 
+        FROM "Booking" 
+        WHERE id = ${bookingId} 
+        FOR UPDATE
+      `;
+      const currentBooking = currentBookingList[0];
       if (currentBooking) {
         const additionCost = Number(cost) || 0;
         const currentLive = Number(currentBooking.liveAdditionsTotal) || 0;
