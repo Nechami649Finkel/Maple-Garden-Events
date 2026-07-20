@@ -143,6 +143,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--brand-green-dark);
 }
 
 @media (max-width: 768px) {
@@ -170,3 +181,4 @@
     max-width: 42vw;
   }
 }
+

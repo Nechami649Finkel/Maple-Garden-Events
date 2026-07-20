@@ -26,6 +26,7 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   overflow: hidden;
   min-height: 320px;
+  font-size: 15px;
 }
 
 .header {
@@ -49,7 +50,8 @@
 }
 .backBtn:hover { background: #475569; }
 
-.title {
+.title,
+.listTitle {
   color: #fff;
   margin: 0;
   font-size: 1.2rem;
@@ -214,17 +216,12 @@
 .secondaryBtn:hover { background: #e2e8f0; }
 
 .listHeader {
-  background: #334155;
-  padding: 14px 18px;
+  background: var(--brand-green-dark);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-.listTitle {
-  color: #fff;
-  margin: 0;
-  font-size: 1.05rem;
 }
 .refreshBtn {
   background: rgba(255,255,255,0.12);
@@ -233,7 +230,7 @@
   border-radius: 8px;
   padding: 6px 12px;
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: 15px;
 }
 .refreshBtn:hover { background: rgba(255,255,255,0.2); }
 
@@ -250,7 +247,7 @@
   color: #475569;
   border-radius: 999px;
   padding: 6px 12px;
-  font-size: 0.82rem;
+  font-size: 15px;
   cursor: pointer;
 }
 .filterBtnActive {
@@ -280,12 +277,12 @@
 }
 .listSubject {
   color: #1e293b;
-  font-size: 0.95rem;
+  font-size: 15px;
 }
 .listMessage {
   margin: 0 0 10px;
   color: #64748b;
-  font-size: 0.88rem;
+  font-size: 15px;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -297,12 +294,12 @@
   flex-wrap: wrap;
   gap: 8px 14px;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 15px;
 }
 .listError {
   margin: 10px 0 0;
   color: #b91c1c;
-  font-size: 0.82rem;
+  font-size: 15px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 8px;
@@ -313,10 +310,11 @@
   text-align: center;
   color: #64748b;
   margin: 0;
+  font-size: 15px;
 }
 
 .statusBadge {
-  font-size: 0.75rem;
+  font-size: 15px;
   font-weight: bold;
   border-radius: 999px;
   padding: 4px 10px;
@@ -346,7 +344,7 @@
   color: #b91c1c;
   border-radius: 8px;
   padding: 6px 12px;
-  font-size: 0.82rem;
+  font-size: 15px;
   cursor: pointer;
 }
 .cancelBtn:hover:not(:disabled) { background: #fef2f2; }
@@ -357,3 +355,4 @@
     grid-template-columns: 1fr;
   }
 }
+

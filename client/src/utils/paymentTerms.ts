@@ -151,6 +151,24 @@ export interface PaymentTermsRenderContext {
   eventDate?: Date | string | null;
 }
 
+export function formatPaymentTemplateForDisplay(
+  bodyTemplate: string,
+  installments: PaymentInstallment[],
+  translate: (key: TranslationKey) => string,
+): string {
+  const totalPart = ` (${translate(T.PAYMENT_TERMS.PLACEHOLDER_TOTAL)})`;
+  const amountPart = ` (${translate(T.PAYMENT_TERMS.PLACEHOLDER_AMOUNT)})`;
+  const duePart = ` (${translate(T.PAYMENT_TERMS.PLACEHOLDER_DUE_DATE)})`;
+
+  return bodyTemplate
+    .replace(/\{\{TOTAL_PART\}\}/g, totalPart)
+    .replace(/\{\{PERCENT_1\}\}/g, String(installments[0]?.percent ?? ''))
+    .replace(/\{\{PERCENT_2\}\}/g, String(installments[1]?.percent ?? ''))
+    .replace(/\{\{AMOUNT_1_PART\}\}/g, amountPart)
+    .replace(/\{\{AMOUNT_2_PART\}\}/g, amountPart)
+    .replace(/\{\{DUE_1\}\}/g, duePart);
+}
+
 export function renderPaymentTermsText(
   template: PaymentTermsTemplate,
   ctx: PaymentTermsRenderContext,

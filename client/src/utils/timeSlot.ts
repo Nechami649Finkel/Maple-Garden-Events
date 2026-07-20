@@ -10,9 +10,9 @@ export const DEFAULT_TIME_SLOT: TimeSlot = 'evening';
 export const SLOT_DISPLAY_ORDER: TimeSlot[] = ['evening', 'morning', 'noon'];
 
 export const SLOT_COLORS: Record<TimeSlot, string> = {
-  morning: '#F59E0B',
-  noon: '#10B981',
-  evening: '#6366F1',
+  morning: '#22C55E',
+  noon: '#8B5CF6',
+  evening: '#F97316',
 };
 
 export const SLOT_HOURS: Record<TimeSlot, { start: string; end: string }> = {

@@ -2,6 +2,7 @@
    פריסת דף הלוח
 ========================================= */
 .calendar-page-layout {
+  --calendar-font-size: 15px;
   display: flex;
   direction: rtl;
   flex: 1;
@@ -10,7 +11,8 @@
   height: 100%;
   background: var(--brand-bg);
   font-family: var(--brand-font);
-  padding: 0 var(--brand-page-padding) var(--brand-page-padding);
+  font-size: var(--calendar-font-size);
+  padding: 1.2cm var(--brand-page-padding) var(--brand-page-padding);
   box-sizing: border-box;
 }
 
@@ -21,169 +23,116 @@
   padding: 12px 0 8px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
-.calendar-toolbar {
+/* =========================================
+   כרטיס עליון — פקדים + חודשים
+========================================= */
+.calendar-top-card {
   background: var(--brand-surface);
   border: 1px solid var(--brand-border);
-  border-radius: var(--brand-radius);
-  padding: 12px 18px;
+  border-radius: 20px;
+  padding: 16px 20px;
   display: flex;
+  flex-direction: column;
   gap: 14px;
-  align-items: center;
-  direction: rtl;
   box-shadow: var(--brand-shadow-sm);
+  flex-shrink: 0;
 }
 
-.calendar-toolbar,
-.calendar-header-nav,
-.option-mode-banner {
-  flex-shrink: 0;
+.calendar-control-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  direction: rtl;
+}
+
+.calendar-availability-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-self: start;
 }
 
 .calendar-toolbar-label {
   color: var(--brand-text);
   font-weight: 600;
-  font-size: 1.05rem;
+  font-size: var(--calendar-font-size);
   white-space: nowrap;
 }
 
 .calendar-toolbar-select {
-  padding: 10px 16px;
-  border-radius: var(--brand-radius-sm);
+  padding: 8px 32px 8px 14px;
+  border-radius: 10px;
   border: 1px solid var(--brand-border-strong);
-  font-size: 1.05rem;
+  font-size: var(--calendar-font-size);
+  font-weight: 600;
   background: var(--brand-surface);
   color: var(--brand-text);
   cursor: pointer;
   outline: none;
-  min-width: 140px;
+  min-width: 120px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236B7280' d='M3 4.5L6 7.5L9 4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 10px center;
 }
 
 .calendar-toolbar-select:focus {
   border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(184, 149, 106, 0.15);
 }
 
-.calendar-legend {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-right: auto;
-  flex-wrap: wrap;
-}
-
-.calendar-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--brand-text-secondary);
-}
-
-.calendar-legend-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: var(--brand-radius-full);
-  flex-shrink: 0;
-  box-shadow: var(--brand-shadow-sm);
-}
-
-/* =========================================
-   ניווט שנה + חודשים
-========================================= */
-.calendar-header-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.year-nav {
+.calendar-inline-nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  justify-self: center;
+  grid-column: 2;
 }
 
-.year-nav .year-display {
-  margin-bottom: 0;
-  min-width: 4ch;
-}
-
-.calendar-nav {
+.inline-date-nav {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--brand-surface);
-  padding: 6px;
-  border-radius: var(--brand-radius);
-  border: 1px solid var(--brand-border);
-  box-shadow: var(--brand-shadow-sm);
-}
-
-.nav-btn {
-  background: var(--brand-surface);
-  border: 1px solid var(--brand-border);
-  border-radius: var(--brand-radius-sm);
-  padding: 10px 14px;
-  font-size: 1.15rem;
-  cursor: pointer;
-  color: var(--brand-text-secondary);
-  flex-shrink: 0;
-  transition: all var(--brand-transition);
-  line-height: 1;
-}
-
-.nav-btn:hover {
-  background: var(--brand-gold-light);
-  color: var(--brand-gold-deep);
-  border-color: var(--brand-gold);
-}
-
-.year-btn { font-weight: 700; }
-
-.months-bar {
-  display: flex;
-  flex: 1;
-  border-radius: var(--brand-radius-sm);
-  overflow: hidden;
-  background: var(--brand-bg);
-  gap: 2px;
-  padding: 2px;
-}
-
-.month-tab {
-  flex: 1;
-  text-align: center;
-  padding: 11px 4px;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--brand-text-muted);
-  cursor: pointer;
-  transition: all var(--brand-transition);
-  border-radius: 4px;
+  flex-wrap: nowrap;
   white-space: nowrap;
 }
 
-.month-tab:hover {
-  background: var(--brand-surface);
+.inline-nav-btn {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: var(--brand-text-muted);
+  transition: all var(--brand-transition);
+  line-height: 1;
+  padding: 0;
+}
+
+.inline-nav-btn:hover {
+  background: var(--brand-bg);
   color: var(--brand-text);
 }
 
-.month-tab.active {
-  background: var(--brand-tab-active-bg);
-  color: #fff;
-  box-shadow: var(--brand-shadow-sm);
+.inline-date-label {
+  font-size: var(--calendar-font-size);
+  font-weight: 700;
+  color: var(--brand-text);
+  min-width: 3.5ch;
+  text-align: center;
 }
 
-.year-display {
-  text-align: center;
-  font-size: clamp(1.35rem, 2.2vh, 1.75rem);
-  font-weight: 700;
-  color: var(--brand-text-secondary);
-  letter-spacing: 0.02em;
-  margin-bottom: clamp(4px, 0.8vh, 10px);
+.option-mode-banner {
+  flex-shrink: 0;
 }
 
 /* =========================================
@@ -192,9 +141,9 @@
 .calendar-grid-wrapper {
   background: var(--brand-surface);
   border: 1px solid var(--brand-border);
-  border-radius: var(--brand-radius-lg);
+  border-radius: 20px;
   padding: clamp(16px, 2vh, 24px);
-  box-shadow: var(--brand-shadow);
+  box-shadow: var(--brand-shadow-sm);
   width: 100%;
   flex: 1;
   min-height: 0;
@@ -206,27 +155,25 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   direction: ltr;
-  background: #fff;
-  padding-bottom: clamp(10px, 1.4vh, 16px);
+  padding-bottom: clamp(10px, 1.4vh, 14px);
   flex-shrink: 0;
 }
 
 .calendar-grid {
   --calendar-max-events: 3;
-  --event-pill-height: clamp(18px, 2.4vh, 26px);
+  --event-pill-height: 24px;
   --event-pill-gap: clamp(3px, 0.5vh, 6px);
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(var(--calendar-week-rows, 5), 1fr);
-  gap: 1px;
+  gap: 6px;
   direction: ltr;
   width: 100%;
   flex: 1;
   min-height: 0;
   align-content: stretch;
-  background: var(--brand-border);
-  border-radius: var(--brand-radius);
-  overflow: hidden;
+  background: transparent;
+  border-radius: 14px;
 }
 
 .calendar-grid-uniform .calendar-cell {
@@ -238,9 +185,8 @@
   text-align: center;
   font-weight: 700;
   color: var(--brand-text-secondary);
-  padding: clamp(10px, 1.4vh, 16px) 6px 0;
-  font-size: clamp(0.88rem, 1.2vh, 1.05rem);
-  background: #fff;
+  padding: clamp(8px, 1.2vh, 12px) 6px 0;
+  font-size: var(--calendar-font-size);
   border: none;
 }
 
@@ -248,30 +194,33 @@
    תא יום
 ========================================= */
 .calendar-cell {
+  --restriction-triangle-size: clamp(14px, 1.6vw, 18px);
   background: var(--brand-surface);
   padding: clamp(6px, 0.9vh, 10px) clamp(8px, 0.9vw, 12px);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   gap: clamp(2px, 0.35vh, 5px);
-  border: none;
-  border-radius: 0;
+  border: 1px solid var(--brand-border);
+  border-radius: 12px;
   cursor: pointer;
-  transition: box-shadow var(--brand-transition), background var(--brand-transition);
+  transition: box-shadow var(--brand-transition), background var(--brand-transition), border-color var(--brand-transition);
   direction: rtl;
   overflow: hidden;
   font-family: var(--brand-font);
   text-align: inherit;
   width: 100%;
   min-height: clamp(72px, 10vh, 120px);
+  position: relative;
+  isolation: isolate;
 }
 
 .today-badge {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   background: var(--brand-gold);
   color: #fff;
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: 2px 7px;
+  border-radius: 6px;
   font-weight: 700;
   line-height: 1.3;
   white-space: nowrap;
@@ -279,7 +228,8 @@
 
 .calendar-cell:hover:not(.out-of-month):not(.status-blocked):not(.is-past) {
   background: var(--brand-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--brand-gold);
+  border-color: var(--brand-gold);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .calendar-cell:disabled {
@@ -293,9 +243,9 @@
 }
 
 .calendar-cell.out-of-month {
-  background: transparent;
-  border: 1px dashed var(--brand-border);
-  opacity: 0.35;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border);
+  opacity: 0.45;
   cursor: default;
   box-shadow: none;
 }
@@ -320,7 +270,7 @@
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  font-size: clamp(0.92rem, 1.35vh, 1.15rem);
+  font-size: var(--calendar-font-size);
   font-weight: 800;
   color: var(--brand-text);
   line-height: 1.1;
@@ -329,31 +279,32 @@
 .hebrew-text {
   color: var(--brand-text-muted);
   font-weight: 500;
-  font-size: clamp(0.68rem, 0.95vh, 0.82rem);
+  font-size: calc(var(--calendar-font-size) * 0.87);
   line-height: 1.2;
   text-align: left;
 }
 
 .candle-time {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   background: var(--brand-bg);
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: 2px 6px;
+  border-radius: 6px;
   color: var(--brand-text-secondary);
   font-weight: 600;
 }
 
 .cell-status-text {
-  font-size: clamp(0.66rem, 0.88vh, 0.78rem);
+  font-size: var(--calendar-font-size);
   font-weight: 600;
   text-align: right;
   line-height: 1.25;
   flex-shrink: 0;
-  min-height: clamp(14px, 1.5vh, 18px);
-  max-height: clamp(14px, 1.5vh, 18px);
+  min-height: 20px;
+  max-height: 20px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: #000;
 }
 
 /* =========================================
@@ -366,24 +317,36 @@
 }
 
 .status-blocked .gregorian-num,
-.status-blocked .hebrew-text,
-.status-blocked .cell-status-text {
+.status-blocked .hebrew-text {
   color: #fff !important;
 }
 
-.status-forbidden {
-  background: #FFF5F7 !important;
-  border-color: #FEB2B2 !important;
+/* ימים שאינם זמינים / מוגבלים לחתונה — צבע רק במשולש בפינה */
+.status-forbidden.has-restriction-marker,
+.status-problematic.has-restriction-marker {
+  background: var(--brand-surface) !important;
+  border-color: var(--brand-border) !important;
 }
 
-.status-forbidden .cell-status-text { color: #C53030; }
-
-.status-problematic {
-  background: #FFFAF0 !important;
-  border-color: #FBD38D !important;
+.calendar-cell.has-restriction-marker::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--restriction-triangle-size);
+  height: var(--restriction-triangle-size);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-.status-problematic .cell-status-text { color: #C05621; }
+.calendar-cell.status-forbidden.has-restriction-marker::before {
+  background: #E53E3E;
+}
+
+.calendar-cell.status-problematic.has-restriction-marker::before {
+  background: #D69E2E;
+}
 
 /* =========================================
    אירועים בתא
@@ -422,9 +385,9 @@
   justify-content: center;
   text-align: center;
   line-height: 1.2;
-  font-size: clamp(0.62rem, 0.95vh, 0.78rem);
-  padding: 0 clamp(4px, 0.5vw, 8px);
-  border-radius: 4px;
+  font-size: calc(var(--calendar-font-size) * 0.93);
+  padding: 0 clamp(6px, 0.6vw, 10px);
+  border-radius: 8px;
   flex-shrink: 0;
   height: var(--event-pill-height);
   box-sizing: border-box;
@@ -434,7 +397,8 @@
    היום / עבר
 ========================================= */
 .is-today {
-  box-shadow: inset 0 0 0 2px var(--brand-gold) !important;
+  border-color: var(--brand-gold) !important;
+  box-shadow: inset 0 0 0 1px var(--brand-gold), var(--brand-shadow-sm) !important;
   background: var(--brand-gold-light) !important;
 }
 
@@ -454,7 +418,8 @@
 }
 
 .is-past.is-past-has-events:hover {
-  box-shadow: inset 0 0 0 1px var(--brand-gold) !important;
+  border-color: var(--brand-gold) !important;
+  box-shadow: var(--brand-shadow-sm) !important;
 }
 
 /* =========================================
@@ -464,7 +429,7 @@
   background: var(--brand-surface);
   border: 1px solid var(--brand-border);
   border-inline-end: 4px solid var(--brand-gold);
-  border-radius: var(--brand-radius);
+  border-radius: 20px;
   padding: 14px 20px;
   display: flex;
   justify-content: space-between;
@@ -490,7 +455,7 @@
   background: var(--brand-green);
   color: white;
   border: none;
-  border-radius: var(--brand-radius-sm);
+  border-radius: 10px;
   padding: 10px 22px;
   font-weight: 600;
   font-size: 0.9rem;
@@ -511,7 +476,7 @@
   background: var(--brand-surface);
   color: var(--brand-text-muted);
   border: 1px solid var(--brand-border-strong);
-  border-radius: var(--brand-radius-sm);
+  border-radius: 10px;
   padding: 10px 18px;
   font-size: 0.9rem;
   cursor: pointer;
@@ -574,7 +539,7 @@
   background: var(--brand-green);
   color: white;
   border: none;
-  border-radius: var(--brand-radius-sm);
+  border-radius: 10px;
   padding: 14px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -588,7 +553,7 @@
   background: var(--brand-surface);
   color: var(--brand-green-dark);
   border: 2px dashed var(--brand-green);
-  border-radius: var(--brand-radius-sm);
+  border-radius: 10px;
   padding: 14px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -607,6 +572,9 @@
   flex-direction: column;
   align-items: center;
   gap: 16px;
+  background: var(--brand-surface);
+  border-radius: 20px;
+  border: 1px solid var(--brand-border);
 }
 
 .calendar-loading::before {
@@ -630,7 +598,7 @@
   .app-layout-viewport-fill .calendar-page-layout {
     flex: 1;
     min-height: 0;
-    padding: 0 24px 16px;
+    padding: 1.2cm 24px 16px;
     overflow: hidden;
   }
 
@@ -650,8 +618,8 @@
   .app-layout-viewport-fill .calendar-grid {
     height: 100%;
     min-height: 0;
-    gap: clamp(5px, 0.85vh, 10px);
-    --event-pill-height: clamp(16px, 2.1vh, 22px);
+    gap: clamp(4px, 0.7vh, 8px);
+    --event-pill-height: 24px;
     --event-pill-gap: clamp(2px, 0.4vh, 4px);
   }
 
@@ -665,48 +633,31 @@
   }
 
   .app-layout-viewport-fill .gregorian-num {
-    font-size: clamp(0.88rem, 1.25vh, 1.05rem);
+    font-size: var(--calendar-font-size);
   }
 
   .app-layout-viewport-fill .hebrew-text {
-    font-size: clamp(0.64rem, 0.88vh, 0.76rem);
+    font-size: calc(var(--calendar-font-size) * 0.87);
   }
 
   .app-layout-viewport-fill .cell-status-text {
-    font-size: clamp(0.62rem, 0.82vh, 0.72rem);
-    min-height: clamp(12px, 1.35vh, 16px);
-    max-height: clamp(12px, 1.35vh, 16px);
+    font-size: var(--calendar-font-size);
+    min-height: 20px;
+    max-height: 20px;
   }
 
   .app-layout-viewport-fill .small-event-pill {
-    font-size: clamp(0.58rem, 0.88vh, 0.72rem);
+    font-size: calc(var(--calendar-font-size) * 0.93);
   }
 
   .app-layout-viewport-fill .week-day-label {
-    font-size: clamp(0.8rem, 1vh, 0.92rem);
+    font-size: var(--calendar-font-size);
     padding: clamp(5px, 1vh, 10px) 6px;
   }
 
-  .app-layout-viewport-fill .calendar-toolbar {
-    padding: 8px 14px;
+  .app-layout-viewport-fill .calendar-top-card {
+    padding: 12px 16px;
     gap: 10px;
-  }
-
-  .app-layout-viewport-fill .calendar-header-nav {
-    gap: clamp(4px, 0.6vh, 8px);
-  }
-
-  .app-layout-viewport-fill .calendar-nav {
-    padding: 4px;
-  }
-
-  .app-layout-viewport-fill .month-tab {
-    padding: 8px 3px;
-    font-size: clamp(0.78rem, 1vh, 0.9rem);
-  }
-
-  .app-layout-viewport-fill .year-nav .year-display {
-    font-size: clamp(1.1rem, 1.8vh, 1.45rem);
   }
 
   .app-layout-viewport-fill .calendar-container {
@@ -719,21 +670,11 @@
   .app-layout-viewport-fill .calendar-grid-uniform .calendar-cell {
     min-height: clamp(80px, 12vh, 140px);
   }
-
-  .calendar-toolbar {
-    padding: 10px 16px;
-    gap: 12px;
-    flex-wrap: nowrap;
-  }
-
-  .calendar-legend {
-    gap: 12px;
-  }
 }
 
 @media (min-width: 1400px) {
   .app-layout-viewport-fill .calendar-page-layout {
-    padding: 0 var(--brand-page-padding) var(--brand-page-padding);
+    padding: 1.2cm var(--brand-page-padding) var(--brand-page-padding);
   }
 
   .calendar-grid-wrapper {
@@ -743,41 +684,36 @@
 
 @media (max-width: 768px) {
   .calendar-page-layout {
-    padding: 0 8px 16px;
+    padding: 12px 8px 16px;
   }
 
-  .calendar-toolbar {
-    flex-wrap: wrap;
-    padding: 10px 12px;
+  .calendar-top-card {
+    padding: 12px 14px;
+    border-radius: 16px;
   }
 
-  .calendar-header-nav {
-    gap: 6px;
+  .calendar-control-bar {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .year-nav {
-    gap: 10px;
+  .calendar-availability-group {
+    justify-self: stretch;
   }
 
-  .calendar-nav {
-    flex-wrap: nowrap;
-    gap: 4px;
+  .calendar-inline-nav {
+    justify-self: stretch;
+    grid-column: auto;
   }
 
-  .months-bar {
-    overflow-x: auto;
-    flex: 1;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .month-tab {
-    padding: 7px 8px;
-    min-width: 44px;
-    font-size: 0.75rem;
+  .inline-date-nav {
+    justify-content: center;
+    width: 100%;
   }
 
   .calendar-grid-wrapper {
-    padding: 8px;
+    padding: 10px;
+    border-radius: 16px;
     overflow-x: hidden;
   }
 
@@ -786,16 +722,18 @@
     width: 100%;
     flex: none;
     grid-auto-rows: auto;
+    gap: 4px;
   }
 
   .calendar-cell {
     min-height: 58px;
     height: auto;
     padding: 6px 7px;
+    border-radius: 8px;
   }
 
   .week-day-label {
-    font-size: 0.72rem;
+    font-size: var(--calendar-font-size);
     padding: 6px 0;
   }
 }
@@ -807,24 +745,25 @@
   }
 
   .gregorian-num {
-    font-size: 0.9rem;
+    font-size: var(--calendar-font-size);
   }
 
   .hebrew-text {
-    font-size: 0.6rem;
+    font-size: calc(var(--calendar-font-size) * 0.87);
   }
 
   .today-badge {
-    font-size: 0.5rem;
+    font-size: calc(var(--calendar-font-size) * 0.75);
     padding: 1px 4px;
   }
 
   .small-event-pill {
-    font-size: clamp(0.58rem, 0.9vh, 0.72rem);
+    font-size: calc(var(--calendar-font-size) * 0.93);
     padding: 0 clamp(3px, 0.4vw, 6px);
   }
 
-  .year-display {
-    font-size: 1.05rem;
+  .inline-date-label {
+    font-size: var(--calendar-font-size);
   }
 }
+

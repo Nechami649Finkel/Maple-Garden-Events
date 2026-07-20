@@ -4,6 +4,7 @@ export type NavIconName =
   | 'dashboard'
   | 'calendar'
   | 'settings'
+  | 'settingsAlt'
   | 'clipboard'
   | 'bookings'
   | 'star'
@@ -20,7 +21,7 @@ export interface NavItemDef {
 export const NAV_ITEMS: NavItemDef[] = [
   { labelKey: T.NAV.DASHBOARD, path: '/dashboard', icon: 'dashboard' },
   { labelKey: T.NAV.CALENDAR, path: '/calendar', icon: 'calendar' },
-  { labelKey: T.NAV.SETTINGS, path: '/settings', icon: 'settings' },
+  { labelKey: T.NAV.SETTINGS, path: '/settings', icon: 'settingsAlt' },
   { labelKey: T.NAV.OPTIONS_MANAGER, path: '/options-manager', icon: 'clipboard' },
   { labelKey: T.NAV.BOOKINGS_MANAGER, path: '/bookings-manager', icon: 'bookings' },
   { labelKey: T.NAV.FEEDBACK_MANAGER, path: '/feedback-manager', icon: 'star' },
@@ -56,6 +57,11 @@ export function resolveRouteTitleKey(pathname: string): TranslationKey | null {
     return T.NAV.FEEDBACK_PAGE;
   }
   return ROUTE_TITLE_KEYS[pathname] ?? null;
+}
+
+export function resolveRouteIcon(pathname: string): NavIconName | null {
+  const item = NAV_ITEMS.find((nav) => isNavItemActive(pathname, nav.path));
+  return item?.icon ?? null;
 }
 
 export function isNavItemActive(pathname: string, itemPath: string): boolean {

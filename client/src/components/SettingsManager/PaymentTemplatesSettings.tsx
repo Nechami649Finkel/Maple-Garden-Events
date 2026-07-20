@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { PaymentTermsTemplate } from '../../utils/paymentTerms';
 import {
   DEFAULT_PAYMENT_TEMPLATES,
+  formatPaymentTemplateForDisplay,
   getLocalizedPaymentTemplateDisplay,
 } from '../../utils/paymentTerms';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -37,6 +38,11 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
 
   const displayTemplate = (template: PaymentTermsTemplate) =>
     getLocalizedPaymentTemplateDisplay(t, template);
+
+  const previewTemplate = (template: PaymentTermsTemplate) => {
+    const shown = displayTemplate(template);
+    return formatPaymentTemplateForDisplay(shown.bodyTemplate, template.installments, t);
+  };
 
   const startAdd = () => setDraft(emptyTemplate(t(T.PAYMENT_TERMS.SPLIT_BODY)));
 
@@ -104,8 +110,11 @@ export const PaymentTemplatesSettings: React.FC<PaymentTemplatesSettingsProps> =
             >
               <div>
                 <strong>{shown.name}</strong>
-                <div style={{ fontSize: '13px', color: '#555', marginTop: '6px', whiteSpace: 'pre-wrap' }}>
-                  {shown.bodyTemplate}
+                <div style={{ fontSize: '12px', color: '#888', marginTop: '6px' }}>
+                  {t(T.SETTINGS.PREVIEW)}:
+                </div>
+                <div style={{ fontSize: '13px', color: '#555', marginTop: '4px', whiteSpace: 'pre-wrap' }}>
+                  {previewTemplate(item)}
                 </div>
               </div>
               <button

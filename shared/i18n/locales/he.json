@@ -1363,6 +1363,10 @@
     },
     "FILTER_WEDDING": "חתונה",
     "FILTER_OTHER": "אירוע אחר",
+    "LEGEND_FORBIDDEN": "לא זמין לחתונה",
+    "LEGEND_PARTIAL": "הגבלה חלקית",
+    "VIEW_LEGEND": "צפה במקרא",
+    "HIDE_LEGEND": "הסתר מקרא",
     "ADD_EVENT": "הוספת אירוע",
     "ADD_OPTION": "הוספת אופציה",
     "OVERRIDE_OPTION": "סגירת אירוע במקום האופציה",
@@ -1432,7 +1436,10 @@
     "SPLIT_70_30_NAME": "70% שבוע לפני · 30% עד 24 שעות אחרי",
     "SPLIT_BODY": "תשלום עבור האירוע{{TOTAL_PART}} יבוצע בשני שלבים: {{PERCENT_1}}%{{AMOUNT_1_PART}} לא יאוחר מ-7 ימים לפני האירוע{{DUE_1}}, ויתרת {{PERCENT_2}}%{{AMOUNT_2_PART}} לא יאוחר מ-24 שעות לאחר סיום האירוע.",
     "FULL_AFTER_NAME": "מלא עד 24 שעות לאחר האירוע",
-    "FULL_AFTER_BODY": "תשלום עבור האירוע{{TOTAL_PART}} יתבצע לא יאוחר מ-24 שעות לאחר סיום האירוע."
+    "FULL_AFTER_BODY": "תשלום עבור האירוע{{TOTAL_PART}} יתבצע לא יאוחר מ-24 שעות לאחר סיום האירוע.",
+    "PLACEHOLDER_TOTAL": "סכום כולל",
+    "PLACEHOLDER_AMOUNT": "סכום",
+    "PLACEHOLDER_DUE_DATE": "תאריך יעד"
   },
   "FEEDBACK": {
     "PAGE_TITLE": "משובי לקוחות",
@@ -1652,6 +1659,8 @@
     "TABLES_COUNT": "{count} שולחנות",
     "TABLE_LAYOUT": "סידור שולחנות",
     "TABLE_SKETCH_ALT": "סקיצת סידור שולחנות",
+    "ENLARGE_TABLE_LAYOUT": "הגדלת סקיצת סידור שולחנות",
+    "ENLARGED_TABLE_SKETCH_ALT": "סקיצת סידור שולחנות מוגדלת",
     "LABEL_MEN_COUNT": "כמות גברים",
     "LABEL_WOMEN_COUNT": "כמות נשים",
     "LABEL_SPLIT_PERCENT": "חלוקה (אחוזים)",

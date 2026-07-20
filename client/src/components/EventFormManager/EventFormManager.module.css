@@ -1901,10 +1901,19 @@
   width: 100%;
   padding: 0;
   border: none;
-  background: transparent;
-  cursor: zoom-in;
-  text-align: center;
-  position: relative;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--brand-radius-sm);
+  transition: box-shadow var(--brand-transition);
+}
+
+.tableLayoutPreviewBtn:hover {
+  box-shadow: 0 0 0 2px rgba(184, 149, 106, 0.35);
+}
+
+.tableLayoutPreviewBtn:focus-visible {
+  outline: 2px solid var(--brand-green);
+  outline-offset: 2px;
 }
 
 .tableLayoutPreviewImg {
@@ -1913,46 +1922,39 @@
   object-fit: contain;
   border-radius: var(--brand-radius-sm);
   border: 1px solid var(--brand-border);
-  transition: box-shadow 0.15s ease, border-color 0.15s ease;
-}
-
-.tableLayoutPreviewBtn:hover .tableLayoutPreviewImg,
-.tableLayoutPreviewBtn:focus-visible .tableLayoutPreviewImg {
-  border-color: var(--brand-green, #2d6a4f);
-  box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.25);
-}
-
-.tableLayoutPreviewHint {
   display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  color: #64748b;
 }
 
-.tableLayoutLightbox {
-  display: flex;
-  flex-direction: column;
+.imageLightboxContent {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.imageLightboxCloseBtn {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--brand-border);
+  border-radius: 50%;
+  background: var(--brand-surface);
+  color: var(--brand-text);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
-  gap: 14px;
-  max-width: min(96vw, 1100px);
-  width: 100%;
-}
-
-.tableLayoutLightboxImg {
-  width: 100%;
-  max-height: 78vh;
-  object-fit: contain;
-  border-radius: var(--brand-radius);
-  background: #fff;
-  box-shadow: var(--brand-shadow-lg);
-}
-
-.tableLayoutLightboxActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
   justify-content: center;
-  align-items: center;
+  box-shadow: var(--brand-shadow-lg);
+  z-index: 1;
+  font-family: var(--brand-font);
+}
+
+.imageLightboxCloseBtn:hover {
+  background: var(--brand-bg);
 }
 
 /* פוטר */
@@ -2143,3 +2145,4 @@
     align-items: flex-start;
   }
 }
+
