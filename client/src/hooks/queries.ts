@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { API_URL } from '../config/api';
 import { apiFetch } from '../services/api';
 import { type BookingApi } from '../utils/bookingApi';
@@ -38,6 +38,56 @@ export function useBookingsQuery(params: BookingsParams) {
       const json = await res.json();
       if (!json.success) throw new Error(json.message || tClient(T.BOOKINGS.LOAD_ERROR));
       return { data: json.data as BookingApi[], pagination: json.pagination };
+    },
+  });
+}
+
+export interface CursorPaginationMeta {
+  nextCursor?: string;
+  hasMore: boolean;
+  limit: number;
+}
+
+export interface InfiniteBookingsResponse {
+  data: BookingApi[];
+  pagination: CursorPaginationMeta;
+}
+
+export function useInfiniteBookingsQuery(params: BookingsParams) {
+  return useInfiniteQuery({
+    queryKey: ['bookings', params],
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }): Promise<InfiniteBookingsResponse> => {
+      const qs = new URLSearchParams();
+      if (params.status) qs.set('status', params.status);
+      if (params.limit) qs.set('limit', String(params.limit));
+      if (params.search) qs.set('search', params.search);
+      if (pageParam) qs.set('cursor', pageParam);
+
+      const res = await apiFetch(`${API_URL}/bookings?${qs}`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || tClient(T.BOOKINGS.LOAD_ERROR));
+      return { data: json.data as BookingApi[], pagination: json.pagination };
+    },
+    getNextPageParam: (lastPage) => lastPage.pagination.nextCursor,
+  });
+}
+
+import { queryClient } from '../lib/queryClient';
+
+export function prefetchCalendarDates(start: string, end: string, eventType: string) {
+  queryClient.prefetchQuery({
+    queryKey: ['calendar', start, end, eventType],
+    queryFn: async (): Promise<CalendarDayApi[]> => {
+      const qs = new URLSearchParams({ start, end, eventType });
+      const res = await apiFetch(`${API_URL}/calendar/dates?${qs}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(typeof json?.error === 'string' ? json.error : tClient(T.CALENDAR.LOAD_ERROR));
+      }
+      if (Array.isArray(json)) return json as CalendarDayApi[];
+      if (Array.isArray(json?.data)) return json.data as CalendarDayApi[];
+      return [];
     },
   });
 }

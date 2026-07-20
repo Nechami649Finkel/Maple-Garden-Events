@@ -1,5 +1,5 @@
 import React, { useEffect, useState, memo } from 'react';
-import { useCalendarDatesQuery } from '../../hooks/queries';
+import { useCalendarDatesQuery, prefetchCalendarDates } from '../../hooks/queries';
 import { useNavigate } from 'react-router-dom';
 import './Calendar.css';
 import { EventPopup } from '../EventPopup/EventPopup';
@@ -281,6 +281,14 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const prevYear  = () => setCurrentDate(new Date(year - 1, month, 1));
   const nextYear  = () => setCurrentDate(new Date(year + 1, month, 1));
 
+  const prefetchForDate = (y: number, m: number) => {
+    const pFirst = new Date(y, m, 1);
+    const pStart = new Date(y, m, 1 - pFirst.getDay());
+    const pLast = new Date(y, m + 1, 0);
+    const pEnd = new Date(y, m + 1, 0 + (6 - pLast.getDay()));
+    prefetchCalendarDates(formatDateLocal(pStart), formatDateLocal(pEnd), eventTypeFilter);
+  };
+
   const handleBookEventFromPanel = () => {
     if (!sidePanelDay) return;
     const dayToBook = sidePanelDay;
@@ -352,6 +360,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                 type="button"
                 className="inline-nav-btn"
                 onClick={prevMonth}
+                onMouseEnter={() => prefetchForDate(year, month - 1)}
                 aria-label={t(T.CALENDAR.PREV_MONTH)}
               >
                 ‹
@@ -363,6 +372,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                 type="button"
                 className="inline-nav-btn"
                 onClick={nextMonth}
+                onMouseEnter={() => prefetchForDate(year, month + 1)}
                 aria-label={t(T.CALENDAR.NEXT_MONTH)}
               >
                 ›
@@ -371,6 +381,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                 type="button"
                 className="inline-nav-btn"
                 onClick={prevYear}
+                onMouseEnter={() => prefetchForDate(year - 1, month)}
                 aria-label={t(T.CALENDAR.PREV_YEAR)}
               >
                 ‹
@@ -380,6 +391,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                 type="button"
                 className="inline-nav-btn"
                 onClick={nextYear}
+                onMouseEnter={() => prefetchForDate(year + 1, month)}
                 aria-label={t(T.CALENDAR.NEXT_YEAR)}
               >
                 ›

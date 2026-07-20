@@ -1414,7 +1414,8 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
 });
 
 export const getAllBookings = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, skip } = parsePagination(req.query as Record<string, unknown>);
+  const { page, limit, skip: pageSkip } = parsePagination(req.query as Record<string, unknown>);
+  const cursor = req.query.cursor as string | undefined;
   const status = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
   const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
 
@@ -1440,21 +1441,37 @@ export const getAllBookings = catchAsync(async (req: Request, res: Response) => 
     ];
   }
 
+  const findManyArgs: Prisma.BookingFindManyArgs = {
+    where,
+    take: cursor ? limit + 1 : limit, 
+    skip: cursor ? 1 : pageSkip,
+    orderBy: cursor ? { id: 'desc' } : { eventDate: { date: 'desc' } }, 
+    include: { eventDate: true, eventForm: true, additions: true },
+  };
+
+  if (cursor) {
+    findManyArgs.cursor = { id: cursor };
+  }
+
   const [bookings, total] = await Promise.all([
-    prisma.booking.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { eventDate: { date: 'desc' } },
-      include: { eventDate: true, eventForm: true, additions: true },
-    }),
-    prisma.booking.count({ where }),
+    prisma.booking.findMany(findManyArgs),
+    cursor ? Promise.resolve(0) : prisma.booking.count({ where }),
   ]);
+
+  let nextCursor: string | undefined = undefined;
+  if (cursor && bookings.length > limit) {
+    const nextItem = bookings.pop();
+    nextCursor = nextItem?.id;
+  }
 
   res.status(200).json({
     success: true,
     data: bookings,
-    pagination: paginationMeta(page, limit, total),
+    pagination: cursor ? {
+      nextCursor,
+      hasMore: !!nextCursor,
+      limit,
+    } : paginationMeta(page, limit, total),
   });
 });
 
