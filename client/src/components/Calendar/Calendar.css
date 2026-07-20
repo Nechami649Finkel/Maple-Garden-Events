@@ -277,9 +277,9 @@
 }
 
 .hebrew-text {
-  color: var(--brand-text-muted);
+  color: #9ca3af;
   font-weight: 500;
-  font-size: calc(var(--calendar-font-size) * 0.87);
+  font-size: calc(var(--calendar-font-size) * 0.82);
   line-height: 1.2;
   text-align: left;
 }

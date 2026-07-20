@@ -8,7 +8,7 @@ import {
   KASHRUT_KEY_BY_VALUE,
 } from '@shared/i18n/bookingLookups';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
-import { useNavigationOverride } from '../../context/NavigationContext';
+import { useNavigationOverride } from '../../context/navigationContext';
 import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';

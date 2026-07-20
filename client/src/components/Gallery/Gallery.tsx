@@ -69,7 +69,7 @@ const Gallery = () => {
         {currentCategoryData?.items.map((item) => (
           <div key={item.id} className={styles.card}>
             {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} className={styles.image} />
+              <img src={item.imageUrl} alt={item.name} className={styles.image} loading="lazy" />
             ) : (
               <div className={styles.imagePlaceholder}>📷</div>
             )}

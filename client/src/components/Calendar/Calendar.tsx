@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, memo } from 'react';
 import { useCalendarDatesQuery } from '../../hooks/queries';
 import { useNavigate } from 'react-router-dom';
 import './Calendar.css';
@@ -56,6 +56,129 @@ const formatDateLocal = (date: Date): string => {
   const dd = String(date.getDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 };
+
+const CalendarCell = memo(({ 
+  day, 
+  todayStr, 
+  month, 
+  eventTypeFilter, 
+  openDayPanel,
+  t,
+  T,
+  getEventTitle 
+}: {
+  day: DayData & { col: number; row: number };
+  todayStr: string;
+  month: number;
+  eventTypeFilter: string;
+  openDayPanel: (day: DayData) => void;
+  t: any;
+  T: any;
+  getEventTitle: (booking: any) => string;
+}) => {
+  const isToday = day.date === todayStr;
+  const isPast = day.date < todayStr;
+  const dayNum = new Date(day.date + 'T12:00:00').getDate();
+  const bookingCount = day.bookings?.length ?? 0;
+  const isWeddingFilter = eventTypeFilter === DEFAULT_EVENT_TYPE;
+  const hasRestrictionMarker =
+    isWeddingFilter &&
+    day.isCurrentMonth &&
+    (day.status === 'FORBIDDEN' || day.status === 'PROBLEMATIC');
+  const cls = [
+    'calendar-cell',
+    `status-${day.status.toLowerCase()}`,
+    hasRestrictionMarker ? 'has-restriction-marker' : '',
+    !day.isCurrentMonth ? 'out-of-month' : '',
+    isToday ? 'is-today' : '',
+    isPast && day.isCurrentMonth ? 'is-past' : '',
+    isPast && day.isCurrentMonth && bookingCount > 0 ? 'is-past-has-events' : '',
+  ].filter(Boolean).join(' ');
+  const isHardBlocked = day.status === 'BLOCKED' && bookingCount === 0;
+  const canViewPastEvents = isPast && bookingCount > 0;
+  const isCellDisabled =
+    !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || (isPast && !canViewPastEvents);
+  const ariaLabel = day.isCurrentMonth
+    ? t(T.CALENDAR.CELL_ARIA, {
+        day: dayNum,
+        hebrewDate: day.hebrewDate || '',
+        count: bookingCount,
+        reason: day.reason || '',
+        viewHint: canViewPastEvents ? t(T.CALENDAR.VIEW_CHECK_IN) : '',
+      })
+    : String(dayNum);
+
+  return (
+    <button
+      type="button"
+      className={cls}
+      style={{ gridColumn: day.col, gridRow: day.row }}
+      aria-label={ariaLabel}
+      disabled={isCellDisabled}
+      onClick={() => {
+        if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked) return;
+        if (isPast && bookingCount === 0) return;
+        openDayPanel(day);
+      }}
+    >
+      <div className="cell-header-row">
+        <span className="gregorian-num">
+          {dayNum}
+          {isToday && <span className="today-badge">{t(T.CALENDAR.TODAY)}</span>}
+        </span>
+        {day.isCurrentMonth && day.candleTime && <span className="candle-time">{day.candleTime}</span>}
+        <span className="hebrew-text">{day.isCurrentMonth ? day.hebrewDate : ''}</span>
+      </div>
+      
+      <div className="cell-status-text">{day.isCurrentMonth ? (day.reason || '') : ''}</div>
+      <div className="cell-events-container">
+        {sortBookingsForCalendarCell(day.bookings).map((b: any, idx: number) => {
+          const baseColor = getSlotColor(b.timeOfDay);
+          const isOptionBooking = b.isOption === true;
+          const isLive =
+            !isOptionBooking &&
+            day.status === 'BOOKED' &&
+            isEventLive(day.date, b, b.eventForm);
+          
+          const eventStyle = isOptionBooking
+            ? { 
+                backgroundColor: `${baseColor}18`,
+                border: `1.5px dashed ${baseColor}`,
+                color: baseColor,
+                fontWeight: '700'
+              }
+            : { 
+                backgroundColor: baseColor,
+                border: `1.5px solid ${baseColor}`,
+                color: '#FFFFFF',
+                fontWeight: '700',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
+              };
+
+          return (
+            <div 
+              key={idx} 
+              className="small-event-pill"
+              style={eventStyle}
+              onClick={(e) => {
+                e.stopPropagation();
+                openDayPanel(day);
+              }}
+            >
+              {isLive && <span className={liveStyles.liveBadge}>{t(T.CALENDAR.LIVE_BADGE)}</span>}
+              {getEventTitle(b)}
+            </div>
+          );
+        })}
+      </div>
+    </button>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.day === nextProps.day && 
+         prevProps.todayStr === nextProps.todayStr &&
+         prevProps.month === nextProps.month &&
+         prevProps.eventTypeFilter === nextProps.eventTypeFilter;
+});
 
 export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const { t, T } = useTranslation();
@@ -282,105 +405,18 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
             style={{ ['--calendar-week-rows' as string]: weekRowCount } as React.CSSProperties}
           >
             {grid.map(day => {
-              const isToday = day.date === todayStr;
-              const isPast = day.date < todayStr;
-              
-              const dayNum = new Date(day.date + 'T12:00:00').getDate();
-
-              const bookingCount = day.bookings?.length ?? 0;
-              const isWeddingFilter = eventTypeFilter === DEFAULT_EVENT_TYPE;
-              const hasRestrictionMarker =
-                isWeddingFilter
-                && day.isCurrentMonth
-                && (day.status === 'FORBIDDEN' || day.status === 'PROBLEMATIC');
-              const cls = [
-                'calendar-cell',
-                `status-${day.status.toLowerCase()}`,
-                hasRestrictionMarker ? 'has-restriction-marker' : '',
-                !day.isCurrentMonth ? 'out-of-month' : '',
-                isToday ? 'is-today' : '',
-                isPast && day.isCurrentMonth ? 'is-past' : '',
-                isPast && day.isCurrentMonth && bookingCount > 0 ? 'is-past-has-events' : '',
-              ].filter(Boolean).join(' ');
-              const isHardBlocked = day.status === 'BLOCKED' && bookingCount === 0;
-              const canViewPastEvents = isPast && bookingCount > 0;
-              const isCellDisabled =
-                !day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked || (isPast && !canViewPastEvents);
-              const ariaLabel = day.isCurrentMonth
-                ? t(T.CALENDAR.CELL_ARIA, {
-                    day: dayNum,
-                    hebrewDate: day.hebrewDate || '',
-                    count: bookingCount,
-                    reason: day.reason || '',
-                    viewHint: canViewPastEvents ? t(T.CALENDAR.VIEW_CHECK_IN) : '',
-                  })
-                : String(dayNum);
-
               return (
-                <button
-                  type="button"
+                <CalendarCell
                   key={day.date}
-                  className={cls}
-                  style={{ gridColumn: day.col, gridRow: day.row }}
-                  aria-label={ariaLabel}
-                  disabled={isCellDisabled}
-                  onClick={() => {
-                  if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked) return;
-                  if (isPast && bookingCount === 0) return;
-                  openDayPanel(day);
-                }}>
-                  <div className="cell-header-row">
-                      <span className="gregorian-num">
-                        {dayNum}
-                        {isToday && <span className="today-badge">{t(T.CALENDAR.TODAY)}</span>}
-                      </span>
-                      {day.isCurrentMonth && day.candleTime && <span className="candle-time">{day.candleTime}</span>}
-                      <span className="hebrew-text">{day.isCurrentMonth ? day.hebrewDate : ''}</span>
-                  </div>
-                  
-                  <div className="cell-status-text">{day.isCurrentMonth ? (day.reason || '') : ''}</div>
-                  <div className="cell-events-container">
-                    {sortBookingsForCalendarCell(day.bookings).map((b: any, idx: number) => {
-                      const baseColor = getSlotColor(b.timeOfDay);
-                      const isOptionBooking = b.isOption === true;
-                      const isLive =
-                        !isOptionBooking
-                        && day.status === 'BOOKED'
-                        && isEventLive(day.date, b, b.eventForm);
-                      
-                      // העיצוב המתוקן שיוצר קונטרסט ברור:
-                      const eventStyle = isOptionBooking
-                        ? { 
-                            backgroundColor: `${baseColor}18`,
-                            border: `1.5px dashed ${baseColor}`,
-                            color: baseColor,
-                            fontWeight: '700'
-                          }
-                        : { 
-                            backgroundColor: baseColor,
-                            border: `1.5px solid ${baseColor}`,
-                            color: '#FFFFFF',
-                            fontWeight: '700',
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.12)'
-                          };
-
-                      return (
-                        <div 
-                          key={idx} 
-                          className="small-event-pill"
-                          style={eventStyle}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDayPanel(day);
-                          }}
-                        >
-                          {isLive && <span className={liveStyles.liveBadge}>{t(T.CALENDAR.LIVE_BADGE)}</span>}
-                          {getEventTitle(b)}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </button>
+                  day={day}
+                  todayStr={todayStr}
+                  month={month}
+                  eventTypeFilter={eventTypeFilter}
+                  openDayPanel={openDayPanel}
+                  t={t}
+                  T={T}
+                  getEventTitle={getEventTitle}
+                />
               );
             })}
           </div>
