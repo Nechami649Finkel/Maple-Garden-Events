@@ -4,6 +4,7 @@ import prisma from '../config/prisma';
 import { mailFailureMessage, sendBumpEmail, sendOptionInterestEmail } from '../utils/mailer';
 import { sendBumpWhatsApp, sendOptionInterestWhatsApp } from '../utils/whatsapp';
 import { catchAsync } from '../middlewares/errorHandler';
+import { invalidateCache } from '../middlewares/cacheMiddleware';
 import { AuthRequest } from '../middlewares/auth';
 import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
 import { getContractText, resolveContractWithPaymentTerms, resolveDefaultPaymentTermsText } from '../utils/getContractText';
@@ -1107,6 +1108,8 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     ? await prisma.booking.findUnique({ where: { id }, include: { eventDate: true } })
     : updated;
 
+  await invalidateCache('calendar');
+
   res.status(200).json({
     success: true,
     message: 'ההזמנה עודכנה בהצלחה.',
@@ -1417,7 +1420,11 @@ export const getAllBookings = catchAsync(async (req: Request, res: Response) => 
   const { page, limit, skip: pageSkip } = parsePagination(req.query as Record<string, unknown>);
   const cursor = req.query.cursor as string | undefined;
   const status = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
-  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  let search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  
+  if (search.length > 100) {
+    search = search.substring(0, 100);
+  }
 
   if (status === 'OPTION') {
     await syncDesyncedOptionDates();
@@ -1502,6 +1509,8 @@ export const releaseOptions = catchAsync(async (req: Request, res: Response) => 
 
   emitDateUpdatedMany(dateIds.map((dateId: string) => ({ dateId, status: 'AVAILABLE' })));
   emitBookingUpdated();
+  
+  await invalidateCache('calendar');
 
   res.status(200).json({ success: true, message: 'התאריכים שוחררו והסטטיסטיקה נשמרה בהצלחה.' });
 });
@@ -1603,6 +1612,8 @@ export const bumpOption = catchAsync(async (req: Request, res: Response) => {
 
   emitDateUpdated({ dateId, status: 'OPTION' });
   emitBookingUpdated();
+
+  await invalidateCache('calendar');
 
   res.status(200).json({
     success: true,
