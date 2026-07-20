@@ -75,8 +75,10 @@ export const sendGreeting = async (req: AuthRequest, res: Response) => {
         });
       }
 
+      const { tenantId } = req.user!;
       const createdBy = typeof req.user?.email === 'string' ? req.user.email : undefined;
       await scheduleGreeting({
+        tenantId,
         subject,
         message,
         scheduledAt,

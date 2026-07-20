@@ -148,7 +148,7 @@ export async function syncOptionDatesOnEdit(
     if (!eventDate) {
       eventDate = await tx.eventDate.create({
         data: {
-          tenantId: anchor.tenantId,
+          tenant: { connect: { id: anchor.tenantId } },
           date: calendarDateForStorage(calendarKey),
           status: 'OPTION',
           optionExpiresAt: optionExpiresAt,
@@ -198,7 +198,7 @@ export async function syncOptionDatesOnEdit(
     try {
       await tx.booking.create({
         data: {
-          tenantId: anchor.tenantId,
+          tenant: { connect: { id: anchor.tenantId } },
           clientAFullName: String(sharedFields.clientAFullName ?? anchor.clientAFullName),
           clientAIdNumber: String(sharedFields.clientAIdNumber ?? ''),
           clientAPhone: String(sharedFields.clientAPhone ?? anchor.clientAPhone),
@@ -232,7 +232,7 @@ export async function syncOptionDatesOnEdit(
           advancePaid: 0,
           totalPaid: 0,
           securityCheckStatus: 'PENDING',
-          eventDateId: eventDate.id,
+          eventDate: { connect: { id: eventDate.id } },
           timeOfDay: timeString,
           timeSlot: slot,
           isOption: true,
