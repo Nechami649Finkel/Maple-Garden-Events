@@ -11,6 +11,7 @@ import { checkAuthSession } from './services/api';
 import { connectSocket, disconnectSocket } from './services/socketService';
 import { setupRealtimeSync, teardownRealtimeSync } from './services/realtimeSync';
 import { setupOfflineCheckInSync } from './utils/offlineCheckInQueue';
+import { cleanExpiredLocalDrafts } from './utils/localDraft';
 import { queryClient } from './lib/queryClient';
 
 const BookingForm = lazy(() => import('./components/BookingForm/BookingForm'));
@@ -84,6 +85,10 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(() =>
     isDesignRoute ? true : null,
   );
+
+  useEffect(() => {
+    cleanExpiredLocalDrafts();
+  }, []);
 
   useEffect(() => {
     if (isDesignRoute) return;

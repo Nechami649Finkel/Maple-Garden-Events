@@ -1,9 +1,9 @@
 import type { UpgradeKey } from './pricing';
 import {
-  clearSessionDraft,
-  loadSessionDraft,
-  saveSessionDraft,
-} from './sessionDraft';
+  clearLocalDraft,
+  loadLocalDraft,
+  saveLocalDraft,
+} from './localDraft';
 
 const DRAFT_KEY_EVENT = 'maple-draft:booking:event';
 const DRAFT_KEY_OPTION = 'maple-draft:booking:option';
@@ -35,14 +35,14 @@ export function saveBookingDraft(
   isOption: boolean,
   data: BookingDraftSnapshot,
 ): void {
-  saveSessionDraft(getDraftKey(isOption), userEmail, data);
+  saveLocalDraft(getDraftKey(isOption), userEmail, data);
 }
 
 export function loadBookingDraft(
   userEmail: string,
   isOption: boolean,
 ): BookingDraftSnapshot | null {
-  return loadSessionDraft<BookingDraftSnapshot>(
+  return loadLocalDraft<BookingDraftSnapshot>(
     getDraftKey(isOption),
     userEmail,
     DRAFT_TTL_MS,
@@ -50,5 +50,5 @@ export function loadBookingDraft(
 }
 
 export function clearBookingDraft(isOption: boolean): void {
-  clearSessionDraft(getDraftKey(isOption));
+  clearLocalDraft(getDraftKey(isOption));
 }
