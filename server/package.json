@@ -52,6 +52,7 @@
     "google-auth-library": "^10.7.0",
     "hebcal": "^2.3.2",
     "helmet": "^8.2.0",
+    "ioredis": "^5.11.1",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",

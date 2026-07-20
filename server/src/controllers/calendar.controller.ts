@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { calendarService } from '../Services/calendar.service';
 import { logger } from '../utils/logger';
+import { invalidateCache } from '../middlewares/cacheMiddleware';
 
 export const calendarController = {
 
@@ -37,6 +38,7 @@ export const calendarController = {
       const dateStr = req.params.dateStr as string;
       const { employeeName } = req.body;
       const result = await calendarService.lockDateForChecking(dateStr, employeeName);
+      await invalidateCache('calendar');
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });
@@ -47,6 +49,7 @@ export const calendarController = {
     try {
       const dateStr = req.params.dateStr as string;
       const result = await calendarService.releaseDate(dateStr);
+      await invalidateCache('calendar');
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: 'שגיאה בשחרור התאריך' });
@@ -58,6 +61,7 @@ export const calendarController = {
       const dateId = req.params.dateId as string;
       const bookingDetails = req.body;
       const result = await calendarService.createOption(dateId, bookingDetails);
+      await invalidateCache('calendar');
       res.json(result);
     } catch (error) {
       res.status(500).json({ error: 'שגיאה ביצירת אופציה' });
@@ -69,6 +73,7 @@ export const calendarController = {
       const dateId = req.params.dateId as string;
       const bookingDetails = req.body;
       const result = await calendarService.bookEventFinal(dateId, bookingDetails);
+      await invalidateCache('calendar');
       res.json(result);
     } catch (error: any) {
       res.status(400).json({ error: error.message });

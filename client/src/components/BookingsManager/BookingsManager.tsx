@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from './BookingsManager.module.css';
 import BookingDetailsModal from './BookingDetailsModal';
-import { useBookingsQuery } from '../../hooks/queries';
+import { useInfiniteBookingsQuery } from '../../hooks/queries';
 import { PageLoader } from '../PageLoader/PageLoader';
 import { loadTablePrefs, saveTablePrefs } from '../../utils/tablePrefs';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -114,16 +114,15 @@ const BookingsManager = () => {
     return sorted;
   };
 
-  const { data, isLoading } = useBookingsQuery({
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } = useInfiniteBookingsQuery({
     status: 'BOOKED',
-    page: 1,
-    limit: 500,
+    limit: 100, // Reduced from 500 to leverage cursor pagination effectively
     search: debouncedSearch || undefined,
   });
 
   const { upcomingBookings, pastBookings } = useMemo(() => {
     const today = startOfDay(new Date());
-    const bookings = (data?.data ?? []).filter((b: any) => !b.isOption);
+    const bookings = (data?.pages.flatMap(page => page.data) ?? []).filter((b: any) => !b.isOption);
 
     const upcoming = sortBookings(
       bookings.filter((b: any) => {
@@ -250,7 +249,15 @@ const BookingsManager = () => {
           {upcomingBookings.length > 0 &&
             renderSection(t(T.BOOKINGS.SECTION_UPCOMING), upcomingBookings, 'confirmed')}
           {pastBookings.length > 0 &&
-            renderSection(t(T.BOOKINGS.SECTION_PAST), pastBookings, 'past')}
+            renderSection(t(T.BOOKINGS.PAST_SECTION), pastBookings, 'past')}
+            
+          {hasNextPage && (
+            <div className={styles.loadMoreContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
+              <Button onClick={() => fetchNextPage()} disabled={isFetchingNextPage}>
+                {isFetchingNextPage ? t(T.UI.LOADING_DATA) : 'טען עוד'}
+              </Button>
+            </div>
+          )}
         </>
       )}
 
