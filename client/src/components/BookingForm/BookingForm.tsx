@@ -1249,9 +1249,17 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
           {(!isOption || convertFromOption) && (
           <div className="row g-3 mt-2">
-            {((!isEditMode && !isOption) || convertFromOption) && (
-              <div className="col-12">
-                <div className="maple-contract-box p-3">
+            <div className="col-12">
+              <div className="maple-contract-box p-3">
+                {contractSigned && formData.clientSignatureUrl && (
+                  <div className="mb-3">
+                    <label className="form-label text-success fw-bold">✓ חוזה חתום</label>
+                    <div className="mt-2 bg-white border rounded p-2" style={{ display: 'inline-block' }}>
+                      <img src={formData.clientSignatureUrl} alt="Signature" style={{ maxHeight: '80px', display: 'block' }} />
+                    </div>
+                  </div>
+                )}
+                {(!isEditMode || convertFromOption || (!contractSigned && !isOption)) && (
                   <div className="form-check mb-2">
                     <input
                       type="checkbox"
@@ -1272,16 +1280,16 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                       {t(T.BOOKING.FORM.CONTRACT_READ_AND_SIGN)}
                     </label>
                   </div>
-                  <button
-                    type="button"
-                    className="btn btn-link p-0"
-                    onClick={() => setIsContractModalOpen(true)}
-                  >
-                    {t(T.BOOKING.FORM.CONTRACT_OPEN_MODAL)}
-                  </button>
-                </div>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-link p-0"
+                  onClick={() => setIsContractModalOpen(true)}
+                >
+                  {contractSigned ? t(T.BOOKING.FORM.CONTRACT_OPEN_MODAL) : t(T.BOOKING.FORM.CONTRACT_OPEN_MODAL)}
+                </button>
               </div>
-            )}
+            </div>
 
           </div>
           )}

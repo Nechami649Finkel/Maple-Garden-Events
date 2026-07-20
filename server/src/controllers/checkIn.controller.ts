@@ -72,6 +72,7 @@ export const checkInController = {
 
   async updateCheckIn(req: AuthRequest, res: Response) {
     try {
+      const { tenantId } = req.user!;
       const bookingId = paramId(req.params.bookingId);
       const existing = await prisma.booking.findFirst({
         where: { id: bookingId,
