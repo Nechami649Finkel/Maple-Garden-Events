@@ -28,6 +28,19 @@
   height: 100dvh;
 }
 
+/* Calendar: full viewport on desktop; mobile keeps header + hamburger nav */
+@media (min-width: 1024px) {
+  .app-layout-calendar {
+    grid-template-rows: 1fr;
+    grid-template-areas:
+      "sidebar main";
+  }
+
+  .app-layout-calendar .app-header {
+    display: none;
+  }
+}
+
 .app-layout-main {
   grid-area: main;
   flex: 1;

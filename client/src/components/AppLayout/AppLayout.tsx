@@ -3,6 +3,7 @@ import { AppSidebar } from '../AppSidebar/AppSidebar';
 import { NavigationProvider } from '../../context/NavigationProvider';
 import { SidebarProvider } from '../../context/SidebarProvider';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useLocation } from 'react-router-dom';
 import './AppLayout.css';
 
 export type AppLayoutMode = 'default' | 'viewportFill' | 'fullWidth';
@@ -37,6 +38,8 @@ export const AppLayout = ({
   const isViewportFill = mode === 'viewportFill';
   const isFullWidth = mode === 'fullWidth';
   const { t, T } = useTranslation();
+  const location = useLocation();
+  const isCalendar = location.pathname === '/calendar';
 
   return (
     <NavigationProvider>
@@ -49,6 +52,7 @@ export const AppLayout = ({
             'app-layout',
             fullHeight !== false ? 'app-layout-full' : '',
             isViewportFill ? 'app-layout-viewport-fill' : '',
+            isCalendar ? 'app-layout-calendar' : '',
           ]
             .filter(Boolean)
             .join(' ')}
