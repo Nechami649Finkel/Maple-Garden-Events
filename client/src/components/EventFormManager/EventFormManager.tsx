@@ -23,7 +23,13 @@ import { calculatePortionBilling } from '../../utils/portionBilling';
 import { hasEventEnded } from '../../utils/eventStart';
 import { todayCalendarKey } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
-import { secureFetch } from '../../services/api';
+import { secureFetch, getAuthUser } from '../../services/api';
+import {
+  saveEventFormDraft,
+  loadEventFormDraft,
+  clearEventFormDraft,
+  type EventFormDraftSnapshot,
+} from '../../utils/eventFormDraft';
 import {
   useBookingsQuery,
   useEventFormsQuery,
@@ -364,6 +370,22 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           setSelectedMenu(form.menuSelections || null);
           setSavedTables(tables?.length ? serverTablesToClient(tables) : undefined);
           setTableLayoutImageUrl(form.tableLayoutImageUrl || null);
+
+          const currentUser = getAuthUser();
+          if (currentUser && currentUser.email) {
+            const draft = loadEventFormDraft(selected.id, currentUser.email);
+            if (draft) {
+              if (window.confirm('מצאנו טיוטה מקומית לא שמורה. האם תרצה לשחזר אותה?')) {
+                setFormData(draft.formData);
+                setHasHonorTable(draft.hasHonorTable);
+                setHasEntertainers(draft.hasEntertainers);
+                setNotesList(draft.notesList);
+                setSelectedMenu(draft.selectedMenu);
+              } else {
+                clearEventFormDraft(selected.id);
+              }
+            }
+          }
         } else {
           setFormData({});
           setHasHonorTable(null);
@@ -382,6 +404,25 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         setTableLayoutImageUrl(null);
       });
   }, [selected, designExport]);
+
+  useEffect(() => {
+    if (!selected || actionBusy) return;
+    const currentUser = getAuthUser();
+    if (!currentUser || !currentUser.email) return;
+
+    const timer = setTimeout(() => {
+      const snapshot: EventFormDraftSnapshot = {
+        formData,
+        hasHonorTable,
+        hasEntertainers,
+        notesList,
+        selectedMenu,
+      };
+      saveEventFormDraft(selected.id, currentUser.email, snapshot);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [selected, formData, hasHonorTable, hasEntertainers, notesList, selectedMenu, actionBusy]);
 
   const handleTableLayoutSave = async (tables: TableData[], imageDataUrl: string) => {
     if (!selected) return;
@@ -642,6 +683,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       
       const result = await response.json();
       if (result.success) {
+        clearEventFormDraft(selected.id);
         setDepositCheckFile(null);
         showEmailSaveMessage(result);
         setSelected(null);
@@ -675,6 +717,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         return;
       }
 
+      clearEventFormDraft(selected.id);
+
       const saveResult = await saveResponse.json();
       if (saveResult.emailSent || saveResult.emailSkipped || saveResult.emailError) {
         showEmailSaveMessage(saveResult);
@@ -706,6 +750,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         alert(t(T.UI.SAVE_ERROR));
         return;
       }
+
+      clearEventFormDraft(selected.id);
 
       const saveResult = await saveResponse.json();
 

@@ -1,9 +1,9 @@
 import type { TableData } from '../constants/defaultTableLayout';
 import {
-  clearSessionDraft,
-  loadSessionDraft,
-  saveSessionDraft,
-} from './sessionDraft';
+  clearLocalDraft,
+  loadLocalDraft,
+  saveLocalDraft,
+} from './localDraft';
 
 const DRAFT_PREFIX = 'maple-draft:floorplan:';
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
@@ -17,14 +17,14 @@ export function saveFloorPlanDraft(
   userEmail: string,
   tables: TableData[],
 ): void {
-  saveSessionDraft(draftKey(eventId), userEmail, tables);
+  saveLocalDraft(draftKey(eventId), userEmail, tables);
 }
 
 export function loadFloorPlanDraft(
   eventId: string,
   userEmail: string,
 ): TableData[] | null {
-  return loadSessionDraft<TableData[]>(
+  return loadLocalDraft<TableData[]>(
     draftKey(eventId),
     userEmail,
     DRAFT_TTL_MS,
@@ -32,5 +32,5 @@ export function loadFloorPlanDraft(
 }
 
 export function clearFloorPlanDraft(eventId: string): void {
-  clearSessionDraft(draftKey(eventId));
+  clearLocalDraft(draftKey(eventId));
 }
