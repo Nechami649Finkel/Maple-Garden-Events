@@ -21,16 +21,16 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
-      <ErrorFallback error={error instanceof Error ? error : undefined} resetError={resetError} />
-    )}>
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <QueryClientProvider client={queryClient}>
-          <I18nProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>
+          <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
+            <ErrorFallback error={error instanceof Error ? error : undefined} resetError={resetError} />
+          )}>
             <App />
-          </I18nProvider>
-        </QueryClientProvider>
-      </GoogleOAuthProvider>
-    </Sentry.ErrorBoundary>
+          </Sentry.ErrorBoundary>
+        </I18nProvider>
+      </QueryClientProvider>
+    </GoogleOAuthProvider>
   </StrictMode>,
 );

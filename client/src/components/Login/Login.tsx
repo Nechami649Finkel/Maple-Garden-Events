@@ -8,7 +8,7 @@ interface LoginProps {
   onLoginSuccess: () => void;
 }
 
-import { getBrandConfig } from '../../../shared/brand/index';
+import { getBrandConfig } from '@shared/brand/index';
 
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { t, T } = useTranslation();

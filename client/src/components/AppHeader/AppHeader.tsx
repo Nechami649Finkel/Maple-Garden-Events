@@ -1,8 +1,8 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { useNavigationContext } from '../../context/NavigationContext';
+import { useNavigationContext } from '../../context/navigationContext';
 
-import { useSidebar } from '../../context/SidebarContext';
+import { useSidebar } from '../../context/sidebarContext';
 
 import { useTranslation } from '../../i18n/useTranslation';
 
