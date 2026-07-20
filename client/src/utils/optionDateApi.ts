@@ -92,6 +92,17 @@ export function getHebrewDateLabel(dateStr: string): string {
   }
 }
 
+/** Compact Hebrew day numeral for dense calendar cells, e.g. "יט". */
+export function getHebrewDayShort(dateStr: string): string {
+  try {
+    return new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric' }).format(
+      new Date(`${dateStr}T12:00:00`),
+    );
+  } catch {
+    return '';
+  }
+}
+
 function toErrorMessage(t: TranslateFn, error: ValidationError): string {
   return formatValidationError(t, error);
 }

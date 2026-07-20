@@ -21,14 +21,35 @@ import {
   getPriceFieldLabel,
   NON_REMOVABLE_PRICE_FIELDS,
   parseHiddenPriceFields,
+  SYSTEM_PRICE_FIELDS,
 } from '../../utils/pricing';
 import { useTranslation } from '../../i18n/useTranslation';
 import { Icon } from '../ui/Icon';
+import { HebrewDatePicker } from '../ui/HebrewDatePicker';
 import { translateByValue } from '@shared/i18n/bookingLookups';
 import { T, type TranslationKey } from '@shared/i18n/keys';
 
 /** Editable global settings draft (price fields + catalog meta). */
 type GlobalSettingsDraft = Record<string, unknown>;
+
+/** Fields accepted by PUT /settings/global (strict Zod) — never send tenantId/id/meta. */
+const GLOBAL_SETTINGS_WRITE_KEYS = [
+  ...SYSTEM_PRICE_FIELDS.map((f) => f.field),
+  'defaultAdvance',
+  'optionDurationHours',
+  'contractText',
+  'paymentTemplates',
+  'defaultPaymentTemplateId',
+  'hiddenPriceFields',
+] as const;
+
+function buildGlobalSettingsPayload(settings: GlobalSettingsDraft): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+  for (const key of GLOBAL_SETTINGS_WRITE_KEYS) {
+    if (settings[key] !== undefined) payload[key] = settings[key];
+  }
+  return payload;
+}
 
 interface KashrutRecord {
   id: string;
@@ -76,11 +97,15 @@ export const SettingsManager = () => {
   const loading = settingsLoading || extrasLoading || kashrutLoading || staffLoading;
   const saveGlobalSettings = async () => {
     try {
-      await apiFetch(`${API_URL}/settings/global`, {
+      const res = await apiFetch(`${API_URL}/settings/global`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(globalSettings)
+        body: JSON.stringify(buildGlobalSettingsPayload(globalSettings)),
       });
+      if (!res.ok) {
+        alert(t(T.SETTINGS.SAVE_ERROR));
+        return;
+      }
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       alert(t(T.SETTINGS.SAVED));
     } catch {
@@ -98,11 +123,15 @@ export const SettingsManager = () => {
 
   const persistHiddenPriceFields = async (hiddenPriceFields: string[]) => {
     try {
-      await apiFetch(`${API_URL}/settings/global`, {
+      const res = await apiFetch(`${API_URL}/settings/global`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hiddenPriceFields }),
       });
+      if (!res.ok) {
+        alert(t(T.SETTINGS.PRICING_UPDATE_ERROR));
+        return;
+      }
       setGlobalSettings((prev) => ({ ...prev, hiddenPriceFields }));
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
     } catch {
@@ -538,12 +567,13 @@ export const SettingsManager = () => {
               
               <div className="form-group" style={{ flex: '1', minWidth: '200px' }}>
                 <label style={{fontWeight: 'bold'}}>{t(T.SETTINGS.CERT_EXPIRY)}</label>
-                <input 
-                  type="date" 
-                  value={formatDateForInput(mainKashrut.validUntil)} 
-                  onChange={(e) => handleDateChangeLocal(mainKashrut.id, e.target.value)} 
-                  onBlur={(e) => updateKashrut(mainKashrut.id, { validUntil: e.target.value })} 
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
+                <HebrewDatePicker
+                  value={formatDateForInput(mainKashrut.validUntil)}
+                  aria-label={t(T.SETTINGS.CERT_EXPIRY)}
+                  onChange={(next) => {
+                    handleDateChangeLocal(mainKashrut.id, next);
+                    updateKashrut(mainKashrut.id, { validUntil: next });
+                  }}
                 />
               </div>
 
@@ -572,7 +602,9 @@ export const SettingsManager = () => {
 
             </div>
           ) : (
-            <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>{t(T.SETTINGS.KASHRUT_LOADING)}</div>
+            <div style={{padding: '20px', textAlign: 'center', color: '#666'}}>
+              {kashrutLoading ? t(T.SETTINGS.KASHRUT_LOADING) : t(T.SETTINGS.KASHRUT_EMPTY)}
+            </div>
           )}
         </div>
 

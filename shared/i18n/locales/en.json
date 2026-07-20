@@ -13,6 +13,7 @@
       "CONFIRM": "Confirm",
       "EDIT": "Edit",
       "DELETE": "Delete",
+      "CLEAR": "Clear",
       "SEND": "Send",
       "SAVE_CHANGES": "Save changes"
     },
@@ -1864,6 +1865,7 @@
     "CERT_UPLOAD": "Upload certificate",
     "PREVIEW": "Preview",
     "KASHRUT_LOADING": "Loading...",
+    "KASHRUT_EMPTY": "No kashrut certificate found for this venue. Refresh the page or contact an admin.",
     "ROLE_MANAGER": "Manager",
     "ROLE_STAFF": "Staff",
     "ROLE_PRODUCTION": "Production",
