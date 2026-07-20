@@ -1,6 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
-import { getHebrewDateLabel, getHebrewDayShort } from '../../utils/optionDateApi';
 import { toCalendarDateKey } from '../../utils/dateLocal';
 import styles from './HebrewDatePicker.module.css';
 
@@ -31,13 +30,11 @@ function parseValue(value: string): Date | null {
 function formatDisplay(value: string, locale: string): string {
   const d = parseValue(value);
   if (!d) return '';
-  const gregorian = d.toLocaleDateString(locale === 'en' ? 'en-GB' : 'he-IL', {
+  return d.toLocaleDateString(locale === 'en' ? 'en-GB' : 'he-IL', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
   });
-  const hebrew = getHebrewDateLabel(toCalendarDateKey(d));
-  return hebrew ? `${gregorian} · ${hebrew}` : gregorian;
 }
 
 export function HebrewDatePicker({
@@ -214,8 +211,6 @@ export function HebrewDatePicker({
             {cells.map((cell) => {
               const isSelected = cell.dateStr === selectedStr;
               const isToday = cell.dateStr === todayStr;
-              const hebrewShort = getHebrewDayShort(cell.dateStr);
-              const hebrewFull = getHebrewDateLabel(cell.dateStr);
               return (
                 <button
                   key={cell.dateStr}
@@ -229,13 +224,11 @@ export function HebrewDatePicker({
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  title={hebrewFull}
-                  aria-label={`${cell.day}${hebrewFull ? ` · ${hebrewFull}` : ''}`}
+                  aria-label={String(cell.day)}
                   aria-selected={isSelected}
                   onClick={() => selectDate(cell.dateStr)}
                 >
                   <span className={styles.dayGregorian}>{cell.day}</span>
-                  {hebrewShort ? <span className={styles.dayHebrew}>{hebrewShort}</span> : null}
                 </button>
               );
             })}
