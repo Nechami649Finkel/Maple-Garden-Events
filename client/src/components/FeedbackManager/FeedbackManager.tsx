@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { formatDate, formatDateTime } from '@shared/i18n/formatters';
+import { formatDate } from '@shared/i18n/formatters';
 import { useFeedbackAdminQuery } from '../../hooks/queries';
 import { API_URL } from '../../config/api';
 import { apiFetch } from '../../services/api';
@@ -49,7 +49,8 @@ type SendResult = {
 
 function stars(score: number | null, emDash: string) {
   if (score == null) return emDash;
-  return '★'.repeat(Math.round(score)) + '☆'.repeat(5 - Math.round(score));
+  const rounded = Math.min(5, Math.max(0, Math.round(score)));
+  return '★'.repeat(rounded) + '☆'.repeat(5 - rounded);
 }
 
 async function sendFeedbackRequest(
@@ -87,7 +88,7 @@ const FeedbackManager = () => {
 
   const formatSentTime = (iso: string | null): string => {
     if (!iso) return '';
-    return formatDateTime(iso, locale, {
+    return formatDate(iso, locale, {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',

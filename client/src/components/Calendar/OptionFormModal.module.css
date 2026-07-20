@@ -1,0 +1,83 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 32, 44, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: calc(var(--maple-z-panel) + 10);
+  direction: rtl;
+  backdrop-filter: blur(3px);
+  padding: 16px;
+}
+
+.modal {
+  background: var(--maple-bg);
+  border-radius: var(--maple-radius-lg);
+  width: 100%;
+  max-width: 960px;
+  max-height: calc(100dvh - 32px);
+  overflow: hidden;
+  box-shadow: var(--maple-shadow-lg);
+  border: 1px solid var(--maple-border);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.header {
+  background: linear-gradient(135deg, var(--maple-green) 0%, var(--maple-green-dark) 100%);
+  color: #fff;
+  padding: 20px 24px;
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.headerText h2 {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.headerText p {
+  margin: 0;
+  font-size: 0.875rem;
+  opacity: 0.92;
+}
+
+.body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.body :global(.maple-page-wrap) {
+  padding: 0;
+  min-height: 0;
+}
+
+.body :global(.maple-form-card) {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.body :global(.card-header) {
+  display: none;
+}
