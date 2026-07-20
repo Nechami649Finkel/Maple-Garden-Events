@@ -1,4 +1,7 @@
-import BookingForm from './BookingForm';
+import React, { Suspense } from 'react';
+import { PageLoader } from '../PageLoader/PageLoader';
+
+const BookingForm = React.lazy(() => import('./BookingForm'));
 
 /**
  * Dev-only full-page preview of the booking close form for design exports.
@@ -6,8 +9,10 @@ import BookingForm from './BookingForm';
  */
 export default function BookingFormDesignExport() {
   return (
-    <BookingForm
-      initialDates={[{ date: '2026-09-15', hebrewDate: 'כ״ג באלול תשפ״ו' }]}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <BookingForm
+        initialDates={[{ date: '2026-09-15', hebrewDate: 'כ״ג באלול תשפ״ו' }]}
+      />
+    </Suspense>
   );
 }

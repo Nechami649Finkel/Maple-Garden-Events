@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
+import expressStaticGzip from 'express-static-gzip';
 
 import { validateEnv } from './config/env';
 import { isAllowedCorsOrigin } from './config/corsOrigins';
@@ -119,7 +120,14 @@ const shouldServeClient =
 
 if (shouldServeClient) {
   const clientDist = path.resolve(__dirname, '../../client/dist');
-  app.use(express.static(clientDist));
+  app.use('/', expressStaticGzip(clientDist, {
+    enableBrotli: true,
+    orderPreference: ['br', 'gz'],
+    serveStatic: {
+      maxAge: '1y',
+      cacheControl: true
+    }
+  }));
   app.get(/^(?!\/api).*/, (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });

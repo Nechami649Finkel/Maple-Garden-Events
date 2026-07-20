@@ -42,9 +42,12 @@ import OptionDatesBar from './sections/OptionDatesBar';
 import FinalizeOptionDatesBar from './sections/FinalizeOptionDatesBar';
 import { verifyAllOptionDates, normalizeOptionDate } from '../../utils/optionDateApi';
 import { calendarKeyFromDbDate } from '../../utils/dateLocal';
+import React, { Suspense } from 'react';
 import { API_URL } from '../../config/api';
 import { NotesList } from '../NotesList/NotesList';
-import MenuDisplay from '../MenuDisplay/MenuDisplay';
+import { PageLoader } from '../PageLoader/PageLoader';
+
+const MenuDisplay = React.lazy(() => import('../MenuDisplay/MenuDisplay'));
 import {
   clearBookingDraft,
   loadBookingDraft,
@@ -1310,7 +1313,11 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
       />
 
       {isMenuViewOpen && (
-         <div className={styles.menuOverlay}><div className={styles.menuModal}><button type="button" className={styles.menuCloseBtn} onClick={() => setIsMenuViewOpen(false)}>{t(T.BOOKING.FORM.MENU_CLOSE)}</button><div className={styles.menuModalContent}><MenuDisplay /></div></div></div>
+        <div className={styles.menuOverlay}><div className={styles.menuModal}><button type="button" className={styles.menuCloseBtn} onClick={() => setIsMenuViewOpen(false)}>{t(T.BOOKING.FORM.MENU_CLOSE)}</button><div className={styles.menuModalContent}>
+          <Suspense fallback={<PageLoader />}>
+            <MenuDisplay />
+          </Suspense>
+        </div></div></div>
       )}
     </div>
   );

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from './MiniCalendar.module.css';
-import { type CalendarDayApi } from '../../utils/optionDateApi';
+import { type CalendarDayApi, getHebrewDateLabel } from '../../utils/optionDateApi';
 
 interface MiniCalendarProps {
   days: CalendarDayApi[];
@@ -87,6 +87,7 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
           const dayData = dayMap.get(dateStr);
           const bookingCount = dayData?.bookings?.filter((b) => !b.isOption)?.length ?? 0;
           const isToday = dateStr === todayStr;
+          const hebrewDate = dayData?.hebrewDate?.trim() || getHebrewDateLabel(dateStr);
 
           return (
             <Link
@@ -99,7 +100,14 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
                 count: bookingCount,
               })}
             >
-              <span className={styles.dayNum}>{day}</span>
+              <span className={styles.cellHeader}>
+                <span className={styles.dayNum}>{day}</span>
+                {hebrewDate ? (
+                  <span className={styles.hebrewDate} title={hebrewDate}>
+                    {hebrewDate}
+                  </span>
+                ) : null}
+              </span>
               {bookingCount > 0 && (
                 <span className={styles.dot} aria-hidden="true" />
               )}
