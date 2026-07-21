@@ -17,6 +17,7 @@ const router = Router();
 router.use(requireAuth);
 
 // הגדרות מתחם — Manager בלבד (PRD §2.3)
+router.get('/branding', settingsController.getBranding);
 router.get('/global', requireRole(...RBAC.MANAGER_ONLY), settingsController.getSettings);
 router.put('/global', requireRole(...RBAC.MANAGER_ONLY), validate(updateSettingsSchema), settingsController.updateSettings);
 

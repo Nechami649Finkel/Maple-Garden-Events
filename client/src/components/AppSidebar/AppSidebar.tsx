@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS, isNavItemActive } from '../../utils/navConfig';
 import { useSidebar } from '../../context/SidebarProvider';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useTenantBranding } from '../../contexts/TenantBrandingContext';
 import { Icon } from '../ui/Icon';
 import './AppSidebar.css';
 
@@ -11,6 +12,7 @@ export const AppSidebar = () => {
   const location = useLocation();
   const { isOpen, close } = useSidebar();
   const { t, T } = useTranslation();
+  const { venueName, logoUrl } = useTenantBranding();
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -37,8 +39,15 @@ export const AppSidebar = () => {
           onClick={() => goTo('/dashboard')}
           aria-label={t(T.NAV.SIDEBAR_BACK_DASHBOARD)}
         >
-          <img src="/logo.png" alt="" className="app-sidebar-logo" />
-          <span className="app-sidebar-venue">{t(T.NAV.SIDEBAR_VENUE)}</span>
+          <img 
+            src={logoUrl} 
+            alt={venueName} 
+            className="app-sidebar-logo" 
+            onError={(e) => {
+              e.currentTarget.src = '/logo.png';
+            }}
+          />
+          <span className="app-sidebar-venue">{venueName}</span>
         </button>
         <button
           type="button"
