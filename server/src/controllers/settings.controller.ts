@@ -11,6 +11,16 @@ export const settingsController = {
   // הגדרות מערכת (מע"מ, מחירי בסיס קבועים)
   // =========================================
   
+  getBranding: catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+    res.json({
+      venueName: tenant?.name || 'Maple Garden Events',
+      logoUrl: '/assets/maple-default-logo.png'
+    });
+  }),
+
   getSettings: catchAsync(async (req: Request, res: Response) => {
       const tenantId = (req as any).user?.tenantId;
       if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
