@@ -23,6 +23,10 @@ import {
 import { UpcomingEventsPanel } from './UpcomingEventsPanel';
 import { MiniCalendar } from './MiniCalendar';
 import styles from './Dashboard.module.css';
+import { type BookingApi } from '../../utils/bookingApi';
+import { type CalendarDayApi } from '../../utils/optionDateApi';
+
+type ActivityBooking = BookingApi & { _type: 'booked' | 'option' };
 
 const startOfDay = (d: Date) => {
   const copy = new Date(d);
@@ -30,7 +34,7 @@ const startOfDay = (d: Date) => {
   return copy;
 };
 
-const getEventDay = (b: any) =>
+const getEventDay = (b: BookingApi) =>
   b.eventDate?.date ? startOfDay(new Date(b.eventDate.date)) : null;
 
 const Dashboard = () => {
@@ -71,7 +75,7 @@ const Dashboard = () => {
     const today = startOfDay(new Date());
     const in30 = new Date(today);
     in30.setDate(in30.getDate() + 30);
-    return (bookedData?.data ?? []).filter((b: any) => {
+    return (bookedData?.data ?? []).filter((b) => {
       if (b.isOption) return false;
       const day = getEventDay(b);
       return day !== null && day >= today && day <= in30;
@@ -80,7 +84,7 @@ const Dashboard = () => {
 
   const openOptionsCount = useMemo(() => {
     const today = startOfDay(new Date());
-    return (optionsData?.data ?? []).filter((b: any) => {
+    return (optionsData?.data ?? []).filter((b) => {
       if (b.isOption === false) return false;
       const day = getEventDay(b);
       return day !== null && day >= today;
@@ -89,8 +93,8 @@ const Dashboard = () => {
 
   const eventsThisMonth = useMemo(() => {
     if (!Array.isArray(calendarData)) return 0;
-    return calendarData.reduce((sum: number, day: any) => {
-      const bookings = day.bookings?.filter((b: any) => !b.isOption) ?? [];
+    return calendarData.reduce((sum: number, day: CalendarDayApi) => {
+      const bookings = day.bookings?.filter((b) => !b.isOption) ?? [];
       return sum + bookings.length;
     }, 0);
   }, [calendarData]);
@@ -100,11 +104,11 @@ const Dashboard = () => {
     avgScore != null ? avgScore.toFixed(1) : t(T.COMMON.LABELS.EM_DASH);
 
   const recentActivity = useMemo(() => {
-    const booked = (bookedData?.data ?? []).filter((b: any) => !b.isOption);
-    const options = (optionsData?.data ?? []).filter((b: any) => b.isOption !== false);
-    const combined = [
-      ...booked.map((b: any) => ({ ...b, _type: 'booked' as const })),
-      ...options.map((b: any) => ({ ...b, _type: 'option' as const })),
+    const booked = (bookedData?.data ?? []).filter((b) => !b.isOption);
+    const options = (optionsData?.data ?? []).filter((b) => b.isOption !== false);
+    const combined: ActivityBooking[] = [
+      ...booked.map((b) => ({ ...b, _type: 'booked' as const })),
+      ...options.map((b) => ({ ...b, _type: 'option' as const })),
     ];
     return combined
       .filter((b) => getEventDay(b))
@@ -190,7 +194,7 @@ const Dashboard = () => {
               <p className={styles.emptyActivity}>{t(T.DASHBOARD.NO_ACTIVITY)}</p>
             ) : (
               <ul className={styles.activityList}>
-                {recentActivity.map((b: any) => (
+                {recentActivity.map((b) => (
                   <li key={b.id} className={styles.activityItem}>
                     <div className={styles.activityInfo}>
                       <span className={styles.activityName}>{b.clientAFullName}</span>

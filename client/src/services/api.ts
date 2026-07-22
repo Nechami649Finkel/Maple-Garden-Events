@@ -82,7 +82,7 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       Sentry.captureException(error, { extra: { url, method } });
     }
     if (isNetworkError) {
-      throw new Error(tClient(T.UI.SERVER_CONNECTION_ERROR));
+      throw new Error(tClient(T.UI.SERVER_CONNECTION_ERROR), { cause: error });
     }
     throw error;
   }

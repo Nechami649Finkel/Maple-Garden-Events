@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -22,37 +23,44 @@ interface HallInvoicesPanelProps {
   onPaymentUpdated?: () => void;
 }
 
+interface HallInvoicesData {
+  hallAmount: number;
+  remaining: number;
+  invoices: HallInvoiceRow[];
+}
+
 const HallInvoicesPanel = ({ bookingId, isOption, onPaymentUpdated }: HallInvoicesPanelProps) => {
   const { t, T, locale } = useTranslation();
-  const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [hallAmount, setHallAmount] = useState(0);
-  const [remaining, setRemaining] = useState(0);
-  const [invoices, setInvoices] = useState<HallInvoiceRow[]>([]);
-  const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const money = (value: number) => formatCurrency(value, locale);
 
-  const loadInvoices = useCallback(async () => {
-    setLoading(true);
-    setError('');
-    try {
+  const {
+    data,
+    isLoading: loading,
+    error: fetchError,
+    refetch,
+  } = useQuery({
+    queryKey: ['hall-invoices', bookingId],
+    queryFn: async (): Promise<HallInvoicesData> => {
       const res = await apiFetch(`${API_URL}/bookings/${bookingId}/invoices`);
       const json = await res.json();
       if (!json.success) throw new Error(json.message || t(T.INVOICES.LOAD_ERROR));
-      setHallAmount(json.data.hallAmount ?? 0);
-      setRemaining(json.data.remaining ?? 0);
-      setInvoices(json.data.invoices ?? []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t(T.INVOICES.LOAD_ERROR));
-    } finally {
-      setLoading(false);
-    }
-  }, [bookingId, t, T]);
+      return {
+        hallAmount: json.data.hallAmount ?? 0,
+        remaining: json.data.remaining ?? 0,
+        invoices: json.data.invoices ?? [],
+      };
+    },
+  });
 
-  useEffect(() => {
-    loadInvoices();
-  }, [loadInvoices]);
+  const hallAmount = data?.hallAmount ?? 0;
+  const remaining = data?.remaining ?? 0;
+  const invoices = data?.invoices ?? [];
+  const error =
+    actionError ||
+    (fetchError instanceof Error ? fetchError.message : fetchError ? t(T.INVOICES.LOAD_ERROR) : '');
 
   const handleCreateInvoice = async () => {
     if (isOption) {
@@ -65,7 +73,7 @@ const HallInvoicesPanel = ({ bookingId, isOption, onPaymentUpdated }: HallInvoic
     }
 
     setCreating(true);
-    setError('');
+    setActionError('');
     try {
       const res = await apiFetch(`${API_URL}/bookings/${bookingId}/invoice`, {
         method: 'POST',
@@ -74,7 +82,7 @@ const HallInvoicesPanel = ({ bookingId, isOption, onPaymentUpdated }: HallInvoic
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.message || t(T.INVOICES.CREATE_ERROR));
-      await loadInvoices();
+      await refetch();
       onPaymentUpdated?.();
       if (json.data?.invoice?.paymentUrl) {
         window.open(json.data.invoice.paymentUrl, '_blank', 'noopener,noreferrer');
@@ -83,7 +91,7 @@ const HallInvoicesPanel = ({ bookingId, isOption, onPaymentUpdated }: HallInvoic
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : t(T.INVOICES.CREATE_ERROR);
-      setError(msg);
+      setActionError(msg);
       alert(msg);
     } finally {
       setCreating(false);

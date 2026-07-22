@@ -15,6 +15,7 @@ import {
 import { renderUpgradesSectionsHtml } from './contract/upgradeTablesHtml';
 import { DEFAULT_UPGRADES_PRICING } from './pricing';
 import { HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
+import { logger } from './logger';
 import {
   DEFAULT_LOCALE,
   getServerTranslation,
@@ -317,12 +318,16 @@ const translateKashrut = (k: string | null | undefined, t: Translator['t']) => {
   const map: Record<string, string> = {
     bad_reuven: t(T.BOOKING.KOSHER_TYPES.RUBIN),
     machpud: t(T.BOOKING.KOSHER_TYPES.MACHPUD),
+    מחפוד: t(T.BOOKING.KOSHER_TYPES.MACHPUD),
     other: t(T.SERVER.COMMON.NOT_SPECIFIED),
     rubin: t(T.BOOKING.KOSHER_TYPES.RUBIN),
+    רובין: t(T.BOOKING.KOSHER_TYPES.RUBIN),
     kehilot: t(T.BOOKING.KOSHER_TYPES.KEHILOT),
     gross: t(T.BOOKING.KOSHER_TYPES.GROSS),
     landa: t(T.BOOKING.KOSHER_TYPES.LANDA),
+    לנדא: t(T.BOOKING.KOSHER_TYPES.LANDA),
     badatz: t(T.BOOKING.KOSHER_TYPES.BADATZ),
+    'בדץ ע"ח': t(T.BOOKING.KOSHER_TYPES.BADATZ),
   };
   return map[k || ''] || k || t(T.SERVER.COMMON.NOT_SPECIFIED);
 };
@@ -445,7 +450,7 @@ function parseMenuRows(menuSelections: unknown, t: Translator['t']): string {
       return row(category, esc(itemsList));
     }).join('');
   } catch (err) {
-    console.error('Menu parse error for PDF:', err);
+    logger.error('שגיאה בפענוח התפריט ל-PDF', { error: err });
     return '';
   }
 }

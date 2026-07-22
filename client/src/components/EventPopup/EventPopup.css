@@ -14,14 +14,14 @@
 }
 
 .popup-content {
-  background: var(--maple-bg);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-bg);
+  border-radius: var(--brand-radius-lg);
   width: 100%;
   max-width: 920px;
   max-height: calc(100dvh - 32px);
   overflow: hidden;
-  box-shadow: var(--maple-shadow-lg);
-  border: 1px solid var(--maple-border);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   margin: auto;
@@ -29,7 +29,7 @@
 }
 
 .popup-header {
-  background: linear-gradient(135deg, var(--maple-green) 0%, var(--maple-green-dark) 100%);
+  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
   color: #fff;
   padding: 20px 24px;
   position: relative;
@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .popup-header-close:hover {
@@ -87,8 +87,8 @@
 
 .popup-footer {
   padding: 14px 24px;
-  border-top: 1px solid var(--maple-border);
-  background: var(--maple-surface);
+  border-top: 1px solid var(--brand-border);
+  background: var(--brand-surface);
   display: flex;
   justify-content: flex-start;
   align-items: center;
@@ -97,50 +97,50 @@
 }
 
 .popup-add-btn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: #fff;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 20px;
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
-  transition: background var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: background var(--brand-transition);
 }
 
 .popup-add-btn:hover {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
 }
 
 .popup-option-btn {
-  background: var(--maple-surface);
-  color: var(--maple-green-dark);
-  border: 2px dashed var(--maple-green);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  color: var(--brand-green-dark);
+  border: 2px dashed var(--brand-green);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 20px;
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
-  transition: background var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: background var(--brand-transition);
 }
 
 .popup-option-btn:hover {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
 }
 
 .popup-override-btn {
   background: #b45309;
   color: #fff;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 20px;
   font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
-  transition: background var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: background var(--brand-transition);
 }
 
 .popup-override-btn:hover {
@@ -148,44 +148,44 @@
 }
 
 .popup-close-btn {
-  background: var(--maple-surface);
-  color: var(--maple-text-secondary);
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 28px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
-  transition: all var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: all var(--brand-transition);
 }
 
 .popup-close-btn:hover {
-  background: var(--maple-bg);
-  border-color: var(--maple-green-muted);
-  color: var(--maple-green-dark);
+  background: var(--brand-bg);
+  border-color: var(--brand-green-muted);
+  color: var(--brand-green-dark);
 }
 
 .no-events-msg {
   text-align: center;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   padding: 24px;
 }
 
 .event-card {
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius);
-  border: 1px solid var(--maple-border);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-border);
   border-right-width: 5px;
   overflow: hidden;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
   flex-shrink: 0;
 }
 
 .event-card-top {
   padding: 14px 18px;
-  border-bottom: 1px solid var(--maple-border);
-  background: var(--maple-green-light);
+  border-bottom: 1px solid var(--brand-border);
+  background: var(--brand-green-light);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -202,13 +202,13 @@
 
 .event-card-title-row h3 {
   margin: 0;
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-size: 1rem;
   font-weight: 600;
 }
 
 .event-code-badge {
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
   font-weight: 700;
 }
 
@@ -228,36 +228,36 @@
 }
 
 .status-badge.booked {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: #fff;
 }
 
 .status-badge.option {
-  background: var(--maple-surface);
-  color: var(--maple-green-dark);
-  border: 1.5px dashed var(--maple-green);
+  background: var(--brand-surface);
+  color: var(--brand-green-dark);
+  border: 1.5px dashed var(--brand-green);
 }
 
 .edit-btn {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: #fff;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 9px 18px;
   font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
-  font-family: var(--maple-font);
+  transition: background var(--brand-transition);
+  font-family: var(--brand-font);
 }
 
 .edit-btn:hover:not(:disabled) {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .edit-btn:disabled {
-  background: var(--maple-border-strong);
-  color: var(--maple-text-muted);
+  background: var(--brand-border-strong);
+  color: var(--brand-text-muted);
   cursor: not-allowed;
 }
 
@@ -272,7 +272,7 @@
 
 .edit-blocked-msg {
   font-size: 0.78rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 .contract-missing-msg {
@@ -290,16 +290,16 @@
 }
 
 .info-group {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   padding: 14px;
-  border-radius: var(--maple-radius-sm);
-  border: 1px solid var(--maple-border);
+  border-radius: var(--brand-radius-sm);
+  border: 1px solid var(--brand-border);
 }
 
 .info-group h4 {
   margin: 0 0 10px;
-  color: var(--maple-text);
-  border-bottom: 2px solid var(--maple-green-muted);
+  color: var(--brand-text);
+  border-bottom: 2px solid var(--brand-green-muted);
   padding-bottom: 6px;
   font-size: 0.9rem;
 }
@@ -307,12 +307,12 @@
 .info-group p {
   margin: 4px 0;
   font-size: 0.86rem;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   line-height: 1.45;
 }
 
 .info-group p strong {
-  color: var(--maple-text);
+  color: var(--brand-text);
   display: inline-block;
   min-width: 68px;
 }
@@ -329,14 +329,14 @@
 }
 
 .all-good-group {
-  background: var(--maple-green-light);
-  border-color: var(--maple-green-muted);
+  background: var(--brand-green-light);
+  border-color: var(--brand-green-muted);
   grid-column: 1 / -1;
 }
 
 .all-good-group h4 {
-  border-bottom-color: var(--maple-green-muted);
-  color: var(--maple-green-dark);
+  border-bottom-color: var(--brand-green-muted);
+  color: var(--brand-green-dark);
 }
 
 .missing-list {
@@ -357,7 +357,7 @@
 }
 
 .all-good {
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
   font-weight: 600;
   margin: 0;
   font-size: 0.86rem;
@@ -365,12 +365,12 @@
 
 .comments-box {
   margin-top: 10px;
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: 10px;
-  border-radius: var(--maple-radius-sm);
-  border: 1px dashed var(--maple-border-strong);
+  border-radius: var(--brand-radius-sm);
+  border: 1px dashed var(--brand-border-strong);
   font-size: 0.84rem;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .comments-box strong {

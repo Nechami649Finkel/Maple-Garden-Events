@@ -1,123 +1,58 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import prisma from '../config/prisma';
 import { Prisma } from '@prisma/client';
+import { AuthRequest } from '../middlewares/auth';
+import { isFloorStaffRole } from '../config/rbac';
 import { canEditCheckIn } from '../utils/eventStart';
 import { emitBookingUpdated, emitCheckInUpdated } from '../utils/realtime';
 import { calendarKeyFromDbDate } from '../utils/dateLocal';
-
-export interface ReserveTableRow {
-  number: number;
-  value: string;
-}
+import { ForbiddenError, NotFoundError } from '../utils/httpErrors';
+import { sanitizeFloorStaffData } from '../utils/sanitizeFloorStaffData';
+import {
+  buildDefaultCheckIn,
+  getOrCreateCheckIn,
+  validateFloorStaffAccess,
+} from '../Services/checkInService';
+import { logger } from '../utils/logger';
 
 function toPrismaJson(value: unknown): Prisma.InputJsonValue {
   return value as unknown as Prisma.InputJsonValue;
-}
-
-function getLastName(fullName?: string | null): string {
-  if (!fullName?.trim()) return '';
-  const parts = fullName.trim().split(/\s+/);
-  return parts[parts.length - 1] || '';
-}
-
-function buildFamiliesLabel(booking: {
-  clientAFullName: string;
-  clientBFullName?: string | null;
-  eventType?: string | null;
-}): string {
-  const nameA = getLastName(booking.clientAFullName);
-  const nameB = getLastName(booking.clientBFullName);
-  if (booking.eventType === 'חתונה' && nameB) {
-    return `משפחת ${nameA} ומשפחת ${nameB}`;
-  }
-  if (nameB) return `${booking.clientAFullName} ו${booking.clientBFullName}`;
-  return nameA ? `משפחת ${nameA}` : booking.clientAFullName;
-}
-
-function calcReservePortions(guestCount: number): number {
-  if (!Number.isFinite(guestCount) || guestCount <= 0) return 0;
-  return Math.ceil(guestCount * 0.1);
-}
-
-function calcEntertainerPortions(eventForm: {
-  entertainersTotal?: number | null;
-  entertainersBar?: number | null;
-  entertainersSitting?: number | null;
-} | null | undefined): number {
-  if (!eventForm) return 0;
-  if (eventForm.entertainersTotal && eventForm.entertainersTotal > 0) {
-    return eventForm.entertainersTotal;
-  }
-  return (eventForm.entertainersBar || 0) + (eventForm.entertainersSitting || 0);
-}
-
-function defaultReserveTables(): ReserveTableRow[] {
-  return [1, 2, 3, 4, 5].map((n) => ({ number: n, value: '' }));
-}
-
-function buildDefaultCheckIn(booking: {
-  guestCount: number;
-  clientAFullName: string;
-  clientBFullName?: string | null;
-  eventType?: string | null;
-  clientComments?: string | null;
-}, eventForm: {
-  entertainersTotal?: number | null;
-  entertainersBar?: number | null;
-  entertainersSitting?: number | null;
-  notes?: string | null;
-} | null | undefined) {
-  const specialParts: string[] = [];
-  if (eventForm?.notes?.trim()) specialParts.push(eventForm.notes.trim());
-  if (booking.clientComments?.trim()) specialParts.push(booking.clientComments.trim());
-
-  return {
-    familiesLabel: buildFamiliesLabel(booking),
-    orderedPortions: booking.guestCount,
-    entertainerPortions: calcEntertainerPortions(eventForm),
-    reservePortions: calcReservePortions(booking.guestCount),
-    hallReceivedConfirmed: false,
-    reserveTables: defaultReserveTables(),
-    specialAdditions: specialParts.join('\n') || null,
-    customerSignature: null,
-  };
-}
-
-async function getOrCreateCheckIn(bookingId: string) {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { eventForm: true, eventCheckIn: true, eventDate: true },
-  });
-
-  if (!booking) return null;
-
-  if (booking.eventCheckIn) {
-    return { booking, checkIn: booking.eventCheckIn };
-  }
-
-  const defaults = buildDefaultCheckIn(booking, booking.eventForm);
-  const checkIn = await prisma.eventCheckIn.create({
-    data: {
-      bookingId,
-      ...defaults,
-      reserveTables: toPrismaJson(defaults.reserveTables),
-    },
-  });
-
-  return { booking, checkIn };
 }
 
 function paramId(value: string | string[]): string {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function mapDomainError(res: Response, err: unknown): boolean {
+  if (err instanceof ForbiddenError) {
+    res.status(403).json({ error: err.message });
+    return true;
+  }
+  if (err instanceof NotFoundError) {
+    res.status(404).json({ error: err.message });
+    return true;
+  }
+  return false;
+}
+
 export const checkInController = {
-  async getCheckIn(req: Request, res: Response) {
+  async getCheckIn(req: AuthRequest, res: Response) {
     try {
       const bookingId = paramId(req.params.bookingId);
-      const result = await getOrCreateCheckIn(bookingId);
-      if (!result) {
-        return res.status(404).json({ error: 'הזמנה לא נמצאה' });
+      const role = req.user?.role;
+
+      let preloadedBooking = null;
+      if (isFloorStaffRole(role)) {
+        preloadedBooking = await validateFloorStaffAccess(req.user, bookingId);
+      }
+
+      const result = await getOrCreateCheckIn(bookingId, preloadedBooking);
+
+      if (isFloorStaffRole(role)) {
+        return res.json({
+          success: true,
+          data: sanitizeFloorStaffData(result.booking, result.checkIn),
+        });
       }
 
       res.json({
@@ -129,12 +64,13 @@ export const checkInController = {
         },
       });
     } catch (e) {
-      console.error('getCheckIn error:', e);
+      if (mapDomainError(res, e)) return;
+      logger.error('getCheckIn error', { error: e });
       res.status(500).json({ error: 'שגיאה בטעינת טופס הקבלה' });
     }
   },
 
-  async updateCheckIn(req: Request, res: Response) {
+  async updateCheckIn(req: AuthRequest, res: Response) {
     try {
       const bookingId = paramId(req.params.bookingId);
       const existing = await prisma.booking.findUnique({
@@ -143,7 +79,7 @@ export const checkInController = {
       });
 
       if (!existing) {
-        return res.status(404).json({ error: 'הזמנה לא נמצאה' });
+        throw new NotFoundError('הזמנה לא נמצאה');
       }
 
       const eventDateStr = existing.eventDate?.date
@@ -153,9 +89,7 @@ export const checkInController = {
         !eventDateStr
         || !canEditCheckIn(eventDateStr, existing, existing.eventForm)
       ) {
-        return res.status(403).json({
-          error: 'ניתן לערוך את טופס קבלת האולם רק במהלך האירוע',
-        });
+        throw new ForbiddenError('ניתן לערוך את טופס קבלת האולם רק במהלך האירוע');
       }
 
       const body = req.body || {};
@@ -188,21 +122,44 @@ export const checkInController = {
         });
       } else {
         const defaults = buildDefaultCheckIn(existing, existing.eventForm);
-        checkIn = await prisma.eventCheckIn.create({
-          data: {
-            bookingId,
-            ...defaults,
-            ...data,
-            reserveTables: toPrismaJson(data.reserveTables ?? defaults.reserveTables),
-          },
-        });
+        try {
+          checkIn = await prisma.eventCheckIn.create({
+            data: {
+              bookingId,
+              ...defaults,
+              ...data,
+              reserveTables: toPrismaJson(data.reserveTables ?? defaults.reserveTables),
+            },
+          });
+        } catch (err) {
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError
+            && err.code === 'P2002'
+          ) {
+            checkIn = await prisma.eventCheckIn.update({
+              where: { bookingId },
+              data,
+            });
+          } else {
+            throw err;
+          }
+        }
       }
 
       emitBookingUpdated(bookingId);
       emitCheckInUpdated(bookingId);
+
+      if (isFloorStaffRole(req.user?.role)) {
+        return res.json({
+          success: true,
+          data: sanitizeFloorStaffData(existing, checkIn),
+        });
+      }
+
       res.json({ success: true, data: checkIn });
     } catch (e) {
-      console.error('updateCheckIn error:', e);
+      if (mapDomainError(res, e)) return;
+      logger.error('updateCheckIn error', { error: e });
       res.status(500).json({ error: 'שגיאה בשמירת טופס הקבלה' });
     }
   },

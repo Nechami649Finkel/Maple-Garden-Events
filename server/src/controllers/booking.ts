@@ -28,6 +28,7 @@ import {
   parseCalendarDate,
   calendarKeyFromDbDate,
 } from '../utils/dateLocal';
+import { logger } from '../utils/logger';
 import {
   normalizeTimeSlot,
   formatStoredTimeOfDay,
@@ -333,6 +334,19 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
 
   const contractFields = syncContractFields(data.contractSigned, data.clientSignature);
+  if (data.contractSigned && !contractFields.clientSignatureUrl) {
+    return res.status(400).json({
+      success: false,
+      message: 'לא ניתן לסמן חוזה כחתום ללא חתימת לקוח.',
+    });
+  }
+
+  if (contractFields.clientSignatureUrl) {
+    logger.info('Booking create: storing client signature', {
+      bytes: contractFields.clientSignatureUrl.length,
+      isDataUrl: contractFields.clientSignatureUrl.startsWith('data:image/'),
+    });
+  }
 
   let createdBookings: any[] = [];
   let eventsToEmit: { dateId: string, status: string }[] = [];
@@ -602,7 +616,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
         );
       }
     } catch (pdfError) {
-      console.error("שגיאה בהפקת או שליחת החוזה הראשוני למייל:", pdfError);
+      logger.error("שגיאה בהפקת או שליחת החוזה הראשוני למייל:", pdfError);
     }
   }
 
@@ -612,7 +626,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       try {
         easycountResult = await issueEasyCountReceiptForBooking(savedBooking.id);
       } catch (easycountError) {
-        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+        logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
     }
   }
@@ -818,21 +832,37 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
   const prices = priceCheck.serverBreakdown;
   const isConverting = data.convertFromOption === true;
-  const finalSignature = data.clientSignature ?? booking.clientSignatureUrl;
+  const incomingSignature =
+    typeof data.clientSignature === 'string' ? data.clientSignature.trim() : '';
+  const finalSignature = incomingSignature || booking.clientSignatureUrl || null;
   let convertedEventCode: string | null = null;
 
-  if (data.contractSigned && !finalSignature?.trim()) {
+  if (data.contractSigned && !finalSignature) {
     return res.status(400).json({
       success: false,
       message: 'לא ניתן לסמן חוזה כחתום ללא חתימת לקוח.',
     });
   }
 
-  const contractFields = data.clientSignature !== undefined
-    ? syncContractFields(data.contractSigned, data.clientSignature)
-    : isConverting
-      ? syncContractFields(data.contractSigned ?? true, finalSignature)
-      : syncContractFields(booking.isContractSigned, booking.clientSignatureUrl);
+  // Preserve an existing signature when the client sends null/empty without
+  // explicitly unsigning (common on edit when the pad is closed/unmounted).
+  let contractFields: ReturnType<typeof syncContractFields>;
+  if (data.clientSignature !== undefined) {
+    if (incomingSignature) {
+      contractFields = syncContractFields(data.contractSigned, incomingSignature);
+    } else if (data.contractSigned === false) {
+      contractFields = syncContractFields(false, null);
+    } else {
+      contractFields = syncContractFields(
+        data.contractSigned ?? booking.isContractSigned,
+        booking.clientSignatureUrl,
+      );
+    }
+  } else if (isConverting) {
+    contractFields = syncContractFields(data.contractSigned ?? true, finalSignature);
+  } else {
+    contractFields = syncContractFields(booking.isContractSigned, booking.clientSignatureUrl);
+  }
 
   if (isConverting) {
     convertedEventCode = convertOptionCodeToEventCode(booking.eventCode);
@@ -1035,7 +1065,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
           );
         }
       } catch (pdfError) {
-        console.error('שגיאה בהפקת או שליחת חוזה ה-PDF:', pdfError);
+        logger.error('שגיאה בהפקת או שליחת חוזה ה-PDF:', pdfError);
       }
     }
 
@@ -1044,7 +1074,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       try {
         easycountResult = await issueEasyCountReceiptForBooking(updated.id);
       } catch (easycountError) {
-        console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+        logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
     }
 
@@ -1069,7 +1099,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     try {
       easycountResult = await issueEasyCountReceiptForBooking(updated.id);
     } catch (easycountError) {
-      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
   }
 
@@ -1256,7 +1286,7 @@ export const addEventAddition = async (req: Request, res: Response) => {
     emitBookingUpdated(bookingId);
     res.status(201).json({ message: 'התוספת נשמרה בהצלחה!', addition: newAddition });
   } catch (error) {
-    console.error('Error adding event addition:', error);
+    logger.error('Error adding event addition:', error);
     res.status(500).json({ error: 'שגיאת שרת פנימית בעת שמירת התוספת' });
   }
 };
@@ -1355,7 +1385,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
         );
       }
     } catch (pdfError) {
-      console.error("שגיאה בהפקת או שליחת חוזה ה-PDF:", pdfError);
+      logger.error("שגיאה בהפקת או שליחת חוזה ה-PDF:", pdfError);
     }
   }
 
@@ -1364,7 +1394,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
     try {
       easycountResult = await issueEasyCountReceiptForBooking(bookingId);
     } catch (easycountError) {
-      console.error('שגיאה בהפקת קבלת EZCount:', easycountError);
+      logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
   }
 

@@ -1,6 +1,6 @@
 .container {
   direction: rtl;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .header {
@@ -11,19 +11,19 @@
   gap: 16px;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid var(--maple-green-light);
+  border-bottom: 2px solid var(--brand-green-light);
 }
 
 .title {
   margin: 0 0 6px;
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .subtitle {
   margin: 0;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   font-size: 0.92rem;
   line-height: 1.5;
 }
@@ -36,11 +36,11 @@
 
 .select {
   padding: 8px 12px;
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
-  background: var(--maple-surface);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
+  background: var(--brand-surface);
   font-size: 0.9rem;
-  color: var(--maple-text);
+  color: var(--brand-text);
   cursor: pointer;
 }
 
@@ -52,25 +52,25 @@
 }
 
 .kpiCard {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 16px;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
   text-align: center;
 }
 
 .kpiLabel {
   display: block;
   font-size: 0.82rem;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   margin-bottom: 6px;
 }
 
 .kpiValue {
   font-size: 1.6rem;
   font-weight: 700;
-  color: var(--maple-green-dark, #166534);
+  color: var(--brand-green-dark, #166534);
 }
 
 .kpiValueWarn {
@@ -80,24 +80,24 @@
 .kpiSub {
   display: block;
   font-size: 0.78rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   margin-top: 4px;
 }
 
 .section {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 18px;
   margin-bottom: 18px;
-  box-shadow: var(--maple-shadow-sm);
+  box-shadow: var(--brand-shadow-sm);
 }
 
 .sectionTitle {
   margin: 0 0 14px;
   font-size: 1.05rem;
   font-weight: 600;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .twoCol {
@@ -136,7 +136,7 @@
   display: flex;
   justify-content: space-between;
   font-size: 0.88rem;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   font-weight: 600;
 }
 
@@ -150,7 +150,7 @@
 .barFill {
   height: 100%;
   border-radius: 11px;
-  background: linear-gradient(90deg, var(--maple-green), #86efac);
+  background: linear-gradient(90deg, var(--brand-green), #86efac);
   transition: width 0.4s ease;
 }
 
@@ -186,7 +186,7 @@
 .monthBar {
   width: 70%;
   max-width: 36px;
-  background: linear-gradient(180deg, var(--maple-green), #86efac);
+  background: linear-gradient(180deg, var(--brand-green), #86efac);
   border-radius: 4px 4px 0 0;
   min-height: 4px;
   transition: height 0.4s ease;
@@ -194,7 +194,7 @@
 
 .monthLabel {
   font-size: 0.68rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -204,7 +204,7 @@
 .monthScore {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .lowList,
@@ -217,8 +217,8 @@
 .lowItem,
 .commentItem {
   padding: 12px 14px;
-  border-radius: var(--maple-radius-sm);
-  border: 1px solid var(--maple-border);
+  border-radius: var(--brand-radius-sm);
+  border: 1px solid var(--brand-border);
   background: #fef2f2;
 }
 
@@ -238,7 +238,7 @@
 
 .eventCode {
   font-weight: 700;
-  color: var(--maple-green-dark, #166534);
+  color: var(--brand-green-dark, #166534);
 }
 
 .scoreBadge {
@@ -251,14 +251,14 @@
 }
 
 .scoreBadgeGood {
-  background: var(--maple-green);
+  background: var(--brand-green);
 }
 
 .lowText,
 .commentText {
   margin: 0;
   font-size: 0.9rem;
-  color: var(--maple-text);
+  color: var(--brand-text);
   line-height: 1.45;
 }
 
@@ -266,12 +266,12 @@
 .noData {
   text-align: center;
   padding: 40px 20px;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   font-size: 1rem;
 }
 
 .loading {
-  color: var(--maple-green);
+  color: var(--brand-green);
   font-weight: 600;
 }
 
@@ -284,15 +284,15 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  border-radius: var(--maple-radius-sm);
-  border: 1px solid var(--maple-green);
+  border-radius: var(--brand-radius-sm);
+  border: 1px solid var(--brand-green);
   background: transparent;
-  color: var(--maple-green-dark, #166534);
+  color: var(--brand-green-dark, #166534);
   font-size: 0.88rem;
   cursor: pointer;
   text-decoration: none;
 }
 
 .linkBtn:hover {
-  background: var(--maple-green-light, #dcfce7);
+  background: var(--brand-green-light, #dcfce7);
 }

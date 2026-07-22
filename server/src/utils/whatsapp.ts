@@ -1,3 +1,5 @@
+// src/utils/whatsapp.ts
+import { logger } from './logger';
 import {
   DEFAULT_LOCALE,
   getServerTranslation,
@@ -43,14 +45,14 @@ export async function checkHasWhatsApp(rawPhone: string): Promise<boolean | null
     );
 
     if (!res.ok) {
-      console.error(`Green API checkWhatsapp failed (${res.status})`);
+      logger.error('Green API checkWhatsapp failed', { status: res.status });
       return null;
     }
 
     const data = (await res.json()) as { existsWhatsapp?: boolean };
     return !!data.existsWhatsapp;
   } catch (error) {
-    console.error('Green API checkWhatsapp error:', error);
+    logger.error('Green API checkWhatsapp error', { error });
     return null;
   }
 }
@@ -73,14 +75,14 @@ async function sendGreenApiMessage(rawPhone: string, message: string): Promise<b
     );
 
     if (!res.ok) {
-      console.error(`Green API sendMessage failed (${res.status})`);
+      logger.error('Green API sendMessage failed', { status: res.status });
       return false;
     }
 
-    console.log(`✅ WhatsApp sent to ${rawPhone}`);
+    logger.info('WhatsApp sent', { phone: rawPhone });
     return true;
   } catch (error) {
-    console.error('Green API sendMessage error:', error);
+    logger.error('Green API sendMessage error', { error });
     return false;
   }
 }
@@ -108,7 +110,7 @@ async function deliverWhatsApp(
   if (isGreenApiConfigured()) {
     const hasWhatsApp = await checkHasWhatsApp(phone);
     if (hasWhatsApp === false) {
-      console.log(`[WHATSAPP] ${phone} — ${t(T.SERVER.WHATSAPP.NO_WHATSAPP, { type })}`);
+      logger.info(t(T.SERVER.WHATSAPP.NO_WHATSAPP, { type }), { phone, type });
       return { sent: false, simulated: false, hasWhatsApp: false };
     }
 
@@ -116,9 +118,7 @@ async function deliverWhatsApp(
     return { sent, simulated: false, hasWhatsApp: hasWhatsApp ?? true };
   }
 
-  console.log(`\n[WHATSAPP SIMULATION - ${type}] ${phone}...`);
-  console.log(`------------ message ------------\n${message}\n-------------------------------------`);
-  console.log(`[WHATSAPP SIMULATION] (${t(T.SERVER.WHATSAPP.SIMULATION)})`);
+  logger.info(t(T.SERVER.WHATSAPP.SIMULATION), { type, phone, message });
   return { sent: false, simulated: true, hasWhatsApp: null };
 }
 

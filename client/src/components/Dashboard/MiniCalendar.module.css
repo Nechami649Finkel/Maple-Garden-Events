@@ -3,10 +3,10 @@
 }
 
 .monthLabel {
-  margin: 0 0 var(--maple-space-3);
-  font-size: var(--maple-text-sm);
+  margin: 0 0 var(--brand-space-3);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   text-align: center;
 }
 
@@ -18,10 +18,10 @@
 
 .dayHeader {
   text-align: center;
-  font-size: var(--maple-text-xs);
+  font-size: var(--brand-text-xs);
   font-weight: 600;
-  color: var(--maple-text-muted);
-  padding: var(--maple-space-1);
+  color: var(--brand-text-muted);
+  padding: var(--brand-space-1);
 }
 
 .emptyCell {
@@ -35,30 +35,30 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   text-decoration: none;
-  color: var(--maple-text);
-  font-size: var(--maple-text-xs);
+  color: var(--brand-text);
+  font-size: var(--brand-text-xs);
   font-weight: 500;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
   position: relative;
 }
 
 .cell:hover {
-  background: var(--maple-gold-light);
+  background: var(--brand-gold-light);
 }
 
 .today {
-  box-shadow: inset 0 0 0 2px var(--maple-gold);
+  box-shadow: inset 0 0 0 2px var(--brand-gold);
   font-weight: 700;
 }
 
 .hasBookings {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
 }
 
 .hasBookings:hover {
-  background: var(--maple-green-muted);
+  background: var(--brand-green-muted);
 }
 
 .dayNum {
@@ -69,5 +69,5 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
 }

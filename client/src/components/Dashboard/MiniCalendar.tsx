@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import styles from './MiniCalendar.module.css';
+import { type CalendarDayApi } from '../../utils/optionDateApi';
 
 interface MiniCalendarProps {
-  days: any[];
+  days: CalendarDayApi[];
 }
 
 export function MiniCalendar({ days }: MiniCalendarProps) {
@@ -45,7 +46,7 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
   );
 
   const dayMap = useMemo(() => {
-    const map = new Map<string, any>();
+    const map = new Map<string, CalendarDayApi>();
     for (const d of days) {
       if (d.date) map.set(d.date.slice(0, 10), d);
     }
@@ -84,7 +85,7 @@ export function MiniCalendar({ days }: MiniCalendarProps) {
           }
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
           const dayData = dayMap.get(dateStr);
-          const bookingCount = dayData?.bookings?.filter((b: any) => !b.isOption)?.length ?? 0;
+          const bookingCount = dayData?.bookings?.filter((b) => !b.isOption)?.length ?? 0;
           const isToday = dateStr === todayStr;
 
           return (

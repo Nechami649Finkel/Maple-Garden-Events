@@ -1,7 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
   useMemo,
   useState,
   type ReactNode,
@@ -14,23 +12,10 @@ import {
   saveAccessibilitySettings,
   type AccessibilitySettings,
 } from '../accessibility/accessibilitySettings';
-
-interface AccessibilityContextValue {
-  settings: AccessibilitySettings;
-  increaseText: () => void;
-  decreaseText: () => void;
-  toggleGrayscale: () => void;
-  toggleHighContrast: () => void;
-  toggleNegativeContrast: () => void;
-  toggleLightBackground: () => void;
-  toggleHighlightLinks: () => void;
-  toggleReadableFont: () => void;
-  reset: () => void;
-  canIncreaseText: boolean;
-  canDecreaseText: boolean;
-}
-
-const AccessibilityContext = createContext<AccessibilityContextValue | null>(null);
+import {
+  AccessibilityContext,
+  type AccessibilityContextValue,
+} from './accessibilityContext';
 
 function persistAndApply(next: AccessibilitySettings) {
   saveAccessibilitySettings(next);
@@ -133,12 +118,4 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
   return (
     <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>
   );
-}
-
-export function useAccessibility() {
-  const ctx = useContext(AccessibilityContext);
-  if (!ctx) {
-    throw new Error('useAccessibility must be used within AccessibilityProvider');
-  }
-  return ctx;
 }

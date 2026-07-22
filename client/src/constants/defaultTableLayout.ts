@@ -166,7 +166,7 @@ export function buildLayoutForGuestCount(params: LayoutBuildParams): TableData[]
   }
   if (includeHonor && menSlots.honor) {
     tables.push(clampToSection({
-      id: nextId++,
+      id: nextId,
       x: menSlots.honor.x,
       y: menSlots.honor.y,
       section: 'men',

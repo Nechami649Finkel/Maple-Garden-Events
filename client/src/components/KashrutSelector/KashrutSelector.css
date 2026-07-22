@@ -1,75 +1,76 @@
-.kashrut-container {
+.kashrut-selector {
   display: flex;
-  gap: 15px;
+  gap: 10px;
   align-items: center;
-  margin-top: 10px;
-}
-
-.kashrut-select-wrapper {
-  flex: 1;
-}
-
-.kashrut-select {
   width: 100%;
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #cbd5e1;
+}
+
+.kashrut-selector__field {
+  flex: 1;
+  min-width: 0;
+}
+
+.kashrut-selector__field select {
+  width: 100%;
   cursor: pointer;
 }
 
-.preview-box {
-  cursor: pointer;
+.kashrut-selector__thumb {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border: 2px solid #e2e8f0;
   border-radius: 6px;
   overflow: hidden;
-  width: 50px;
-  height: 50px;
+  background: #fff;
+  cursor: pointer;
 }
 
-.preview-img {
+.kashrut-selector__thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.placeholder-box {
-  width: 50px;
-  height: 50px;
-  background: #f8fafc;
+.kashrut-selector__thumb-empty {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
   border: 1px dashed #cbd5e1;
   border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10px;
-  color: #999;
+  color: #94a3b8;
+  font-size: 12px;
+  background: #f8fafc;
 }
 
-.modal-overlay {
+.kashrut-selector__modal {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.85);
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
   z-index: 9999;
   padding: 20px;
 }
 
-.modal-content {
+.kashrut-selector__modal-content {
   text-align: center;
 }
 
-.modal-img {
+.kashrut-selector__modal-content img {
   max-width: 100%;
   max-height: 80vh;
   border-radius: 4px;
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
-.close-btn {
+.kashrut-selector__modal-content button {
   display: block;
   margin: 20px auto 0;
   padding: 10px 30px;

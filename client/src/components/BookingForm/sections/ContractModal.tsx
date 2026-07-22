@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { getSignatureDataUrl } from '../../../utils/signature';
 import { openContractPdf } from '../../../utils/contractPrint';
@@ -19,6 +19,9 @@ interface ContractModalProps {
   styles?: Record<string, string>;
 }
 
+/** Locked bitmap size — avoids ResizeObserver remounts that wipe strokes. */
+const SIGNATURE_SIZE = { width: 700, height: 200 };
+
 const ContractModal = ({
   isOpen,
   onClose,
@@ -33,31 +36,47 @@ const ContractModal = ({
   const { t, T } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const [draftText, setDraftText] = useState('');
-  const signatureWrapRef = useRef<HTMLDivElement>(null);
-  const [signatureSize, setSignatureSize] = useState({ width: 700, height: 200 });
+  const [padGeneration, setPadGeneration] = useState(0);
+  const [wasOpen, setWasOpen] = useState(isOpen);
+  const latestSignatureRef = useRef<{ gen: number; data: string } | null>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const el = signatureWrapRef.current;
-    if (!el) return;
-
-    const updateSize = () => {
-      const width = Math.max(260, Math.min(700, Math.floor(el.clientWidth - 4)));
-      const height = width < 400 ? 140 : 200;
-      setSignatureSize({ width, height });
-    };
-
-    updateSize();
-    const ro = new ResizeObserver(updateSize);
-    ro.observe(el);
-    window.addEventListener('resize', updateSize);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', updateSize);
-    };
-  }, [isOpen]);
+  // Reset pad session when the modal opens (render-time adjust — no effect setState).
+  if (isOpen !== wasOpen) {
+    setWasOpen(isOpen);
+    if (isOpen) {
+      setIsEditing(false);
+      setDraftText('');
+      setPadGeneration((g) => g + 1);
+    }
+  }
 
   if (!isOpen) return null;
+
+  const captureFromPad = (): string | null => {
+    const fromPad = getSignatureDataUrl(sigCanvas);
+    if (fromPad) {
+      latestSignatureRef.current = { gen: padGeneration, data: fromPad };
+      return fromPad;
+    }
+    const cached = latestSignatureRef.current;
+    if (cached && cached.gen === padGeneration) return cached.data;
+    return null;
+  };
+
+  const handleConfirmSignature = () => {
+    if (isEditing) {
+      alert(t(T.BOOKING.CONTRACT.SAVE_EDIT_BEFORE_SIGN));
+      return;
+    }
+    const dataUrl = captureFromPad();
+    if (!dataUrl) {
+      alert(t(T.BOOKING.CONTRACT.SIGN_REQUIRED));
+      return;
+    }
+    onSignatureSaved?.(dataUrl);
+    setContractSigned(true);
+    onClose();
+  };
 
   const startEditing = () => {
     setDraftText(contractText);
@@ -142,37 +161,39 @@ const ContractModal = ({
 
           <div className={modalStyles.signatureSection}>
             <h4>{t(T.BOOKING.CONTRACT.SIGNATURE_TITLE)}</h4>
-            <div ref={signatureWrapRef} className={modalStyles.signatureBox}>
+            <div className={modalStyles.signatureBox}>
               <SignatureCanvas
+                key={padGeneration}
                 ref={sigCanvas}
                 penColor="#0f172a"
+                onEnd={() => {
+                  const snap = getSignatureDataUrl(sigCanvas);
+                  if (snap) latestSignatureRef.current = { gen: padGeneration, data: snap };
+                }}
                 canvasProps={{
-                  width: signatureSize.width,
-                  height: signatureSize.height,
-                  style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block' },
+                  width: SIGNATURE_SIZE.width,
+                  height: SIGNATURE_SIZE.height,
+                  style: { cursor: 'crosshair', width: '100%', height: 'auto', display: 'block', touchAction: 'none' },
                 }}
               />
             </div>
           </div>
 
           <div className={modalStyles.actions}>
-            <button type="button" onClick={() => sigCanvas.current?.clear()} className="maple-btn maple-btn-danger">
+            <button
+              type="button"
+              onClick={() => {
+                sigCanvas.current?.clear();
+                latestSignatureRef.current = null;
+              }}
+              className="maple-btn maple-btn-danger"
+            >
               {t(T.BOOKING.CONTRACT.CLEAR_SIGNATURE)}
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                if (isEditing) {
-                  alert(t(T.BOOKING.CONTRACT.SAVE_EDIT_BEFORE_SIGN));
-                  return;
-                }
-                const dataUrl = getSignatureDataUrl(sigCanvas);
-                if (!dataUrl) return alert(t(T.BOOKING.CONTRACT.SIGN_REQUIRED));
-                onSignatureSaved?.(dataUrl);
-                setContractSigned(true);
-                onClose();
-              }}
+              onClick={handleConfirmSignature}
               className={`maple-btn maple-btn-primary ${modalStyles.signBtn}`}
             >
               {t(T.BOOKING.CONTRACT.CONFIRM_SIGN)}

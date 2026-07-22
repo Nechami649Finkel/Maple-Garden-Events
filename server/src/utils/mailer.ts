@@ -31,14 +31,16 @@ export function canSendRealMail(): boolean {
   return !!(getEmailUser() && getEmailPass());
 }
 
+import { getBrandConfig } from '../vendor/shared/brand/index';
+
 export function getFromAddress(locale: Locale = DEFAULT_LOCALE): string {
-  const { t } = getServerTranslation(locale);
-  return `"${t(T.SERVER.COMMON.FROM_NAME)}" <${getEmailUser() || 'maple.events.il@gmail.com'}>`;
+  const brand = getBrandConfig();
+  return `"${brand.messaging.emailFromName}" <${getEmailUser() || brand.supportEmail}>`;
 }
 
 function getAlertsFromAddress(locale: Locale = DEFAULT_LOCALE): string {
-  const { t } = getServerTranslation(locale);
-  return `"${t(T.SERVER.COMMON.ALERTS_FROM_NAME)}" <${getEmailUser() || 'maple.events.il@gmail.com'}>`;
+  const brand = getBrandConfig();
+  return `"${brand.messaging.emailAlertsFromName}" <${getEmailUser() || brand.supportEmail}>`;
 }
 
 let transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null = null;

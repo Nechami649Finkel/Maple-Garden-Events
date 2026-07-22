@@ -1,11 +1,11 @@
 .empty {
   text-align: center;
   padding: 48px 24px;
-  color: var(--maple-text-muted);
-  font-size: var(--maple-text-base);
-  background: var(--maple-surface);
-  border: 1px dashed var(--maple-border-strong);
-  border-radius: var(--maple-radius-lg);
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-base);
+  background: var(--brand-surface);
+  border: 1px dashed var(--brand-border-strong);
+  border-radius: var(--brand-radius-lg);
 }
 
 .icon {
@@ -16,14 +16,14 @@
 
 .title {
   margin: 0 0 8px;
-  font-size: var(--maple-text-lg);
+  font-size: var(--brand-text-lg);
   font-weight: 700;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .message {
   margin: 0;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
 }
 
 .action {

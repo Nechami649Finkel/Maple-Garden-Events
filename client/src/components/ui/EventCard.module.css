@@ -1,75 +1,75 @@
 .card {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius);
-  padding: var(--maple-space-4);
-  box-shadow: var(--maple-shadow-sm);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  padding: var(--brand-space-4);
+  box-shadow: var(--brand-shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: var(--maple-space-2);
-  transition: box-shadow var(--maple-transition);
+  gap: var(--brand-space-2);
+  transition: box-shadow var(--brand-transition);
 }
 
 .card:hover {
-  box-shadow: var(--maple-shadow);
+  box-shadow: var(--brand-shadow);
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: var(--maple-space-2);
+  gap: var(--brand-space-2);
   flex-wrap: wrap;
 }
 
 .date {
   display: inline-flex;
   padding: 3px 10px;
-  border-radius: var(--maple-radius-sm);
-  background: var(--maple-gold-light);
-  color: var(--maple-gold-deep);
-  font-size: var(--maple-text-xs);
+  border-radius: var(--brand-radius-sm);
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
+  font-size: var(--brand-text-xs);
   font-weight: 700;
 }
 
 .code {
-  font-size: var(--maple-text-xs);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-xs);
+  color: var(--brand-text-muted);
   font-weight: 600;
 }
 
 .name {
   margin: 0;
-  font-size: var(--maple-text-base);
+  font-size: var(--brand-text-base);
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .nameSecondary {
   margin: 0;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-secondary);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-secondary);
 }
 
 .details {
-  margin: var(--maple-space-1) 0 var(--maple-space-2);
+  margin: var(--brand-space-1) 0 var(--brand-space-2);
   display: flex;
   flex-direction: column;
-  gap: var(--maple-space-1);
+  gap: var(--brand-space-1);
 }
 
 .detailRow {
   display: flex;
-  gap: var(--maple-space-2);
-  font-size: var(--maple-text-sm);
+  gap: var(--brand-space-2);
+  font-size: var(--brand-text-sm);
 }
 
 .detailRow dt {
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   font-weight: 500;
   min-width: 48px;
 }
 
 .detailRow dd {
   margin: 0;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }

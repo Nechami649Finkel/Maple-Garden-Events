@@ -3,7 +3,7 @@ import {
   HALL_UPGRADE_KEYS,
   type UpgradeKey,
 } from '../../../utils/pricing';
-import { EXTERNAL_SUPPLIER_LINKS } from '../BookingForm';
+import { EXTERNAL_SUPPLIER_LINKS } from '../bookingFormConstants';
 import { useTranslation } from '../../../i18n/useTranslation';
 import { formatNumber } from '@shared/i18n/formatters';
 import { UPGRADE_I18N_KEYS } from '@shared/i18n/bookingLookups';

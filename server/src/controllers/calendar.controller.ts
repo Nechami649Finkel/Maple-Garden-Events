@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { calendarService } from '../Services/calendar.service';
+import { logger } from '../utils/logger';
 
 export const calendarController = {
 
@@ -26,7 +27,7 @@ export const calendarController = {
       );
       res.json(dates);
     } catch (error) {
-      console.error('❌ שגיאה מפורטת ב-getAllDates:', error);
+      logger.error('getAllDates failed', { error });
       res.status(500).json({ error: 'שגיאה בשליפת התאריכים' });
     }
   },

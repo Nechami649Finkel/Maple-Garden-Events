@@ -1,5 +1,6 @@
 import { apiFetch } from '../services/api';
 import { API_URL } from '../config/api';
+import { type EventFormTime } from './eventStart';
 import { type TimeSlot, normalizeTimeSlot } from './timeSlot';
 import {
   validateOptionDateSelection,
@@ -9,6 +10,55 @@ import {
 import { T, type TranslationKey, type TranslationParams } from '@shared/i18n';
 
 export type OptionDateItem = { date: string; hebrewDate?: string };
+
+export function normalizeOptionDate(d: string | OptionDateItem): OptionDateItem {
+  if (typeof d === 'object' && d?.date) return d;
+  return { date: String(d), hebrewDate: '' };
+}
+
+/** Booking summary embedded in calendar day cells */
+export type CalendarBookingApi = {
+  id?: string;
+  timeOfDay?: string | null;
+  isOption?: boolean;
+  clientAFullName?: string;
+  clientBFullName?: string;
+  eventType?: string;
+  eventForm?: EventFormTime | null;
+  eventCode?: string;
+  paidAmount?: number;
+  isContractSigned?: boolean;
+  clientAIdNumber?: string;
+  clientBIdNumber?: string;
+  clientAPhone?: string;
+  clientBPhone?: string;
+  clientAEmail?: string;
+  clientBEmail?: string;
+  guestCount?: number | null;
+  finalPricePortion?: number;
+  basePrice?: number;
+  totalPrice?: number;
+  extrasPrice?: number;
+  externalExtrasPrice?: number;
+  liveAdditionsTotal?: number;
+  createdBy?: string;
+  clientComments?: string | null;
+  managerComments?: string | null;
+  clientSignatureUrl?: string | null;
+};
+
+/** Day payload from GET /api/calendar/dates */
+export type CalendarDayApi = {
+  id?: string | null;
+  date: string;
+  hebrewDate?: string;
+  status?: string;
+  reason?: string | null;
+  candleTime?: string | null;
+  lockedBy?: string | null;
+  bookings?: CalendarBookingApi[];
+  blockedSlots?: string[];
+};
 
 type TranslateFn = (key: TranslationKey, params?: TranslationParams) => string;
 
@@ -20,13 +70,15 @@ export async function fetchCalendarDays(
   start: string,
   end: string,
   eventType: string,
-): Promise<any[]> {
+): Promise<CalendarDayApi[]> {
   const filter = getEventTypeFilter(eventType);
   const res = await apiFetch(
     `${API_URL}/calendar/dates?start=${start}&end=${end}&eventType=${filter}`,
   );
   if (!res.ok) throw new Error('fetch failed');
-  return res.json();
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data as CalendarDayApi[];
 }
 
 function getHebrewDateLabel(dateStr: string): string {
@@ -66,8 +118,9 @@ export async function resolveOptionDate(
     if (!res.ok) {
       return { ok: false, error: t(T.VALIDATION.VERIFY_FAILED) };
     }
-    const data = await res.json();
-    const day = data?.[0];
+    const data: unknown = await res.json();
+    const days = Array.isArray(data) ? (data as CalendarDayApi[]) : [];
+    const day = days[0];
     const serverError = validateOptionDateSelection(date, day, slot, excludeDates);
     if (serverError) return { ok: false, error: toErrorMessage(t, serverError) };
     return {

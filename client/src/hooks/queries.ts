@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { API_URL } from '../config/api';
 import { apiFetch } from '../services/api';
+import { type BookingApi } from '../utils/bookingApi';
+import { type CalendarDayApi } from '../utils/optionDateApi';
 import { tClient, T } from '../i18n/clientTranslation';
 
 export interface PaginationMeta {
@@ -18,7 +20,7 @@ interface BookingsParams {
 }
 
 interface BookingsResponse {
-  data: unknown[];
+  data: BookingApi[];
   pagination: PaginationMeta;
 }
 
@@ -35,7 +37,7 @@ export function useBookingsQuery(params: BookingsParams) {
       const res = await apiFetch(`${API_URL}/bookings?${qs}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.message || tClient(T.BOOKINGS.LOAD_ERROR));
-      return { data: json.data, pagination: json.pagination };
+      return { data: json.data as BookingApi[], pagination: json.pagination };
     },
   });
 }
@@ -43,15 +45,15 @@ export function useBookingsQuery(params: BookingsParams) {
 export function useCalendarDatesQuery(start: string, end: string, eventType: string) {
   return useQuery({
     queryKey: ['calendar', start, end, eventType],
-    queryFn: async () => {
+    queryFn: async (): Promise<CalendarDayApi[]> => {
       const qs = new URLSearchParams({ start, end, eventType });
       const res = await apiFetch(`${API_URL}/calendar/dates?${qs}`);
       const json = await res.json();
       if (!res.ok) {
         throw new Error(typeof json?.error === 'string' ? json.error : tClient(T.CALENDAR.LOAD_ERROR));
       }
-      if (Array.isArray(json)) return json;
-      if (Array.isArray(json?.data)) return json.data;
+      if (Array.isArray(json)) return json as CalendarDayApi[];
+      if (Array.isArray(json?.data)) return json.data as CalendarDayApi[];
       return [];
     },
     enabled: Boolean(start && end),

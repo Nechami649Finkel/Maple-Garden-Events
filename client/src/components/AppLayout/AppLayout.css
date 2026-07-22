@@ -1,6 +1,6 @@
 .app-layout {
   display: grid;
-  grid-template-rows: var(--maple-header-height) 1fr;
+  grid-template-rows: var(--brand-header-height) 1fr;
   grid-template-columns: 1fr;
   grid-template-areas:
     "header"
@@ -9,15 +9,15 @@
   width: 100vw;
   overflow: hidden;
   direction: rtl;
-  font-family: var(--maple-font);
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  font-family: var(--brand-font);
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 @media (min-width: 1024px) {
   .app-layout {
-    grid-template-columns: var(--maple-sidebar-width) 1fr;
-    grid-template-rows: var(--maple-header-height) 1fr;
+    grid-template-columns: var(--brand-sidebar-width) 1fr;
+    grid-template-rows: var(--brand-header-height) 1fr;
     grid-template-areas:
       "sidebar header"
       "sidebar main";
@@ -53,8 +53,8 @@
 
 .page-content {
   flex: 1;
-  padding: var(--maple-page-padding);
-  max-width: var(--maple-content-max);
+  padding: var(--brand-page-padding);
+  max-width: var(--brand-content-max);
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
@@ -62,7 +62,7 @@
 
 .page-content-full {
   flex: 1;
-  padding: var(--maple-page-padding);
+  padding: var(--brand-page-padding);
   width: 100%;
   margin: 0;
   box-sizing: border-box;

@@ -24,11 +24,12 @@ import {
   translateByValue,
 } from '@shared/i18n/bookingLookups';
 import styles from './BookingsManager.module.css';
+import { type BookingApi, type EventAdditionApi } from '../../utils/bookingApi';
 
 interface BookingDetailsModalProps {
-  booking: any;
+  booking: BookingApi;
   onClose: () => void;
-  onBookingUpdated?: (booking: any) => void;
+  onBookingUpdated?: (booking: BookingApi) => void;
 }
 
 const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDetailsModalProps) => {
@@ -74,7 +75,7 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
           (json.success ? t(T.BOOKINGS.RECEIPT_SUCCESS) : t(T.BOOKINGS.RECEIPT_ERROR)),
       );
       if (json.success && json.data && onBookingUpdated) {
-        onBookingUpdated(json.data);
+        onBookingUpdated(json.data as BookingApi);
       }
     } catch {
       alert(t(T.COMMON.ERRORS.CONNECTION));
@@ -230,13 +231,13 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               <label>{t(T.BOOKINGS.LABEL_PAID)}</label>
               <span>{money(booking.paidAmount)}</span>
             </div>
-            {booking.advancePaid > 0 && (
+            {(booking.advancePaid ?? 0) > 0 && (
               <div className={styles.popupRow}>
                 <label>{t(T.BOOKINGS.LABEL_ADVANCE)}</label>
                 <span>{money(booking.advancePaid)}</span>
               </div>
             )}
-            {booking.totalPaid > 0 && (
+            {(booking.totalPaid ?? 0) > 0 && (
               <div className={styles.popupRow}>
                 <label>{t(T.BOOKINGS.LABEL_TOTAL_PAID)}</label>
                 <span>{money(booking.totalPaid)}</span>
@@ -373,10 +374,10 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
             </section>
           )}
 
-          {booking.additions?.length > 0 && (
+          {booking.additions && booking.additions.length > 0 && (
             <section className={styles.detailsSection}>
               <h3 className={styles.sectionTitle}>{t(T.BOOKINGS.LIVE_ADDITIONS_SECTION)}</h3>
-              {booking.additions.map((add: any) => (
+              {booking.additions.map((add: EventAdditionApi) => (
                 <div key={add.id} className={styles.additionItem}>
                   <div className={styles.additionMeta}>
                     🕒 {formatDateTime(add.createdAt, locale, { dateStyle: 'short', timeStyle: 'short' })}

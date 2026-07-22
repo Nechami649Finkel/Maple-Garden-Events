@@ -51,14 +51,14 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: var(--maple-gold-light);
+  background: var(--brand-gold-light);
   border: 1px solid rgba(184, 149, 106, 0.45);
-  border-radius: var(--maple-radius);
-  padding: var(--maple-space-4);
+  border-radius: var(--brand-radius);
+  padding: var(--brand-space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--maple-space-3);
-  box-shadow: var(--maple-shadow-sm);
+  gap: var(--brand-space-3);
+  box-shadow: var(--brand-shadow-sm);
   margin-bottom: 1rem;
 }
 
@@ -66,31 +66,31 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
 }
 
 .optionDatesBarHead strong {
-  font-size: var(--maple-text-base);
-  color: var(--maple-gold-deep);
+  font-size: var(--brand-text-base);
+  color: var(--brand-gold-deep);
 }
 
 .optionDatesBarHint {
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-secondary);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-secondary);
 }
 
 .optionDatesChips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
 }
 
 .optionDateChip {
   display: flex;
   align-items: stretch;
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   border: 1px solid rgba(184, 149, 106, 0.4);
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   overflow: hidden;
   min-width: 200px;
 }
@@ -104,29 +104,29 @@
 }
 
 .optionDateChipIndex {
-  font-size: var(--maple-text-xs);
+  font-size: var(--brand-text-xs);
   font-weight: 700;
-  color: var(--maple-gold-deep);
+  color: var(--brand-gold-deep);
 }
 
 .optionDateChipGreg {
-  font-size: var(--maple-text-lg);
+  font-size: var(--brand-text-lg);
   font-weight: 700;
-  color: var(--maple-charcoal);
+  color: var(--brand-charcoal);
   direction: ltr;
   text-align: right;
 }
 
 .optionDateChipDow,
 .optionDateChipHeb {
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-muted);
 }
 
 .optionDateChipRemove {
   border: none;
   background: rgba(197, 48, 48, 0.08);
-  color: var(--maple-danger);
+  color: var(--brand-danger);
   padding: 0 12px;
   cursor: pointer;
   font-size: 1rem;
@@ -142,64 +142,64 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
 }
 
 .optionAddDateBtn {
   align-self: flex-start;
-  background: var(--maple-gold-deep);
+  background: var(--brand-gold-deep);
   color: #fff;
   border: none;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 18px;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
-  transition: background var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: background var(--brand-transition);
 }
 
 .optionAddDateBtn:hover {
-  background: var(--maple-gold);
+  background: var(--brand-gold);
 }
 
 .optionDatesMaxMsg,
 .optionDatesOr {
   margin: 0;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-muted);
 }
 
 .optionManualInput {
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   padding: 9px 12px;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   min-width: 160px;
   direction: ltr;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .optionManualInput:focus {
-  border-color: var(--maple-gold);
+  border-color: var(--brand-gold);
   outline: none;
   box-shadow: 0 0 0 3px rgba(184, 149, 106, 0.2);
 }
 
 .optionManualAddBtn {
-  background: var(--maple-surface);
-  color: var(--maple-gold-deep);
-  border: 1px solid var(--maple-gold);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-surface);
+  color: var(--brand-gold-deep);
+  border: 1px solid var(--brand-gold);
+  border-radius: var(--brand-radius-sm);
   padding: 9px 16px;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
   cursor: pointer;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .optionManualAddBtn:hover:not(:disabled) {
-  background: var(--maple-gold-light);
+  background: var(--brand-gold-light);
 }
 
 .optionManualAddBtn:disabled {
@@ -209,29 +209,29 @@
 
 .optionManualError {
   margin: 0;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-danger);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-danger);
 }
 
 .optionPickerOverlay {
   position: fixed;
   inset: 0;
-  background: var(--maple-overlay);
-  z-index: var(--maple-z-modal);
+  background: var(--brand-overlay);
+  z-index: var(--brand-z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--maple-space-4);
+  padding: var(--brand-space-4);
 }
 
 .optionPickerModal {
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
   width: 100%;
   max-width: min(520px, 94vw);
-  padding: var(--maple-space-4);
-  box-shadow: var(--maple-shadow-lg);
-  border: 1px solid var(--maple-border);
+  padding: var(--brand-space-4);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
   overflow: visible;
 }
 
@@ -239,45 +239,45 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--maple-space-3);
+  margin-bottom: var(--brand-space-3);
 }
 
 .optionPickerHeader h4 {
   margin: 0;
-  font-size: var(--maple-text-base);
-  color: var(--maple-charcoal);
+  font-size: var(--brand-text-base);
+  color: var(--brand-charcoal);
 }
 
 .optionPickerClose {
-  border: 1px solid var(--maple-border);
-  background: var(--maple-surface);
+  border: 1px solid var(--brand-border);
+  background: var(--brand-surface);
   border-radius: 50%;
   width: 32px;
   height: 32px;
   font-size: 1rem;
   cursor: pointer;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 .optionPickerManual {
-  margin-bottom: var(--maple-space-3);
-  padding-bottom: var(--maple-space-3);
-  border-bottom: 1px solid var(--maple-border);
+  margin-bottom: var(--brand-space-3);
+  padding-bottom: var(--brand-space-3);
+  border-bottom: 1px solid var(--brand-border);
 }
 
 .optionPickerManualLabel {
   display: block;
-  font-size: var(--maple-text-sm);
+  font-size: var(--brand-text-sm);
   font-weight: 600;
-  color: var(--maple-text-secondary);
-  margin-bottom: var(--maple-space-2);
+  color: var(--brand-text-secondary);
+  margin-bottom: var(--brand-space-2);
 }
 
 .optionPickerOr {
   margin: 0 0 10px;
   text-align: center;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-muted);
 }
 
 .optionPickerNav {
@@ -289,12 +289,12 @@
 }
 
 .optionPickerNav button {
-  border: 1px solid var(--maple-border);
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--brand-border);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-sm);
   padding: 4px 12px;
   cursor: pointer;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .optionPickerWeekdays {
@@ -303,8 +303,8 @@
   gap: 6px;
   margin-bottom: 8px;
   text-align: center;
-  font-size: var(--maple-text-xs);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-xs);
+  color: var(--brand-text-muted);
   direction: rtl;
 }
 
@@ -322,25 +322,25 @@
   justify-content: center;
   aspect-ratio: 1;
   min-height: 72px;
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
-  background: var(--maple-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
+  background: var(--brand-surface);
   cursor: pointer;
   padding: 8px 4px;
   gap: 4px;
-  transition: border-color var(--maple-transition), background var(--maple-transition);
+  transition: border-color var(--brand-transition), background var(--brand-transition);
   min-width: 0;
   width: 100%;
 }
 
 .optionPickerDay:hover:not(:disabled) {
-  border-color: var(--maple-gold);
-  background: var(--maple-gold-light);
+  border-color: var(--brand-gold);
+  background: var(--brand-gold-light);
 }
 
 .optionPickerDayDisabled {
-  background: var(--maple-bg);
-  color: var(--maple-text-muted);
+  background: var(--brand-bg);
+  color: var(--brand-text-muted);
   cursor: not-allowed;
   opacity: 0.7;
 }
@@ -352,7 +352,7 @@
 
 .optionPickerDayHeb {
   font-size: 0.7rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   line-height: 1.2;
   text-align: center;
   max-width: 100%;
@@ -368,6 +368,6 @@
 
 .optionPickerLoading {
   text-align: center;
-  padding: var(--maple-space-6);
-  color: var(--maple-text-muted);
+  padding: var(--brand-space-6);
+  color: var(--brand-text-muted);
 }

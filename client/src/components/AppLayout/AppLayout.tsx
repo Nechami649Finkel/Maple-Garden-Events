@@ -1,7 +1,7 @@
-import { AppHeader } from '../AppHeader/AppHeader';
+﻿import { AppHeader } from '../AppHeader/AppHeader';
 import { AppSidebar } from '../AppSidebar/AppSidebar';
-import { NavigationProvider } from '../../context/NavigationContext';
-import { SidebarProvider } from '../../context/SidebarContext';
+import { NavigationProvider } from '../../context/NavigationProvider';
+import { SidebarProvider } from '../../context/SidebarProvider';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useLocation } from 'react-router-dom';
 import './AppLayout.css';

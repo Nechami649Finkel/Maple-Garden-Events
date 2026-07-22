@@ -1,32 +1,15 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useEffect } from 'react';
 
 export interface NavigationOverride {
   onBack: () => void;
 }
 
-interface NavigationContextValue {
+export interface NavigationContextValue {
   override: NavigationOverride | null;
   setOverride: (override: NavigationOverride | null) => void;
 }
 
-const NavigationContext = createContext<NavigationContextValue | null>(null);
-
-export function NavigationProvider({ children }: { children: ReactNode }) {
-  const [override, setOverride] = useState<NavigationOverride | null>(null);
-  const value = useMemo(() => ({ override, setOverride }), [override]);
-  return (
-    <NavigationContext.Provider value={value}>
-      {children}
-    </NavigationContext.Provider>
-  );
-}
+export const NavigationContext = createContext<NavigationContextValue | null>(null);
 
 export function useNavigationContext(): NavigationContextValue {
   const ctx = useContext(NavigationContext);

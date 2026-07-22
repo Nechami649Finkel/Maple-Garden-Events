@@ -4,13 +4,13 @@
   max-width: 28rem;
   margin: 0 auto;
   padding: 1rem;
-  background-color: var(--maple-surface);
-  box-shadow: var(--maple-shadow);
-  border-radius: var(--maple-radius);
-  border: 1px solid var(--maple-border);
+  background-color: var(--brand-surface);
+  box-shadow: var(--brand-shadow);
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-border);
   direction: rtl;
   box-sizing: border-box;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .addition-form-title {
@@ -18,7 +18,7 @@
   font-weight: 700;
   margin-bottom: 1rem;
   text-align: center;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .addition-form {
@@ -36,7 +36,7 @@
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   margin-bottom: 0.25rem;
 }
 
@@ -44,15 +44,15 @@
   display: block;
   width: 100%;
   padding: 0.5rem 0.65rem;
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   box-sizing: border-box;
   font-family: inherit;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: var(--maple-green);
+  border-color: var(--brand-green);
   box-shadow: 0 0 0 3px rgba(140, 191, 142, 0.25);
 }
 
@@ -62,7 +62,7 @@
   margin-top: 1rem;
   background-color: #fff5f5;
   padding: 0.75rem;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   border: 1px solid rgba(229, 62, 62, 0.25);
 }
 
@@ -71,14 +71,14 @@
   margin-left: 0.5rem;
   width: 1rem;
   height: 1rem;
-  accent-color: var(--maple-danger);
+  accent-color: var(--brand-danger);
   cursor: pointer;
 }
 
 .agreement-text {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--maple-danger);
+  color: var(--brand-danger);
   margin: 0;
   cursor: pointer;
 }
@@ -88,16 +88,16 @@
 }
 
 .signature-canvas-container {
-  border: 2px dashed var(--maple-border-strong);
-  background-color: var(--maple-bg);
-  border-radius: var(--maple-radius-sm);
+  border: 2px dashed var(--brand-border-strong);
+  background-color: var(--brand-bg);
+  border-radius: var(--brand-radius-sm);
   overflow: hidden;
   touch-action: none;
 }
 
 .clear-signature-btn {
   font-size: 0.875rem;
-  color: var(--maple-green-deep);
+  color: var(--brand-green-deep);
   background: none;
   border: none;
   cursor: pointer;
@@ -112,21 +112,21 @@
 
 .submit-btn {
   width: 100%;
-  background-color: var(--maple-green-dark);
+  background-color: var(--brand-green-dark);
   color: white;
   font-weight: 700;
   padding: 0.75rem 1rem;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   border: none;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
   font-size: 1rem;
   margin-top: 0.5rem;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .submit-btn:hover:not(:disabled) {
-  background-color: var(--maple-green-deep);
+  background-color: var(--brand-green-deep);
 }
 
 .submit-btn:disabled {

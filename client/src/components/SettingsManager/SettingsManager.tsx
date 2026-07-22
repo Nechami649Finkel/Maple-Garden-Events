@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './SettingsManager.css';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from '../../services/api';
@@ -27,6 +27,15 @@ import { Icon } from '../ui/Icon';
 import { translateByValue } from '@shared/i18n/bookingLookups';
 import { T, type TranslationKey } from '@shared/i18n/keys';
 
+/** Editable global settings draft (price fields + catalog meta). */
+type GlobalSettingsDraft = Record<string, unknown>;
+
+interface KashrutRecord {
+  id: string;
+  imageUrl?: string | null;
+  validUntil?: string | Date | null;
+}
+
 const EXTRA_CATEGORY_KEY_BY_VALUE: Record<string, TranslationKey> = {
   עיצוב: T.SETTINGS.CATEGORY_DESIGN,
   טכני: T.SETTINGS.CATEGORY_TECH,
@@ -39,21 +48,27 @@ export const SettingsManager = () => {
   const queryClient = useQueryClient();
   const { data: globalSettingsData, isLoading: settingsLoading } = useGlobalSettingsQuery();
   const { data: extras = [], isLoading: extrasLoading } = useExtrasQuery();
-  const { data: kashrutsData = [], isLoading: kashrutLoading } = useKashrutQuery();
+  // Do NOT default to `[]` — a fresh array each render caused infinite setState loops.
+  const { data: kashrutsData, isLoading: kashrutLoading } = useKashrutQuery();
   const { data: staffMembers = [], isLoading: staffLoading } = useStaffQuery();
 
-  const [globalSettings, setGlobalSettings] = useState<any>({});
-  const [kashruts, setKashruts] = useState<any[]>([]);
+  const [globalSettings, setGlobalSettings] = useState<GlobalSettingsDraft>({});
+  const [settingsSource, setSettingsSource] = useState<typeof globalSettingsData>(undefined);
+  // Sync editable draft only when React Query provides a new cached object reference.
+  if (globalSettingsData !== undefined && globalSettingsData !== settingsSource) {
+    setSettingsSource(globalSettingsData);
+    setGlobalSettings(globalSettingsData as GlobalSettingsDraft);
+  }
+
+  const [kashruts, setKashruts] = useState<KashrutRecord[]>([]);
+  const [kashrutsSource, setKashrutsSource] = useState<typeof kashrutsData>(undefined);
+  if (kashrutsData !== undefined && kashrutsData !== kashrutsSource) {
+    setKashrutsSource(kashrutsData);
+    setKashruts(Array.isArray(kashrutsData) ? (kashrutsData as KashrutRecord[]) : []);
+  }
+
   const [newExtra, setNewExtra] = useState({ name: '', category: 'עיצוב', price: '' });
   const [newStaffName, setNewStaffName] = useState('');
-
-  useEffect(() => {
-    if (globalSettingsData) setGlobalSettings(globalSettingsData);
-  }, [globalSettingsData]);
-
-  useEffect(() => {
-    setKashruts(Array.isArray(kashrutsData) ? kashrutsData : []);
-  }, [kashrutsData]);
 
   const formatExtraCategory = (value: string) =>
     translateByValue(t, EXTRA_CATEGORY_KEY_BY_VALUE, value);
@@ -68,14 +83,14 @@ export const SettingsManager = () => {
       });
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
       alert(t(T.SETTINGS.SAVED));
-    } catch (error) {
+    } catch {
       alert(t(T.SETTINGS.SAVE_ERROR));
     }
   };
 
   const updatePriceField = (field: string, value: string) => {
     const num = Number(value);
-    setGlobalSettings((prev: Record<string, unknown>) => ({
+    setGlobalSettings((prev) => ({
       ...prev,
       [field]: value === '' ? '' : num,
     }));
@@ -88,7 +103,7 @@ export const SettingsManager = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hiddenPriceFields }),
       });
-      setGlobalSettings((prev: Record<string, unknown>) => ({ ...prev, hiddenPriceFields }));
+      setGlobalSettings((prev) => ({ ...prev, hiddenPriceFields }));
       await queryClient.invalidateQueries({ queryKey: ['settings'] });
     } catch {
       alert(t(T.SETTINGS.PRICING_UPDATE_ERROR));
@@ -130,7 +145,7 @@ export const SettingsManager = () => {
     }
   };
 
-  const updateKashrut = async (id: string, data: any) => {
+  const updateKashrut = async (id: string, data: Partial<Pick<KashrutRecord, 'imageUrl' | 'validUntil'>>) => {
     try {
       const response = await apiFetch(`${API_URL}/kashrut/${id}`, {
         method: 'PUT',
@@ -142,7 +157,7 @@ export const SettingsManager = () => {
         alert(`${t(T.SETTINGS.SERVER_REJECT)} (${response.status})`);
         return;
       }
-    } catch (error) {
+    } catch {
       alert(t(T.SETTINGS.COMM_ERROR));
     }
   };  
@@ -169,7 +184,7 @@ export const SettingsManager = () => {
       });
       setNewExtra({ name: '', category: 'עיצוב', price: '' });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
-    } catch (error) {
+    } catch {
       alert(t(T.SETTINGS.EXTRA_ADD_ERROR));
     }
   };
@@ -182,7 +197,7 @@ export const SettingsManager = () => {
         body: JSON.stringify({ isActive: !currentStatus })
       });
       await queryClient.invalidateQueries({ queryKey: ['settings', 'extras'] });
-    } catch (error) {
+    } catch {
       alert(t(T.SETTINGS.STATUS_UPDATE_ERROR));
     }
   };
@@ -222,7 +237,7 @@ export const SettingsManager = () => {
     setKashruts(prev => prev.map(k => k.id === id ? { ...k, validUntil: newDate } : k));
   };
 
-  const formatDateForInput = (dateString: any) => {
+  const formatDateForInput = (dateString: string | Date | null | undefined) => {
     if (!dateString) return '';
     const d = new Date(dateString);
     return isNaN(d.getTime()) ? '' : calendarKeyFromDbDate(d);
@@ -279,7 +294,7 @@ export const SettingsManager = () => {
                     <input
                       type="number"
                       className="price-inline-input"
-                      value={globalSettings[item.field] ?? ''}
+                      value={(globalSettings[item.field] as string | number | undefined) ?? ''}
                       onChange={(e) => updatePriceField(item.field, e.target.value)}
                     />
                     {item.suffix && <span className="price-suffix">{item.suffix}</span>}
@@ -320,7 +335,7 @@ export const SettingsManager = () => {
                     <input
                       type="number"
                       className="price-inline-input"
-                      value={globalSettings[item.field] ?? ''}
+                      value={(globalSettings[item.field] as string | number | undefined) ?? ''}
                       onChange={(e) => updatePriceField(item.field, e.target.value)}
                     />
                   </td>

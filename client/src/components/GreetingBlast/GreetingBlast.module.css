@@ -1,6 +1,6 @@
 .container {
   direction: rtl;
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   padding: 16px;
 }
 
@@ -30,7 +30,7 @@
 }
 
 .header {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -38,7 +38,7 @@
 }
 
 .backBtn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   border: none;
   border-radius: 8px;
   padding: 8px 14px;

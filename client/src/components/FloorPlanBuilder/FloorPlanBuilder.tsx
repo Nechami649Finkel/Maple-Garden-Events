@@ -53,6 +53,21 @@ function resolveInitialTables(
   return DEFAULT_TABLE_LAYOUT.map(t => ({ ...t }));
 }
 
+function resolveInitialTablesWithDraft(
+  initialTables: TableData[] | undefined,
+  layoutConfig: LayoutConfig,
+  draftEventId: string | undefined,
+  userEmail: string,
+): TableData[] {
+  if (draftEventId && userEmail) {
+    const draft = loadFloorPlanDraft(draftEventId, userEmail);
+    if (draft && draft.length > 0) {
+      return draft.map(clampToSection);
+    }
+  }
+  return resolveInitialTables(initialTables, layoutConfig);
+}
+
 interface TableItemProps {
   table: TableData;
   isSelected: boolean;
@@ -156,8 +171,15 @@ interface Props {
   draftEventId?: string;
 }
 
-export const FloorPlanBuilder: React.FC<Props> = ({
-  initialTables,
+interface EditorProps extends Props {
+  userEmail: string;
+  initialTablesSeed: TableData[];
+}
+
+const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
+  initialTablesSeed,
+  userEmail,
+  draftEventId,
   guestCount = 0,
   seatingType = 'separate',
   menPercent,
@@ -166,21 +188,9 @@ export const FloorPlanBuilder: React.FC<Props> = ({
   onSave,
   onClose,
   downloadFileName,
-  draftEventId,
 }) => {
   const { t, T } = useTranslation();
-  const layoutConfig = useMemo<LayoutConfig>(() => ({
-    guestCount,
-    seatingType,
-    menPercent,
-    womenPercent,
-    includeHonorTables,
-  }), [guestCount, seatingType, menPercent, womenPercent, includeHonorTables]);
-
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [draftLoaded, setDraftLoaded] = useState(false);
-
-  const [tables, setTables] = useState<TableData[]>(() => resolveInitialTables(initialTables, layoutConfig));
+  const [tables, setTables] = useState<TableData[]>(initialTablesSeed);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [layoutKey, setLayoutKey] = useState(0);
   const [exporting, setExporting] = useState(false);
@@ -188,28 +198,12 @@ export const FloorPlanBuilder: React.FC<Props> = ({
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getAuthUser().then((user) => {
-      if (user?.email) setUserEmail(user.email);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!draftEventId || !userEmail || draftLoaded) return;
-    const draft = loadFloorPlanDraft(draftEventId, userEmail);
-    if (draft && draft.length > 0) {
-      setTables(draft.map(clampToSection));
-      setLayoutKey((k) => k + 1);
-    }
-    setDraftLoaded(true);
-  }, [draftEventId, userEmail, draftLoaded]);
-
-  useEffect(() => {
-    if (!draftEventId || !userEmail || !draftLoaded) return;
+    if (!draftEventId || !userEmail) return;
     const timer = setTimeout(() => {
       saveFloorPlanDraft(draftEventId, userEmail, tables);
     }, 500);
     return () => clearTimeout(timer);
-  }, [draftEventId, userEmail, draftLoaded, tables]);
+  }, [draftEventId, userEmail, tables]);
 
   const handleMove = useCallback((id: number, x: number, y: number) => {
     setTables(prev =>
@@ -370,6 +364,59 @@ export const FloorPlanBuilder: React.FC<Props> = ({
         <span className="legend-hint">{t(T.FLOOR_PLAN.LEGEND_HINT)}</span>
       </div>
     </div>
+  );
+};
+
+export const FloorPlanBuilder: React.FC<Props> = (props) => {
+  const {
+    initialTables,
+    guestCount = 0,
+    seatingType = 'separate',
+    menPercent,
+    womenPercent,
+    includeHonorTables = true,
+    draftEventId,
+  } = props;
+
+  const layoutConfig = useMemo<LayoutConfig>(() => ({
+    guestCount,
+    seatingType,
+    menPercent,
+    womenPercent,
+    includeHonorTables,
+  }), [guestCount, seatingType, menPercent, womenPercent, includeHonorTables]);
+
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAuthUser().then((user) => {
+      setUserEmail(user?.email ?? '');
+    });
+  }, []);
+
+  const needsDraftUser = Boolean(draftEventId);
+  const userReady = !needsDraftUser || userEmail !== null;
+
+  const initialTablesSeed = useMemo(
+    () => resolveInitialTablesWithDraft(initialTables, layoutConfig, draftEventId, userEmail ?? ''),
+    [initialTables, layoutConfig, draftEventId, userEmail],
+  );
+
+  if (!userReady) {
+    return (
+      <div className="floor-plan-container">
+        <p>טוען טיוטה...</p>
+      </div>
+    );
+  }
+
+  return (
+    <FloorPlanBuilderEditor
+      key={`${draftEventId ?? 'none'}-${userEmail}`}
+      {...props}
+      userEmail={userEmail ?? ''}
+      initialTablesSeed={initialTablesSeed}
+    />
   );
 };
 

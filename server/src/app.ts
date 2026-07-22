@@ -24,6 +24,7 @@ import checkInRoutes from './routes/checkIn.routes';
 import easyCountRoutes from './routes/easyCount.routes';
 import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
 import filesRoutes from './routes/files.routes';
+import checkScanRoutes from './routes/checkScan.routes';
 
 validateEnv();
 
@@ -33,7 +34,12 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-app.use(helmet());
+app.use(
+  helmet({
+    // Required for Google OAuth popup/postMessage in dev
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  }),
+);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -86,11 +92,14 @@ app.use(cors({
 
 app.use(cookieParser());
 app.use(csrfProtection);
+
+// Must mount before express.json so the route's express.raw can capture the original body.
+app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(requestLogger);
 
-app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
 app.use('/api/easy-count', easyCountRoutes);
 app.use('/api/check-in', checkInRoutes);
 app.use('/api/auth', authRoutes);
@@ -103,6 +112,7 @@ app.use('/api/options', optionRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/files', filesRoutes);
+app.use('/api/scan-check', checkScanRoutes);
 
 const shouldServeClient =
   process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';

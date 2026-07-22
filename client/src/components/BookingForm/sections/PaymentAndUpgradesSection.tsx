@@ -9,6 +9,7 @@ import type { DepositCheckDetails } from '../../../utils/checkOcr';
 import { openContractPdf, printContract } from '../../../utils/contractPrint';
 
 import type { PaymentTermsTemplate } from '../../../utils/paymentTerms';
+import type { BookingFormData } from '../bookingFormTypes';
 
 import { useTranslation } from '../../../i18n/useTranslation';
 
@@ -17,8 +18,7 @@ import { formatNumber } from '@shared/i18n/formatters';
 
 
 interface PaymentAndUpgradesSectionProps {
-
-  formData: any;
+  formData: BookingFormData;
 
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
 

@@ -5,32 +5,27 @@ import './Calendar.css';
 import { EventPopup } from '../EventPopup/EventPopup';
 import {
   getSlotColor,
+  SLOT_COLORS,
+  TIME_SLOTS,
   getTakenSlots,
   getBookableSlotsForDate,
   hasOptionOnDay,
   normalizeTimeSlot,
+  formatSlotLabel,
   type TimeSlot,
 } from '../../utils/timeSlot';
-import { CalendarLegendBar } from './CalendarLegendBar';
-import { CalendarDaySidePanel } from './CalendarDaySidePanel';
-import { OptionFormModal } from './OptionFormModal';
 import { isEventLive } from '../../utils/eventStart';
+import { type CalendarBookingApi, type CalendarDayApi } from '../../utils/optionDateApi';
 import { useTranslation } from '../../i18n/useTranslation';
 import { DEFAULT_EVENT_TYPE, translateByValue, EVENT_TYPE_KEY_BY_VALUE } from '@shared/i18n/bookingLookups';
 import liveStyles from '../LiveEvent/LiveEvent.module.css';
-interface DayData {
-  id: string | null;
-  date: string;
+
+type DayData = CalendarDayApi & {
   dayOfWeek: number;
-  hebrewDate: string;
-  status: string;
-  reason: string | null;
-  candleTime: string | null;
-  lockedBy: string | null;
-  bookings: any[];
-  blockedSlots?: string[];
   isCurrentMonth: boolean;
-}
+  status: string;
+  bookings: CalendarBookingApi[];
+};
 
 interface CalendarProps {
   onDateSelect: (day: DayData) => void;
@@ -42,7 +37,7 @@ const COL_HEADER_INDEX_KEYS = [0, 1, 2, 3, 4, 5, 6] as const;
 /** DOM order top→bottom so flex-end stacks: evening on top, morning at bottom */
 const CALENDAR_SLOT_STACK_ORDER: TimeSlot[] = ['evening', 'noon', 'morning'];
 
-function sortBookingsForCalendarCell(bookings: any[]) {
+function sortBookingsForCalendarCell(bookings: CalendarBookingApi[]) {
   return [...bookings].sort((a, b) => {
     const slotA = normalizeTimeSlot(a.timeOfDay) ?? 'morning';
     const slotB = normalizeTimeSlot(b.timeOfDay) ?? 'morning';
@@ -61,7 +56,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const { t, T } = useTranslation();
   const navigate = useNavigate();
 
-  const getEventTitle = (booking: any) => {
+  const getEventTitle = (booking: CalendarBookingApi) => {
   // 1. מנקים רווחים נסתרים מסוג האירוע כדי שהקוד יזהה אותו בוודאות
   const type = (booking.eventType || '').trim(); 
 
@@ -71,17 +66,14 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     return fullName.trim().split(' ').pop() || '';
   };
 
-  const nameA = getLastName(booking.clientAFullName);
-  const nameB = getLastName(booking.clientBFullName);
+  const nameA = getLastName(booking.clientAFullName ?? '');
+  const nameB = getLastName(booking.clientBFullName ?? '');
 
   // 3. חיבור חכם של השמות - רק אם יש באמת שני צדדים שונים
-  let namesDisplay = '';
-  if (nameA && nameB && nameA !== nameB) {
-    namesDisplay = `${nameA}-${nameB}`;
-  } else {
-    // אם הוזן רק צד אחד במערכת, נציג רק אותו
-    namesDisplay = nameA || nameB; 
-  }
+  const namesDisplay =
+    nameA && nameB && nameA !== nameB
+      ? `${nameA}-${nameB}`
+      : nameA || nameB;
 
   // 4. תצוגה סופית על הלוח (בלי מקף מיותר בחתונות)
   if (type === 'חתונה' || type === 'אירוסין') {
@@ -95,9 +87,9 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   };
 
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [sidePanelDay, setSidePanelDay] = useState<DayData | null>(null);
-  const [eventPopupDay, setEventPopupDay] = useState<DayData | null>(null);
-  const [optionModalDay, setOptionModalDay] = useState<DayData | null>(null);
+  const [selectedDay, setSelectedDay] = useState<(DayData & { col?: number; row?: number }) | null>(null);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [selectedDateForAction, setSelectedDateForAction] = useState<string | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState(DEFAULT_EVENT_TYPE);
   const [, setLiveTick] = useState(0);
 
@@ -122,7 +114,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const datesList = Array.isArray(datesData) ? datesData : [];
 
   const buildGrid = () => {
-    const serverMap = new Map<string, any>(datesList.map((d: any) => [d.date, d]));
+    const serverMap = new Map<string, CalendarDayApi>(datesList.map((d) => [d.date, d]));
     const days: (DayData & { col: number; row: number })[] = [];
     const loop = new Date(startDate);
     let row = 1;
@@ -135,7 +127,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
         date: key, 
         dayOfWeek: dow, 
         hebrewDate: srv?.hebrewDate ?? '',
-        status: srv?.status ?? 'AVAILABLE', 
+        status: srv?.status ?? 'AVAILABLE',
         reason: srv?.reason ?? null, 
         candleTime: srv?.candleTime ?? null,
         lockedBy: srv?.lockedBy ?? null, 
@@ -158,20 +150,10 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
   const prevYear  = () => setCurrentDate(new Date(year - 1, month, 1));
   const nextYear  = () => setCurrentDate(new Date(year + 1, month, 1));
 
-  const handleBookEventFromPanel = () => {
-    if (!sidePanelDay) return;
-    const dayToBook = sidePanelDay;
-    setSidePanelDay(null);
-    onDateSelect(dayToBook);
-  };
-
-  const handleOpenOptionFromPanel = () => {
-    if (!sidePanelDay) return;
-    setOptionModalDay(sidePanelDay);
-  };
-
-  const openDayPanel = (day: DayData) => {
-    setSidePanelDay(day);
+  const handleBookEvent = () => {
+    setIsActionModalOpen(false);
+    const dayObj = grid.find(d => d.date === selectedDateForAction);
+    if (dayObj) onDateSelect(dayObj);
   };
 
   const handleOverrideOptionBook = (day: DayData) => {
@@ -209,62 +191,37 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
     <div className="calendar-page-layout">
       <div className="calendar-container">
       
-      <div className="calendar-top-card">
-        <div className="calendar-control-bar">
-          <div className="calendar-availability-group">
-            <span className="calendar-toolbar-label">{t(T.CALENDAR.AVAILABILITY_LABEL)}</span>
-            <select
-              className="calendar-toolbar-select"
-              value={eventTypeFilter}
-              onChange={(e) => setEventTypeFilter(e.target.value)}
-            >
-              <option value="חתונה">{t(T.CALENDAR.FILTER_WEDDING)}</option>
-              <option value="אירוע אחר">{t(T.CALENDAR.FILTER_OTHER)}</option>
-            </select>
-          </div>
+      <div className="calendar-toolbar">
+        <span className="calendar-toolbar-label">{t(T.CALENDAR.AVAILABILITY_LABEL)}</span>
+        <select className="calendar-toolbar-select" value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)}>
+          <option value="חתונה">{t(T.CALENDAR.FILTER_WEDDING)}</option>
+          <option value="אירוע אחר">{t(T.CALENDAR.FILTER_OTHER)}</option>
+        </select>
+        <div className="calendar-legend">
+          {TIME_SLOTS.map((slot) => (
+            <span key={slot} className="calendar-legend-item">
+              <span className="calendar-legend-swatch" style={{ backgroundColor: SLOT_COLORS[slot] }} />
+              {formatSlotLabel(t, slot)}
+            </span>
+          ))}
+        </div>
+      </div>
 
-          <div className="calendar-inline-nav">
-            <div className="inline-date-nav">
-              <button
-                type="button"
-                className="inline-nav-btn"
-                onClick={prevMonth}
-                aria-label={t(T.CALENDAR.PREV_MONTH)}
-              >
-                ‹
-              </button>
-              <span className="inline-date-label">
-                {t(T.CALENDAR.MONTHS[month as keyof typeof T.CALENDAR.MONTHS])}
-              </span>
-              <button
-                type="button"
-                className="inline-nav-btn"
-                onClick={nextMonth}
-                aria-label={t(T.CALENDAR.NEXT_MONTH)}
-              >
-                ›
-              </button>
-              <button
-                type="button"
-                className="inline-nav-btn"
-                onClick={prevYear}
-                aria-label={t(T.CALENDAR.PREV_YEAR)}
-              >
-                ‹
-              </button>
-              <span className="inline-date-label">{year}</span>
-              <button
-                type="button"
-                className="inline-nav-btn"
-                onClick={nextYear}
-                aria-label={t(T.CALENDAR.NEXT_YEAR)}
-              >
-                ›
-              </button>
-            </div>
-          </div>
+      <div className="calendar-header-nav">
+        <div className="year-nav" style={{ direction: 'rtl' }}>
+          <button className="nav-btn year-btn" onClick={nextYear} aria-label={t(T.CALENDAR.NEXT_YEAR)}>»</button>
+          <span className="year-display">{year}</span>
+          <button className="nav-btn year-btn" onClick={prevYear} aria-label={t(T.CALENDAR.PREV_YEAR)}>«</button>
+        </div>
 
-          <CalendarLegendBar showWeddingRestrictions={eventTypeFilter === DEFAULT_EVENT_TYPE} />
+        <div className="calendar-nav" style={{ direction: 'rtl' }}>
+          <button className="nav-btn" onClick={nextMonth} aria-label={t(T.CALENDAR.NEXT_MONTH)}>›</button>
+          <div className="months-bar">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((i) => (
+              <div key={i} className={`month-tab ${i === month ? 'active' : ''}`} onClick={() => setCurrentDate(new Date(year, i, 1))}>{t(T.CALENDAR.MONTHS[i as keyof typeof T.CALENDAR.MONTHS])}</div>
+            ))}
+          </div>
+          <button className="nav-btn" onClick={prevMonth} aria-label={t(T.CALENDAR.PREV_MONTH)}>‹</button>
         </div>
       </div>
 
@@ -288,15 +245,9 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
               const dayNum = new Date(day.date + 'T12:00:00').getDate();
 
               const bookingCount = day.bookings?.length ?? 0;
-              const isWeddingFilter = eventTypeFilter === DEFAULT_EVENT_TYPE;
-              const hasRestrictionMarker =
-                isWeddingFilter
-                && day.isCurrentMonth
-                && (day.status === 'FORBIDDEN' || day.status === 'PROBLEMATIC');
               const cls = [
                 'calendar-cell',
                 `status-${day.status.toLowerCase()}`,
-                hasRestrictionMarker ? 'has-restriction-marker' : '',
                 !day.isCurrentMonth ? 'out-of-month' : '',
                 isToday ? 'is-today' : '',
                 isPast && day.isCurrentMonth ? 'is-past' : '',
@@ -326,8 +277,13 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                   disabled={isCellDisabled}
                   onClick={() => {
                   if (!day.isCurrentMonth || day.status === 'FORBIDDEN' || isHardBlocked) return;
-                  if (isPast && bookingCount === 0) return;
-                  openDayPanel(day);
+                  if (isPast) {
+                    if (bookingCount > 0) setSelectedDay(day);
+                    return;
+                  }
+
+                  if (day.bookings.length > 0) { setSelectedDay(day); return; }
+                  setSelectedDateForAction(day.date); setIsActionModalOpen(true);
                 }}>
                   <div className="cell-header-row">
                       <span className="gregorian-num">
@@ -340,7 +296,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                   
                   <div className="cell-status-text">{day.isCurrentMonth ? (day.reason || '') : ''}</div>
                   <div className="cell-events-container">
-                    {sortBookingsForCalendarCell(day.bookings).map((b: any, idx: number) => {
+                    {sortBookingsForCalendarCell(day.bookings ?? []).map((b, idx: number) => {
                       const baseColor = getSlotColor(b.timeOfDay);
                       const isOptionBooking = b.isOption === true;
                       const isLive =
@@ -371,7 +327,7 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
                           style={eventStyle}
                           onClick={(e) => {
                             e.stopPropagation();
-                            openDayPanel(day);
+                            setSelectedDay(day);
                           }}
                         >
                           {isLive && <span className={liveStyles.liveBadge}>{t(T.CALENDAR.LIVE_BADGE)}</span>}
@@ -386,50 +342,64 @@ export const Calendar = ({ onDateSelect }: CalendarProps) => {
           </div>
         </div>
       )}
-      {sidePanelDay && (
-        <CalendarDaySidePanel
-          day={sidePanelDay}
-          onClose={() => setSidePanelDay(null)}
-          onBookEvent={handleBookEventFromPanel}
-          onOpenOption={handleOpenOptionFromPanel}
-          onViewEvents={
-            (sidePanelDay.bookings?.length ?? 0) > 0
-              ? () => {
-                  setEventPopupDay(sidePanelDay);
-                  setSidePanelDay(null);
-                }
-              : undefined
-          }
-        />
-      )}
-
-      {eventPopupDay && (
+      {selectedDay && (
         <EventPopup
-          day={eventPopupDay}
-          onClose={() => setEventPopupDay(null)}
+          day={selectedDay}
+          onClose={() => setSelectedDay(null)}
           onAddEvent={() => {
-            const dayToBook = eventPopupDay;
-            setEventPopupDay(null);
+            const dayToBook = selectedDay;
+            setSelectedDay(null);
             onDateSelect(dayToBook);
           }}
           onAddOption={() => {
-            setOptionModalDay(eventPopupDay);
-            setEventPopupDay(null);
+            const dayToOption = selectedDay;
+            setSelectedDay(null);
+            navigate('/option', {
+              state: {
+                selectedDates: [{ date: dayToOption.date, hebrewDate: dayToOption.hebrewDate || '' }],
+                takenSlots: Array.from(getTakenSlots(dayToOption.bookings || [])),
+                blockedSlots: (dayToOption.blockedSlots || []) as TimeSlot[],
+              },
+            });
           }}
           onOverrideOptionBook={
-            hasOptionOnDay(eventPopupDay)
-              ? () => handleOverrideOptionBook(eventPopupDay)
+            hasOptionOnDay(selectedDay)
+              ? () => handleOverrideOptionBook(selectedDay)
               : undefined
           }
         />
       )}
 
-      {optionModalDay && (
-        <OptionFormModal
-          date={optionModalDay.date}
-          hebrewDate={optionModalDay.hebrewDate || ''}
-          onClose={() => setOptionModalDay(null)}
-        />
+      {isActionModalOpen && (
+        <div className="side-panel-overlay" onClick={() => setIsActionModalOpen(false)}>
+          <div className="side-panel" onClick={e => e.stopPropagation()}>
+            <div className="side-panel-header">
+              <span>{t(T.CALENDAR.SELECTED_DATE, { date: selectedDateForAction?.split('-').reverse().join('-') ?? '' })}</span>
+              <button className="side-panel-close" onClick={() => setIsActionModalOpen(false)}>✕</button>
+            </div>
+            <div className="side-panel-body">
+              <button className="book-btn" onClick={handleBookEvent}>{t(T.CALENDAR.BOOK_EVENT)}</button>
+              <button
+                className="option-btn"
+                onClick={() => {
+                  if (!selectedDateForAction) return;
+                  const dayData = datesList.find((d) => d.date === selectedDateForAction);
+                  setIsActionModalOpen(false);
+                  navigate('/option', {
+                    state: {
+                      selectedDates: [{
+                        date: selectedDateForAction,
+                        hebrewDate: dayData?.hebrewDate || '',
+                      }],
+                    },
+                  });
+                }}
+              >
+                {t(T.CALENDAR.OPEN_OPTION)}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       </div>
     </div>

@@ -1,33 +1,33 @@
 .card {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-lg);
-  box-shadow: var(--maple-shadow-sm);
-  transition: border-color var(--maple-transition), box-shadow var(--maple-transition),
-    transform var(--maple-transition);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-lg);
+  box-shadow: var(--brand-shadow-sm);
+  transition: border-color var(--brand-transition), box-shadow var(--brand-transition),
+    transform var(--brand-transition);
   overflow: hidden;
 }
 
 .interactive:hover {
-  border-color: var(--maple-gold);
-  box-shadow: var(--maple-shadow);
+  border-color: var(--brand-gold);
+  box-shadow: var(--brand-shadow);
 }
 
 .header {
   padding: 16px 20px;
-  border-bottom: 1px solid var(--maple-border);
-  background: var(--maple-bg);
+  border-bottom: 1px solid var(--brand-border);
+  background: var(--brand-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--maple-space-3);
+  gap: var(--brand-space-3);
 }
 
 .headerTitle {
   margin: 0;
-  font-size: var(--maple-text-lg);
+  font-size: var(--brand-text-lg);
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .body {
@@ -36,8 +36,8 @@
 
 .footer {
   padding: 14px 20px;
-  border-top: 1px solid var(--maple-border);
-  background: var(--maple-bg);
+  border-top: 1px solid var(--brand-border);
+  background: var(--brand-bg);
   display: flex;
   align-items: center;
   justify-content: flex-start;

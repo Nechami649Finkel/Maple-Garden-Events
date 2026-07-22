@@ -1,4 +1,5 @@
 import { deliverMail, getFromAddress } from '../utils/mailer';
+import { logger } from '../utils/logger';
 import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../i18n/getServerTranslation';
 
 export const sendPDFToClient = async (
@@ -52,14 +53,14 @@ export const sendWhatsAppMessage = async (
     const twilio_phone = process.env.TWILIO_PHONE_NUMBER;
 
     if (!twilio_account_sid || !twilio_auth_token || !twilio_phone) {
-      console.warn('⚠️ Twilio not configured - skipping WhatsApp');
+      logger.warn('Twilio not configured - skipping WhatsApp');
       return false;
     }
 
-    console.log(`📱 WhatsApp would be sent to: ${phoneNumber}`);
+    logger.info('WhatsApp would be sent', { phoneNumber });
     return false;
   } catch (error) {
-    console.error('❌ WhatsApp sending failed:', error);
+    logger.error('WhatsApp sending failed', { error });
     return false;
   }
 };

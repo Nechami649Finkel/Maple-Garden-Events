@@ -11,9 +11,10 @@ import {
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { T, type TranslationKey } from '@shared/i18n/keys';
 import styles from './OptionActionModal.module.css';
+import { type BookingApi } from '../../utils/bookingApi';
 
 interface Props {
-  option: any;
+  option: BookingApi;
   onClose: () => void;
   onSuccess: () => void;
 }

@@ -8,9 +8,12 @@ interface LoginProps {
   onLoginSuccess: () => void;
 }
 
+import { getBrandConfig } from '../../../shared/brand/index';
+
 export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const { t, T } = useTranslation();
   const [error, setError] = useState('');
+  const brand = getBrandConfig();
 
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     if (!credentialResponse.credential) {
@@ -42,9 +45,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     <div className="login-container">
       <div className="login-form">
         <div className="login-brand">
-          <img src="/logo.png" alt={t(T.AUTH.LOGIN.BRAND_ALT)} className="login-logo" />
+          <img src={brand.logoUrl} alt={brand.displayName} className="login-logo" />
           <h2>{t(T.AUTH.LOGIN.TITLE)}</h2>
-          <p className="login-subtitle">{t(T.AUTH.LOGIN.SUBTITLE)}</p>
+          <p className="login-subtitle">{brand.displayName} — מערכת ניהול</p>
         </div>
 
         {error && <div className="error-message">{error}</div>}

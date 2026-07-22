@@ -2,9 +2,13 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 
-export const AUTH_COOKIE_NAME = 'maple_session';
-export const REFRESH_COOKIE_NAME = 'maple_refresh';
-export const CSRF_COOKIE_NAME = 'maple_csrf';
+import { getBrandConfig } from '../vendor/shared/brand/index';
+
+const brand = getBrandConfig();
+
+export const AUTH_COOKIE_NAME = `${brand.id}_session`;
+export const REFRESH_COOKIE_NAME = `${brand.id}_refresh`;
+export const CSRF_COOKIE_NAME = `${brand.id}_csrf`;
 export const CSRF_HEADER_NAME = 'x-csrf-token';
 
 export type AuthUser = { email: string; role: string; name: string };

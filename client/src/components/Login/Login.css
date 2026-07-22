@@ -6,18 +6,18 @@
   align-items: center;
   min-height: 100vh;
   min-height: 100dvh;
-  background: linear-gradient(160deg, var(--maple-green-light) 0%, var(--maple-bg) 45%, var(--maple-bg) 100%);
+  background: linear-gradient(160deg, var(--brand-green-light) 0%, var(--brand-bg) 45%, var(--brand-bg) 100%);
   direction: inherit;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
   padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
 }
 
 .login-form {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   padding: 2rem 1.5rem;
-  border-radius: var(--maple-radius-lg);
-  box-shadow: var(--maple-shadow-lg);
-  border: 1px solid var(--maple-border);
+  border-radius: var(--brand-radius-lg);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
   width: 100%;
   max-width: 420px;
   display: flex;
@@ -42,7 +42,7 @@
 
 .login-form h2 {
   text-align: center;
-  color: var(--maple-text);
+  color: var(--brand-text);
   margin: 0;
   font-size: 1.35rem;
   font-weight: 700;
@@ -50,7 +50,7 @@
 
 .login-subtitle {
   text-align: center;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   margin: 0;
   font-size: 0.92rem;
 }
@@ -64,9 +64,9 @@
 
 .error-message {
   background: #fff5f5;
-  color: var(--maple-danger);
+  color: var(--brand-danger);
   padding: 0.85rem 1rem;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   text-align: center;
   font-weight: 600;
   font-size: 0.92rem;

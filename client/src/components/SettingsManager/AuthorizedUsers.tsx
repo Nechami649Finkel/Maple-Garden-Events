@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import { useTranslation } from '../../i18n/useTranslation';
@@ -12,30 +12,39 @@ const ROLE_KEYS = {
 
 const ROLE_OPTIONS = Object.entries(ROLE_KEYS) as [keyof typeof ROLE_KEYS, string][];
 
+const AUTH_USERS_URL = `${API_URL}/auth/authorized-users`;
+
+type AuthorizedUser = {
+  id: string;
+  email: string;
+  role: string;
+  createdAt?: string;
+};
+
 export const AuthorizedUsers = () => {
   const { t, T } = useTranslation();
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AuthorizedUser[]>([]);
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('manager');
-
-  const AUTH_USERS_URL = `${API_URL}/auth/authorized-users`;
 
   const roleLabel = (role: keyof typeof ROLE_KEYS) =>
     t(T.SETTINGS[ROLE_KEYS[role] as keyof typeof T.SETTINGS] as typeof T.SETTINGS.ROLE_MANAGER);
 
-  const loadUsers = () => {
+  const loadUsers = useCallback(() => {
     apiFetch(AUTH_USERS_URL)
       .then((res) => {
         if (!res.ok) throw new Error(`${t(T.UI.SERVER_ERROR)}: ${res.status}`);
         return res.json();
       })
-      .then((data) => setUsers(data))
+      .then((data: unknown) => {
+        if (Array.isArray(data)) setUsers(data as AuthorizedUser[]);
+      })
       .catch((err) => console.error(t(T.SETTINGS.USERS_LOAD_ERROR), err));
-  };
+  }, [t, T]);
 
   useEffect(() => {
     loadUsers();
-  }, []);
+  }, [loadUsers]);
 
   const handleAddEmail = async () => {
     const emailToSave = email.toLowerCase().trim();

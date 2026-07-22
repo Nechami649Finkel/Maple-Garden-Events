@@ -2,7 +2,9 @@
   "name": "maple-events",
   "private": true,
   "scripts": {
-    "dev": "start cmd /k \"cd server && npm run dev\" && start cmd /k \"cd client && npm run dev\"",
+    "dev": "concurrently -k -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:win": "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
+    "dev:check": "node scripts/dev-check.mjs",
     "build": "npm run build --prefix client && npm run build --prefix server",
     "build:client": "npm run build --prefix client",
     "build:server": "npm run build --prefix server",
@@ -16,6 +18,7 @@
     "export:event-form-design-pdf": "playwright test tests/e2e/export-event-form-design.spec.ts"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2"
+    "@playwright/test": "^1.58.2",
+    "concurrently": "^10.0.3"
   }
 }

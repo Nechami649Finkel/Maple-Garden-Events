@@ -7,3 +7,4 @@ backups/
 shared/
 src/vendor/
 /src/generated/prisma
+google-credentials.json

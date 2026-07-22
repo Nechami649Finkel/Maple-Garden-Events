@@ -1,9 +1,9 @@
 .dashboard {
   display: grid;
-  gap: var(--maple-space-6);
+  gap: var(--brand-space-6);
   grid-template-columns: 1fr;
-  padding: var(--maple-space-6);
-  max-width: var(--maple-content-max);
+  padding: var(--brand-space-6);
+  max-width: var(--brand-content-max);
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
@@ -14,27 +14,27 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--maple-space-4);
+  gap: var(--brand-space-4);
   flex-wrap: wrap;
 }
 
 .title {
-  margin: 0 0 var(--maple-space-1);
-  font-size: var(--maple-heading);
+  margin: 0 0 var(--brand-space-1);
+  font-size: var(--brand-heading);
   font-weight: 700;
-  color: var(--maple-charcoal);
+  color: var(--brand-charcoal);
 }
 
 .subtitle {
   margin: 0;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text-muted);
 }
 
 .metrics {
   grid-column: 1 / -1;
   display: grid;
-  gap: var(--maple-space-4);
+  gap: var(--brand-space-4);
   grid-template-columns: 1fr;
 }
 
@@ -52,8 +52,8 @@
 
 .emptyActivity {
   text-align: center;
-  color: var(--maple-text-muted);
-  padding: var(--maple-space-6);
+  color: var(--brand-text-muted);
+  padding: var(--brand-space-6);
   margin: 0;
 }
 
@@ -63,21 +63,21 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--maple-space-2);
+  gap: var(--brand-space-2);
 }
 
 .activityItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--maple-space-3);
-  padding: var(--maple-space-3) var(--maple-space-2);
-  border-radius: var(--maple-radius-sm);
-  transition: background var(--maple-transition);
+  gap: var(--brand-space-3);
+  padding: var(--brand-space-3) var(--brand-space-2);
+  border-radius: var(--brand-radius-sm);
+  transition: background var(--brand-transition);
 }
 
 .activityItem:hover {
-  background: var(--maple-surface-raised);
+  background: var(--brand-surface-raised);
 }
 
 .activityInfo {
@@ -89,13 +89,13 @@
 
 .activityName {
   font-weight: 600;
-  font-size: var(--maple-text-sm);
-  color: var(--maple-text);
+  font-size: var(--brand-text-sm);
+  color: var(--brand-text);
 }
 
 .activityMeta {
-  font-size: var(--maple-text-xs);
-  color: var(--maple-text-muted);
+  font-size: var(--brand-text-xs);
+  color: var(--brand-text-muted);
 }
 
 @media (min-width: 480px) {
@@ -106,7 +106,7 @@
 
 @media (min-width: 768px) {
   .dashboard {
-    padding: var(--maple-space-8);
+    padding: var(--brand-space-8);
   }
 }
 
@@ -135,6 +135,6 @@
 
 @media (max-width: 480px) {
   .dashboard {
-    padding: var(--maple-space-4);
+    padding: var(--brand-space-4);
   }
 }

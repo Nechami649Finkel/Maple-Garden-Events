@@ -1,13 +1,13 @@
 .settings-container {
   direction: rtl;
-  font-family: var(--maple-font);
-  color: var(--maple-text);
+  font-family: var(--brand-font);
+  color: var(--brand-text);
 }
 
 .settings-header {
   margin-bottom: 32px;
-  color: var(--maple-text);
-  border-bottom: 2px solid var(--maple-green-light);
+  color: var(--brand-text);
+  border-bottom: 2px solid var(--brand-green-light);
   padding-bottom: 16px;
 }
 
@@ -29,7 +29,7 @@
 
 .settings-header p {
   margin: 0;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 .settings-grid {
@@ -51,16 +51,16 @@
 }
 
 .settings-card {
-  background: var(--maple-surface);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
   padding: 24px;
-  box-shadow: var(--maple-shadow-sm);
-  border: 1px solid var(--maple-border);
+  box-shadow: var(--brand-shadow-sm);
+  border: 1px solid var(--brand-border);
 }
 
 .settings-card h2 {
   margin-top: 0;
-  color: var(--maple-text);
+  color: var(--brand-text);
   font-size: 1.2rem;
   margin-bottom: 20px;
 }
@@ -73,7 +73,7 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .settings-container .form-group input,
@@ -81,37 +81,37 @@
 .settings-container .form-group textarea {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid var(--maple-border-strong);
-  border-radius: var(--maple-radius-sm);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   font-size: 1rem;
-  background: var(--maple-surface);
-  transition: border-color var(--maple-transition), box-shadow var(--maple-transition);
+  background: var(--brand-surface);
+  transition: border-color var(--brand-transition), box-shadow var(--brand-transition);
 }
 
 .settings-container .form-group input:focus,
 .settings-container .form-group select:focus,
 .settings-container .form-group textarea:focus {
   outline: none;
-  border-color: var(--maple-green);
+  border-color: var(--brand-green);
   box-shadow: 0 0 0 3px rgba(140, 191, 142, 0.25);
 }
 
 .save-btn {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   font-weight: 600;
   cursor: pointer;
   width: 100%;
   margin-top: 16px;
-  transition: background var(--maple-transition);
-  font-family: var(--maple-font);
+  transition: background var(--brand-transition);
+  font-family: var(--brand-font);
 }
 
 .save-btn:hover {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .add-extra-form {
@@ -120,10 +120,10 @@
   gap: 12px;
   margin-bottom: 24px;
   align-items: end;
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
   padding: 16px;
-  border-radius: var(--maple-radius);
-  border: 1px solid var(--maple-green-muted);
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-green-muted);
 }
 
 @media (max-width: 768px) {
@@ -133,20 +133,20 @@
 }
 
 .add-btn {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   color: white;
   border: none;
   padding: 10px 20px;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   font-weight: 600;
   cursor: pointer;
   height: 42px;
-  font-family: var(--maple-font);
-  transition: background var(--maple-transition);
+  font-family: var(--brand-font);
+  transition: background var(--brand-transition);
 }
 
 .add-btn:hover {
-  background: var(--maple-green-deep);
+  background: var(--brand-green-deep);
 }
 
 .extras-table {
@@ -158,13 +158,13 @@
 .extras-table td {
   padding: 12px;
   text-align: right;
-  border-bottom: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--brand-border);
 }
 
 .extras-table th {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .status-toggle {
@@ -174,23 +174,23 @@
   font-size: 0.85rem;
   font-weight: bold;
   border: none;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .status-active {
-  background: var(--maple-green-light);
-  color: var(--maple-green-deep);
+  background: var(--brand-green-light);
+  color: var(--brand-green-deep);
 }
 
 .status-inactive {
   background: #fff5f5;
-  color: var(--maple-danger);
+  color: var(--brand-danger);
 }
 
 .price-group-title {
   margin: 20px 0 10px;
   font-size: 1rem;
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
 }
 
 .price-catalog-table {
@@ -201,9 +201,9 @@
   width: 100%;
   max-width: 120px;
   padding: 6px 8px;
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
-  font-family: var(--maple-font);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
+  font-family: var(--brand-font);
 }
 
 .price-suffix {
@@ -223,21 +223,21 @@
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .delete-btn {
   background: transparent;
-  color: var(--maple-danger);
+  color: var(--brand-danger);
   border: 1px solid rgba(229, 62, 62, 0.35);
   padding: 6px 12px;
-  border-radius: var(--maple-radius-sm);
+  border-radius: var(--brand-radius-sm);
   cursor: pointer;
   font-weight: 600;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .delete-btn:hover {
-  background: var(--maple-danger);
+  background: var(--brand-danger);
   color: #fff;
 }

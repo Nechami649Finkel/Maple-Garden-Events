@@ -1,3 +1,5 @@
+import { getBrandConfig } from '../vendor/shared/brand/index';
+const brand = getBrandConfig();
 import cron from 'node-cron';
 import prisma from '../config/prisma';
 import { logger } from './logger';
@@ -32,7 +34,7 @@ export const startCronJobs = () => {
   
   // הגדרות למנהל
   const MANAGER_PHONE = '0501234567'; 
-  const MANAGER_EMAIL = 'maple.events.il@gmail.com'; 
+  const MANAGER_EMAIL = process.env.MANAGER_EMAIL || brand.messaging.managerAlertEmail; 
 
   // ==========================================
   // אופציות שפג תוקפן — נשארות על הלוח עד סגירת אירוע אמיתי (BOOKED)

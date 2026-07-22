@@ -232,7 +232,7 @@ export const feedbackController = {
         clientSide: feedback.clientSide,
       });
     } catch (error) {
-      console.error('Error verifying feedback token:', error);
+      logger.error('Error verifying feedback token', { error });
       res.status(500).json({ success: false, message: 'שגיאת שרת בבדיקת הקישור.' });
     }
   },
@@ -278,9 +278,11 @@ export const feedbackController = {
       );
 
       if (averageScore && averageScore <= 3) {
-        console.warn(
-          `[⚠️ התראת שירות] משוב נמוך (${averageScore}) מ-${updatedFeedback.clientName} | ממוצע משולב: ${combinedAverage ?? '—'}`,
-        );
+        logger.warn('Low feedback score alert', {
+          averageScore,
+          clientName: updatedFeedback.clientName,
+          combinedAverage,
+        });
         const managerEmail = process.env.MANAGER_EMAIL;
         if (managerEmail) {
           await sendManagerFinancialAlertEmail(
@@ -300,7 +302,7 @@ export const feedbackController = {
         combinedAverage,
       });
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      logger.error('Error submitting feedback', { error });
       res.status(500).json({ success: false, message: 'שגיאת שרת בשמירת המשוב.' });
     }
   },
