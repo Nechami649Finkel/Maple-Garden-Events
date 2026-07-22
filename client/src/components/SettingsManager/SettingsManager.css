@@ -24,7 +24,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
 }
 
 .settings-header p {
@@ -241,3 +241,4 @@
   background: var(--brand-danger);
   color: #fff;
 }
+

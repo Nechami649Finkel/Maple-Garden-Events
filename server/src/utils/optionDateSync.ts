@@ -21,6 +21,7 @@ import prisma from '../config/prisma';
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 type BookingWithDate = {
+  tenantId: string;
   id: string;
   calendarDateId: string;
   clientAFullName: string;
@@ -147,6 +148,7 @@ export async function syncOptionDatesOnEdit(
     if (!eventDate) {
       eventDate = await tx.eventDate.create({
         data: {
+          tenant: { connect: { id: anchor.tenantId } },
           date: calendarDateForStorage(calendarKey),
           status: 'OPTION',
           optionExpiresAt: optionExpiresAt,
@@ -196,6 +198,7 @@ export async function syncOptionDatesOnEdit(
     try {
       await tx.booking.create({
         data: {
+          tenant: { connect: { id: anchor.tenantId } },
           clientAFullName: String(sharedFields.clientAFullName ?? anchor.clientAFullName),
           clientAIdNumber: String(sharedFields.clientAIdNumber ?? ''),
           clientAPhone: String(sharedFields.clientAPhone ?? anchor.clientAPhone),

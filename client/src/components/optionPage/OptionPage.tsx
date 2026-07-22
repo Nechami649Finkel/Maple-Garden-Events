@@ -1,5 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import BookingForm from '../BookingForm/BookingForm';
+import React, { Suspense } from 'react';
+import { PageLoader } from '../PageLoader/PageLoader';
+
+const BookingForm = React.lazy(() => import('../BookingForm/BookingForm'));
 import { EmptyState, Button } from '../ui';
 import { useTranslation } from '../../i18n/useTranslation';
 import './OptionPage.css';
@@ -26,10 +29,12 @@ const OptionPage = () => {
   }
 
   return (
-    <BookingForm
-      initialDates={selectedDates}
-      isOption={true}
-    />
+    <Suspense fallback={<PageLoader />}>
+      <BookingForm
+        initialDates={selectedDates}
+        isOption={true}
+      />
+    </Suspense>
   );
 };
 

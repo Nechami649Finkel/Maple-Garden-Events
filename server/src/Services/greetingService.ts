@@ -225,6 +225,7 @@ async function removeAttachment(attachmentPath: string | null): Promise<void> {
 }
 
 export async function scheduleGreeting(params: {
+  tenantId: string;
   subject: string;
   message: string;
   scheduledAt: Date;
@@ -233,6 +234,7 @@ export async function scheduleGreeting(params: {
 }) {
   const greeting = await prisma.scheduledGreeting.create({
     data: {
+      tenantId: params.tenantId,
       subject: params.subject,
       message: params.message,
       scheduledAt: params.scheduledAt,

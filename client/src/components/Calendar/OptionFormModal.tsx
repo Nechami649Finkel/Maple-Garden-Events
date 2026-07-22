@@ -1,6 +1,8 @@
 import { createPortal } from 'react-dom';
-import { useEffect } from 'react';
-import BookingForm from '../BookingForm/BookingForm';
+import React, { Suspense } from 'react';
+import { PageLoader } from '../PageLoader/PageLoader';
+
+const BookingForm = React.lazy(() => import('../BookingForm/BookingForm'));
 import { useTranslation } from '../../i18n/useTranslation';
 import { formatDate } from '@shared/i18n/formatters';
 import styles from './OptionFormModal.module.css';
@@ -19,7 +21,7 @@ export function OptionFormModal({
   const { t, T, locale } = useTranslation();
   const dateDisplay = formatDate(date, locale);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
@@ -54,10 +56,12 @@ export function OptionFormModal({
           </div>
         </header>
         <div className={styles.body}>
-          <BookingForm
-            initialDates={[{ date, hebrewDate }]}
-            isOption
-          />
+          <Suspense fallback={<PageLoader />}>
+            <BookingForm
+              initialDates={[{ date, hebrewDate }]}
+              isOption
+            />
+          </Suspense>
         </div>
       </div>
     </div>,

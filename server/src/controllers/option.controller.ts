@@ -4,12 +4,16 @@ import { allocateEventCode } from '../utils/eventCode';
 
 /** @deprecated Prefer POST /api/bookings with isOption: true */
 export const createNewOption = async (req: Request, res: Response) => {
+  const tenantId = (req as any).user?.tenantId;
+  if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+  
   const { openedBy, clientName, clientPhone, eventDate, portions, pricePerPortion } = req.body;
 
   try {
     const eventCode = await allocateEventCode('OPT');
     const newOption = await prisma.booking.create({
       data: {
+        tenant: { connect: { id: tenantId } },
         clientAFullName: clientName || 'לא צוין',
         clientAIdNumber: '',
         clientAPhone: clientPhone || '',
@@ -24,6 +28,7 @@ export const createNewOption = async (req: Request, res: Response) => {
         isOption: true,
         eventDate: {
           create: {
+            tenant: { connect: { id: tenantId } },
             date: new Date(eventDate),
             status: 'OPTION',
           },

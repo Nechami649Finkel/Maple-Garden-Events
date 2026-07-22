@@ -153,7 +153,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  color: var(--maple-green-dark);
+  color: var(--brand-green-dark);
 }
 
 @media (max-width: 768px) {
@@ -181,3 +181,4 @@
     max-width: 42vw;
   }
 }
+

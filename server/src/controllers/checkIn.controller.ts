@@ -72,9 +72,12 @@ export const checkInController = {
 
   async updateCheckIn(req: AuthRequest, res: Response) {
     try {
+      const { tenantId } = req.user!;
       const bookingId = paramId(req.params.bookingId);
-      const existing = await prisma.booking.findUnique({
-        where: { id: bookingId },
+      const existing = await prisma.booking.findFirst({
+        where: { id: bookingId,
+            tenantId: tenantId
+        },
         include: { eventCheckIn: true, eventForm: true, eventDate: true },
       });
 
@@ -116,8 +119,10 @@ export const checkInController = {
 
       let checkIn;
       if (existing.eventCheckIn) {
-        checkIn = await prisma.eventCheckIn.update({
-          where: { bookingId },
+        checkIn = await prisma.eventCheckIn.updateMany({
+          where: { bookingId,
+              tenantId: tenantId
+        },
           data,
         });
       } else {
@@ -129,6 +134,7 @@ export const checkInController = {
               ...defaults,
               ...data,
               reserveTables: toPrismaJson(data.reserveTables ?? defaults.reserveTables),
+                tenantId: tenantId
             },
           });
         } catch (err) {
@@ -136,8 +142,10 @@ export const checkInController = {
             err instanceof Prisma.PrismaClientKnownRequestError
             && err.code === 'P2002'
           ) {
-            checkIn = await prisma.eventCheckIn.update({
-              where: { bookingId },
+            checkIn = await prisma.eventCheckIn.updateMany({
+              where: { bookingId,
+                  tenantId: tenantId
+            },
               data,
             });
           } else {

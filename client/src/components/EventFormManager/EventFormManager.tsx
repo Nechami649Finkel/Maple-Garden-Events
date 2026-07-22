@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNavigationOverride } from '../../context/navigationContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { formatDate, formatDateTime, formatCurrency } from '@shared/i18n/formatters';
 import {
@@ -9,15 +8,11 @@ import {
   KASHRUT_KEY_BY_VALUE,
 } from '@shared/i18n/bookingLookups';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
+import { useNavigationOverride } from '../../context/navigationContext';
 import '../../styles/bootstrap-maple-forms.css';
 import styles from './EventFormManager.module.css';
 import CheckCamera from '../CheckCamera/CheckCamera';
 import CheckDetailsForm from '../CheckDetailsForm/CheckDetailsForm';
-import KashrutSelector from '../KashrutSelector/KashrutSelector';
-import {
-  DEFAULT_EVENT_KASHRUT,
-  normalizeKashrutValue,
-} from '../KashrutSelector/kashrutOptions';
 import { scanCheckImage, fileToDataUrl, type DepositCheckDetails } from '../../utils/checkOcr';
 import CancellationStats from '../CancellationStats/CancellationStats';
 import MenuSelectionForm from '../MenuSelectionForm/MenuSelectionForm';
@@ -25,14 +20,21 @@ import FloorPlanBuilder from '../FloorPlanBuilder/FloorPlanBuilder';
 import type { TableData } from '../FloorPlanBuilder/FloorPlanBuilder';
 import { serverTablesToClient, clientTablesToServer } from '../../constants/defaultTableLayout';
 import { calculatePortionBilling } from '../../utils/portionBilling';
-import { hasEventEnded, type EventFormTime } from '../../utils/eventStart';
+import { hasEventEnded } from '../../utils/eventStart';
 import { todayCalendarKey } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
-import { secureFetch } from '../../services/api';
+import { secureFetch, getAuthUser } from '../../services/api';
+import {
+  saveEventFormDraft,
+  loadEventFormDraft,
+  clearEventFormDraft,
+  type EventFormDraftSnapshot,
+} from '../../utils/eventFormDraft';
 import {
   useBookingsQuery,
   useEventFormsQuery,
   useGlobalSettingsQuery,
+  useKashrutQuery,
 } from '../../hooks/queries';
 import {
   PageHeader,
@@ -59,7 +61,7 @@ interface Booking {
   guestCount: number;
   eventType: string;
   timeOfDay: string;
-  eventForm?: EventFormTime | null;
+  eventForm?: any;
   akumApprovalCode?: string;
 }
 
@@ -96,6 +98,7 @@ interface EventFormData {
   hasSoundSystem?: boolean;
   hasScreens?: boolean;
   hasFireworks?: boolean;
+  entertainersTotal?: number; 
   entertainersBar?: number;
   entertainersSitting?: number;
   entertainersMen?: number;
@@ -113,6 +116,15 @@ interface EventFormData {
   pricePerPortion?: number;
   totalPrice?: number;
 }
+
+const KASHRUT_LIST = [
+  "רובין",
+  "מחפוד",
+  "לנדא",
+  "בדץ קהילות",
+  "הרב גרוס",
+  'בדץ ע"ח'
+];
 
 interface SegmentedControlProps {
   value: string;
@@ -177,6 +189,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     page: 1,
   });
   const { data: allForms = [] } = useEventFormsQuery();
+  const { data: kashruts = [] } = useKashrutQuery();
   const { data: globalSettings } = useGlobalSettingsQuery();
 
   const bookings = useMemo(
@@ -191,15 +204,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [viewMode, setViewMode] = useState<'bookings' | 'forms' | 'stats'>('bookings');
   const [showPastEvents, setShowPastEvents] = useState(false);
   
-  const [formData, setFormData] = useState<EventFormData>(() => {
-    if (designExport?.formData) {
-      return {
-        ...designExport.formData,
-        kashrut: normalizeKashrutValue(designExport.formData.kashrut),
-      };
-    }
-    return { kashrut: DEFAULT_EVENT_KASHRUT };
-  });
+  const [formData, setFormData] = useState<EventFormData>(designExport?.formData ?? {});
   const [depositCheckFile, setDepositCheckFile] = useState<File | null>(null);
   const [checkScanning, setCheckScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -208,34 +213,20 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [notesList, setNotesList] = useState<string[]>(designExport?.notesList ?? []);
   const [newNote, setNewNote] = useState('');
 
+  const [kashrutImage, setKashrutImage] = useState<string | null>(null);
+  const [isKashrutModalOpen, setIsKashrutModalOpen] = useState(false);
+  
   const [selectedMenu, setSelectedMenu] = useState<Record<string, string[]> | null>(designExport?.selectedMenu ?? null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isTableLayoutOpen, setIsTableLayoutOpen] = useState(false);
-  const [isTableLayoutPreviewOpen, setIsTableLayoutPreviewOpen] = useState(false);
   const [savedTables, setSavedTables] = useState<TableData[] | undefined>(undefined);
   const [tableLayoutImageUrl, setTableLayoutImageUrl] = useState<string | null>(null);
+  const [isTableLayoutModalOpen, setIsTableLayoutModalOpen] = useState(false);
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
   const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
   const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
-  const barPortionPrice = globalSettings?.barPortionPrice != null
-    ? Number(globalSettings.barPortionPrice)
-    : 60;
+  const [barPortionPrice, setBarPortionPrice] = useState(60);
   const [showCamera, setShowCamera] = useState(false);
-
-  // Reset draft form fields when selection identity changes (render-time adjustment).
-  const [selectionSource, setSelectionSource] = useState(selected);
-  if (!designExport && selected !== selectionSource) {
-    setSelectionSource(selected);
-    if (!selected) {
-      setFormData({});
-      setNotesList([]);
-      setHasHonorTable(null);
-      setHasEntertainers(null);
-      setShowCamera(false);
-    } else {
-      setShowCamera(false);
-    }
-  }
 
   const portionBilling = calculatePortionBilling({
     finalGuestCount: formData.finalGuestCount || 0,
@@ -275,7 +266,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       ),
       hasEquipment,
       entertainersOk,
-      hasCheck && !!normalizeKashrutValue(formData.kashrut),
+      hasCheck && !!formData.kashrut,
       !!selectedMenu && Object.keys(selectedMenu).length > 0,
       true,
     ];
@@ -287,10 +278,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setShowCamera(false);
       return;
     }
-    if (isTableLayoutPreviewOpen) {
-      setIsTableLayoutPreviewOpen(false);
-      return;
-    }
     if (isTableLayoutOpen) {
       setIsTableLayoutOpen(false);
       return;
@@ -299,26 +286,30 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setIsMenuOpen(false);
       return;
     }
+    if (isKashrutModalOpen) {
+      setIsKashrutModalOpen(false);
+      return;
+    }
+    if (isTableLayoutModalOpen) {
+      setIsTableLayoutModalOpen(false);
+      return;
+    }
     if (selected) {
       setSelected(null);
     }
-  }, [showCamera, isTableLayoutPreviewOpen, isTableLayoutOpen, isMenuOpen, selected]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected]);
 
   const navigationOverride = useMemo(() => {
-    const inSubStep =
-      showCamera || isTableLayoutPreviewOpen || isTableLayoutOpen || isMenuOpen || !!selected;
+    const inSubStep = showCamera || isTableLayoutOpen || isMenuOpen || isKashrutModalOpen || isTableLayoutModalOpen || !!selected;
     return inSubStep ? { onBack: handleStepBack } : null;
-  }, [showCamera, isTableLayoutPreviewOpen, isTableLayoutOpen, isMenuOpen, selected, handleStepBack]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected, handleStepBack]);
 
   useNavigationOverride(navigationOverride);
 
   const prepareFormDataForSave = (data: EventFormData): EventFormData => {
-    const rest: EventFormData = { ...data };
-    delete rest.menCount;
-    delete rest.womenCount;
+    const { menCount, womenCount, ...rest } = data;
     return {
       ...rest,
-      kashrut: normalizeKashrutValue(data.kashrut),
       honorTableCount: hasHonorTable ? data.honorTableCount : undefined,
       ...(hasEntertainers === false ? {
         entertainersBar: undefined,
@@ -335,45 +326,42 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     alert(t(T.EVENT_FORM.MENU_SAVED));
   };
 
-  // Fetch server form when a booking is selected; only setState after the async response.
   useEffect(() => {
-    if (designExport || !selected) return;
+    if (kashruts.length > 0 && kashruts[0].imageUrl) {
+      setKashrutImage(kashruts[0].imageUrl);
+    }
+  }, [kashruts]);
 
-    let cancelled = false;
+  useEffect(() => {
+    if (globalSettings?.barPortionPrice) {
+      setBarPortionPrice(Number(globalSettings.barPortionPrice));
+    }
+  }, [globalSettings]);
+
+  useEffect(() => {
+    if (designExport) return;
+
+    if (!selected) {
+      setFormData({});
+      setNotesList([]);
+      setHasHonorTable(null);
+      setHasEntertainers(null);
+      setShowCamera(false);
+      return;
+    }
+    setShowCamera(false);
     secureFetch(`${API_URL}/event-forms/${selected.id}`, { credentials: 'include' })
       .then(r => r.json())
       .then(form => {
-        if (cancelled) return;
         if (form && form.id) {
-          const {
-            tables,
-            ...formFields
-          } = form as EventFormData & {
-            id?: string;
-            createdAt?: string;
-            updatedAt?: string;
-            booking?: unknown;
-            bookingId?: string;
-            tables?: Parameters<typeof serverTablesToClient>[0];
-          };
-          const cleanForm: EventFormData = { ...formFields };
-          Reflect.deleteProperty(cleanForm, 'id');
-          Reflect.deleteProperty(cleanForm, 'createdAt');
-          Reflect.deleteProperty(cleanForm, 'updatedAt');
-          Reflect.deleteProperty(cleanForm, 'booking');
-          Reflect.deleteProperty(cleanForm, 'bookingId');
+          const { id, createdAt, updatedAt, booking, bookingId, tables, ...cleanForm } = form;
           const guestTotal = cleanForm.finalGuestCount || selected.guestCount;
           const { menCount, womenCount } = countsFromPercents(
             cleanForm.menPercent,
             cleanForm.womenPercent,
             guestTotal
           );
-          setFormData({
-            ...cleanForm,
-            menCount,
-            womenCount,
-            kashrut: normalizeKashrutValue(cleanForm.kashrut),
-          });
+          setFormData({ ...cleanForm, menCount, womenCount });
           setHasHonorTable(!!(form.honorTableCount && form.honorTableCount > 0));
           setHasEntertainers(
             form.entertainersBar != null || form.entertainersSitting != null ? true : null
@@ -382,8 +370,24 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           setSelectedMenu(form.menuSelections || null);
           setSavedTables(tables?.length ? serverTablesToClient(tables) : undefined);
           setTableLayoutImageUrl(form.tableLayoutImageUrl || null);
+
+          const currentUser = getAuthUser();
+          if (currentUser && currentUser.email) {
+            const draft = loadEventFormDraft(selected.id, currentUser.email);
+            if (draft) {
+              if (window.confirm('מצאנו טיוטה מקומית לא שמורה. האם תרצה לשחזר אותה?')) {
+                setFormData(draft.formData);
+                setHasHonorTable(draft.hasHonorTable);
+                setHasEntertainers(draft.hasEntertainers);
+                setNotesList(draft.notesList);
+                setSelectedMenu(draft.selectedMenu);
+              } else {
+                clearEventFormDraft(selected.id);
+              }
+            }
+          }
         } else {
-          setFormData({ kashrut: DEFAULT_EVENT_KASHRUT });
+          setFormData({});
           setHasHonorTable(null);
           setHasEntertainers(null);
           setNotesList([]);
@@ -392,16 +396,33 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         }
       })
       .catch(() => {
-        if (cancelled) return;
-        setFormData({ kashrut: DEFAULT_EVENT_KASHRUT });
+        setFormData({});
         setHasHonorTable(null);
         setHasEntertainers(null);
         setNotesList([]);
         setSavedTables(undefined);
         setTableLayoutImageUrl(null);
       });
-    return () => { cancelled = true; };
   }, [selected, designExport]);
+
+  useEffect(() => {
+    if (!selected || actionBusy) return;
+    const currentUser = getAuthUser();
+    if (!currentUser || !currentUser.email) return;
+
+    const timer = setTimeout(() => {
+      const snapshot: EventFormDraftSnapshot = {
+        formData,
+        hasHonorTable,
+        hasEntertainers,
+        notesList,
+        selectedMenu,
+      };
+      saveEventFormDraft(selected.id, currentUser.email, snapshot);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [selected, formData, hasHonorTable, hasEntertainers, notesList, selectedMenu, actionBusy]);
 
   const handleTableLayoutSave = async (tables: TableData[], imageDataUrl: string) => {
     if (!selected) return;
@@ -476,17 +497,14 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     statusLabel: hasForm ? t(T.EVENT_FORM.STATUS_EXISTS) : t(T.EVENT_FORM.STATUS_PENDING),
   });
 
-  const handleInputChange = (
-    field: keyof EventFormData,
-    value: EventFormData[keyof EventFormData] | string,
-  ) => {
+  const handleInputChange = (field: keyof EventFormData, value: any) => {
     if (field === 'menCount' || field === 'womenCount') {
       setFormData(prev => {
         const menCount = field === 'menCount'
-          ? Math.max(0, parseInt(String(value), 10) || 0)
+          ? Math.max(0, parseInt(value, 10) || 0)
           : (prev.menCount || 0);
         const womenCount = field === 'womenCount'
-          ? Math.max(0, parseInt(String(value), 10) || 0)
+          ? Math.max(0, parseInt(value, 10) || 0)
           : (prev.womenCount || 0);
         const { menPercent, womenPercent } = computePercentSplit(menCount, womenCount);
         return { ...prev, menCount, womenCount, menPercent, womenPercent };
@@ -640,7 +658,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       currentSeating &&
       (currentSeating === 'mixed' || ((formData.menCount || 0) + (formData.womenCount || 0) > 0)) &&
       (formData.depositCheckUrl || depositCheckFile) && 
-      !!normalizeKashrutValue(formData.kashrut)
+      formData.kashrut
     );
   };
 
@@ -665,6 +683,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       
       const result = await response.json();
       if (result.success) {
+        clearEventFormDraft(selected.id);
         setDepositCheckFile(null);
         showEmailSaveMessage(result);
         setSelected(null);
@@ -698,6 +717,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         return;
       }
 
+      clearEventFormDraft(selected.id);
+
       const saveResult = await saveResponse.json();
       if (saveResult.emailSent || saveResult.emailSkipped || saveResult.emailError) {
         showEmailSaveMessage(saveResult);
@@ -729,6 +750,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         alert(t(T.UI.SAVE_ERROR));
         return;
       }
+
+      clearEventFormDraft(selected.id);
 
       const saveResult = await saveResponse.json();
 
@@ -967,7 +990,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
             </div>
             <div className="d-flex flex-wrap gap-2 mt-2">
               <span className="maple-meta-chip">{t(T.EVENT_FORM.META_FINAL, { count: formData.finalGuestCount || t(T.COMMON.LABELS.EM_DASH) })}</span>
-              <span className="maple-meta-chip">{t(T.EVENT_FORM.META_KASHRUT, { value: formatKashrut(normalizeKashrutValue(formData.kashrut)) })}</span>
+              <span className="maple-meta-chip">{t(T.EVENT_FORM.META_KASHRUT, { value: formData.kashrut ? formatKashrut(formData.kashrut) : t(T.COMMON.LABELS.EM_DASH) })}</span>
             </div>
             {!designExport && (
               <button type="button" onClick={() => setSelected(null)} className="btn btn-sm btn-outline-secondary position-absolute top-0 end-0 m-3">✕ {t(T.UI.CLOSE)}</button>
@@ -1351,18 +1374,37 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                 <div className={styles.tableLayoutPreviewBlock}>
                   <button
                     type="button"
+                    onClick={() => setIsTableLayoutModalOpen(true)}
                     className={styles.tableLayoutPreviewBtn}
-                    onClick={() => setIsTableLayoutPreviewOpen(true)}
-                    title="לחץ להגדלה ולצפייה בסידור המלא"
-                    aria-label="הגדלת סקיצת סידור שולחנות"
+                    title={t(T.EVENT_FORM.ENLARGE_TABLE_LAYOUT)}
+                    aria-label={t(T.EVENT_FORM.ENLARGE_TABLE_LAYOUT)}
                   >
                     <img
                       src={tableLayoutImageUrl}
                       alt={t(T.EVENT_FORM.TABLE_SKETCH_ALT)}
                       className={styles.tableLayoutPreviewImg}
                     />
-                    <span className={styles.tableLayoutPreviewHint}>לחץ להגדלה ולצפייה בסידור</span>
                   </button>
+                </div>
+              )}
+
+              {isTableLayoutModalOpen && tableLayoutImageUrl && (
+                <div onClick={() => setIsTableLayoutModalOpen(false)} className={styles.modalOverlay}>
+                  <div onClick={e => e.stopPropagation()} className={styles.imageLightboxContent}>
+                    <button
+                      type="button"
+                      onClick={() => setIsTableLayoutModalOpen(false)}
+                      className={styles.imageLightboxCloseBtn}
+                      aria-label={t(T.UI.CLOSE)}
+                    >
+                      ✕
+                    </button>
+                    <img
+                      src={tableLayoutImageUrl}
+                      alt={t(T.EVENT_FORM.ENLARGED_TABLE_SKETCH_ALT)}
+                      className={styles.modalImg}
+                    />
+                  </div>
                 </div>
               )}
 
@@ -1477,12 +1519,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     <span className={styles.payStatusWarn}>{t(T.EVENT_FORM.CHECK_MISSING)}</span>
                   )}
                   {formData.kashrut ? (
-                    <span className={styles.payStatusOk}>{t(T.EVENT_FORM.KASHRUT_SELECTED, { value: formatKashrut(normalizeKashrutValue(formData.kashrut)) })}</span>
+                    <span className={styles.payStatusOk}>{t(T.EVENT_FORM.KASHRUT_SELECTED, { value: formatKashrut(formData.kashrut) })}</span>
                   ) : (
                     <span className={styles.payStatusWarn}>{t(T.EVENT_FORM.KASHRUT_REQUIRED)}</span>
                   )}
                 </div>
-                <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                <div className="d-flex flex-wrap gap-2 mb-3">
                   <button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setShowCamera(true)}>
                     {t(T.EVENT_FORM.PHOTO)}
                   </button>
@@ -1490,15 +1532,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     {t(T.EVENT_FORM.UPLOAD)}
                   </button>
                   <input type="file" id="fileInput" accept="image/*" onChange={handleFileChange} className="d-none" />
-                  <div className="form-check mb-0">
+                  <div className="form-check">
                     <input type="checkbox" className="form-check-input" id="deposit-received" checked={formData.depositCheckStatus || false} onChange={e => handleCheckboxChange('depositCheckStatus', e.target.checked)} />
                     <label className="form-check-label" htmlFor="deposit-received">{t(T.EVENT_FORM.CHECK_RECEIVED)}</label>
                   </div>
-                  {(depositCheckFile || formData.depositCheckUrl) && (
-                    <button type="button" onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">
-                      {t(T.EVENT_FORM.DELETE_CHECK)}
-                    </button>
-                  )}
                 </div>
 
                 {(formData.depositCheckUrl || formData.depositCheckDetails) && (
@@ -1516,12 +1553,22 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                     <input type="text" readOnly value={selected.akumApprovalCode || t(T.EVENT_FORM.NOT_ENTERED)} className={`form-control bg-light ${selected.akumApprovalCode ? 'text-success' : 'text-muted'}`} />
                   </div>
                   <div className="col-6">
-                    <label className="form-label" htmlFor="event-kashrut">{t(T.EVENT_FORM.KASHRUT_ALT)}</label>
-                    <KashrutSelector
-                      id="event-kashrut"
-                      value={formData.kashrut}
-                      onChange={(val) => handleInputChange('kashrut', val)}
-                    />
+                    <label className="form-label">{t(T.EVENT_FORM.KASHRUT_ALT)}</label>
+                    <div className={styles.kashrutRow}>
+                      <select className="form-select" value={formData.kashrut || ''} onChange={(e) => handleInputChange('kashrut', e.target.value)}>
+                        <option value="">{t(T.EVENT_FORM.SELECT_KASHRUT)}</option>
+                        {KASHRUT_LIST.map((kName, idx) => (
+                          <option key={idx} value={kName}>{formatKashrut(kName)}</option>
+                        ))}
+                      </select>
+                      {kashrutImage ? (
+                        <div onClick={() => setIsKashrutModalOpen(true)} className={styles.kashrutThumb} title={t(T.EVENT_FORM.ENLARGE_CERT)}>
+                          <img src={kashrutImage} alt={t(T.EVENT_FORM.KASHRUT_ALT)} />
+                        </div>
+                      ) : (
+                        <div className={styles.kashrutThumbEmpty}>{t(T.COMMON.LABELS.EM_DASH)}</div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1533,9 +1580,20 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   {selected.clientSignatureUrl && (
                     <img src={selected.clientSignatureUrl} alt={t(T.EVENT_FORM.CONTRACT_ALT)} className={styles.signatureThumb} title={t(T.EVENT_FORM.CONTRACT_SIGNED)} />
                   )}
+                  {(depositCheckFile || formData.depositCheckUrl) && (
+                    <button onClick={handleDeleteCheckImage} className="btn btn-sm btn-outline-danger">{t(T.EVENT_FORM.DELETE_CHECK)}</button>
+                  )}
                 </div>
               </div>
               </div>
+              {isKashrutModalOpen && kashrutImage && (
+                <div onClick={() => setIsKashrutModalOpen(false)} className={styles.modalOverlay}>
+                  <div onClick={e => e.stopPropagation()} className={styles.modalContent}>
+                    <img src={kashrutImage} alt={t(T.EVENT_FORM.ENLARGED_CERT_ALT)} className={styles.modalImg} />
+                    <button onClick={() => setIsKashrutModalOpen(false)} className={styles.modalCloseBtn}>{t(T.UI.CLOSE)}</button>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={`card mb-0 ${styles.boardNotes}`}>
@@ -1612,46 +1670,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                          initialSelections={selectedMenu} 
                       />
                     </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {isTableLayoutPreviewOpen && tableLayoutImageUrl && (
-              <div
-                className={styles.modalOverlay}
-                onClick={() => setIsTableLayoutPreviewOpen(false)}
-                role="dialog"
-                aria-modal="true"
-                aria-label="תצוגה מוגדלת של סידור שולחנות"
-              >
-                <div
-                  className={styles.tableLayoutLightbox}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <img
-                    src={tableLayoutImageUrl}
-                    alt="סידור שולחנות — תצוגה מלאה"
-                    className={styles.tableLayoutLightboxImg}
-                  />
-                  <div className={styles.tableLayoutLightboxActions}>
-                    <button
-                      type="button"
-                      className="btn btn-primary"
-                      onClick={() => {
-                        setIsTableLayoutPreviewOpen(false);
-                        setIsTableLayoutOpen(true);
-                      }}
-                    >
-                      פתיחת הסידור המלא לעריכה / צפייה
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.modalCloseBtn}
-                      onClick={() => setIsTableLayoutPreviewOpen(false)}
-                    >
-                      סגור
-                    </button>
                   </div>
                 </div>
               </div>

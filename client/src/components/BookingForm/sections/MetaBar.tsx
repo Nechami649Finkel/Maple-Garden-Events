@@ -7,7 +7,7 @@ import {
   translateByValue,
 } from '@shared/i18n/bookingLookups';
 
-const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours }: any) => {
+const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours, calendarEventTypeFilter }: any) => {
   const { data: staffMembers = [] } = useStaffQuery();
   const { t, T, locale } = useTranslation();
 
@@ -54,7 +54,10 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
           <option value="" disabled hidden>
             {isOption ? t(T.BOOKING.META.SELECT_EVENT_TYPE_OPTIONAL) : t(T.BOOKING.META.SELECT_EVENT_TYPE)}
           </option>
-          {EVENT_TYPE_VALUES.map(type => (
+          {EVENT_TYPE_VALUES.filter(type => {
+            const isOtherEvent = calendarEventTypeFilter === 'אירוע אחר' || formData.eventType === 'אירוע אחר';
+            return !(isOtherEvent && type === 'חתונה');
+          }).map(type => (
             <option key={type} value={type}>
               {translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, type)}
             </option>

@@ -318,6 +318,7 @@ export const calendarService = {
       try {
         const created = await tx.booking.create({
           data: {
+            tenant: { connect: { id: String((bookingDetails as any).tenantId) } },
             clientAFullName: bookingDetails.clientAFullName,
             clientAIdNumber: bookingDetails.clientAIdNumber || '',
             clientAPhone: bookingDetails.clientAPhone,
@@ -385,7 +386,7 @@ export const calendarService = {
   },
 
   /** נעילת תאריך זמנית בזמן בדיקה/מילוי טופס (30 דקות) */
-  async lockDateForChecking(dateStr: string, employeeName: string) {
+  async lockDateForChecking(dateStr: string, employeeName: string, tenantId: string) {
     try {
       const calendarKey = toCalendarDateKey(dateStr);
 
@@ -425,7 +426,8 @@ export const calendarService = {
         if (!eventDate) {
           eventDate = await tx.eventDate.create({
             data: {
-              date: calendarDateForStorage(calendarKey),
+              tenant: { connect: { id: tenantId } },
+              date: new Date(calendarKey),
               status: EventStatus.CHECKING,
               lockedBy: employeeName,
               optionExpiresAt: expiry,
@@ -532,9 +534,10 @@ export const calendarService = {
         try {
           created = await tx.booking.create({
             data: {
-              clientAFullName: bookingDetails.clientAFullName,
+              tenant: { connect: { id: String((bookingDetails as any).tenantId) } },
+              clientAFullName: bookingDetails.clientAFullName || '',
               clientAIdNumber: bookingDetails.clientAIdNumber || '',
-              clientAPhone: bookingDetails.clientAPhone,
+              clientAPhone: bookingDetails.clientAPhone || '',
               clientAEmail: bookingDetails.clientAEmail || null,
               clientAAddress: bookingDetails.clientAAddress || null,
               clientBFullName: bookingDetails.clientBFullName || null,
@@ -593,6 +596,7 @@ export const calendarService = {
 
   /** שמירת hold רך לכמה תאריכי אופציה (לפני מילוי טופס מלא) */
   async saveOptionHold(
+    tenantId: string,
     dates: string[],
     clientName: string,
     clientPhone: string,
@@ -633,6 +637,7 @@ export const calendarService = {
           if (!eventDate) {
             eventDate = await tx.eventDate.create({
               data: {
+                tenant: { connect: { id: tenantId } },
                 date: calendarDateForStorage(calendarKey),
                 status: EventStatus.OPTION,
                 optionExpiresAt: expiry,

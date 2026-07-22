@@ -16,11 +16,10 @@ export function getBrandConfig(): BrandConfig {
   // Resolve environment variable safely based on the runtime
   if (typeof process !== 'undefined' && process.env && process.env.TENANT_NAME) {
     tenantName = process.env.TENANT_NAME;
-  } else {
-    // @ts-ignore
-    if (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_TENANT_NAME) {
-      // @ts-ignore
-      tenantName = import.meta.env.VITE_TENANT_NAME;
+  } else if (typeof window !== 'undefined' && (window as any).__TENANT_NAME__) {
+    tenantName = (window as any).__TENANT_NAME__;
+    if (tenantName === '%VITE_TENANT_NAME%') {
+      tenantName = undefined; // Vite hasn't replaced it (e.g. testing context or missing env)
     }
   }
 

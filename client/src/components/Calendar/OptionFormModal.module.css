@@ -5,27 +5,27 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: calc(var(--maple-z-panel) + 10);
+  z-index: calc(var(--brand-z-panel) + 10);
   direction: rtl;
   backdrop-filter: blur(3px);
   padding: 16px;
 }
 
 .modal {
-  background: var(--maple-bg);
-  border-radius: var(--maple-radius-lg);
+  background: var(--brand-bg);
+  border-radius: var(--brand-radius-lg);
   width: 100%;
   max-width: 960px;
   max-height: calc(100dvh - 32px);
   overflow: hidden;
-  box-shadow: var(--maple-shadow-lg);
-  border: 1px solid var(--maple-border);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
 }
 
 .header {
-  background: linear-gradient(135deg, var(--maple-green) 0%, var(--maple-green-dark) 100%);
+  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
   color: #fff;
   padding: 20px 24px;
   position: relative;
@@ -81,3 +81,4 @@
 .body :global(.card-header) {
   display: none;
 }
+

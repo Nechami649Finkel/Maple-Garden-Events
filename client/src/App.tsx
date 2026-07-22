@@ -11,7 +11,9 @@ import { checkAuthSession } from './services/api';
 import { connectSocket, disconnectSocket } from './services/socketService';
 import { setupRealtimeSync, teardownRealtimeSync } from './services/realtimeSync';
 import { setupOfflineCheckInSync } from './utils/offlineCheckInQueue';
+import { cleanExpiredLocalDrafts } from './utils/localDraft';
 import { queryClient } from './lib/queryClient';
+import { TenantBrandingProvider } from './contexts/TenantBrandingContext';
 
 const BookingForm = lazy(() => import('./components/BookingForm/BookingForm'));
 const BookingFormDesignExport = lazy(() => import('./components/BookingForm/BookingFormDesignExport'));
@@ -36,13 +38,14 @@ const CalendarWrapper = () => {
   return (
     <AppLayout layout="viewportFill">
       <Calendar
-        onDateSelect={(day) => {
+        onDateSelect={(day, filter) => {
           navigate('/booking', {
             state: {
               date: day.date,
               hebrewDate: day.hebrewDate,
               takenSlots: Array.from(getTakenSlots(day.bookings || [])),
               blockedSlots: (day.blockedSlots || []) as TimeSlot[],
+              eventTypeFilter: filter,
             },
           });
         }}
@@ -86,6 +89,10 @@ function App() {
   );
 
   useEffect(() => {
+    cleanExpiredLocalDrafts();
+  }, []);
+
+  useEffect(() => {
     if (isDesignRoute) return;
     let cancelled = false;
     checkAuthSession().then((authenticated) => {
@@ -127,53 +134,55 @@ function App() {
 
   return (
     <AccessibilityProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/feedback/:token" element={<Lazy><FeedbackPage /></Lazy>} />
-          {import.meta.env.DEV && (
-            <Route
-              path="/__design__/booking-form"
-              element={
-                <Lazy>
-                  <AppLayout layout="viewportFill">
-                    <BookingFormDesignExport />
-                  </AppLayout>
-                </Lazy>
-              }
-            />
-          )}
-          {import.meta.env.DEV && (
-            <Route
-              path="/__design__/event-form"
-              element={
-                <Lazy>
-                  <AppLayout layout="viewportFill">
-                    <EventFormDesignExport />
-                  </AppLayout>
-                </Lazy>
-              }
-            />
-          )}
+      <TenantBrandingProvider isAuthenticated={isAuthenticated}>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/feedback/:token" element={<Lazy><FeedbackPage /></Lazy>} />
+            {import.meta.env.DEV && (
+              <Route
+                path="/__design__/booking-form"
+                element={
+                  <Lazy>
+                    <AppLayout layout="viewportFill">
+                      <BookingFormDesignExport />
+                    </AppLayout>
+                  </Lazy>
+                }
+              />
+            )}
+            {import.meta.env.DEV && (
+              <Route
+                path="/__design__/event-form"
+                element={
+                  <Lazy>
+                    <AppLayout layout="viewportFill">
+                      <EventFormDesignExport />
+                    </AppLayout>
+                  </Lazy>
+                }
+              />
+            )}
 
-          <Route path="/" element={guard(<Navigate to="/dashboard" replace />)} />
-          <Route path="/dashboard" element={guard(<Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy>)} />
-          <Route path="/calendar" element={guard(<CalendarWrapper />)} />
-          <Route path="/booking" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
-          <Route path="/booking/close-option/:optionId" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
-          <Route path="/booking/edit/:id" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
-          <Route path="/options-manager" element={guard(<Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy>)} />
-          <Route path="/bookings-manager" element={guard(<Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy>)} />
-          <Route path="/greeting" element={guard(<Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy>)} />
-          <Route path="/event-form-manager" element={guard(<Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy>)} />
-          <Route path="/option" element={guard(<Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy>)} />
-          <Route path="/menu" element={guard(<Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy>)} />
-          <Route path="/settings" element={guard(<Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy>)} />
-          <Route path="/feedback-manager" element={guard(<Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy>)} />
-          <Route path="/feedback-stats" element={guard(<Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy>)} />
-          <Route path="/gallery" element={guard(<Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy>)} />
-        </Routes>
-        <AccessibilityWidget />
-      </BrowserRouter>
+            <Route path="/" element={guard(<Navigate to="/dashboard" replace />)} />
+            <Route path="/dashboard" element={guard(<Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy>)} />
+            <Route path="/calendar" element={guard(<CalendarWrapper />)} />
+            <Route path="/booking" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+            <Route path="/booking/close-option/:optionId" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+            <Route path="/booking/edit/:id" element={guard(<Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy>)} />
+            <Route path="/options-manager" element={guard(<Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy>)} />
+            <Route path="/bookings-manager" element={guard(<Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy>)} />
+            <Route path="/greeting" element={guard(<Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy>)} />
+            <Route path="/event-form-manager" element={guard(<Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy>)} />
+            <Route path="/option" element={guard(<Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy>)} />
+            <Route path="/menu" element={guard(<Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy>)} />
+            <Route path="/settings" element={guard(<Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy>)} />
+            <Route path="/feedback-manager" element={guard(<Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy>)} />
+            <Route path="/feedback-stats" element={guard(<Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy>)} />
+            <Route path="/gallery" element={guard(<Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy>)} />
+          </Routes>
+          <AccessibilityWidget />
+        </BrowserRouter>
+      </TenantBrandingProvider>
     </AccessibilityProvider>
   );
 }
