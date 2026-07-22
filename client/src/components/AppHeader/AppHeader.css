@@ -1,19 +1,32 @@
 .app-header {
-  background: var(--maple-surface);
-  border-bottom: 1px solid var(--maple-border);
-  box-shadow: var(--maple-shadow-sm);
-  padding: 8px 20px;
-  direction: rtl;
-  position: sticky;
-  top: 0;
-  z-index: 200;
+  grid-area: header;
+  background: var(--brand-surface);
+  border-bottom: 1px solid var(--brand-border);
+  box-shadow: var(--brand-shadow-sm);
+  padding: 0 var(--brand-space-5);
+  direction: inherit;
+  z-index: var(--brand-z-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--brand-space-3);
+  min-height: var(--brand-header-height);
+  flex-shrink: 0;
+}
+
+.app-header-end {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .app-header-start {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--brand-space-3);
   justify-content: flex-start;
+  min-width: 0;
+  flex: 1;
 }
 
 .app-header-brand {
@@ -23,7 +36,8 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: opacity var(--maple-transition);
+  transition: opacity var(--brand-transition);
+  flex-shrink: 0;
 }
 
 .app-header-brand:hover {
@@ -31,9 +45,9 @@
 }
 
 .app-header-logo {
-  height: 56px;
+  height: 40px;
   width: auto;
-  max-width: 240px;
+  max-width: 200px;
   object-fit: contain;
 }
 
@@ -45,11 +59,11 @@
   width: 42px;
   height: 42px;
   padding: 10px;
-  background: var(--maple-bg);
-  border: 1px solid var(--maple-border);
-  border-radius: var(--maple-radius-sm);
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius-sm);
   cursor: pointer;
-  transition: all var(--maple-transition);
+  transition: all var(--brand-transition);
   flex-shrink: 0;
 }
 
@@ -57,134 +71,94 @@
   display: block;
   height: 2px;
   width: 100%;
-  background: var(--maple-text);
+  background: var(--brand-text);
   border-radius: 2px;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .app-header-hamburger:hover {
-  background: var(--maple-green-light);
-  border-color: var(--maple-green-muted);
+  background: var(--brand-gold-light);
+  border-color: var(--brand-gold);
 }
 
 .app-header-hamburger:hover span {
-  background: var(--maple-green-dark);
+  background: var(--brand-gold-deep);
 }
 
-/* מגירת ניווט */
-.nav-drawer-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(45, 55, 72, 0.4);
-  z-index: 250;
-  animation: fadeIn 0.2s ease;
+@media (min-width: 1024px) {
+  .app-header {
+    padding: 0 var(--brand-space-6);
+  }
+
+  .app-header-hamburger {
+    display: none;
+  }
+
+  .app-header-logo {
+    height: 44px;
+  }
+
+  .app-header-title {
+    font-size: var(--brand-text-lg);
+    max-width: none;
+  }
 }
 
-.nav-drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: min(280px, 85vw);
-  height: 100vh;
-  background: var(--maple-surface);
-  box-shadow: var(--maple-shadow-lg);
-  z-index: 300;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.28s ease;
-  direction: rtl;
-}
-
-.nav-drawer-open {
-  transform: translateX(0);
-}
-
-.nav-drawer-header {
-  display: flex;
+.app-header-back {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--maple-border);
-  background: var(--maple-green-light);
-}
-
-.nav-drawer-logo {
-  height: 36px;
-  width: auto;
-}
-
-.nav-drawer-close {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border);
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  font-size: 1rem;
+  gap: 6px;
+  height: 42px;
+  padding: 0 14px;
+  background: var(--brand-green-light);
+  border: 1px solid var(--brand-green-muted);
+  border-radius: var(--brand-radius-sm);
+  color: var(--brand-green-deep);
+  font-size: var(--brand-text-sm);
+  font-weight: 700;
   cursor: pointer;
-  color: var(--maple-text-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background var(--maple-transition);
+  transition: all var(--brand-transition);
+  font-family: var(--brand-font);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.nav-drawer-close:hover {
-  background: var(--maple-bg);
+.app-header-back:hover {
+  background: var(--brand-green-muted);
+  border-color: var(--brand-green);
+  color: var(--brand-green-dark);
 }
 
-.nav-drawer-list {
-  list-style: none;
-  margin: 0;
-  padding: 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.nav-drawer-item {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 13px 14px;
-  background: none;
-  border: none;
-  border-radius: var(--maple-radius-sm);
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--maple-text-secondary);
-  cursor: pointer;
-  text-align: right;
-  transition: all var(--maple-transition);
-  font-family: var(--maple-font);
-}
-
-.nav-drawer-item:hover {
-  background: var(--maple-green-light);
-  color: var(--maple-green-dark);
-}
-
-.nav-drawer-item.active {
-  background: var(--maple-green);
-  color: #fff;
-}
-
-.nav-drawer-icon {
-  font-size: 1.1rem;
+.app-header-back-icon {
+  font-size: 1.05rem;
   line-height: 1;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.app-header-title {
+  margin: 0;
+  font-size: var(--brand-text-sm);
+  font-weight: 700;
+  color: var(--brand-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-header-title-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--brand-green-dark);
 }
 
 @media (max-width: 768px) {
   .app-header {
-    padding: 8px 14px;
+    padding: 0 var(--brand-space-3);
   }
 
   .app-header-logo {
@@ -195,4 +169,16 @@
     width: 38px;
     height: 38px;
   }
+
+  .app-header-back {
+    height: 38px;
+    padding: 0 10px;
+    font-size: var(--brand-text-xs);
+  }
+
+  .app-header-title {
+    font-size: var(--brand-text-xs);
+    max-width: 42vw;
+  }
 }
+

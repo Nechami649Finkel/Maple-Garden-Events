@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -14,6 +15,7 @@
     "@sentry/react": "^10.59.0",
     "@tanstack/react-query": "^5.101.0",
     "axios": "^1.16.1",
+    "bootstrap": "^5.3.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-draggable": "^4.6.0",
@@ -23,7 +25,6 @@
     "react-zoom-pan-pinch": "^4.0.3",
     "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",
-    "tesseract.js": "^7.0.0",
     "zustand": "^5.0.13"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "globals": "^17.6.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vite-plugin-compression": "^0.5.1"
   }
 }

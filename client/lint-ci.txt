@@ -1,0 +1,1012 @@
+﻿
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx
+   67:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:67:7
+  65 |   useEffect(() => {
+  66 |     if (import.meta.env.DEV && window.location.pathname.startsWith('/__design__/')) {
+> 67 |       setIsAuthenticated(true);
+     |       ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  68 |       return;
+  69 |     }
+  70 |     checkAuthSession().then(setIsAuthenticated);                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/set-state-in-effect
+  133:37  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:133:37
+  131 |           )}
+  132 |
+> 133 |           <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+      |                                     ^^^^^^^^^^^^^^ This component is created during render
+  134 |           <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />
+  135 |           <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
+  136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/static-components
+  134:46  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:134:46
+  132 |
+  133 |           <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+> 134 |           <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                              ^^^^^^^^^^^^^^ This component is created during render
+  135 |           <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
+  136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                                                                                                                                                                                              react-hooks/static-components
+  135:45  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:135:45
+  133 |           <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
+  134 |           <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 135 |           <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
+      |                                             ^^^^^^^^^^^^^^ This component is created during render
+  136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                             react-hooks/static-components
+  136:44  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:136:44
+  134 |           <Route path="/dashboard" element={<ProtectedRoute><Lazy><FullWidthShell><Dashboard /></FullWidthShell></Lazy></ProtectedRoute>} />
+  135 |           <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
+> 136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                            ^^^^^^^^^^^^^^ This component is created during render
+  137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                   react-hooks/static-components
+  137:67  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:137:67
+  135 |           <Route path="/calendar" element={<ProtectedRoute><CalendarWrapper /></ProtectedRoute>} />
+  136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+> 137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                                                   ^^^^^^^^^^^^^^ This component is created during render
+  138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                               react-hooks/static-components
+  138:53  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:138:53
+  136 |           <Route path="/booking" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+> 138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                                     ^^^^^^^^^^^^^^ This component is created during render
+  139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                 react-hooks/static-components
+  139:52  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:139:52
+  137 |           <Route path="/booking/close-option/:optionId" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+> 139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                                    ^^^^^^^^^^^^^^ This component is created during render
+  140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+  142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>  react-hooks/static-components
+  140:53  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:140:53
+  138 |           <Route path="/booking/edit/:id" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><BookingForm /></AppLayout></Lazy></ProtectedRoute>} />
+  139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                                     ^^^^^^^^^^^^^^ This component is created during render
+  141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+  142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+  143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                          react-hooks/static-components
+  141:45  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:141:45
+  139 |           <Route path="/options-manager" element={<ProtectedRoute><Lazy><FullWidthShell><OptionsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                             ^^^^^^^^^^^^^^ This component is created during render
+  142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+  143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+  144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                 react-hooks/static-components
+  142:55  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:142:55
+  140 |           <Route path="/bookings-manager" element={<ProtectedRoute><Lazy><FullWidthShell><BookingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                                       ^^^^^^^^^^^^^^ This component is created during render
+  143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+  144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+  145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                             react-hooks/static-components
+  143:43  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:143:43
+  141 |           <Route path="/greeting" element={<ProtectedRoute><Lazy><FullWidthShell><GreetingBlast /></FullWidthShell></Lazy></ProtectedRoute>} />
+  142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+> 143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                           ^^^^^^^^^^^^^^ This component is created during render
+  144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+  145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                         react-hooks/static-components
+  144:41  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:144:41
+  142 |           <Route path="/event-form-manager" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><EventFormManager /></AppLayout></Lazy></ProtectedRoute>} />
+  143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+> 144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+      |                                         ^^^^^^^^^^^^^^ This component is created during render
+  145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  147 |           <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                     react-hooks/static-components
+  145:45  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:145:45
+  143 |           <Route path="/option" element={<ProtectedRoute><Lazy><AppLayout layout="viewportFill"><OptionPage /></AppLayout></Lazy></ProtectedRoute>} />
+  144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+> 145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                             ^^^^^^^^^^^^^^ This component is created during render
+  146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  147 |           <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
+  148 |           <Route path="/gallery" element={<ProtectedRoute><Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy></ProtectedRoute>} />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                 react-hooks/static-components
+  146:53  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:146:53
+  144 |           <Route path="/menu" element={<ProtectedRoute><Lazy><AppLayout fullHeight={false}><MenuDisplay /></AppLayout></Lazy></ProtectedRoute>} />
+  145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                                     ^^^^^^^^^^^^^^ This component is created during render
+  147 |           <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
+  148 |           <Route path="/gallery" element={<ProtectedRoute><Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy></ProtectedRoute>} />
+  149 |         </Routes>
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                                                                                                              react-hooks/static-components
+  147:51  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:147:51
+  145 |           <Route path="/settings" element={<ProtectedRoute><Lazy><FullWidthShell><SettingsManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 147 |           <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                                   ^^^^^^^^^^^^^^ This component is created during render
+  148 |           <Route path="/gallery" element={<ProtectedRoute><Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy></ProtectedRoute>} />
+  149 |         </Routes>
+  150 |         <AccessibilityWidget />
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                                                                                                                                                                                                                                   react-hooks/static-components
+  148:44  error  Error: Cannot create components during render
+
+Components created during render will reset their state each time they are created. Declare components outside of render.
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:148:44
+  146 |           <Route path="/feedback-manager" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackManager /></FullWidthShell></Lazy></ProtectedRoute>} />
+  147 |           <Route path="/feedback-stats" element={<ProtectedRoute><Lazy><FullWidthShell><FeedbackStats /></FullWidthShell></Lazy></ProtectedRoute>} />
+> 148 |           <Route path="/gallery" element={<ProtectedRoute><Lazy><FullWidthShell><Gallery /></FullWidthShell></Lazy></ProtectedRoute>} />
+      |                                            ^^^^^^^^^^^^^^ This component is created during render
+  149 |         </Routes>
+  150 |         <AccessibilityWidget />
+  151 |       </BrowserRouter>
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\App.tsx:96:26
+   94 |   }
+   95 |
+>  96 |   const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      |                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  97 |     if (!isAuthenticated) {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  98 |       return <Login onLoginSuccess={handleLoginSuccess} />;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 100 |     return <>{children}</>;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 101 |   };
+      | ^^^^ The component is created during render here
+  102 |
+  103 |   return (
+  104 |     <AccessibilityProvider>                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/static-components
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx
+    72:18  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   185:56  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   191:23  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   197:68  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   247:42  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:247:42
+  245 |
+  246 |   useEffect(() => {
+> 247 |     if (globalSettings?.vatRate != null) setVatRate(Number(globalSettings.vatRate));
+      |                                          ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  248 |   }, [globalSettings]);
+  249 |
+  250 |   useEffect(() => {                                                                                                             react-hooks/set-state-in-effect
+   260:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:260:7
+  258 |     const draft = loadBookingDraft(userEmail);
+  259 |     if (!draft) {
+> 260 |       setDraftRestored(true);
+      |       ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  261 |       return;
+  262 |     }
+  263 |     const restore = window.confirm('╫á╫₧╫ª╫נ╫פ ╫ר╫ש╫ץ╫ר╫¬ ╫פ╫צ╫₧╫á╫פ ╫⌐╫£╫נ ╫á╫⌐╫₧╫¿╫פ. ╫£╫⌐╫ק╫צ╫¿ ╫נ╫ץ╫¬╫פ?');                                                                                             react-hooks/set-state-in-effect
+   308:6   warning  React Hook useEffect has a missing dependency: 'buildDraftSnapshot'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+   355:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:355:7
+  353 |     if (globalSettings?.paymentTemplates) {
+  354 |       const meta = getPaymentTemplatesFromSettings(globalSettings);
+> 355 |       setPaymentTemplates(meta.templates);
+      |       ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  356 |     }
+  357 |   }, [globalSettings]);
+  358 |                                                                                                    react-hooks/set-state-in-effect
+   362:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:362:7
+  360 |     if (selectedDatesDisplay.length > 0) {
+  361 |       const firstDate = typeof selectedDatesDisplay[0] === 'object' ? selectedDatesDisplay[0].date : selectedDatesDisplay[0];
+> 362 |       setFormData(prev => ({ ...prev, calendarDateId: firstDate || '' }));
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  363 |     }
+  364 |   }, [selectedDatesDisplay]);
+  365 |             react-hooks/set-state-in-effect
+   368:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:368:7
+  366 |   useEffect(() => {
+  367 |     if (!isOption || selectedDatesDisplay.length === 0) {
+> 368 |       setOptionDatesSlotWarning('');
+      |       ^^^^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  369 |       return;
+  370 |     }
+  371 |     const slot = normalizeTimeSlot(formData.timeOfDay as string);                                                                              react-hooks/set-state-in-effect
+   402:15  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        no-empty
+   418:34  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   513:19  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        no-empty
+   517:51  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   520:26  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   544:6   warning  React Hook useEffect has a missing dependency: 'applyBookingToForm'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+   568:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:568:7
+  566 |       if (!next) return;
+  567 |       const hours = getSlotHours(next);
+> 568 |       setFormData((prev) =>
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  569 |         prev.timeOfDay === next && prev.startTime === hours.start && prev.endTime === hours.end
+  570 |           ? prev
+  571 |           : { ...prev, timeOfDay: next, startTime: hours.start, endTime: hours.end }  react-hooks/set-state-in-effect
+   579:6   warning  React Hook useEffect has missing dependencies: 'availableSlots' and 'unavailableSlots'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/exhaustive-deps
+   579:19  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   579:47  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   587:9   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:587:9
+  585 |       if (eveningOk && formData.timeOfDay !== 'evening') {
+  586 |         const { start, end } = getSlotHours('evening');
+> 587 |         setFormData((prev) => ({ ...prev, timeOfDay: 'evening', startTime: start, endTime: end }));
+      |         ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  588 |         return;
+  589 |       }
+  590 |     }                                              react-hooks/set-state-in-effect
+   598:6   warning  React Hook useEffect has missing dependencies: 'availableSlots' and 'unavailableSlots'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   react-hooks/exhaustive-deps
+   598:59  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   598:87  warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   602:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:602:7
+  600 |   useEffect(() => {
+  601 |     if (formData.eventType !== HALL_ONLY_EVENT_TYPE) {
+> 602 |       setErrors((prev) => (prev.hallRentalPrice ? { ...prev, hallRentalPrice: '' } : prev));
+      |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  603 |     }
+  604 |   }, [formData.eventType]);
+  605 |                                                                                             react-hooks/set-state-in-effect
+   793:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:793:5
+  791 |       eventDate: getEventDateStr(),
+  792 |     });
+> 793 |     setPaymentTermsText(paragraph);
+      |     ^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  794 |   }, [
+  795 |     paymentTemplateId,
+  796 |     paymentTermsCustom,                                                                                                                                                         react-hooks/set-state-in-effect
+   794:6   warning  React Hook useEffect has a missing dependency: 'getEventDateStr'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           react-hooks/exhaustive-deps
+   815:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\BookingForm.tsx:815:5
+  813 |       upgradeKeys: visibleUpgradeKeys,
+  814 |     };
+> 815 |     setContractText(resolveFullContractText({
+      |     ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  816 |       baseContract: contractBaseText,
+  817 |       paymentTerms: paymentTermsText,
+  818 |       lineItemOptions,                                                                                                    react-hooks/set-state-in-effect
+  1066:14  error    'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\ClientsSection.tsx
+  3:82  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\EventSettingsSection.tsx
+  38:4   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  40:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  72:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  80:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\MetaBar.tsx
+  5:114  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\OptionDatesBar.tsx
+   52:36  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+   81:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\OptionDatesBar.tsx:81:5
+  79 |   useEffect(() => {
+  80 |     if (!isOpen) return;
+> 81 |     setManualDate('');
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  82 |     setManualError('');
+  83 |     setPickerError('');
+  84 |     loadMonthDays();  react-hooks/set-state-in-effect
+  100:42  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingForm\sections\PaymentAndUpgradesSection.tsx
+  9:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingsManager\BookingDetailsModal.tsx
+   20:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   22:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  275:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingsManager\BookingsManager.tsx
+   26:25  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   28:21  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   31:25  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   52:44  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   76:35  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   79:11  error    The value assigned to 'cmp' is not used in subsequent statements                                               no-useless-assignment
+  115:52  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  119:19  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  127:19  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  134:6   warning  React Hook useMemo has a missing dependency: 'sortBookings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  138:34  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  184:15  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingsManager\HallInvoicesPanel.tsx
+  49:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\BookingsManager\HallInvoicesPanel.tsx:49:5
+  47 |
+  48 |   useEffect(() => {
+> 49 |     loadInvoices();
+     |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |   }, [loadInvoices]);
+  51 |
+  52 |   const handleCreateInvoice = async () => {  react-hooks/set-state-in-effect
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\Calendar\Calendar.tsx
+   18:13  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+   34:48  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+   49:95  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+   63:7   error  The value assigned to 'namesDisplay' is not used in subsequent statements  no-useless-assignment
+   81:50  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  108:39  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  108:62  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  282:72  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+  369:54  error  Unexpected any. Specify a different type                                   @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\Dashboard\Dashboard.tsx
+   27:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   76:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   86:49  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   96:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   99:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  100:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  183:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\Dashboard\MiniCalendar.tsx
+  12:9   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  21:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  55:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\Dashboard\UpcomingEventsPanel.tsx
+   22:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   25:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   28:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   59:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  110:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\EventFormManager\EventFormManager.tsx
+   10:8   error  'KashrutSelector' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   51:15  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  284:13  error  'menCount' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+  284:23  error  'womenCount' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+  305:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\EventFormManager\EventFormManager.tsx:305:7
+  303 |   useEffect(() => {
+  304 |     if (kashruts.length > 0 && kashruts[0].imageUrl) {
+> 305 |       setKashrutImage(kashruts[0].imageUrl);
+      |       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  306 |     }
+  307 |   }, [kashruts]);
+  308 |                    react-hooks/set-state-in-effect
+  311:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\EventFormManager\EventFormManager.tsx:311:7
+  309 |   useEffect(() => {
+  310 |     if (globalSettings?.barPortionPrice) {
+> 311 |       setBarPortionPrice(Number(globalSettings.barPortionPrice));
+      |       ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  312 |     }
+  313 |   }, [globalSettings]);
+  314 |  react-hooks/set-state-in-effect
+  319:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\EventFormManager\EventFormManager.tsx:319:7
+  317 |
+  318 |     if (!selected) {
+> 319 |       setFormData({});
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  320 |       setNotesList([]);
+  321 |       setHasHonorTable(null);
+  322 |       setHasEntertainers(null);                                      react-hooks/set-state-in-effect
+  331:19  error  'id' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  331:23  error  'createdAt' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  331:34  error  'updatedAt' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  331:45  error  'booking' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  331:54  error  'bookingId' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  439:65  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  559:9   error  'handleShare' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\EventPopup\EventPopup.tsx
+   23:8   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   33:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\FloorPlanBuilder\FloorPlanBuilder.tsx
+  199:7  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\FloorPlanBuilder\FloorPlanBuilder.tsx:199:7
+  197 |     const draft = loadFloorPlanDraft(draftEventId, userEmail);
+  198 |     if (draft && draft.length > 0) {
+> 199 |       setTables(draft.map(clampToSection));
+      |       ^^^^^^^^^ Avoid calling setState() directly within an effect
+  200 |       setLayoutKey((k) => k + 1);
+  201 |     }
+  202 |     setDraftLoaded(true);  react-hooks/set-state-in-effect
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\GreetingBlast\GreetingBlast.tsx
+  78:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\GreetingBlast\GreetingBlast.tsx:78:5
+  76 |
+  77 |   useEffect(() => {
+> 78 |     loadScheduledGreetings();
+     |     ^^^^^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  79 |   }, [loadScheduledGreetings]);
+  80 |
+  81 |   const hasActiveScheduled = scheduledItems.some(  react-hooks/set-state-in-effect
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\KashrutSelector\KashrutSelector.tsx
+  27:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\KashrutSelector\KashrutSelector.tsx:27:5
+  25 |
+  26 |   useEffect(() => {
+> 27 |     setImageError(false);
+     |     ^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  28 |   }, [certImage]);
+  29 |
+  30 |   return (  react-hooks/set-state-in-effect
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\LiveEvent\EventCheckInBoard.tsx
+  42:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\LiveEvent\EventCheckInBoard.tsx:42:5
+  40 |
+  41 |   useEffect(() => {
+> 42 |     setForm(initialData);
+     |     ^^^^^^^ Avoid calling setState() directly within an effect
+  43 |     sigLoaded.current = false;
+  44 |   }, [initialData]);
+  45 |  react-hooks/set-state-in-effect
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\OptionActionModal\OptionActionModal.tsx
+  8:11  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\OptionsManager\OptionsManager.tsx
+   38:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   39:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   50:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\SettingsManager\AuthorizedUsers.tsx
+  15:38  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  33:6   warning  React Hook useEffect has a missing dependency: 'loadUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\SettingsManager\SettingsManager.tsx
+   32:56  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   33:44  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+   38:29  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\SettingsManager\SettingsManager.tsx:38:29
+  36 |
+  37 |   useEffect(() => {
+> 38 |     if (globalSettingsData) setGlobalSettings(globalSettingsData);
+     |                             ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  39 |   }, [globalSettingsData]);
+  40 |
+  41 |   useEffect(() => {                              react-hooks/set-state-in-effect
+   42:5   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\components\SettingsManager\SettingsManager.tsx:42:5
+  40 |
+  41 |   useEffect(() => {
+> 42 |     setKashruts(Array.isArray(kashrutsData) ? kashrutsData : []);
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  43 |   }, [kashrutsData]);
+  44 |
+  45 |   const loading = settingsLoading || extrasLoading || kashrutLoading || staffLoading;  react-hooks/set-state-in-effect
+   55:14  error  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  117:50  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+  129:14  error  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  156:14  error  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  169:14  error  'error' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+  209:43  error  Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  @typescript-eslint/no-explicit-any
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\constants\defaultTableLayout.ts
+  169:11  error  The value assigned to 'nextId' is not used in subsequent statements  no-useless-assignment
+
+C:\Users\This User\Desktop\╫₧╫ש╫ש╫ñ╫£\client\src\services\api.ts
+  84:7  error  There is no `cause` attached to the symptom error being thrown  preserve-caught-error
+
+Γ£צ 147 problems (136 errors, 11 warnings)
+

@@ -1,78 +1,66 @@
-import nodemailer from 'nodemailer';
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'miryamilandman@gmail.com',
-    pass: process.env.EMAIL_PASSWORD || '',
-  },
-});
+import { deliverMail, getFromAddress } from '../utils/mailer';
+import { logger } from '../utils/logger';
+import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../i18n/getServerTranslation';
 
 export const sendPDFToClient = async (
   clientEmail: string,
   clientName: string,
   eventDate: string,
-  pdfBuffer: Buffer
+  pdfBuffer: Buffer,
+  locale: Locale = DEFAULT_LOCALE,
 ): Promise<boolean> => {
-  try {
-    const subject = `טופס הפקת אירוע - ${clientName} | ${new Date(eventDate).toLocaleDateString('he-IL')}`;
-    const htmlBody = `
+  const { t } = getServerTranslation(locale);
+  const formattedDate = new Date(eventDate).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US');
+  const subject = t(T.SERVER.EMAIL.EVENT_FORM.SUBJECT, { clientName, date: formattedDate });
+  const htmlBody = `
       <div style="direction: rtl; font-family: Arial, sans-serif;">
-        <h2>שלום ${clientName}!</h2>
-        <p>מצורף טופס הפקת האירוע שלך ב-PDF.</p>
-        <p>אנא שמור את הטופס הזה כדי להשתמש בו ביום האירוע.</p>
+        <h2>${t(T.SERVER.EMAIL.EVENT_FORM.GREETING, { clientName })}</h2>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.BODY)}</p>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.NOTE)}</p>
         <br/>
-        <p>גן מייפל אירועים</p>
+        <p>${t(T.SERVER.EMAIL.EVENT_FORM.SIGNATURE)}</p>
       </div>
     `;
 
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER || 'miryamilandman@gmail.com',
+  const result = await deliverMail(
+    {
+      from: getFromAddress(locale),
       to: clientEmail,
-      subject: subject,
+      subject,
       html: htmlBody,
       attachments: [
         {
-          filename: `טופס_הפקה_${clientName}.pdf`,
+          filename: t(T.SERVER.EMAIL.EVENT_FORM.ATTACHMENT, { clientName }),
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
       ],
-    });
+    },
+    t(T.SERVER.EMAIL.EVENT_FORM.LOG_LABEL, { email: clientEmail }),
+  );
 
-    console.log(`✅ Email sent to ${clientEmail}`);
-    return true;
-  } catch (error) {
-    console.error('❌ Email sending failed:', error);
-    return false;
-  }
+  return result.ok;
 };
 
 export const sendWhatsAppMessage = async (
   phoneNumber: string,
   clientName: string,
-  eventDate: string
+  eventDate: string,
 ): Promise<boolean> => {
   try {
-    // בשלב זה - placeholder. כדי להשתמש בTwilio צריך:
-    // 1. npm install twilio
-    // 2. Twilio account + credentials
-    // 3. שימוש ב-Twilio API
-    
     const twilio_account_sid = process.env.TWILIO_ACCOUNT_SID;
     const twilio_auth_token = process.env.TWILIO_AUTH_TOKEN;
     const twilio_phone = process.env.TWILIO_PHONE_NUMBER;
 
     if (!twilio_account_sid || !twilio_auth_token || !twilio_phone) {
-      console.warn('⚠️ Twilio not configured - skipping WhatsApp');
+      logger.warn('Twilio not configured - skipping WhatsApp');
       return false;
     }
 
-    // TODO: implement Twilio WhatsApp API
-    console.log(`📱 WhatsApp would be sent to: ${phoneNumber}`);
+    logger.info('WhatsApp would be sent', { phoneNumber });
     return false;
   } catch (error) {
-    console.error('❌ WhatsApp sending failed:', error);
+    logger.error('WhatsApp sending failed', { error });
     return false;
   }
 };

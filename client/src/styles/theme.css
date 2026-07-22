@@ -1,30 +1,265 @@
 :root {
-  /* ירוק מיפל — מתאים ללוגו המקורי */
-  --maple-green: #8CBF8E;
-  --maple-green-dark: #6BA86E;
-  --maple-green-deep: #4F8F52;
-  --maple-green-light: #EDF7EE;
-  --maple-green-muted: #C5E4C7;
+  /* ── Base palette ── */
+  --brand-color-primary: #29443F;
+  --brand-color-bg: #F4F6F9;
+  --brand-color-surface-alt: #EDF0F8;
+  --brand-color-white: #FFFFFF;
 
-  --maple-bg: #F7F8F6;
-  --maple-surface: #FFFFFF;
-  --maple-text: #2D3748;
-  --maple-text-secondary: #4A5568;
-  --maple-text-muted: #718096;
-  --maple-border: #E4E8E4;
-  --maple-border-strong: #CDD5CD;
+  /* ── Surfaces ── */
+  --brand-bg: var(--brand-color-bg);
+  --brand-surface: var(--brand-color-white);
+  --brand-surface-raised: var(--brand-color-surface-alt);
 
-  --maple-radius: 10px;
-  --maple-radius-lg: 14px;
-  --maple-radius-sm: 6px;
-  --maple-shadow-sm: 0 1px 3px rgba(45, 55, 72, 0.06);
-  --maple-shadow: 0 4px 12px rgba(45, 55, 72, 0.08);
-  --maple-shadow-lg: 0 8px 24px rgba(45, 55, 72, 0.12);
+  /* ── Text ── */
+  --brand-charcoal: var(--brand-color-primary);
+  --brand-text: var(--brand-color-primary);
+  --brand-text-secondary: #4A5C58;
+  --brand-text-muted: #7A8B88;
 
-  --maple-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --maple-transition: 0.18s ease;
+  /* ── Borders ── */
+  --brand-border: #E0E4EC;
+  --brand-border-strong: #CED4DF;
 
-  --maple-danger: #E53E3E;
-  --maple-warning: #DD6B20;
-  --maple-info: #4A6FA5;
+  /* ── Brand accents (derived from primary) ── */
+  --brand-gold: var(--brand-color-primary);
+  --brand-gold-light: var(--brand-color-surface-alt);
+  --brand-gold-deep: #1F332F;
+
+  /* ── Brand greens (primary scale) ── */
+  --brand-green: var(--brand-color-primary);
+  --brand-green-dark: #223834;
+  --brand-green-deep: #1A2B28;
+  --brand-green-light: var(--brand-color-surface-alt);
+  --brand-green-muted: #D5DCE8;
+
+  /* ── Sidebar ── */
+  --brand-sidebar-bg: var(--brand-color-bg);
+  --brand-sidebar-text: #4A5C58;
+  --brand-sidebar-text-active: var(--brand-color-primary);
+  --brand-sidebar-active: var(--brand-color-surface-alt);
+  --brand-sidebar-border: var(--brand-border);
+  --brand-sidebar-width: 260px;
+  --brand-sidebar-collapsed: 72px;
+  --brand-sidebar-text-size: clamp(15px, 0.9375rem + 0.1vw, 16px);
+
+  /* ── Panel headers & active tabs ── */
+  --brand-panel-header-bg: linear-gradient(135deg, var(--brand-color-surface-alt) 0%, var(--brand-color-bg) 100%);
+  --brand-panel-header-text: var(--brand-color-primary);
+  --brand-tab-active-bg: var(--brand-color-primary);
+  --brand-overlay: rgba(41, 68, 63, 0.22);
+
+  /* ── Gradients ── */
+  --brand-accent-gradient: linear-gradient(135deg, #29443F 0%, #1F332F 100%);
+
+  /* ── Semantic ── */
+  --brand-danger: #C53030;
+  --brand-warning: #C05621;
+  --brand-info: #3D6B9E;
+  --brand-success: var(--brand-color-primary);
+
+  /* ── Focus / a11y ── */
+  --brand-focus-ring: var(--brand-color-primary);
+  --brand-focus-offset: 2px;
+  --brand-focus-width: 2px;
+
+  /* ── Spacing (4px grid) ── */
+  --brand-space-1: 4px;
+  --brand-space-2: 8px;
+  --brand-space-3: 12px;
+  --brand-space-4: 16px;
+  --brand-space-5: 20px;
+  --brand-space-6: 24px;
+  --brand-space-8: 32px;
+  --brand-space-10: 40px;
+  --brand-space-12: 48px;
+
+  /* ── Layout ── */
+  --brand-page-padding: clamp(16px, 2vw, 32px);
+  --brand-header-height: 60px;
+  --brand-content-max: 1440px;
+
+  /* ── Shape ── */
+  --brand-radius: 10px;
+  --brand-radius-lg: 14px;
+  --brand-radius-sm: 6px;
+  --brand-radius-full: 9999px;
+
+  /* ── Shadows ── */
+  --brand-shadow-sm: 0 1px 3px rgba(41, 68, 63, 0.06);
+  --brand-shadow: 0 4px 12px rgba(41, 68, 63, 0.08);
+  --brand-shadow-lg: 0 8px 24px rgba(41, 68, 63, 0.12);
+
+  /* ── Typography ── */
+  --brand-font: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --brand-text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.8125rem);
+  --brand-text-sm: clamp(0.8125rem, 0.78rem + 0.15vw, 0.875rem);
+  --brand-text-base: clamp(0.9375rem, 0.9rem + 0.2vw, 1rem);
+  --brand-text-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.125rem);
+  --brand-text-xl: clamp(1.2rem, 1.1rem + 0.5vw, 1.375rem);
+  --brand-heading: clamp(1.35rem, 1.2rem + 0.7vw, 1.75rem);
+  --brand-display: clamp(1.75rem, 1.5rem + 1.2vw, 2.25rem);
+
+  /* ── Motion ── */
+  --brand-transition: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Z-index ── */
+  --brand-z-header: 200;
+  --brand-z-sidebar: 250;
+  --brand-z-drawer: 300;
+  --brand-z-panel: 500;
+  --brand-z-modal: 1000;
+  --brand-z-modal-top: 1100;
+
+  /* ── Event form section accents ── */
+  --brand-section-time: var(--brand-color-primary);
+  --brand-section-guests: var(--brand-color-primary);
+  --brand-section-design: #1F332F;
+  --brand-section-equip: #3D6B9E;
+  --brand-section-ent: #7B6B9E;
+  --brand-section-pay: #1F332F;
+  --brand-section-menu-bg: var(--brand-color-surface-alt);
+  --brand-section-notes: #7A8B88;
+
+  /* ── Event form density ── */
+  --brand-form-section-pad: clamp(8px, 1vw, 14px);
+  --brand-form-label-size: clamp(0.68rem, 0.65rem + 0.15vw, 0.76rem);
+  --brand-form-input-pad: clamp(6px, 0.8vw, 10px) clamp(8px, 1vw, 12px);
+  --brand-form-input-size: clamp(0.8rem, 0.78rem + 0.1vw, 0.88rem);
+  --brand-form-input-height: clamp(30px, 4vw, 34px);
+  --brand-form-header-height: clamp(52px, 8vh, 64px);
 }
+
+/* ── Global utilities ── */
+
+.maple-close-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--brand-border);
+  border-radius: 50%;
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--brand-transition), color var(--brand-transition);
+  flex-shrink: 0;
+}
+
+.maple-close-btn:hover {
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.maple-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--brand-overlay);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--brand-z-modal);
+  direction: rtl;
+  padding: 16px;
+}
+
+.maple-modal-header {
+  background: var(--brand-panel-header-bg);
+  color: var(--brand-panel-header-text);
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 3px solid var(--brand-color-primary);
+}
+
+.maple-modal-header h3,
+.maple-modal-header h2 {
+  margin: 0;
+  color: var(--brand-panel-header-text);
+  font-size: var(--brand-text-lg);
+  font-weight: 700;
+}
+
+.maple-modal-header .maple-close-btn {
+  border-color: var(--brand-border-strong);
+  background: var(--brand-surface);
+  color: var(--brand-text-muted);
+}
+
+.maple-modal-header .maple-close-btn:hover {
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.maple-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--brand-space-2);
+  padding: 10px 18px;
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-sm);
+  font-weight: 600;
+  font-family: var(--brand-font);
+  cursor: pointer;
+  border: none;
+  transition: background var(--brand-transition), color var(--brand-transition),
+    border-color var(--brand-transition);
+}
+
+.maple-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.maple-btn-primary {
+  background: var(--brand-green-dark);
+  color: #fff;
+}
+
+.maple-btn-primary:hover:not(:disabled) {
+  background: var(--brand-green-deep);
+}
+
+.maple-btn-secondary {
+  background: var(--brand-surface);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border-strong);
+}
+
+.maple-btn-secondary:hover:not(:disabled) {
+  background: var(--brand-bg);
+}
+
+.maple-btn-danger {
+  background: var(--brand-surface);
+  color: var(--brand-danger);
+  border: 2px solid var(--brand-danger);
+}
+
+.maple-btn-danger:hover:not(:disabled) {
+  background: var(--brand-danger);
+  color: #fff;
+}
+
+.maple-btn-warning {
+  background: var(--brand-warning);
+  color: #fff;
+}
+
+.maple-btn-warning:hover:not(:disabled) {
+  filter: brightness(0.92);
+}
+
+.maple-empty-state {
+  text-align: center;
+  padding: var(--brand-space-12) var(--brand-space-6);
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-base);
+}
+

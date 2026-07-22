@@ -1,27 +1,44 @@
 .container {
   direction: rtl;
-  background: var(--maple-bg);
+  background: var(--brand-bg);
+  padding: 16px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .card {
-  max-width: 640px;
-  margin: 0 auto;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
+.listCard {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  overflow: hidden;
+  min-height: 320px;
+  font-size: 15px;
+}
+
 .header {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   padding: 16px 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: center;
 }
 
 .backBtn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   border: none;
   border-radius: 8px;
   padding: 8px 14px;
@@ -33,7 +50,8 @@
 }
 .backBtn:hover { background: #475569; }
 
-.title {
+.title,
+.listTitle {
   color: #fff;
   margin: 0;
   font-size: 1.2rem;
@@ -179,3 +197,162 @@
 .successIcon { font-size: 3rem; margin-bottom: 16px; }
 .successBox h2 { color: #1e293b; margin: 0 0 8px; }
 .successBox p { color: #64748b; margin: 0 0 24px; }
+.successActions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.secondaryBtn {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: #1e293b;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.secondaryBtn:hover { background: #e2e8f0; }
+
+.listHeader {
+  background: var(--brand-green-dark);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.refreshBtn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.refreshBtn:hover { background: rgba(255,255,255,0.2); }
+
+.filterRow {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.filterBtn {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.filterBtnActive {
+  background: #1e293b;
+  border-color: #1e293b;
+  color: #fff;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.listItem {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.listItem:last-child { border-bottom: none; }
+.listItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.listSubject {
+  color: #1e293b;
+  font-size: 15px;
+}
+.listMessage {
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.listMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #64748b;
+  font-size: 15px;
+}
+.listError {
+  margin: 10px 0 0;
+  color: #b91c1c;
+  font-size: 15px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.listEmpty {
+  padding: 28px 16px;
+  text-align: center;
+  color: #64748b;
+  margin: 0;
+  font-size: 15px;
+}
+
+.statusBadge {
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+.status_PENDING, .status_PROCESSING {
+  background: #fef3c7;
+  color: #92400e;
+}
+.status_SENT {
+  background: #dcfce7;
+  color: #166534;
+}
+.status_FAILED {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.status_CANCELLED {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.cancelBtn {
+  margin-top: 10px;
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.cancelBtn:hover:not(:disabled) { background: #fef2f2; }
+.cancelBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+

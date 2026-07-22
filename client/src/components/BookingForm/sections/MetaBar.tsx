@@ -1,41 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import styles from '../BookingForm.module.css';
-import { apiFetch } from '../../../services/api';
+import { useStaffQuery } from '../../../hooks/queries';
+import { useTranslation } from '../../../i18n/useTranslation';
+import { formatDateTime } from '@shared/i18n/formatters';
+import {
+  EVENT_TYPE_VALUES,
+  EVENT_TYPE_KEY_BY_VALUE,
+  translateByValue,
+} from '@shared/i18n/bookingLookups';
 
-const eventTypesList = ['חתונה', 'אירוסין', 'בר מצווה', 'בת מצווה', 'ברית', 'בריתה', 'חינה', 'הרמת כוסית', 'כנס מקצועי', 'אירוע חברה/עסקי', 'השכרת אולם בלי אוכל'];
+const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours, calendarEventTypeFilter }: any) => {
+  const { data: staffMembers = [] } = useStaffQuery();
+  const { t, T, locale } = useTranslation();
 
-const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDurationHours, setOptionDurationHours }: any) => {
-  const [staffMembers, setStaffMembers] = useState<{ id: string; name: string }[]>([]);
-
-  useEffect(() => {
-    apiFetch('http://localhost:5000/api/settings/staff')
-      .then(r => r.json())
-      .then(data => setStaffMembers(Array.isArray(data) ? data : []))
-      .catch(() => setStaffMembers([]));
-  }, []);
-
-  const currentDateDisplay = new Date().toLocaleString('he-IL', {
-    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
-  });
+  const currentDateDisplay = formatDateTime(new Date(), locale);
 
   return (
-    <div className={styles.metaBar}>
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>מספר {isOption ? 'אופציה' : 'הזמנה'}</label>
-        <input type="text" value={orderNumber} readOnly className={`${styles.input} ${styles.inputReadonly}`} />
+    <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-3">
+      <div className="col">
+        <label className="form-label">
+          {isOption ? t(T.BOOKING.META.ORDER_NUMBER_OPTION) : t(T.BOOKING.META.ORDER_NUMBER_BOOKING)}
+        </label>
+        <input type="text" value={orderNumber} readOnly className="form-control bg-light" />
       </div>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>שם הנציג / סוכן </label>
+      <div className="col">
+        <label className="form-label">
+          {isOption ? t(T.BOOKING.META.CREATED_BY_OPTION) : t(T.BOOKING.META.CREATED_BY_BOOKING)}
+        </label>
         <select
           name="createdBy"
           required
           value={formData.createdBy}
           onChange={handleChange}
-          className={`${styles.input} ${formData.createdBy ? styles.selectHasValue : styles.selectPlaceholder}`}
+          className="form-select"
         >
           <option value="" disabled hidden>
-            בחרי נציג מהרשימה
+            {isOption ? t(T.BOOKING.META.SELECT_CREATED_BY_OPTION) : t(T.BOOKING.META.SELECT_CREATED_BY_BOOKING)}
           </option>
           {staffMembers.map(member => (
             <option key={member.id} value={member.name}>{member.name}</option>
@@ -43,32 +42,41 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
         </select>
       </div>
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>סוג אירוע{isOption ? '' : ' '}</label>
+      <div className="col">
+        <label className="form-label">{t(T.BOOKING.META.EVENT_TYPE)}</label>
         <select
           name="eventType"
           required={!isOption}
           value={formData.eventType}
           onChange={handleChange}
-          className={`${styles.input} ${formData.eventType ? styles.selectHasValue : styles.selectPlaceholder}`}
+          className="form-select"
         >
           <option value="" disabled hidden>
-            {isOption ? 'בחירה (אופציונלי)' : 'בחרי מסוגי האירועים'}
+            {isOption ? t(T.BOOKING.META.SELECT_EVENT_TYPE_OPTIONAL) : t(T.BOOKING.META.SELECT_EVENT_TYPE)}
           </option>
-          {eventTypesList.map(type => <option key={type} value={type}>{type}</option>)}
+          {EVENT_TYPE_VALUES.filter(type => {
+            const isOtherEvent = calendarEventTypeFilter === 'אירוע אחר' || formData.eventType === 'אירוע אחר';
+            return !(isOtherEvent && type === 'חתונה');
+          }).map(type => (
+            <option key={type} value={type}>
+              {translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, type)}
+            </option>
+          ))}
         </select>
       </div>
 
       {isOption && (
-        <div className={styles.inputGroup}>
-          <label className={styles.metaLabel}>תוקף אופציה (בשעות)</label>
-          <input type="number" value={optionDurationHours} onChange={(e) => setOptionDurationHours(Number(e.target.value))} className={styles.input} />
+        <div className="col">
+          <label className="form-label">{t(T.BOOKING.META.OPTION_DURATION_HOURS)}</label>
+          <input type="number" value={optionDurationHours} onChange={(e) => setOptionDurationHours(Number(e.target.value))} className="form-control" />
         </div>
       )}
 
-      <div className={styles.inputGroup}>
-        <label className={styles.metaLabel}>תאריך {isOption ? 'פתיחת האופציה' : 'סגירת האירוע'}</label>
-        <input type="text" value={currentDateDisplay} readOnly className={`${styles.input} ${styles.inputReadonly}`} style={{ direction: 'ltr', textAlign: 'right' }} />
+      <div className="col">
+        <label className="form-label">
+          {isOption ? t(T.BOOKING.META.DATE_OPTION_OPEN) : t(T.BOOKING.META.DATE_EVENT_CLOSE)}
+        </label>
+        <input type="text" value={currentDateDisplay} readOnly className="form-control bg-light" style={{ direction: 'ltr', textAlign: 'right' }} />
       </div>
     </div>
   );

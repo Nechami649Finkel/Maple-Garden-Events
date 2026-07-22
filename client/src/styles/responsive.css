@@ -1,0 +1,85 @@
+/* ===== בסיס רספונסיבי גלובלי ===== */
+html {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+#root {
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Safe area — iPhone notch / home indicator */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .app-header {
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+}
+
+/* מגע — יעדי לחיצה נוחים במובייל */
+@media (max-width: 768px) {
+  .maple-btn,
+  button[type="submit"],
+  .submitBtn,
+  .save-btn,
+  .viewBtn,
+  .nav-btn,
+  .tabBtn {
+    min-height: 44px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px; /* מונע zoom אוטומטי ב-iOS */
+  }
+
+  /* מודלים — bottom sheet במובייל */
+  .maple-modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .maple-modal-overlay > * {
+    width: 100%;
+    max-width: none;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
+    max-height: 92dvh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content,
+  .page-content-full {
+    padding: 12px 10px 20px;
+  }
+
+  .app-sidebar-drawer {
+    width: min(100vw, 320px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-content-full {
+    padding: var(--brand-page-padding);
+  }
+}
+
+@media (min-width: 1920px) {
+  .page-content-full {
+    padding: clamp(24px, 2vw, 40px);
+  }
+}
+

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" role="img" aria-label="ойфм - вп айшетйн бтйш">
+  <defs>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4A853"/>
+      <stop offset="100%" stop-color="#9A7B3A"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(4,4)">
+    <path fill="url(#leafGrad)" d="M22 4C14 4 8 12 8 22c0 14 14 26 14 26s14-12 14-26C36 12 30 4 22 4zm0 8c2.5 0 4.5 4 4.5 10 0 6-4.5 12-4.5 12s-4.5-6-4.5-12c0-6 2-10 4.5-10z"/>
+    <text x="50" y="28" font-family="'Segoe UI', Tahoma, Arial, sans-serif" font-size="26" font-weight="700" fill="#2D3748">ойфм</text>
+    <text x="50" y="44" font-family="'Segoe UI', Tahoma, Arial, sans-serif" font-size="11" font-weight="500" fill="#9A7B3A" letter-spacing="0.5">вп айшетйн бтйш</text>
+  </g>
+</svg>

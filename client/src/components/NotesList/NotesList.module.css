@@ -3,8 +3,8 @@
 }
 
 .notesList {
-  background: var(--maple-surface, white);
-  border: 1px solid var(--maple-border, #e0e0e0);
+  background: var(--brand-surface, white);
+  border: 1px solid var(--brand-border, #e0e0e0);
   border-radius: 6px;
   max-height: 200px;
   overflow-y: auto;
@@ -25,14 +25,14 @@
 
 .noteNumber {
   font-weight: 600;
-  color: var(--maple-green, #5a8f6b);
+  color: var(--brand-green, #5a8f6b);
   min-width: 24px;
 }
 
 .noteText {
   flex: 1;
   font-size: 14px;
-  color: var(--maple-text, #333);
+  color: var(--brand-text, #333);
 }
 
 .removeNoteBtn {
@@ -64,13 +64,13 @@
 
 .noteInput:focus {
   outline: none;
-  border-color: var(--maple-green, #5a8f6b);
+  border-color: var(--brand-green, #5a8f6b);
   box-shadow: 0 0 0 3px rgba(90, 143, 107, 0.12);
 }
 
 .addNoteBtn {
   padding: 10px 16px;
-  background: var(--maple-green, #4caf50);
+  background: var(--brand-green, #4caf50);
   color: white;
   border: none;
   border-radius: 6px;
@@ -80,11 +80,11 @@
 }
 
 .addNoteBtn:hover {
-  background: var(--maple-green-dark, #4a7c59);
+  background: var(--brand-green-dark, #4a7c59);
 }
 
 .emptyText {
   margin: 0;
   font-size: 0.84rem;
-  color: var(--maple-text-secondary, #888);
+  color: var(--brand-text-secondary, #888);
 }

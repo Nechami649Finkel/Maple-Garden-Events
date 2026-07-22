@@ -2,3 +2,16 @@
 .env
 dist/
 build/
+
+# Compiled artifacts in shared source (should stay .ts only)
+shared/**/*.js
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/tests/e2e/.auth/
+
+# Design exports (generated locally)
+/design-exports/

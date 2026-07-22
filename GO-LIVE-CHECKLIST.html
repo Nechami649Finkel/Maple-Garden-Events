@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>רשימת השלמה לפני DevOps — מיפל</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #8CBF8E; --green-dark: #6BA86E; --green-deep: #4F8F52;
+      --bg: #F7F8F6; --surface: #FFF; --text: #2D3748;
+      --muted: #718096; --border: #E2E8F0; --danger: #E53E3E;
+      --radius: 12px; --shadow: 0 4px 20px rgba(45,55,72,.08);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Heebo, Segoe UI, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+    .header {
+      background: linear-gradient(135deg, var(--green-deep), var(--green-dark), var(--green));
+      color: #fff; padding: 1.5rem 2rem; position: sticky; top: 0; z-index: 10;
+      box-shadow: 0 2px 12px rgba(79,143,82,.3);
+    }
+    .header h1 { font-size: 1.4rem; font-weight: 700; }
+    .header p { font-size: .9rem; opacity: .9; margin-top: .25rem; }
+
+    .toolbar {
+      display: flex; flex-wrap: wrap; gap: .75rem; align-items: center;
+      padding: 1rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: 72px; z-index: 9;
+    }
+
+    .progress-wrap { flex: 1; min-width: 200px; }
+    .progress-label { font-size: .85rem; color: var(--muted); margin-bottom: .35rem; display: flex; justify-content: space-between; }
+    .progress-bar { height: 10px; background: #EDF2F7; border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--green-deep), var(--green)); border-radius: 99px; transition: width .4s ease; }
+
+    .filter-btn {
+      padding: .4rem 1rem; border: 1px solid var(--border); border-radius: 20px;
+      background: var(--surface); cursor: pointer; font-family: inherit; font-size: .85rem;
+      transition: all .15s;
+    }
+    .filter-btn.active { background: var(--green-deep); color: #fff; border-color: var(--green-deep); }
+    .filter-btn:hover:not(.active) { background: #EDF7ED; }
+
+    .reset-btn {
+      padding: .4rem 1rem; border: 1px solid var(--danger); border-radius: 20px;
+      background: #FFF5F5; color: var(--danger); cursor: pointer; font-family: inherit; font-size: .85rem;
+    }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem 2rem 3rem; }
+
+    .section { margin-bottom: 2rem; }
+    .section-header {
+      display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem;
+      padding: .75rem 1rem; background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); border-right: 4px solid var(--green);
+    }
+    .section-header h2 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+    .section-count { font-size: .8rem; color: var(--muted); white-space: nowrap; }
+
+    .priority-critical .section-header { border-right-color: var(--danger); }
+    .priority-critical .section-header h2 { color: var(--danger); }
+    .priority-important .section-header { border-right-color: #DD6B20; }
+    .priority-optional .section-header { border-right-color: var(--muted); }
+    .priority-done .section-header { border-right-color: var(--green); opacity: .85; }
+
+    .task-list { list-style: none; }
+    .task {
+      display: flex; align-items: flex-start; gap: .75rem;
+      padding: .85rem 1rem; background: var(--surface); border-radius: var(--radius);
+      margin-bottom: .5rem; border: 1px solid var(--border);
+      transition: background .15s, opacity .2s;
+      cursor: pointer;
+    }
+    .task:hover { background: #FAFFFA; }
+    .task.done { opacity: .65; }
+    .task.done .task-text { text-decoration: line-through; color: var(--muted); }
+    .task.hidden { display: none; }
+
+    .task input[type=checkbox] {
+      width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;
+      accent-color: var(--green-deep); cursor: pointer;
+    }
+    .task-text { flex: 1; font-size: .95rem; }
+    .task-text strong { font-weight: 600; }
+    .task-note { display: block; font-size: .8rem; color: var(--muted); margin-top: .2rem; }
+
+    .badge {
+      display: inline-block; font-size: .7rem; padding: .15rem .5rem;
+      border-radius: 10px; font-weight: 600; margin-right: .5rem; vertical-align: middle;
+    }
+    .badge-critical { background: #FED7D7; color: #C53030; }
+    .badge-important { background: #FEEBC8; color: #C05621; }
+    .badge-optional { background: #E2E8F0; color: #4A5568; }
+    .badge-done-section { background: #C6F6D5; color: #276749; }
+
+    .footer { text-align: center; padding: 1.5rem; color: var(--muted); font-size: .8rem; }
+
+    @media print {
+      .toolbar, .header .reset-btn { display: none; }
+      .task.done { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <h1>🍁 מיפל — רשימת השלמה לפני DevOps</h1>
+  <p>סמני משימות שהושלמו · ההתקדמות נשמרת אוטומטית בדפדפן</p>
+</header>
+
+<div class="toolbar">
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>התקדמות כללית</span>
+      <span id="progressText">0 / 0</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+  <button class="filter-btn active" data-filter="all">הכל</button>
+  <button class="filter-btn" data-filter="pending">נותר לעשות</button>
+  <button class="filter-btn" data-filter="done">הושלם</button>
+  <button class="reset-btn" id="resetBtn">איפוס הכל</button>
+</div>
+
+<div class="container" id="checklist"></div>
+
+<footer class="footer">Maple Garden Events · GO-LIVE Checklist · נשמר ב-localStorage</footer>
+
+<script>
+const STORAGE_KEY = 'maple-go-live-checklist-v1';
+
+const SECTIONS = [
+  {
+    id: 'decisions',
+    title: 'שלב 0 — החלטות לפני go-live',
+    priority: 'critical',
+    tasks: [
+      { id: 'd1', text: 'החלטה: RBAC מלא (4 תפקידים) או כולם Manager לעת עתה?', note: 'ל-go-live מהיר — Manager לכולם מספיק' },
+      { id: 'd2', text: 'החלטה: LIVE אוטומטי (כמו היום) או ידני ע"י Manager?', note: 'אם אוטומטי — עדכני PRD, אין צורך בפיתוח' },
+      { id: 'd3', text: 'החלטה: גלריה = קטלוג עיצובים (קיים) או העלאת תמונות אירועים?', note: '' },
+      { id: 'd4', text: 'החלטה: EasyCount — simulation ב-UAT, live רק אחרי אישור', note: '' },
+    ]
+  },
+  {
+    id: 'data',
+    title: 'שלב 1 — מיגרציית נתונים',
+    priority: 'critical',
+    tasks: [
+      { id: 'm1', text: 'הכנת קובץ Excel מאסטר — אירועים 2026–2027', note: 'עמודות: תאריך, משבצת, סוג, שמות, טלפון, אורחים' },
+      { id: 'm2', text: 'פיתוח סקריפט <code>npm run db:import-legacy</code>', note: 'עדיין לא קיים בפרויקט' },
+      { id: 'm3', text: 'הרצת ייבוא ב-staging + בדיקת דוח שגיאות', note: '' },
+      { id: 'm4', text: 'הרצת <code>verify:double-booking</code> — 0 כפילויות', note: '' },
+      { id: 'm5', text: 'הרצת ייבוא על DB פרודקשן (יום go-live)', note: '' },
+    ]
+  },
+  {
+    id: 'build',
+    title: 'שלב 2 — Build & Production Ready',
+    priority: 'critical',
+    tasks: [
+      { id: 'b1', text: 'הוספת <code>npm run build</code> ל-server (tsc → dist/)', note: 'כרגע יש start בלי build' },
+      { id: 'b2', text: 'וידוא <code>client npm run build</code> עובר ללא שגיאות', note: '' },
+      { id: 'b3', text: 'הגדרת הגשת React: SERVE_CLIENT=true או CDN/CloudFront נפרד', note: '' },
+      { id: 'b4', text: 'הוספת health check endpoint — <code>/api/health</code>', note: '' },
+      { id: 'b5', text: 'תיעוד כל משתני .env לפרודקשן (ללא secrets ב-git)', note: '' },
+    ]
+  },
+  {
+    id: 'env',
+    title: 'שלב 3 — משתני סביבה (Production)',
+    priority: 'critical',
+    tasks: [
+      { id: 'e1', text: 'DATABASE_URL — RDS PostgreSQL', note: 'חובה' },
+      { id: 'e2', text: 'JWT_SECRET — מחרוזת חזקה (32+ תווים)', note: 'חובה' },
+      { id: 'e3', text: 'GOOGLE_CLIENT_ID + הגדרת דומיין ב-Google Console', note: 'חובה' },
+      { id: 'e4', text: 'CLIENT_URL — דומיין פרודקשן', note: 'חובה' },
+      { id: 'e5', text: 'NODE_ENV=production', note: '' },
+      { id: 'e6', text: 'AWS S3 — bucket, region, credentials', note: '' },
+      { id: 'e7', text: 'EASYCOUNT_MODE + מפתחות (או simulation)', note: '' },
+      { id: 'e8', text: 'GREEN_API_INSTANCE_ID + GREEN_API_TOKEN', note: '' },
+      { id: 'e9', text: 'SMTP / Nodemailer', note: '' },
+      { id: 'e10', text: 'SENTRY_DSN (client + server)', note: '' },
+      { id: 'e11', text: 'BACKUP_ENABLED=true + BACKUP_CRON', note: '' },
+      { id: 'e12', text: 'MANAGER_EMAIL + MANAGER_PHONE', note: '' },
+    ]
+  },
+  {
+    id: 'security',
+    title: 'שלב 4 — אבטחה',
+    priority: 'critical',
+    tasks: [
+      { id: 's1', text: 'S3 — הפעלת SSE (הצפנה בשרת)', note: '' },
+      { id: 's2', text: 'Presigned URLs לחוזים, צ\'קים וחתימות', note: 'עדיין לא מיושם' },
+      { id: 's3', text: 'וידוא ש-.env לא ב-git (.gitignore)', note: '' },
+      { id: 's4', text: 'רשימת AuthorizedUser עם אימיילים אמיתיים', note: '' },
+      { id: 's5', text: 'בדיקת CORS — רק דומיינים מורשים', note: 'CLIENT_URL' },
+    ]
+  },
+  {
+    id: 'features',
+    title: 'שלב 5 — פיצ\'רים לפי PRD (אם נדרש)',
+    priority: 'important',
+    tasks: [
+      { id: 'f1', text: 'RBAC — שדה role ב-DB + middleware + סינון ניווט', note: 'אופציונלי אם כולם Manager' },
+      { id: 'f2', text: 'EasyCount — הצעת מחיר', note: 'עדיין לא קיים' },
+      { id: 'f3', text: 'EasyCount — חשבונית חיוב (בסיום LIVE)', note: '' },
+      { id: 'f4', text: 'טריגר LIVE ידני — "פתח אירוע LIVE"', note: 'רק אם החלטתם על זה בשלב 0' },
+      { id: 'f5', text: 'Fallback Offline — localStorage בקבלה LIVE', note: '' },
+      { id: 'f6', text: 'גלריית תמונות אירועים (S3 + העלאה)', note: 'רק אם החלטתם על זה בשלב 0' },
+    ]
+  },
+  {
+    id: 'testing',
+    title: 'שלב 6 — בדיקות',
+    priority: 'important',
+    tasks: [
+      { id: 't1', text: 'הוספת data-testid ל-Calendar ו-BookingForm', note: '' },
+      { id: 't2', text: 'השלמת E2E Golden Path (Playwright)', note: '' },
+      { id: 't3', text: 'UAT ידני: אופציה → הזמנה → חוזה → PDF', note: '' },
+      { id: 't4', text: 'UAT: טופס הפקה + תוכנית ישיבה', note: '' },
+      { id: 't5', text: 'UAT: קבלה LIVE + תוספות', note: '' },
+      { id: 't6', text: 'UAT: משוב לקוח (WhatsApp + מילוי)', note: '' },
+      { id: 't7', text: 'UAT: שליחת ברכה מתוזמנת', note: '' },
+      { id: 't8', text: 'בדיקה על iPad (Safari) — LIVE + תוכנית ישיבה', note: '' },
+      { id: 't9', text: 'בדיקת Cron — תזכורות 09:00', note: '' },
+    ]
+  },
+  {
+    id: 'devops',
+    title: 'שלב 7 — DevOps (AWS)',
+    priority: 'critical',
+    tasks: [
+      { id: 'o1', text: 'RDS PostgreSQL — יצירה + Multi-AZ + גיבויים', note: '' },
+      { id: 'o2', text: 'S3 bucket — קבצים + versioning', note: '' },
+      { id: 'o3', text: 'ECS / App Runner — פריסת server', note: '' },
+      { id: 'o4', text: 'CloudFront / S3 — הגשת React build', note: '' },
+      { id: 'o5', text: 'Route 53 + DNS + SSL (ACM)', note: '' },
+      { id: 'o6', text: 'AWS Secrets Manager — אחסון env', note: '' },
+      { id: 'o7', text: 'CI/CD pipeline — lint → build → test → deploy', note: '' },
+      { id: 'o8', text: 'prisma migrate deploy בכל deploy', note: '' },
+      { id: 'o9', text: 'CloudWatch / Sentry — ניטור והתראות', note: '' },
+      { id: 'o10', text: 'תוכנית Rollback מתועדת', note: '' },
+    ]
+  },
+  {
+    id: 'golive',
+    title: 'שלב 8 — יום Go-Live',
+    priority: 'critical',
+    tasks: [
+      { id: 'g1', text: 'גיבוי DB לפני go-live', note: '' },
+      { id: 'g2', text: 'הרצת import-legacy על פרודקשן', note: '' },
+      { id: 'g3', text: 'verify:double-booking — אישור 0 כפילויות', note: '' },
+      { id: 'g4', text: 'הזנת משתמשים מורשים', note: '' },
+      { id: 'g5', text: 'בדיקת WhatsApp עם מספר אמיתי', note: '' },
+      { id: 'g6', text: 'DNS מצביע לפרודקשן', note: '' },
+      { id: 'g7', text: 'אישור סופי מנהל/ת האולם', note: '' },
+      { id: 'g8', text: '🎉 סיום פיתוח — מעבר לתפעול שוטף', note: '' },
+    ]
+  },
+  {
+    id: 'already',
+    title: '✅ כבר מיושם (לא צריך לבנות)',
+    priority: 'done',
+    tasks: [
+      { id: 'a1', text: 'לוח שנה + אופציות + הזמנות', note: '' },
+      { id: 'a2', text: 'טופס הפקה + תוכנית ישיבה', note: '' },
+      { id: 'a3', text: 'קבלה LIVE', note: '' },
+      { id: 'a4', text: 'משוב + ברכות + Dashboard', note: '' },
+      { id: 'a5', text: 'Google OAuth + Authorized Users', note: '' },
+      { id: 'a6', text: 'EasyCount simulation + חשבונית-קבלה', note: '' },
+      { id: 'a7', text: 'WhatsApp Green API (עם fallback)', note: '' },
+      { id: 'a8', text: 'Socket.io + Cron + Sentry + נגישות', note: '' },
+      { id: 'a9', text: 'PRD + PRD.html', note: '' },
+    ]
+  }
+];
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+  catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+let currentFilter = 'all';
+
+function render() {
+  const container = document.getElementById('checklist');
+  container.innerHTML = '';
+
+  let total = 0, done = 0;
+
+  SECTIONS.forEach(section => {
+    const secEl = document.createElement('div');
+    secEl.className = `section priority-${section.priority}`;
+
+    const secDone = section.tasks.filter(t => state[t.id]).length;
+    const secTotal = section.tasks.length;
+    total += secTotal;
+    done += secDone;
+
+    const badgeClass = { critical: 'badge-critical', important: 'badge-important', optional: 'badge-optional', done: 'badge-done-section' }[section.priority] || '';
+
+    secEl.innerHTML = `
+      <div class="section-header">
+        <h2>${section.title}</h2>
+        <span class="section-count">${secDone}/${secTotal}</span>
+      </div>
+      <ul class="task-list" id="list-${section.id}"></ul>
+    `;
+    container.appendChild(secEl);
+
+    const list = secEl.querySelector('.task-list');
+    section.tasks.forEach(task => {
+      const isDone = !!state[task.id];
+      const li = document.createElement('li');
+      li.className = `task${isDone ? ' done' : ''}`;
+      li.dataset.id = task.id;
+      li.dataset.done = isDone;
+
+      if (currentFilter === 'pending' && isDone) li.classList.add('hidden');
+      if (currentFilter === 'done' && !isDone) li.classList.add('hidden');
+
+      li.innerHTML = `
+        <input type="checkbox" ${isDone ? 'checked' : ''} id="cb-${task.id}" />
+        <label class="task-text" for="cb-${task.id}">
+          ${task.text}
+          ${task.note ? `<span class="task-note">${task.note}</span>` : ''}
+        </label>
+      `;
+
+      li.addEventListener('click', e => {
+        if (e.target.tagName === 'INPUT') return;
+        const cb = li.querySelector('input');
+        cb.checked = !cb.checked;
+        cb.dispatchEvent(new Event('change'));
+      });
+
+      li.querySelector('input').addEventListener('change', e => {
+        state[task.id] = e.target.checked;
+        saveState(state);
+        render();
+      });
+
+      list.appendChild(li);
+    });
+  });
+
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${done} / ${total} (${pct}%)`;
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (confirm('לאפס את כל הסימונים?')) {
+    state = {};
+    saveState(state);
+    render();
+  }
+});
+
+// סמן אוטומטית את "כבר מיושם"
+['a1','a2','a3','a4','a5','a6','a7','a8','a9'].forEach(id => {
+  if (state[id] === undefined) state[id] = true;
+});
+saveState(state);
+render();
+</script>
+</body>
+</html>

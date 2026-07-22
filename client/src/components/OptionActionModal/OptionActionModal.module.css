@@ -1,44 +1,56 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(26, 32, 44, 0.5);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--brand-z-modal);
   direction: rtl;
+  padding: 16px;
 }
 
 .modal {
-  background: #ffffff;
-  border-radius: 8px;
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
   width: 480px;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
 }
 
 .header {
-  background: #1e293b;
+  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
   color: #ffffff;
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 0.95rem;
 }
 
 .closeBtn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   color: #ffffff;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
-.closeBtn:hover { color: #ef4444; }
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
 
 .body {
   padding: 20px;
@@ -48,9 +60,9 @@
 }
 
 .infoBox {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 14px;
   display: flex;
   flex-direction: column;
@@ -61,25 +73,25 @@
   display: flex;
   gap: 10px;
   font-size: 0.9rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--brand-border);
   padding-bottom: 6px;
 }
 .infoRow:last-child { border-bottom: none; padding-bottom: 0; }
 
 .infoRow label {
-  font-weight: bold;
-  color: #475569;
+  font-weight: 700;
+  color: var(--brand-text-secondary);
   min-width: 90px;
   font-size: 0.85rem;
 }
 
 .infoRow span {
-  color: #1e293b;
+  color: var(--brand-text);
 }
 
 .question {
-  font-weight: bold;
-  color: #374151;
+  font-weight: 700;
+  color: var(--brand-text);
   margin: 0;
   font-size: 1rem;
 }
@@ -91,30 +103,32 @@
 }
 
 .finalizeBtn {
-  background: #10b981;
+  background: var(--brand-green-dark);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--brand-radius-sm);
   padding: 14px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--brand-transition);
+  font-family: var(--brand-font);
 }
-.finalizeBtn:hover { background: #059669; }
+.finalizeBtn:hover { background: var(--brand-green-deep); }
 
 .cancelOptionBtn {
-  background: #fff;
-  color: #ef4444;
-  border: 2px solid #ef4444;
-  border-radius: 8px;
+  background: var(--brand-surface);
+  color: var(--brand-danger);
+  border: 2px solid var(--brand-danger);
+  border-radius: var(--brand-radius-sm);
   padding: 12px;
   font-size: 0.95rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: background var(--brand-transition), color var(--brand-transition);
+  font-family: var(--brand-font);
 }
-.cancelOptionBtn:hover { background: #ef4444; color: #fff; }
+.cancelOptionBtn:hover { background: var(--brand-danger); color: #fff; }
 
 .inputGroup {
   display: flex;
@@ -123,20 +137,21 @@
 }
 
 .inputLabel {
-  font-weight: bold;
-  color: #475569;
+  font-weight: 700;
+  color: var(--brand-text-secondary);
   font-size: 0.85rem;
 }
 
 .input {
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 12px;
   font-size: 0.95rem;
   outline: none;
   direction: rtl;
+  font-family: var(--brand-font);
 }
-.input:focus { border-color: #1e293b; }
+.input:focus { border-color: var(--brand-green); box-shadow: 0 0 0 3px rgba(140, 191, 142, 0.2); }
 
 .checkboxRow {
   display: flex;
@@ -149,39 +164,41 @@
   justify-content: space-between;
   align-items: center;
   padding: 14px 20px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--brand-border);
   gap: 10px;
 }
 
 .backBtn {
-  background: #e2e8f0;
-  border: none;
-  border-radius: 8px;
+  background: var(--brand-bg);
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
   padding: 10px 18px;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
   font-size: 0.9rem;
+  font-family: var(--brand-font);
 }
-.backBtn:hover { background: #cbd5e1; }
+.backBtn:hover { background: var(--brand-green-light); }
 
 .submitBtn {
-  background: #1e293b;
+  background: var(--brand-green-dark);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--brand-radius-sm);
   padding: 10px 24px;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--brand-transition);
+  font-family: var(--brand-font);
 }
-.submitBtn:hover { background: #334155; }
+.submitBtn:hover { background: var(--brand-green-deep); }
 .submitBtn:disabled { opacity: 0.6; cursor: not-allowed; }
-/* Acum Alert Box Styling */
+
 .akumAlertBox {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background-color: var(--brand-bg);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
   padding: 16px;
   margin-bottom: 15px;
   margin-top: 10px;
@@ -190,25 +207,55 @@
 
 .akumAlertTitle {
   display: block;
-  font-weight: bold;
-  color: #334155;
+  font-weight: 700;
+  color: var(--brand-text);
   margin-bottom: 8px;
 }
 
 .akumAlertText {
   font-size: 0.95rem;
-  color: #475569;
+  color: var(--brand-text-secondary);
   display: block;
   margin-bottom: 10px;
 }
 
 .akumAlertLink {
-  color: #2563eb;
-  font-weight: bold;
+  color: var(--brand-info);
+  font-weight: 700;
   text-decoration: underline;
-  transition: color 0.2s ease;
 }
 
 .akumAlertLink:hover {
-  color: #1d4ed8;
+  color: var(--brand-green-deep);
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backBtn,
+  .submitBtn,
+  .finalizeBtn,
+  .cancelOptionBtn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .actionButtons {
+    width: 100%;
+  }
 }

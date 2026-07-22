@@ -1,0 +1,75 @@
+/* ── Accessibility modes (applied on html) ── */
+
+html.a11y-grayscale body {
+  filter: grayscale(100%);
+}
+
+html.a11y-negative-contrast body {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html.a11y-grayscale.a11y-negative-contrast body {
+  filter: invert(1) hue-rotate(180deg) grayscale(100%);
+}
+
+html.a11y-grayscale body img,
+html.a11y-grayscale body video {
+  filter: grayscale(100%);
+}
+
+html.a11y-negative-contrast body img,
+html.a11y-negative-contrast body video {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+html.a11y-high-contrast {
+  --brand-bg: #ffffff;
+  --brand-surface: #ffffff;
+  --brand-surface-raised: #ffffff;
+  --brand-text: #000000;
+  --brand-text-secondary: #000000;
+  --brand-text-muted: #1a1a1a;
+  --brand-border: #000000;
+  --brand-border-strong: #000000;
+  --brand-green-dark: #1b5e20;
+  --brand-tab-active-bg: #1b5e20;
+}
+
+html.a11y-light-bg {
+  --brand-bg: #ffffff;
+  --brand-surface: #ffffff;
+  --brand-surface-raised: #fafafa;
+  --brand-sidebar-bg: #f8faf8;
+  --brand-charcoal: #2a2e33;
+  --brand-text: #1f2937;
+  --brand-overlay: rgba(120, 130, 140, 0.18);
+  --brand-panel-header-bg: linear-gradient(135deg, #f0f7f1 0%, #faf6ef 100%);
+}
+
+html.a11y-highlight-links a,
+html.a11y-highlight-links button:not([class*='a11y']) {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+html.a11y-highlight-links a:not([class*='sidebar']):not([class*='a11y']) {
+  background-color: #fff3bf !important;
+  color: #000 !important;
+  box-shadow: inset 0 -2px 0 #f59e0b;
+}
+
+html.a11y-readable-font {
+  --brand-font: Arial, Helvetica, 'Segoe UI', Tahoma, sans-serif;
+}
+
+html.a11y-readable-font body {
+  letter-spacing: 0.02em;
+  line-height: 1.65;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .a11y-widget-panel,
+  .a11y-widget-toggle {
+    transition: none !important;
+  }
+}

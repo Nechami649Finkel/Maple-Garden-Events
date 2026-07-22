@@ -1,0 +1,46 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--brand-radius-full);
+  font-size: var(--brand-text-xs);
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.confirmed {
+  background: var(--brand-green-light);
+  color: var(--brand-green-deep);
+  border: 1px solid var(--brand-green-muted);
+}
+
+.option {
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
+  border: 1px solid rgba(184, 149, 106, 0.35);
+}
+
+.past {
+  background: var(--brand-bg);
+  color: var(--brand-text-muted);
+  border: 1px solid var(--brand-border);
+}
+
+.live {
+  background: rgba(61, 107, 158, 0.1);
+  color: var(--brand-info);
+  border: 1px solid rgba(61, 107, 158, 0.25);
+}
+
+.neutral {
+  background: var(--brand-surface-raised);
+  color: var(--brand-text-secondary);
+  border: 1px solid var(--brand-border);
+}
+
+.gold {
+  background: var(--brand-gold-light);
+  color: var(--brand-gold-deep);
+  border: 1px solid rgba(184, 149, 106, 0.35);
+}

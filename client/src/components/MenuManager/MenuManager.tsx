@@ -1,69 +1,44 @@
-import { useState, useEffect } from 'react';
-import { menuService } from '../../services/menuService';
+import { useState } from 'react';
+import { useTranslation } from '../../i18n/useTranslation';
 
 const MenuManager = () => {
-  const [menu, setMenu] = useState<any[]>([]);
+  const { t, T } = useTranslation();
+  const [dishes, setDishes] = useState<any[]>([]);
   const [newName, setNewName] = useState('');
   const [newPrice, setNewPrice] = useState('');
 
-  useEffect(() => {
-    loadMenu();
-  }, []);
-
-  const loadMenu = async () => {
-    const res = await menuService.getMenu();
-    if (res.success) setMenu(res.data);
-  };
-
-  const handleAdd = async () => {
-    if (!newName || !newPrice) return alert("נא למלא שם ומחיר");
-    
-    // זמני: ה-categoryId מוגדר כ-hardcoded לניסוי. 
-    // בהמשך נוסיף בחירה מרשימה.
-    await menuService.addDish({ 
-        name: newName, 
-        price: parseFloat(newPrice), 
-        categoryId: menu[0]?.id || "" 
-    });
-    
+  const handleAdd = () => {
+    if (!newName || !newPrice) return alert(t(T.MENU.FILL_NAME_PRICE));
+    setDishes([...dishes, { id: Date.now(), name: newName, price: newPrice }]);
     setNewName('');
     setNewPrice('');
-    loadMenu(); // מרענן את הרשימה אחרי הוספה
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('את בטוחה שאת רוצה למחוק?')) {
-      await menuService.deleteDish(id);
-      loadMenu();
+  const handleDelete = (id: number) => {
+    if (window.confirm(t(T.MENU.DELETE_CONFIRM))) {
+      setDishes(dishes.filter((d) => d.id !== id));
     }
   };
 
   return (
-    <div style={{ padding: '20px', direction: 'rtl' }}>
-      <h1>ניהול תפריט</h1>
-      
-      {/* טופס הוספת מנה */}
-      <div style={{ marginBottom: '30px', padding: '15px', background: '#f4f4f4' }}>
-        <h3>הוספת מנה חדשה</h3>
-        <input placeholder="שם המנה" value={newName} onChange={(e) => setNewName(e.target.value)} />
-        <input placeholder="מחיר" type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
-        <button onClick={handleAdd}>הוסף מנה</button>
+    <div>
+      <h1>{t(T.MENU.MANAGER_TITLE)}</h1>
+
+      <div>
+        <h3>{t(T.MENU.ADD_DISH_TITLE)}</h3>
+        <input placeholder={t(T.MENU.DISH_NAME_PLACEHOLDER)} value={newName} onChange={(e) => setNewName(e.target.value)} />
+        <input placeholder={t(T.UI.PRICE)} type="number" value={newPrice} onChange={(e) => setNewPrice(e.target.value)} />
+        <button onClick={handleAdd}>{t(T.MENU.ADD_DISH)}</button>
       </div>
 
-      {/* רשימת המנות */}
-      {menu.map((category) => (
-        <div key={category.id} style={{ marginBottom: '20px' }}>
-          <h2>{category.name}</h2>
-          <ul>
-            {category.dishes.map((dish: any) => (
-              <li key={dish.id}>
-                {dish.name} - {dish.price} ₪
-                <button onClick={() => handleDelete(dish.id)} style={{ color: 'red', marginRight: '10px' }}>מחק</button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      <ul>
+        {dishes.map((dish) => (
+          <li key={dish.id}>
+            {dish.name} - {dish.price}
+            <button onClick={() => handleDelete(dish.id)} style={{ color: 'red', marginRight: '10px' }}>{t(T.UI.DELETE)}</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };

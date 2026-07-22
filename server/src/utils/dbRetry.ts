@@ -1,4 +1,5 @@
 import type { Prisma } from '@prisma/client';
+import { logger } from './logger';
 
 const RETRYABLE_MESSAGE_FRAGMENTS = [
   'connection pool',
@@ -9,6 +10,8 @@ const RETRYABLE_MESSAGE_FRAGMENTS = [
 ];
 
 function isRetryableDbError(error: unknown): boolean {
+  const code = (error as { code?: string })?.code;
+  if (code === 'P1001' || code === 'P1002' || code === 'P1017') return true;
   if (!(error instanceof Error)) return false;
   const message = error.message.toLowerCase();
   return RETRYABLE_MESSAGE_FRAGMENTS.some((fragment) =>
@@ -25,7 +28,7 @@ export async function withDbRetry<T>(
     return await fn();
   } catch (error) {
     if (retries <= 0 || !isRetryableDbError(error)) throw error;
-    console.log(`DB connection failed, retrying in ${delayMs}ms... (${retries} retries left)`);
+    logger.warn('DB connection failed, retrying', { delayMs, retriesLeft: retries });
     await new Promise((resolve) => setTimeout(resolve, delayMs));
     return withDbRetry(fn, retries - 1, delayMs);
   }

@@ -1,0 +1,447 @@
+.checkInBoard {
+
+  direction: rtl;
+
+  font-family: inherit;
+
+  color: #1e293b;
+
+  max-width: 640px;
+
+  margin: 0 auto;
+
+  line-height: 1.6;
+
+}
+
+
+
+.checkInBsd {
+
+  text-align: right;
+
+  font-size: 0.85rem;
+
+  color: #64748b;
+
+  margin: 0 0 0.75rem;
+
+}
+
+
+
+.checkInHeader {
+
+  text-align: center;
+
+  margin-bottom: 1.75rem;
+
+}
+
+
+
+.checkInLogo {
+
+  max-width: 160px;
+
+  height: auto;
+
+  margin-bottom: 0.35rem;
+
+}
+
+
+
+.checkInBrand {
+
+  font-size: 1.35rem;
+
+  font-weight: 700;
+
+  margin: 0.25rem 0 0;
+
+  letter-spacing: 0.02em;
+
+}
+
+
+
+.checkInSubtitle {
+
+  font-size: 0.95rem;
+
+  color: #475569;
+
+  margin: 0.15rem 0 0;
+
+}
+
+
+
+.checkInInlineRow {
+
+  display: flex;
+
+  align-items: baseline;
+
+  flex-wrap: wrap;
+
+  gap: 0.35rem 0.5rem;
+
+  margin-bottom: 0.85rem;
+
+  font-size: 0.98rem;
+
+}
+
+
+
+.checkInInlineLabel {
+
+  font-weight: 600;
+
+  white-space: nowrap;
+
+}
+
+
+
+.checkInInlineInput {
+
+  flex: 1;
+
+  min-width: 120px;
+
+  border: none;
+
+  border-bottom: 1px solid #334155;
+
+  background: transparent;
+
+  padding: 0.15rem 0.25rem;
+
+  font-size: 1rem;
+
+  font-family: inherit;
+
+}
+
+
+
+.checkInInlineInput:focus {
+
+  outline: none;
+
+  border-bottom-color: #6366f1;
+
+}
+
+
+
+.checkInInlineInput:read-only {
+
+  color: #334155;
+
+}
+
+
+
+.checkInConfirmText {
+
+  font-size: 0.98rem;
+
+  line-height: 1.55;
+
+  margin: 1rem 0 1.25rem;
+
+}
+
+
+
+.checkInReserveSection {
+
+  margin: 1.25rem 0;
+
+}
+
+
+
+.checkInSpecialSection {
+
+  margin: 1.25rem 0 1rem;
+
+}
+
+
+
+.checkInLineInput {
+
+  display: block;
+
+  width: 100%;
+
+  border: none;
+
+  border-bottom: 1px solid #334155;
+
+  background: transparent;
+
+  padding: 0.35rem 0.25rem;
+
+  margin-top: 0.5rem;
+
+  font-size: 1rem;
+
+  font-family: inherit;
+
+  box-sizing: border-box;
+
+}
+
+
+
+.checkInLineInput:focus {
+
+  outline: none;
+
+  border-bottom-color: #6366f1;
+
+}
+
+
+
+.checkInField {
+
+  margin-bottom: 1rem;
+
+}
+
+
+
+.signatureSection {
+
+  margin-top: 1.25rem;
+
+}
+
+
+
+.signatureCanvasWrap {
+
+  border: 1px solid #cbd5e1;
+
+  border-radius: 6px;
+
+  background: #fff;
+
+  display: inline-block;
+
+  margin-top: 0.5rem;
+
+}
+
+.signaturePreview {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  margin-top: 0.5rem;
+}
+
+
+
+.clearSigBtn {
+
+  display: block;
+
+  margin-top: 0.5rem;
+
+  background: none;
+
+  border: none;
+
+  color: #6366f1;
+
+  cursor: pointer;
+
+  font-size: 0.85rem;
+
+  padding: 0;
+
+}
+
+
+
+.checkInActions {
+
+  display: flex;
+
+  gap: 0.75rem;
+
+  justify-content: flex-end;
+
+  margin-top: 1.5rem;
+
+  padding-top: 1rem;
+
+  border-top: 1px solid #e2e8f0;
+
+}
+
+
+
+.checkInSaveBtn {
+
+  background: #6366f1;
+
+  color: #fff;
+
+  border: none;
+
+  padding: 0.65rem 1.5rem;
+
+  border-radius: 8px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  font-size: 1rem;
+
+}
+
+
+
+.checkInSaveBtn:disabled {
+
+  opacity: 0.6;
+
+  cursor: not-allowed;
+
+}
+
+
+
+.checkInCancelBtn {
+
+  background: #f1f5f9;
+
+  color: #475569;
+
+  border: 1px solid #cbd5e1;
+
+  padding: 0.65rem 1.25rem;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-size: 1rem;
+
+}
+
+
+
+.checkInLoading {
+
+  text-align: center;
+
+  padding: 2rem;
+
+  color: #64748b;
+
+}
+
+
+
+.checkInError {
+
+  text-align: center;
+
+  padding: 1rem;
+
+  color: #dc2626;
+
+}
+
+.checkInModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.checkInModalBox {
+  background: #fff;
+  border-radius: 12px;
+  max-width: 720px;
+  width: 100%;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 1.5rem 2rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.checkInModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.checkInModalHeader h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.checkInPendingBadge {
+  font-size: 0.8rem;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  margin-inline: auto 0.5rem;
+}
+
+.checkInModalClose {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0.25rem 0.5rem;
+}
+
+.checkInBtn {
+  background: #059669;
+  color: #fff;
+  border: none;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.checkInBtn:hover {
+  background: #047857;
+}
+
+.liveBadge {
+  display: inline-block;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+

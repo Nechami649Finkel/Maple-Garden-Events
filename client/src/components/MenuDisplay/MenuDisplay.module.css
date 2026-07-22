@@ -32,7 +32,7 @@
   font-size: 0.95rem;
   font-weight: 700;
   cursor: pointer;
-  font-family: var(--maple-font, 'Segoe UI', sans-serif);
+  font-family: var(--brand-font, 'Segoe UI', sans-serif);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
   transition: background 0.15s ease;
 }

@@ -46,11 +46,10 @@ function drawTable(ctx: CanvasRenderingContext2D, table: TableData) {
   ctx.fillText(table.isHonor ? 'R' : String(table.id), x + w / 2, y + h / 2);
 }
 
-export async function exportFloorPlanAsImage(
+export async function renderFloorPlanToDataUrl(
   tables: TableData[],
   imageSrc: string,
-  fileName = 'sidur-shulchanot.png'
-): Promise<void> {
+): Promise<string> {
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
   canvas.height = EXPORT_HEIGHT;
@@ -64,8 +63,17 @@ export async function exportFloorPlanAsImage(
     drawTable(ctx, table);
   }
 
+  return canvas.toDataURL('image/png');
+}
+
+export async function exportFloorPlanAsImage(
+  tables: TableData[],
+  imageSrc: string,
+  fileName = 'sidur-shulchanot.png',
+): Promise<void> {
+  const dataUrl = await renderFloorPlanToDataUrl(tables, imageSrc);
   const link = document.createElement('a');
   link.download = fileName;
-  link.href = canvas.toDataURL('image/png');
+  link.href = dataUrl;
   link.click();
 }

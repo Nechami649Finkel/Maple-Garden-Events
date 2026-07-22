@@ -1,3 +1,9 @@
+import {
+  parseCalendarDate,
+  toCalendarDateKey,
+  calendarDayBounds,
+} from './dateLocal';
+
 export type TimeSlot = 'morning' | 'noon' | 'evening';
 
 export const TIME_SLOTS: TimeSlot[] = ['morning', 'noon', 'evening'];
@@ -70,17 +76,24 @@ export function getAvailableSlots(bookings: { timeOfDay?: string | null }[]): Ti
   return TIME_SLOTS.filter((s) => !taken.has(s));
 }
 
-/** משבצות שלא ניתן לקבוע בהן אירוע בתאריך (למשל שבת: בוקר וצהריים). */
+/** משבצות שלא ניתן לקבוע בהן אירוע בתאריך (שישי: צהריים וערב; שבת: בוקר וצהריים). */
 export function getBlockedSlotsForDate(date: Date): TimeSlot[] {
-  if (date.getDay() === 6) return ['morning', 'noon'];
+  const day = date.getDay();
+  if (day === 5) return ['noon', 'evening'];
+  if (day === 6) return ['morning', 'noon'];
   return [];
 }
 
 export function parseDateLocal(dateInput: string | Date): Date {
-  if (dateInput instanceof Date) {
-    return new Date(dateInput.getFullYear(), dateInput.getMonth(), dateInput.getDate(), 12, 0, 0);
-  }
-  return new Date(`${dateInput}T12:00:00`);
+  return parseCalendarDate(dateInput);
+}
+
+export function getLocalDayBounds(date: Date): { start: Date; end: Date } {
+  return calendarDayBounds(date);
+}
+
+export function toLocalDateKey(date: Date): string {
+  return toCalendarDateKey(date);
 }
 
 export function getBookableSlotsForDate(date: Date, bookings: { timeOfDay?: string | null }[]): TimeSlot[] {
@@ -96,8 +109,12 @@ export function isDateFullyBooked(date: Date, bookings: { timeOfDay?: string | n
 export function validateSlotOnDate(date: Date, slot: TimeSlot): string | null {
   const blocked = getBlockedSlotsForDate(date);
   if (blocked.includes(slot)) {
-    if (date.getDay() === 6) {
-      return 'ביום זה ניתן לקבוע אירוע בערב בלבד.';
+    const day = date.getDay();
+    if (day === 5) {
+      return 'ביום שישי ניתן לקבוע אירוע בבוקר בלבד.';
+    }
+    if (day === 6) {
+      return 'ביום שבת ניתן לקבוע אירוע בערב בלבד.';
     }
     return `משבצת ${SLOT_LABELS[slot]} אינה זמינה בתאריך זה.`;
   }

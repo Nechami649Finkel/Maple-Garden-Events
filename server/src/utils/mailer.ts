@@ -1,267 +1,460 @@
+import fs from 'fs';
+import path from 'path';
 import nodemailer from 'nodemailer';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { logger } from './logger';
+import {
+  DEFAULT_LOCALE,
+  getServerTranslation,
+  T,
+  type Locale,
+  type Translator,
+} from '../i18n/getServerTranslation';
 
-// תשתית להתחברות ל-Gmail
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'fake-email@gmail.com',
-    pass: process.env.EMAIL_PASS || 'fake-password',
-  },
-});
+const LOGO_PATH = path.join(__dirname, '..', 'assets', 'logo.png');
 
-function canSendRealMail(): boolean {
-  return !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+export type MailFailureReason = 'missing_config' | 'auth_failed' | 'unknown';
+export type MailDeliveryResult =
+  | { ok: true; simulated?: boolean }
+  | { ok: false; reason: MailFailureReason };
+
+function getEmailUser(): string | undefined {
+  return process.env.EMAIL_USER?.trim() || undefined;
 }
 
-async function deliverMail(
-  mailOptions: nodemailer.SendMailOptions,
-  simulationLabel: string
-): Promise<boolean> {
-  try {
-    if (canSendRealMail()) {
-      await transporter.sendMail(mailOptions);
-      console.log(`✅ ${simulationLabel} → ${mailOptions.to}`);
-    } else {
-      console.log(`[MAILER SIMULATION] ${simulationLabel} → ${mailOptions.to}`);
-    }
-    return true;
-  } catch (error) {
-    console.error(`שגיאה בשליחת מייל (${simulationLabel}):`, error);
-    return false;
+function getEmailPass(): string | undefined {
+  const pass = process.env.EMAIL_PASS || process.env.EMAIL_PASSWORD;
+  return pass?.replace(/\s+/g, '') || undefined;
+}
+
+export function canSendRealMail(): boolean {
+  return !!(getEmailUser() && getEmailPass());
+}
+
+import { getBrandConfig } from '../vendor/shared/brand/index';
+
+export function getFromAddress(locale: Locale = DEFAULT_LOCALE): string {
+  const brand = getBrandConfig();
+  return `"${brand.messaging.emailFromName}" <${getEmailUser() || brand.supportEmail}>`;
+}
+
+function getAlertsFromAddress(locale: Locale = DEFAULT_LOCALE): string {
+  const brand = getBrandConfig();
+  return `"${brand.messaging.emailAlertsFromName}" <${getEmailUser() || brand.supportEmail}>`;
+}
+
+let transporter: nodemailer.Transporter<SMTPTransport.SentMessageInfo> | null = null;
+
+function getTransporter(): nodemailer.Transporter<SMTPTransport.SentMessageInfo> {
+  if (!transporter) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: getEmailUser(),
+        pass: getEmailPass(),
+      },
+    });
+  }
+  return transporter;
+}
+
+export function resetTransporterForTests(): void {
+  transporter = null;
+}
+
+function classifyMailError(error: unknown): MailFailureReason {
+  const err = error as { code?: string; responseCode?: number };
+  if (err?.code === 'EAUTH' || err?.responseCode === 535) return 'auth_failed';
+  return 'unknown';
+}
+
+export function mailFailureMessage(
+  reason: MailFailureReason,
+  locale: Locale = DEFAULT_LOCALE,
+): string {
+  const { t } = getServerTranslation(locale);
+  switch (reason) {
+    case 'missing_config':
+      return t(T.SERVER.MAIL.FAILURE.MISSING_CONFIG);
+    case 'auth_failed':
+      return t(T.SERVER.MAIL.FAILURE.AUTH_FAILED);
+    default:
+      return t(T.SERVER.MAIL.FAILURE.UNKNOWN);
   }
 }
 
-// ==========================================
-// 1. הקפצת אופציה (Bump Option)
-// ==========================================
-export const sendBumpEmail = async (clientEmail: string, clientName: string, eventDate: string, deadline: Date) => {
-  const deadlineStr = deadline.toLocaleString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = new Date(eventDate).toLocaleDateString('he-IL');
+export async function verifyEmailConnection(): Promise<MailDeliveryResult> {
+  if (!canSendRealMail()) {
+    logger.warn(
+      'Email not configured — set EMAIL_USER and EMAIL_PASS (Google App Password) in server/.env',
+    );
+    return { ok: false, reason: 'missing_config' };
+  }
+
+  try {
+    await getTransporter().verify();
+    logger.info(`Email SMTP verified for ${getEmailUser()}`);
+    return { ok: true };
+  } catch (error) {
+    const reason = classifyMailError(error);
+    logger.error(`Email SMTP verification failed (${reason})`, {
+      user: getEmailUser(),
+      hint: mailFailureMessage(reason),
+    });
+    return { ok: false, reason };
+  }
+}
+
+function optionalLogoAttachment(): NonNullable<nodemailer.SendMailOptions['attachments']> {
+  if (fs.existsSync(LOGO_PATH)) {
+    return [{ filename: 'logo.png', path: LOGO_PATH, cid: 'mapleLogo' }];
+  }
+  return [];
+}
+
+function logoHeaderHtml(t: Translator['t']): string {
+  if (fs.existsSync(LOGO_PATH)) {
+    return `<img src="cid:mapleLogo" alt="${t(T.SERVER.COMMON.FROM_NAME)}" style="max-width: 200px; height: auto; display: block; margin: 0 auto;" />`;
+  }
+  return `<div style="font-size: 1.5rem; font-weight: bold; color: #5a8f6b;">${t(T.SERVER.COMMON.FROM_NAME)}</div>`;
+}
+
+function emailFooterHtml(t: Translator['t'], includeReply = true): string {
+  return `
+    <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
+      ${t(T.SERVER.COMMON.AUTO_FOOTER)}<br/>
+      ${includeReply ? `<strong>${t(T.SERVER.COMMON.AUTO_FOOTER_REPLY)}</strong>` : ''}
+    </div>`;
+}
+
+function sanitizeMailAttachments(
+  attachments: nodemailer.SendMailOptions['attachments'],
+): nodemailer.SendMailOptions['attachments'] {
+  if (!attachments?.length) return attachments;
+  return attachments.filter((attachment) => {
+    if ('path' in attachment && attachment.path && typeof attachment.path === 'string') {
+      return fs.existsSync(attachment.path);
+    }
+    return true;
+  });
+}
+
+function formatLocaleDate(dateInput: string | Date, locale: Locale): string {
+  return new Date(dateInput).toLocaleDateString(locale === 'he' ? 'he-IL' : 'en-US');
+}
+
+function formatLocaleDateTime(date: Date, locale: Locale): string {
+  return date.toLocaleString(locale === 'he' ? 'he-IL' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+}
+
+export async function deliverMail(
+  mailOptions: nodemailer.SendMailOptions,
+  simulationLabel: string,
+): Promise<MailDeliveryResult> {
+  const safeOptions: nodemailer.SendMailOptions = {
+    ...mailOptions,
+    attachments: sanitizeMailAttachments(mailOptions.attachments),
+  };
+
+  if (!canSendRealMail()) {
+    logger.info(`[MAILER SIMULATION] ${simulationLabel} → ${mailOptions.to}`);
+    return { ok: true, simulated: true };
+  }
+
+  try {
+    await getTransporter().sendMail(safeOptions);
+    logger.info(`${simulationLabel} → ${mailOptions.to}`);
+    return { ok: true };
+  } catch (error) {
+    const reason = classifyMailError(error);
+    logger.error(`Mail send error (${simulationLabel}):`, error);
+    return { ok: false, reason };
+  }
+}
+
+export const sendBumpEmail = async (
+  clientEmail: string,
+  clientName: string,
+  eventDate: string,
+  deadline: Date,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<MailDeliveryResult> => {
+  const { t } = getServerTranslation(locale);
+  const deadlineStr = formatLocaleDateTime(deadline, locale);
+  const dateStr = formatLocaleDate(eventDate, locale);
+  const team = t(T.SERVER.COMMON.TEAM_CITY);
+  const phone = t(T.SERVER.COMMON.PHONE);
 
   const mailOptions = {
-    from: '"גן אירועים מייפל" <maple.events.il@gmail.com>',
+    from: getFromAddress(locale),
     to: clientEmail,
-    subject: `עדכון חשוב לגבי התאריך שלך במייפל (${dateStr}) ⏳`,
+    subject: t(T.SERVER.MAIL.BUMP.SUBJECT, { date: dateStr }),
     html: `
       <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #d97706;">
-          <img src="cid:mapleLogo" alt="לוגו מייפל" style="max-width: 150px;" />
-          <h2 style="color: #1f2937; margin: 15px 0 0 0;">החלטה דחופה נדרשת</h2>
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #1f2937; margin: 15px 0 0 0;">${t(T.SERVER.MAIL.BUMP.HEADING)}</h2>
         </div>
         <div style="padding: 25px;">
-          <p style="font-size: 1.1rem;">שלום <strong>${clientName}</strong>,</p>
-          <p style="font-size: 1.05rem; line-height: 1.5;">
-            אנו מודים לך שבחרת להתעניין בקיום האירוע שלך בגן האירועים <strong>מייפל</strong>.<br/>
-            התאריך ששמרת כאופציה (<strong>${dateStr}</strong>) הינו מבוקש מאוד, וכרגע יש לקוח נוסף שמעוניין לסגור אירוע במועד זה.
-          </p>
+          <p style="font-size: 1.1rem;">${t(T.SERVER.MAIL.BUMP.GREETING, { clientName })}</p>
+          <p style="font-size: 1.05rem; line-height: 1.5;">${t(T.SERVER.MAIL.BUMP.BODY, { date: dateStr })}</p>
           <div style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px; margin: 25px 0; text-align: center;">
             <p style="color: #92400e; font-size: 1.1rem; margin: 0; font-weight: bold;">
-              על מנת להבטיח את התאריך שלך, אנא צור איתנו קשר עד השעה ${deadlineStr}.
+              ${t(T.SERVER.MAIL.BUMP.DEADLINE, { deadline: deadlineStr })}
             </p>
             <p style="color: #d97706; font-size: 0.9rem; margin-top: 5px;">
-              לאחר שעה זו, האופציה תשתחרר אוטומטית והתאריך יהיה פנוי ללקוח הבא.
+              ${t(T.SERVER.MAIL.BUMP.RELEASE_NOTE)}
             </p>
           </div>
-          <p style="font-size: 1rem; margin-bottom: 30px;">
-            נשמח לחגוג איתכם!<br/>
-            <strong>צוות מייפל - גן אירועים בעיר</strong><br/>
-            טלפון: 03-6777772
-          </p>
+          <p style="font-size: 1rem; margin-bottom: 30px;">${t(T.SERVER.MAIL.BUMP.CLOSING, { team, phone })}</p>
         </div>
       </div>
     `,
-    attachments: [{ filename: 'logo.png', path: './src/assets/logo.png', cid: 'mapleLogo' }]
+    attachments: optionalLogoAttachment(),
   };
 
-  try {
-    console.log(`[MAILER SIMULATION] מכין שליחת מייל הקפצת אופציה ל: ${clientEmail}...`);
-    // await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error('שגיאה בשליחת המייל:', error);
-    return false;
-  }
+  return deliverMail(mailOptions, t(T.SERVER.MAIL.BUMP.LOG_LABEL, { email: clientEmail }));
 };
 
-// ==========================================
-// 2. התראה ללקוח על פרטים שחסרים לאירוע (נודניק)
-// ==========================================
-export const sendSelectionReminderEmail = async (clientEmail: string, clientName: string, missingItems: string[]) => {
+export const sendSelectionReminderEmail = async (
+  clientEmail: string,
+  clientName: string,
+  missingItems: string[],
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<boolean> => {
+  const { t } = getServerTranslation(locale);
+  const team = t(T.SERVER.COMMON.TEAM);
+  const phone = t(T.SERVER.COMMON.PHONE);
+
   const mailOptions = {
-    from: '"גן אירועים מייפל" <maple.events.il@gmail.com>',
+    from: getFromAddress(locale),
     to: clientEmail,
-    subject: `תזכורת: השלמת פרטים לאירוע הקרוב שלכם במייפל 🍁`,
+    subject: t(T.SERVER.MAIL.SELECTION_REMINDER.SUBJECT),
     html: `
       <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #6ee7b7;">
-          <img src="cid:mapleLogo" alt="לוגו מייפל" style="max-width: 150px; margin-bottom: 10px;" />
-          <h2 style="color: #1f2937; margin: 0;">מתכוננים לאירוע שלכם!</h2>
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #1f2937; margin: 0;">${t(T.SERVER.MAIL.SELECTION_REMINDER.HEADING)}</h2>
         </div>
         <div style="padding: 25px;">
-          <p style="font-size: 1.1rem;">שלום <strong>${clientName}</strong>,</p>
-          <p style="font-size: 1.05rem; line-height: 1.5;">
-            האירוע שלכם ב<strong>מייפל</strong> הולך ומתקרב, ואנחנו מתרגשים יחד איתכם! 🎉<br/>
-            שמנו לב שטרם סיימתם לבחור את הפרטים הבאים למערכת:
-          </p>
+          <p style="font-size: 1.1rem;">${t(T.SERVER.MAIL.SELECTION_REMINDER.GREETING, { clientName })}</p>
+          <p style="font-size: 1.05rem; line-height: 1.5;">${t(T.SERVER.MAIL.SELECTION_REMINDER.BODY)}</p>
           <ul style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 15px 35px; margin: 25px 0; color: #166534; font-size: 1.1rem; font-weight: bold;">
-            ${missingItems.map(item => `<li>${item}</li>`).join('')}
+            ${missingItems.map((item) => `<li>${item}</li>`).join('')}
           </ul>
-          <p style="font-size: 1rem; margin-bottom: 30px;">
-            אנא היכנסו למערכת או צרו איתנו קשר בהקדם כדי שנוכל להיערך מראש ולהפיק לכם אירוע מושלם.<br/><br/>
-            <strong>צוות מייפל 🍁</strong><br/>
-            טלפון: 03-6777772
-          </p>
+          <p style="font-size: 1rem; margin-bottom: 30px;">${t(T.SERVER.MAIL.SELECTION_REMINDER.CLOSING, { team, phone })}</p>
         </div>
-        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
-          🤖 הודעה זו נשלחה אוטומטית ממערכת מייפל.<br/>
-          <strong>ניתן להשיב למייל זה בכל שאלה, ונציג יחזור אליכם בהקדם.</strong>
-        </div>
+        ${emailFooterHtml(t)}
       </div>
     `,
-    attachments: [{ filename: 'logo.png', path: './src/assets/logo.png', cid: 'mapleLogo' }]
+    attachments: optionalLogoAttachment(),
   };
 
-  try {
-    console.log(`[MAILER SIMULATION] שולח תזכורת בחירות למייל: ${clientEmail}...`);
-    // await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error('שגיאה בשליחת מייל תזכורת:', error);
-    return false;
-  }
+  const result = await deliverMail(mailOptions, t(T.SERVER.MAIL.SELECTION_REMINDER.LOG_LABEL, { email: clientEmail }));
+  return result.ok;
 };
 
-// ==========================================
-// 3. התראה ללקוח על צ'ק ביטחון חסר (נודניק)
-// ==========================================
-export const sendSecurityCheckReminderEmail = async (clientEmail: string, clientName: string) => {
+export const sendSecurityCheckReminderEmail = async (
+  clientEmail: string,
+  clientName: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<boolean> => {
+  const { t } = getServerTranslation(locale);
+  const team = t(T.SERVER.COMMON.TEAM);
+
   const mailOptions = {
-    from: '"גן אירועים מייפל" <maple.events.il@gmail.com>',
+    from: getFromAddress(locale),
     to: clientEmail,
-    subject: `תזכורת: מסירת צ'ק ביטחון לאירוע שלכם במייפל 🍁`,
+    subject: t(T.SERVER.MAIL.SECURITY_CHECK.SUBJECT),
     html: `
       <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #fca5a5;">
-          <img src="cid:mapleLogo" alt="לוגו מייפל" style="max-width: 150px; margin-bottom: 10px;" />
-          <h2 style="color: #1f2937; margin: 0;">עדכון סטטוס הזמנה</h2>
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #1f2937; margin: 0;">${t(T.SERVER.MAIL.SECURITY_CHECK.HEADING)}</h2>
         </div>
         <div style="padding: 25px;">
-          <p style="font-size: 1.1rem;">שלום <strong>${clientName}</strong>,</p>
-          <p style="font-size: 1.05rem; line-height: 1.5;">
-            מזל טוב על סגירת האירוע בגן האירועים <strong>מייפל</strong>!<br/>
-            שמנו לב שעברו 24 שעות מחתימת החוזה וטרם התקבל או הועלה למערכת צ'ק ביטחון.
-          </p>
+          <p style="font-size: 1.1rem;">${t(T.SERVER.MAIL.SECURITY_CHECK.GREETING, { clientName })}</p>
+          <p style="font-size: 1.05rem; line-height: 1.5;">${t(T.SERVER.MAIL.SECURITY_CHECK.BODY)}</p>
           <div style="background-color: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: 15px; margin: 25px 0; text-align: center;">
             <p style="color: #991b1b; font-size: 1rem; margin: 0; font-weight: bold;">
-              נשמח לקבלו בהקדם האפשרי על מנת להבטיח את שריון התאריך שלכם באופן סופי.
+              ${t(T.SERVER.MAIL.SECURITY_CHECK.ACTION)}
             </p>
           </div>
-          <p style="font-size: 1rem; margin-bottom: 30px;">
-            תודה רבה,<br/>
-            <strong>צוות מייפל 🍁</strong>
-          </p>
+          <p style="font-size: 1rem; margin-bottom: 30px;">${t(T.SERVER.MAIL.SECURITY_CHECK.CLOSING, { team })}</p>
         </div>
-        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
-          🤖 הודעה זו נשלחה אוטומטית ממערכת מייפל.<br/>
-          <strong>ניתן להשיב למייל זה בכל שאלה, ונציג יחזור אליכם בהקדם.</strong>
-        </div>
+        ${emailFooterHtml(t)}
       </div>
     `,
-    attachments: [{ filename: 'logo.png', path: './src/assets/logo.png', cid: 'mapleLogo' }]
+    attachments: optionalLogoAttachment(),
   };
 
-  try {
-    console.log(`[MAILER SIMULATION] שולח תזכורת צ'ק ביטחון למייל: ${clientEmail}...`);
-    // await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error('שגיאה בשליחת מייל:', error);
-    return false;
-  }
+  const result = await deliverMail(mailOptions, t(T.SERVER.MAIL.SECURITY_CHECK.LOG_LABEL, { email: clientEmail }));
+  return result.ok;
 };
 
-// ==========================================
-// 4. התראה פנימית למנהל האולם
-// ==========================================
-export const sendManagerFinancialAlertEmail = async (managerEmail: string, alertType: string, clientName: string, details: string) => {
+export const sendManagerFinancialAlertEmail = async (
+  managerEmail: string,
+  alertType: string,
+  clientName: string,
+  details: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<boolean> => {
+  const { t } = getServerTranslation(locale);
+
   const mailOptions = {
-    from: '"מערכת התראות מייפל" <maple.events.il@gmail.com>',
+    from: getAlertsFromAddress(locale),
     to: managerEmail,
-    subject: `⚠️ התראת ניהול: ${alertType} - ${clientName}`,
+    subject: t(T.SERVER.MAIL.MANAGER_ALERT.SUBJECT, { alertType, clientName }),
     html: `
       <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ef4444; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #ef4444; padding: 15px; text-align: center;">
-          <h2 style="color: #fff; margin: 0;">התראת כספים ⚠️</h2>
+          <h2 style="color: #fff; margin: 0;">${t(T.SERVER.MAIL.MANAGER_ALERT.HEADING)}</h2>
         </div>
         <div style="padding: 25px; background-color: #fff;">
-          <p><strong>לקוח:</strong> ${clientName}</p>
-          <p><strong>סוג התראה:</strong> ${alertType}</p>
-          <p><strong>פרטים:</strong> ${details}</p>
+          <p><strong>${t(T.SERVER.MAIL.MANAGER_ALERT.CLIENT)}</strong> ${clientName}</p>
+          <p><strong>${t(T.SERVER.MAIL.MANAGER_ALERT.ALERT_TYPE)}</strong> ${alertType}</p>
+          <p><strong>${t(T.SERVER.MAIL.MANAGER_ALERT.DETAILS)}</strong> ${details}</p>
           <br/>
-          <p style="color: #ef4444; font-weight: bold;">נדרש טיפול מול הלקוח בהקדם.</p>
-        </div>
-      </div>
-    `
-  };
-
-  try {
-    console.log(`[MAILER SIMULATION] שולח התראת מנהל למייל: ${managerEmail}...`);
-    // await transporter.sendMail(mailOptions);
-    return true;
-  } catch (error) {
-    console.error('שגיאה בשליחת מייל מנהל:', error);
-    return false;
-  }
-};
-
-// ==========================================
-// 5. בקשת משוב לאחר סיום אירוע (חדש!)
-// ==========================================
-export const sendFeedbackRequestEmail = async (clientEmail: string, clientName: string | null, link: string) => {
-  const name = clientName ? clientName.split(' ')[0] : 'לקוחות יקרים';
-  
-  const mailOptions = {
-    from: '"גן אירועים מייפל" <maple.events.il@gmail.com>',
-    to: clientEmail,
-    subject: `איך היה האירוע שלכם? נשמח לשמוע! 🌟`,
-    html: `
-      <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #d8a051;">
-          <img src="cid:mapleLogo" alt="לוגו מייפל" style="max-width: 150px; margin-bottom: 10px;" />
-          <h2 style="color: #1f2937; margin: 0;">תודה שחגגתם איתנו! 🎉</h2>
-        </div>
-        <div style="padding: 25px;">
-          <p style="font-size: 1.1rem;">שלום <strong>${name}</strong>,</p>
-          <p style="font-size: 1.05rem; line-height: 1.5;">
-            היה לנו לעונג עצום לארח אתכם ואת האורחים שלכם בגן האירועים <strong>מייפל</strong>.<br/>
-            כדי שנוכל להמשיך לתת את השירות הטוב ביותר ולהשתפר, נשמח מאוד אם תקדישו דקה קטנה לדירוג החוויה שלכם בטופס הבא:
-          </p>
-          
-          <div style="text-align: center; margin: 35px 0;">
-            <a href="${link}" style="background-color: #d97706; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 1.1rem; display: inline-block;">למעבר לטופס המשוב (קצרצר)</a>
-          </div>
-          
-          <p style="font-size: 0.9rem; color: #6b7280; text-align: center;">
-            (שימו לב: מטעמי אבטחה, הקישור אישי וניתן למילוי פעם אחת בלבד)
-          </p>
-          
-          <p style="font-size: 1rem; margin-top: 30px; margin-bottom: 10px;">
-            בתודה מראש ובאהבה,<br/>
-            <strong>צוות מייפל 🍁</strong>
-          </p>
-        </div>
-        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
-          🤖 הודעה זו נשלחה אוטומטית ממערכת מייפל.
+          <p style="color: #ef4444; font-weight: bold;">${t(T.SERVER.MAIL.MANAGER_ALERT.ACTION)}</p>
         </div>
       </div>
     `,
-    attachments: [{ filename: 'logo.png', path: './src/assets/logo.png', cid: 'mapleLogo' }]
   };
 
-  try {
-    return deliverMail(mailOptions, `מייל משוב ל-${clientEmail}`);
-  } catch (error) {
-    console.error('שגיאה בשליחת מייל משוב:', error);
-    return false;
-  }
+  const result = await deliverMail(mailOptions, t(T.SERVER.MAIL.MANAGER_ALERT.LOG_LABEL, { email: managerEmail }));
+  return result.ok;
+};
+
+export const sendPaymentOverdueReminderEmail = async (
+  clientEmail: string,
+  clientName: string,
+  bodyText: string,
+  remainingAmount: number,
+  missedDeadline: Date,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<boolean> => {
+  const { t } = getServerTranslation(locale);
+  const deadlineStr = formatLocaleDate(missedDeadline, locale);
+  const formattedBody = bodyText.replace(/\n/g, '<br/>');
+  const team = t(T.SERVER.COMMON.TEAM);
+  const phone = t(T.SERVER.COMMON.PHONE);
+
+  const mailOptions = {
+    from: getFromAddress(locale),
+    to: clientEmail,
+    subject: t(T.SERVER.MAIL.PAYMENT_OVERDUE.SUBJECT),
+    html: `
+      <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background-color: #fffbeb; padding: 20px; text-align: center; border-bottom: 3px solid #d97706;">
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #92400e; margin: 0;">${t(T.SERVER.MAIL.PAYMENT_OVERDUE.HEADING)}</h2>
+        </div>
+        <div style="padding: 25px;">
+          <p style="font-size: 1.1rem;">${t(T.SERVER.MAIL.PAYMENT_OVERDUE.GREETING, { clientName })}</p>
+          <p style="font-size: 1.05rem; line-height: 1.6;">${formattedBody}</p>
+          <div style="background-color: #fef3c7; border: 1px solid #fcd34d; border-radius: 6px; padding: 15px; margin: 20px 0;">
+            <strong>${t(T.SERVER.MAIL.PAYMENT_OVERDUE.DEADLINE)}</strong> ${deadlineStr}<br/>
+            <strong>${t(T.SERVER.MAIL.PAYMENT_OVERDUE.REMAINING)}</strong> ₪${Math.round(remainingAmount).toLocaleString(locale === 'he' ? 'he-IL' : 'en-US')}
+          </div>
+          <p style="font-size: 1rem;">${t(T.SERVER.MAIL.PAYMENT_OVERDUE.CLOSING, { phone, team })}</p>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
+          ${t(T.SERVER.COMMON.AUTO_FOOTER)}
+        </div>
+      </div>
+    `,
+    attachments: optionalLogoAttachment(),
+  };
+
+  const result = await deliverMail(mailOptions, t(T.SERVER.MAIL.PAYMENT_OVERDUE.LOG_LABEL, { email: clientEmail }));
+  return result.ok;
+};
+
+export const sendFeedbackRequestEmail = async (
+  clientEmail: string,
+  clientName: string | null,
+  link: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<MailDeliveryResult> => {
+  const { t } = getServerTranslation(locale);
+  const name = clientName ? clientName.split(' ')[0] : t(T.SERVER.COMMON.DEAR_CUSTOMERS);
+  const team = t(T.SERVER.COMMON.TEAM);
+
+  const mailOptions = {
+    from: getFromAddress(locale),
+    to: clientEmail,
+    subject: t(T.SERVER.MAIL.FEEDBACK.SUBJECT),
+    html: `
+      <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #d8a051;">
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #1f2937; margin: 0;">${t(T.SERVER.MAIL.FEEDBACK.HEADING)}</h2>
+        </div>
+        <div style="padding: 25px;">
+          <p style="font-size: 1.1rem;">${t(T.SERVER.MAIL.FEEDBACK.GREETING, { name })}</p>
+          <p style="font-size: 1.05rem; line-height: 1.5;">${t(T.SERVER.MAIL.FEEDBACK.BODY)}</p>
+          <div style="text-align: center; margin: 35px 0;">
+            <a href="${link}" style="background-color: #d97706; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 1.1rem; display: inline-block;">${t(T.SERVER.MAIL.FEEDBACK.CTA)}</a>
+          </div>
+          <p style="font-size: 0.9rem; color: #6b7280; text-align: center;">${t(T.SERVER.MAIL.FEEDBACK.SECURITY_NOTE)}</p>
+          <p style="font-size: 1rem; margin-top: 30px; margin-bottom: 10px;">${t(T.SERVER.MAIL.FEEDBACK.CLOSING, { team })}</p>
+        </div>
+        <div style="background-color: #f3f4f6; padding: 15px; text-align: center; color: #6b7280; font-size: 0.85rem;">
+          ${t(T.SERVER.COMMON.AUTO_FOOTER)}
+        </div>
+      </div>
+    `,
+    attachments: optionalLogoAttachment(),
+  };
+
+  return deliverMail(mailOptions, t(T.SERVER.MAIL.FEEDBACK.LOG_LABEL, { email: clientEmail }));
+};
+
+function buildOptionInterestText(
+  t: Translator['t'],
+  clientName: string,
+  eventDate: string,
+  locale: Locale,
+  customMessage?: string,
+): string {
+  if (customMessage?.trim()) return customMessage.trim();
+  const dateStr = formatLocaleDate(eventDate, locale);
+  return t(T.SERVER.MAIL.OPTION_INTEREST.DEFAULT_BODY, { clientName, date: dateStr });
+}
+
+export const sendOptionInterestEmail = async (
+  clientEmail: string,
+  clientName: string,
+  eventDate: string,
+  customMessage?: string,
+  locale: Locale = DEFAULT_LOCALE,
+): Promise<MailDeliveryResult> => {
+  const { t } = getServerTranslation(locale);
+  const bodyText = buildOptionInterestText(t, clientName, eventDate, locale, customMessage);
+  const dateStr = formatLocaleDate(eventDate, locale);
+  const escapedBody = bodyText.replace(/\n/g, '<br/>');
+  const team = t(T.SERVER.COMMON.TEAM_CITY);
+  const phone = t(T.SERVER.COMMON.PHONE);
+
+  const mailOptions = {
+    from: getFromAddress(locale),
+    to: clientEmail,
+    subject: t(T.SERVER.MAIL.OPTION_INTEREST.SUBJECT, { date: dateStr }),
+    html: `
+      <div style="font-family: Arial, sans-serif; direction: rtl; text-align: right; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+        <div style="background-color: #f9fafb; padding: 20px; text-align: center; border-bottom: 3px solid #d97706;">
+          ${logoHeaderHtml(t)}
+          <h2 style="color: #1f2937; margin: 15px 0 0 0;">${t(T.SERVER.MAIL.OPTION_INTEREST.HEADING)}</h2>
+        </div>
+        <div style="padding: 25px;">
+          <p style="font-size: 1.05rem; line-height: 1.6;">${escapedBody}</p>
+          <p style="font-size: 1rem; margin-top: 30px;"><strong>${team}</strong><br/>${phone}</p>
+        </div>
+        ${emailFooterHtml(t)}
+      </div>
+    `,
+    attachments: optionalLogoAttachment(),
+  };
+
+  return deliverMail(mailOptions, t(T.SERVER.MAIL.OPTION_INTEREST.LOG_LABEL, { email: clientEmail }));
 };
