@@ -1,0 +1,34 @@
+.panel {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  padding: var(--brand-space-5);
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.empty {
+  text-align: center;
+  color: var(--brand-text-muted);
+  padding: var(--brand-space-8);
+  margin: 0;
+}
+
+.tableWrap {
+  display: none;
+}
+
+.cardsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--brand-space-3);
+}
+
+@media (min-width: 768px) {
+  .tableWrap {
+    display: block;
+  }
+
+  .cardsWrap {
+    display: none;
+  }
+}

@@ -1,48 +1,55 @@
 .container {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--maple-bg);
-  padding: 20px;
+  background: linear-gradient(160deg, var(--brand-green-light) 0%, var(--brand-bg) 45%, var(--brand-bg) 100%);
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
   direction: rtl;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: var(--brand-font);
 }
 
 .card {
-  background: #ffffff;
+  background: var(--brand-surface);
   max-width: 500px;
   width: 100%;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  border-radius: var(--brand-radius-lg);
+  box-shadow: var(--brand-shadow-lg);
+  border: 1px solid var(--brand-border);
   padding: 32px 24px;
   text-align: center;
+  animation: feedbackFadeIn 0.4s ease-in-out;
 }
 
 .logo {
-  max-width: 120px;
+  max-width: 140px;
+  height: auto;
   margin-bottom: 20px;
+  object-fit: contain;
 }
 
 .title {
-  color: #1e293b;
-  font-size: 1.5rem;
-  margin-bottom: 8px;
+  color: var(--brand-text);
+  font-size: var(--brand-text-xl);
+  font-weight: 700;
+  margin: 0 0 8px;
 }
 
 .subtitle {
-  color: #64748b;
-  font-size: 1rem;
-  margin-bottom: 24px;
+  color: var(--brand-text-muted);
+  font-size: var(--brand-text-base);
+  margin: 0 0 24px;
   line-height: 1.5;
 }
 
 .ratingSection {
   margin-bottom: 24px;
   text-align: right;
-  background: #f1f5f9;
+  background: var(--brand-green-light);
   padding: 16px;
-  border-radius: 12px;
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-green-muted);
 }
 
 .ratingRow {
@@ -58,21 +65,21 @@
 
 .ratingLabel {
   font-weight: 600;
-  color: #334155;
-  font-size: 1rem;
+  color: var(--brand-text-secondary);
+  font-size: var(--brand-text-base);
 }
 
 .stars {
   display: flex;
   gap: 4px;
-  direction: ltr; /* כדי שהכוכבים יתמלאו משמאל לימין */
+  direction: ltr;
 }
 
 .star {
   font-size: 1.5rem;
   cursor: pointer;
-  color: #cbd5e1;
-  transition: color 0.2s ease, transform 0.2s ease;
+  color: var(--brand-border-strong);
+  transition: color var(--brand-transition), transform var(--brand-transition);
 }
 
 .star:hover {
@@ -80,48 +87,52 @@
 }
 
 .starActive {
-  color: var(--maple-green);
+  color: var(--brand-green-dark);
 }
 
 .textArea {
   width: 100%;
   box-sizing: border-box;
   padding: 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  font-size: 0.95rem;
+  border: 1px solid var(--brand-border-strong);
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-sm);
   resize: vertical;
   min-height: 100px;
   margin-bottom: 24px;
   outline: none;
-  font-family: inherit;
+  font-family: var(--brand-font);
+  direction: rtl;
 }
 
 .textArea:focus {
-  border-color: #d97706;
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 3px rgba(107, 168, 110, 0.15);
 }
 
 .submitBtn {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-  color: white;
+  background: var(--brand-accent-gradient);
+  color: #fff;
   border: none;
   width: 100%;
   padding: 14px;
-  border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-text-lg);
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s ease, transform 0.1s ease;
+  font-family: var(--brand-font);
+  transition: opacity var(--brand-transition), transform var(--brand-transition);
 }
 
 .submitBtn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-2px);
+  opacity: 0.92;
+  transform: translateY(-1px);
 }
 
 .submitBtn:disabled {
-  background: #cbd5e1;
+  background: var(--brand-border-strong);
   cursor: not-allowed;
+  transform: none;
 }
 
 .messageBox {
@@ -131,4 +142,25 @@
 .iconBig {
   font-size: 4rem;
   margin-bottom: 16px;
+}
+
+@keyframes feedbackFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    padding: 24px 18px;
+  }
+
+  .title {
+    font-size: var(--brand-text-lg);
+  }
 }

@@ -1,10 +1,30 @@
 // @ts-ignore
 import hebcal from 'hebcal';
 import prisma from "../config/prisma";
-import { io } from "../server";
-import { normalizeTimeSlot, getTakenSlots, SLOT_LABELS, formatStoredTimeOfDay, getBlockedSlotsForDate, isDateFullyBooked, validateSlotOnDate, parseDateLocal } from '../utils/timeSlot';
-import { validateSlotAvailability, resolveBookingSlot } from '../utils/bookingDateValidation';
+import { emitDateUpdated } from "../utils/realtime";
+import {
+  normalizeTimeSlot,
+  formatStoredTimeOfDay,
+  getBlockedSlotsForDate,
+  parseDateLocal,
+  toLocalDateKey,
+  isDateFullyBooked,
+} from '../utils/timeSlot';
+import { resolveBookingSlot } from '../utils/bookingDateValidation';
 import { allocateEventCode } from '../utils/eventCode';
+import { extractHallPriceBreakdown } from '../utils/hallBilling';
+import {
+  toCalendarDateKey,
+  calendarDateForStorage,
+  prismaCalendarDayWhere,
+  parseCalendarDate,
+} from '../utils/dateLocal';
+import {
+  assertSlotAvailableAfterLock,
+  HttpError,
+  lockEventDateRow,
+} from '../utils/eventDateLock';
+import { isSlotUniqueViolation, slotUniqueConflictError } from '../utils/bookingSlotGuard';
 
 export enum EventStatus {
   AVAILABLE = 'AVAILABLE',
@@ -14,13 +34,6 @@ export enum EventStatus {
   BLOCKED   = 'BLOCKED',      // חסום לגמרי (אדום - כמו שבת)
   FORBIDDEN = 'FORBIDDEN',    // אסור לאירוע (ורוד - חגים/צומות קשים)
   PROBLEMATIC = 'PROBLEMATIC' // תאריך דפוק/אפשרי חלקית (כתום)
-}
-
-function toLocalDateKey(d: Date): string {
-  const yyyy = d.getFullYear();
-  const mm   = String(d.getMonth() + 1).padStart(2, '0');
-  const dd   = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
 }
 
 const HEBREW_NUMERALS: Record<number, string> = {
@@ -64,11 +77,11 @@ export function getDayStaticStatus(jsDate: Date, eventType: string = 'חתונה
     return { type: EventStatus.PROBLEMATIC, reason: 'שבת' };
   }
   if (jsDay === 5) {
+    const reason = 'יום שישי (בוקר בלבד)';
     if (eventType === 'חתונה') {
-      return { type: EventStatus.PROBLEMATIC, reason: 'יום שישי ' };
-    } else {
-      return { type: EventStatus.AVAILABLE, reason: 'יום שישי (בוקר בלבד)' };
+      return { type: EventStatus.PROBLEMATIC, reason };
     }
+    return { type: EventStatus.AVAILABLE, reason };
   }
 
   const holidays: any[] = hDate.holidays(true) || [];
@@ -182,12 +195,36 @@ export function getDayStaticStatus(jsDate: Date, eventType: string = 'חתונה
   return { type: EventStatus.AVAILABLE };
 }
 
+const CHECKING_HOLD_MINUTES = 30;
+const DEFAULT_OPTION_HOURS = 48;
+
+function checkingExpiry(): Date {
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + CHECKING_HOLD_MINUTES);
+  return expiry;
+}
+
+function defaultOptionExpiry(hours = DEFAULT_OPTION_HOURS): Date {
+  const expiry = new Date();
+  expiry.setHours(expiry.getHours() + hours);
+  return expiry;
+}
+
+function mapHttpError(error: unknown): never {
+  if (error instanceof HttpError) {
+    const err = new Error(error.message);
+    (err as any).statusCode = error.statusCode;
+    throw err;
+  }
+  throw error;
+}
+
 export const calendarService = {
   // שליפה של כל האירועים ביום (עד 3)
   async getAllCalendarDates(startDate: Date, endDate: Date, eventType: string = 'חתונה') {
     const datesInRange = await prisma.eventDate.findMany({
       where: { date: { gte: startDate, lte: endDate } },
-      include: { bookings: true }
+      include: { bookings: { include: { eventForm: true, eventCheckIn: true } } }
     });
     
     const result = [];
@@ -199,23 +236,29 @@ export const calendarService = {
       const staticSt = getDayStaticStatus(current, eventType);
       const blockedSlots = getBlockedSlotsForDate(current);
       
-      const record = datesInRange.find((d: any) => toLocalDateKey(new Date(d.date)) === dateKey);
-      const bookings = record?.bookings || [];
+      const recordsForDay = datesInRange.filter((d: any) => toLocalDateKey(new Date(d.date)) === dateKey);
+      const record =
+        recordsForDay.find((d: any) => d.status === EventStatus.BOOKED) ||
+        recordsForDay.find((d: any) => d.status === EventStatus.OPTION) ||
+        recordsForDay.find((d: any) => (d.bookings?.length ?? 0) > 0) ||
+        recordsForDay[0];
+      const bookings = recordsForDay.flatMap((d: any) => d.bookings || []);
 
-      const dbStatus = record?.status;
+      const dbStatus = recordsForDay.some((d: any) => d.status === EventStatus.BOOKED)
+        ? EventStatus.BOOKED
+        : recordsForDay.some((d: any) => d.status === EventStatus.OPTION)
+          ? EventStatus.OPTION
+          : record?.status;
       const hasBookingStatus = dbStatus === EventStatus.OPTION || dbStatus === EventStatus.BOOKED;
-      const fullyBooked = isDateFullyBooked(current, bookings);
 
       result.push({
         id: record?.id || null,
         date: dateKey,
         dayOfWeek: current.getDay(),
         hebrewDate: formatHebrewDate(hDate),
-        status: fullyBooked
-          ? EventStatus.BLOCKED
-          : hasBookingStatus
-            ? dbStatus
-            : staticSt.type,
+        status: hasBookingStatus
+          ? dbStatus
+          : staticSt.type,
         reason: staticSt.reason || null,
         blockedSlots,
         bookings: bookings 
@@ -227,80 +270,408 @@ export const calendarService = {
 
   // סגירה סופית עם מניעת התנגשויות זמן
   async bookEventFinal(dateId: string, bookingDetails: any) {
-    return prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT id FROM "EventDate" WHERE id = ${dateId} FOR UPDATE`;
+    const booking = await prisma.$transaction(async (tx) => {
+      await lockEventDateRow(tx, dateId);
 
-      const eventDateRecord = await tx.eventDate.findUnique({ where: { id: dateId } });
+      const eventDateRecord = await tx.eventDate.findUnique({
+        where: { id: dateId },
+        include: { bookings: true },
+      });
       if (!eventDateRecord) {
-        const error = new Error('תאריך האירוע לא נמצא.');
-        (error as any).statusCode = 404;
-        throw error;
+        throw new HttpError('תאריך האירוע לא נמצא.', 404);
       }
 
-      const existing = await tx.booking.findMany({
-        where: { eventDate: { id: dateId } },
-      });
+      const calendarKey = toLocalDateKey(new Date(eventDateRecord.date));
+      const existing = eventDateRecord.bookings;
 
       if (isDateFullyBooked(parseDateLocal(eventDateRecord.date), existing)) {
-        const error = new Error('התאריך מלא — אין משבצות זמן פנויות.');
-        (error as any).statusCode = 400;
-        throw error;
+        throw new HttpError('התאריך מלא — אין משבצות זמן פנויות.', 400);
       }
 
       const slot = resolveBookingSlot(
         bookingDetails.timeOfDay,
         bookingDetails.startTime,
         bookingDetails.endTime,
-        false
+        false,
       );
 
       if (!slot) {
-        const error = new Error('יש לבחור משבצת זמן: בוקר, צהריים או ערב.');
-        (error as any).statusCode = 400;
-        throw error;
+        throw new HttpError('יש לבחור משבצת זמן: בוקר, צהריים או ערב.', 400);
       }
 
-      const slotAvailabilityError = validateSlotAvailability(
-        parseDateLocal(eventDateRecord.date),
+      assertSlotAvailableAfterLock(
+        calendarKey,
         slot,
         existing,
-        bookingDetails.eventType || 'חתונה'
+        bookingDetails.eventType || 'חתונה',
       );
-      if (slotAvailabilityError) {
-        const error = new Error(slotAvailabilityError);
-        (error as any).statusCode = 400;
-        throw error;
-      }
 
       const storedTime = formatStoredTimeOfDay(slot, bookingDetails.startTime, bookingDetails.endTime);
-      const eventCode = await allocateEventCode('EVT');
+      const eventCode = await allocateEventCode('EVT', tx);
+      const totals = bookingDetails.calculatedTotals;
+      const priceBreakdown = extractHallPriceBreakdown(bookingDetails, 0);
+      const basePrice = Number(totals?.baseTotal ?? priceBreakdown.basePrice) || 0;
+      const extrasPrice = Number(totals?.hallExtrasTotal ?? totals?.extrasTotal ?? priceBreakdown.extrasPrice) || 0;
+      const externalExtrasPrice = Number(totals?.externalExtrasTotal ?? priceBreakdown.externalExtrasPrice) || 0;
+      const totalPrice = priceBreakdown.totalPrice;
 
       try {
-        const booking = await tx.booking.create({
+        const created = await tx.booking.create({
           data: {
-            ...bookingDetails,
+            tenant: { connect: { id: String((bookingDetails as any).tenantId) } },
+            clientAFullName: bookingDetails.clientAFullName,
+            clientAIdNumber: bookingDetails.clientAIdNumber || '',
+            clientAPhone: bookingDetails.clientAPhone,
+            clientAEmail: bookingDetails.clientAEmail || null,
+            clientAAddress: bookingDetails.clientAAddress || null,
+            clientBFullName: bookingDetails.clientBFullName || null,
+            clientBIdNumber: bookingDetails.clientBIdNumber || null,
+            clientBPhone: bookingDetails.clientBPhone || null,
+            clientBEmail: bookingDetails.clientBEmail || null,
+            clientBAddress: bookingDetails.clientBAddress || null,
+            eventType: bookingDetails.eventType,
             timeOfDay: storedTime,
             timeSlot: slot,
+            guestCount: Number(bookingDetails.guestCount) || 0,
+            minimumGuestCount: Number(bookingDetails.minimumGuestCount) || Number(bookingDetails.guestCount) || 0,
+            finalPricePortion: Number(bookingDetails.finalPricePortion) || 0,
+            basePrice,
+            extrasPrice,
+            externalExtrasPrice,
+            liveAdditionsTotal: 0,
+            totalPrice,
+            hallRentalPrice: bookingDetails.hallRentalPrice != null ? Number(bookingDetails.hallRentalPrice) : null,
+            hasMusic: bookingDetails.hasMusic !== undefined ? bookingDetails.hasMusic : true,
+            akumApprovalCode: bookingDetails.akumApprovalCode || null,
+            managerComments: bookingDetails.managerComments || null,
+            clientComments: bookingDetails.clientComments || null,
+            createdBy: bookingDetails.createdBy,
+            advancePaid: 0,
+            totalPaid: 0,
+            securityCheckStatus: 'PENDING',
+            isContractSigned: !!(bookingDetails.contractSigned && bookingDetails.clientSignature),
+            clientSignatureUrl: bookingDetails.clientSignature || null,
+            depositCheckUrl: bookingDetails.depositCheckUrl || null,
+            depositCheckDetails: bookingDetails.depositCheckDetails || null,
+            contractText: bookingDetails.contractText?.trim() || null,
+            isOption: false,
             eventDate: { connect: { id: dateId } },
             eventCode,
           },
         });
 
-        io.emit('date-updated', { dateId, status: 'BOOKED' });
-        return booking;
-      } catch (createErr: any) {
-        if (createErr?.code === 'P2002') {
-          const error = new Error(`כבר קיים אירוע ב${SLOT_LABELS[slot]} בתאריך זה!`);
-          (error as any).statusCode = 409;
-          throw error;
+        await tx.eventDate.update({
+          where: { id: dateId },
+          data: {
+            status: EventStatus.BOOKED,
+            optionExpiresAt: null,
+            lockedBy: null,
+            clientName: null,
+            clientPhone: null,
+            clientEmail: null,
+          },
+        });
+
+        return created;
+      } catch (createErr: unknown) {
+        if (isSlotUniqueViolation(createErr)) {
+          throw slotUniqueConflictError(slot);
         }
         throw createErr;
       }
     });
+
+    emitDateUpdated({ dateId, status: 'BOOKED' });
+    return booking;
   },
 
-  async lockDateForChecking(dateStr: string, employeeName: string) { /* ... */ },
-  async releaseDate(dateStr: string) { /* ... */ },
-  async createOption(dateId: string, bookingDetails: any) { /* ... */ },
-  async saveOptionHold(dates: string[], clientName: string, clientPhone: string, clientEmail: string) { /* ... */ }
+  /** נעילת תאריך זמנית בזמן בדיקה/מילוי טופס (30 דקות) */
+  async lockDateForChecking(dateStr: string, employeeName: string, tenantId: string) {
+    try {
+      const calendarKey = toCalendarDateKey(dateStr);
+
+      return await prisma.$transaction(async (tx) => {
+        let eventDate = await tx.eventDate.findFirst({
+          where: prismaCalendarDayWhere(calendarKey),
+          include: { bookings: true },
+        });
+
+        if (eventDate) {
+          await lockEventDateRow(tx, eventDate.id);
+          eventDate = await tx.eventDate.findUnique({
+            where: { id: eventDate.id },
+            include: { bookings: true },
+          });
+        }
+
+        if (eventDate) {
+          const hasConfirmed = eventDate!.bookings.some((b) => !b.isOption);
+          if (hasConfirmed || eventDate!.status === EventStatus.BOOKED) {
+            throw new HttpError('לא ניתן לנעול תאריך שכבר מוזמן.', 409);
+          }
+
+          if (
+            eventDate!.status === EventStatus.CHECKING
+            && eventDate!.lockedBy
+            && eventDate!.lockedBy !== employeeName
+            && eventDate!.optionExpiresAt
+            && eventDate!.optionExpiresAt > new Date()
+          ) {
+            throw new HttpError(`התאריך נבדק על ידי ${eventDate!.lockedBy}.`, 409);
+          }
+        }
+
+        const expiry = checkingExpiry();
+
+        if (!eventDate) {
+          eventDate = await tx.eventDate.create({
+            data: {
+              tenant: { connect: { id: tenantId } },
+              date: new Date(calendarKey),
+              status: EventStatus.CHECKING,
+              lockedBy: employeeName,
+              optionExpiresAt: expiry,
+            },
+            include: { bookings: true },
+          });
+        } else {
+          eventDate = await tx.eventDate.update({
+            where: { id: eventDate.id },
+            data: {
+              status: EventStatus.CHECKING,
+              lockedBy: employeeName,
+              optionExpiresAt: expiry,
+            },
+            include: { bookings: true },
+          });
+        }
+
+        emitDateUpdated({ dateId: eventDate.id, status: EventStatus.CHECKING });
+        return eventDate;
+      });
+    } catch (error) {
+      mapHttpError(error);
+    }
+  },
+
+  /** שחרור נעילת CHECKING */
+  async releaseDate(dateStr: string) {
+    try {
+      const calendarKey = toCalendarDateKey(dateStr);
+
+      return await prisma.$transaction(async (tx) => {
+        const eventDate = await tx.eventDate.findFirst({
+          where: prismaCalendarDayWhere(calendarKey),
+          include: { bookings: true },
+        });
+
+        if (!eventDate) {
+          throw new HttpError('תאריך לא נמצא.', 404);
+        }
+
+        await lockEventDateRow(tx, eventDate.id);
+
+        const hasBookings = eventDate.bookings.length > 0;
+        const nextStatus = hasBookings
+          ? (eventDate.bookings.some((b) => !b.isOption) ? EventStatus.BOOKED : EventStatus.OPTION)
+          : EventStatus.AVAILABLE;
+
+        const updated = await tx.eventDate.update({
+          where: { id: eventDate.id },
+          data: {
+            status: nextStatus,
+            lockedBy: null,
+            optionExpiresAt: hasBookings ? eventDate.optionExpiresAt : null,
+          },
+        });
+
+        emitDateUpdated({ dateId: updated.id, status: nextStatus });
+        return updated;
+      });
+    } catch (error) {
+      mapHttpError(error);
+    }
+  },
+
+  /** יצירת אופציה מלאה על תאריך בודד */
+  async createOption(dateId: string, bookingDetails: any) {
+    try {
+      const optionHours = Number(bookingDetails.optionDurationHours) || DEFAULT_OPTION_HOURS;
+      const expiry = defaultOptionExpiry(optionHours);
+
+      const booking = await prisma.$transaction(async (tx) => {
+        await lockEventDateRow(tx, dateId);
+
+        const eventDateRecord = await tx.eventDate.findUnique({
+          where: { id: dateId },
+          include: { bookings: true },
+        });
+        if (!eventDateRecord) {
+          throw new HttpError('תאריך האירוע לא נמצא.', 404);
+        }
+
+        const calendarKey = toLocalDateKey(new Date(eventDateRecord.date));
+        const slot = resolveBookingSlot(
+          bookingDetails.timeOfDay,
+          bookingDetails.startTime,
+          bookingDetails.endTime,
+          true,
+        ) || 'evening';
+
+        assertSlotAvailableAfterLock(
+          calendarKey,
+          slot,
+          eventDateRecord.bookings,
+          bookingDetails.eventType || 'חתונה',
+          { isOption: true },
+        );
+
+        const storedTime = formatStoredTimeOfDay(slot, bookingDetails.startTime, bookingDetails.endTime);
+        const eventCode = await allocateEventCode('OPT', tx);
+        const priceBreakdown = extractHallPriceBreakdown(bookingDetails, 0);
+
+        let created;
+        try {
+          created = await tx.booking.create({
+            data: {
+              tenant: { connect: { id: String((bookingDetails as any).tenantId) } },
+              clientAFullName: bookingDetails.clientAFullName || '',
+              clientAIdNumber: bookingDetails.clientAIdNumber || '',
+              clientAPhone: bookingDetails.clientAPhone || '',
+              clientAEmail: bookingDetails.clientAEmail || null,
+              clientAAddress: bookingDetails.clientAAddress || null,
+              clientBFullName: bookingDetails.clientBFullName || null,
+              clientBIdNumber: bookingDetails.clientBIdNumber || null,
+              clientBPhone: bookingDetails.clientBPhone || null,
+              clientBEmail: bookingDetails.clientBEmail || null,
+              clientBAddress: bookingDetails.clientBAddress || null,
+              eventType: bookingDetails.eventType,
+              timeOfDay: storedTime,
+              timeSlot: slot,
+              guestCount: Number(bookingDetails.guestCount) || 0,
+              minimumGuestCount: Number(bookingDetails.minimumGuestCount) || Number(bookingDetails.guestCount) || 0,
+              finalPricePortion: Number(bookingDetails.finalPricePortion) || 0,
+              basePrice: priceBreakdown.basePrice,
+              extrasPrice: priceBreakdown.extrasPrice,
+              externalExtrasPrice: priceBreakdown.externalExtrasPrice,
+              liveAdditionsTotal: 0,
+              totalPrice: priceBreakdown.totalPrice,
+              hallRentalPrice: bookingDetails.hallRentalPrice != null ? Number(bookingDetails.hallRentalPrice) : null,
+              hasMusic: bookingDetails.hasMusic !== undefined ? bookingDetails.hasMusic : true,
+              createdBy: bookingDetails.createdBy,
+              isOption: true,
+              optionDurationHours: optionHours,
+              eventDate: { connect: { id: dateId } },
+              eventCode,
+            },
+          });
+        } catch (createErr: unknown) {
+          if (isSlotUniqueViolation(createErr)) {
+            throw slotUniqueConflictError(slot);
+          }
+          throw createErr;
+        }
+
+        await tx.eventDate.update({
+          where: { id: dateId },
+          data: {
+            status: EventStatus.OPTION,
+            optionExpiresAt: expiry,
+            lockedBy: null,
+            clientName: bookingDetails.clientAFullName,
+            clientPhone: bookingDetails.clientAPhone,
+            clientEmail: bookingDetails.clientAEmail || null,
+          },
+        });
+
+        return created;
+      });
+
+      emitDateUpdated({ dateId, status: 'OPTION' });
+      return booking;
+    } catch (error) {
+      mapHttpError(error);
+    }
+  },
+
+  /** שמירת hold רך לכמה תאריכי אופציה (לפני מילוי טופס מלא) */
+  async saveOptionHold(
+    tenantId: string,
+    dates: string[],
+    clientName: string,
+    clientPhone: string,
+    clientEmail: string,
+  ) {
+    if (dates.length === 0) {
+      throw new HttpError('חובה לבחור לפחות תאריך אחד.', 400);
+    }
+    if (dates.length > 3) {
+      throw new HttpError('ניתן לשמור עד 3 תאריכים לאופציה.', 400);
+    }
+
+    const uniqueKeys = [...new Set(dates.map((d) => toCalendarDateKey(d)))];
+    const expiry = defaultOptionExpiry();
+
+    try {
+      const results = await prisma.$transaction(async (tx) => {
+        const saved: unknown[] = [];
+
+        for (const calendarKey of uniqueKeys) {
+          let eventDate = await tx.eventDate.findFirst({
+            where: prismaCalendarDayWhere(calendarKey),
+            include: { bookings: true },
+          });
+
+          if (eventDate) {
+            await lockEventDateRow(tx, eventDate.id);
+            eventDate = await tx.eventDate.findUnique({
+              where: { id: eventDate.id },
+              include: { bookings: true },
+            });
+          }
+
+          if (eventDate?.bookings.some((b) => !b.isOption)) {
+            throw new HttpError(`${calendarKey}: התאריך כבר מוזמן.`, 409);
+          }
+
+          if (!eventDate) {
+            eventDate = await tx.eventDate.create({
+              data: {
+                tenant: { connect: { id: tenantId } },
+                date: calendarDateForStorage(calendarKey),
+                status: EventStatus.OPTION,
+                optionExpiresAt: expiry,
+                clientName,
+                clientPhone,
+                clientEmail: clientEmail || null,
+              },
+              include: { bookings: true },
+            });
+          } else {
+            eventDate = await tx.eventDate.update({
+              where: { id: eventDate.id },
+              data: {
+                status: EventStatus.OPTION,
+                optionExpiresAt: expiry,
+                clientName,
+                clientPhone,
+                clientEmail: clientEmail || null,
+                lockedBy: null,
+              },
+              include: { bookings: true },
+            });
+          }
+
+          saved.push(eventDate);
+          emitDateUpdated({ dateId: eventDate.id, status: EventStatus.OPTION });
+        }
+
+        return saved;
+      });
+
+      return results;
+    } catch (error) {
+      mapHttpError(error);
+    }
+  },
 };

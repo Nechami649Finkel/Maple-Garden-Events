@@ -1,0 +1,36 @@
+.errorFallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+  font-family: var(--brand-font);
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.errorFallback h1 {
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+}
+
+.errorFallback p {
+  color: var(--brand-text-muted);
+  margin-bottom: 1.5rem;
+  max-width: 420px;
+}
+
+.errorFallback pre {
+  background: var(--brand-surface);
+  padding: 1rem;
+  border-radius: var(--brand-radius);
+  border: 1px solid var(--brand-border);
+  max-width: 600px;
+  overflow: auto;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  text-align: left;
+  direction: ltr;
+}

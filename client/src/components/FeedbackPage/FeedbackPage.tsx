@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import styles from './FeedbackPage.module.css';
-
-// --- הגדרות טיפוסים (TypeScript Interfaces) ---
+import { API_URL } from '../../config/api';
+import { useTranslation } from '../../i18n/useTranslation';
 
 interface ClientData {
   clientName: string;
@@ -17,13 +17,12 @@ interface Ratings {
 
 type PageStatus = 'loading' | 'active' | 'submitted' | 'error';
 
-// --- קומפוננטת עזר לדירוג כוכבים ---
-// שומרת על הקוד הראשי נקי ומונעת שכפול של לוגיקת הכוכבים 3 פעמים
 const StarRating: React.FC<{
   label: string;
   value: number;
   onChange: (value: number) => void;
-}> = ({ label, value, onChange }) => {
+  starAriaLabel: (star: number) => string;
+}> = ({ label, value, onChange, starAriaLabel }) => {
   return (
     <div className={styles.ratingRow}>
       <span className={styles.ratingLabel}>{label}</span>
@@ -34,7 +33,7 @@ const StarRating: React.FC<{
             className={`${styles.star} ${star <= value ? styles.starActive : ''}`}
             onClick={() => onChange(star)}
             role="button"
-            aria-label={`דרג ${star} כוכבים`}
+            aria-label={starAriaLabel(star)}
           >
             ★
           </span>
@@ -44,35 +43,32 @@ const StarRating: React.FC<{
   );
 };
 
-// --- הקומפוננטה הראשית ---
-
 const FeedbackPage: React.FC = () => {
-  // חילוץ האסימון מהנתיב (למשל: /feedback/abc-123-def)
   const { token } = useParams<{ token: string }>();
+  const { t, T } = useTranslation();
 
-  // ניהול מצבי הדף
   const [status, setStatus] = useState<PageStatus>('loading');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [clientData, setClientData] = useState<ClientData | null>(null);
 
-  // ניהול הטופס
   const [ratings, setRatings] = useState<Ratings>({ food: 0, service: 0, venue: 0 });
   const [comments, setComments] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const feedbackApiBase = `${API_URL}/feedback`;
 
-  // 1. קריאת GET: בדיקת תקינות הקישור בטעינה הראשונית
+  const starAriaLabel = (star: number) => t(T.FEEDBACK.RATE_STAR_ARIA, { value: star });
+
   useEffect(() => {
     const verifyToken = async () => {
       if (!token) {
         setStatus('error');
-        setErrorMessage('קישור חסר או לא תקין.');
+        setErrorMessage(t(T.FEEDBACK.INVALID_LINK));
         return;
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/feedback/${token}`);
+        const response = await fetch(`${feedbackApiBase}/${token}`);
         const data = await response.json();
 
         if (response.ok && data.success) {
@@ -83,30 +79,28 @@ const FeedbackPage: React.FC = () => {
           setStatus('active');
         } else {
           setStatus('error');
-          setErrorMessage(data.message || 'הקישור אינו חוקי או שכבר מולא.');
+          setErrorMessage(data.message || t(T.FEEDBACK.LINK_USED));
         }
       } catch (error) {
         console.error('Error verifying token:', error);
         setStatus('error');
-        setErrorMessage('אירעה שגיאה בתקשורת עם השרת. אנא נסה שוב מאוחר יותר.');
+        setErrorMessage(t(T.FEEDBACK.LOAD_ERROR_PUBLIC));
       }
     };
 
     verifyToken();
-  }, [token, API_BASE_URL]);
+  }, [token, feedbackApiBase, t, T]);
 
-  // 2. קריאת POST: שליחת המשוב לשרת
   const handleSubmit = async () => {
-    // ולידציה בסיסית - לוודא שהלקוח דירג לפחות משהו אחד או מילא הכל
     if (ratings.food === 0 || ratings.service === 0 || ratings.venue === 0) {
-      alert('נשמח אם תדרגו את כל הקטגוריות כדי שנוכל להשתפר!');
+      alert(t(T.FEEDBACK.RATE_ALL_PROMPT));
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/feedback/${token}`, {
+      const response = await fetch(`${feedbackApiBase}/${token}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -124,24 +118,23 @@ const FeedbackPage: React.FC = () => {
       if (response.ok && data.success) {
         setStatus('submitted');
       } else {
-        alert(data.message || 'אירעה שגיאה בשמירת המשוב.');
+        alert(data.message || t(T.FEEDBACK.SAVE_ERROR));
         setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      alert('שגיאת תקשורת. אנא בדוק את החיבור לאינטרנט ונסה שוב.');
+      alert(t(T.FEEDBACK.NETWORK_ERROR));
       setIsSubmitting(false);
     }
   };
-
-  // --- פונקציות רינדור (Rendering) לפי מצב ---
 
   if (status === 'loading') {
     return (
       <div className={styles.container}>
         <div className={styles.card}>
-          <h2 className={styles.title}>טוען נתונים...</h2>
-          <p className={styles.subtitle}>אנא המתן</p>
+          <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
+          <h2 className={styles.title}>{t(T.FEEDBACK.LOADING_TITLE)}</h2>
+          <p className={styles.subtitle}>{t(T.FEEDBACK.LOADING_SUBTITLE)}</p>
         </div>
       </div>
     );
@@ -151,8 +144,9 @@ const FeedbackPage: React.FC = () => {
     return (
       <div className={styles.container}>
         <div className={`${styles.card} ${styles.messageBox}`}>
+          <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
           <div className={styles.iconBig}>😕</div>
-          <h2 className={styles.title}>אופס!</h2>
+          <h2 className={styles.title}>{t(T.FEEDBACK.ERROR_TITLE)}</h2>
           <p className={styles.subtitle}>{errorMessage}</p>
         </div>
       </div>
@@ -163,48 +157,49 @@ const FeedbackPage: React.FC = () => {
     return (
       <div className={styles.container}>
         <div className={`${styles.card} ${styles.messageBox}`}>
+          <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
           <div className={styles.iconBig}>🤍</div>
-          <h2 className={styles.title}>תודה רבה!</h2>
-          <p className={styles.subtitle}>
-            המשוב שלך התקבל בהצלחה. אנו מעריכים מאוד את הזמן שהקדשת כדי לעזור לנו להשתפר!
-          </p>
+          <h2 className={styles.title}>{t(T.FEEDBACK.THANK_YOU_TITLE)}</h2>
+          <p className={styles.subtitle}>{t(T.FEEDBACK.THANK_YOU_MESSAGE)}</p>
         </div>
       </div>
     );
   }
 
-  // המצב הרגיל - טופס המשוב
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <h1 className={styles.title}>
-          היי {clientData?.clientName},
-        </h1>
+        <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
+        <h1 className={styles.title}>{t(T.FEEDBACK.PAGE_GREETING)}</h1>
         <p className={styles.subtitle}>
-          שמחנו לקחת חלק באירוע שלכם! נשמח לשמוע איך היה כדי שנוכל להמשיך להשתפר.
+          {clientData?.clientName ? `${clientData.clientName}, ` : ''}
+          {t(T.FEEDBACK.PAGE_INTRO)}
         </p>
 
         <div className={styles.ratingSection}>
           <StarRating
-            label="איך היה האוכל?"
+            label={t(T.FEEDBACK.RATE_FOOD)}
             value={ratings.food}
             onChange={(val) => setRatings({ ...ratings, food: val })}
+            starAriaLabel={starAriaLabel}
           />
           <StarRating
-            label="איך היה השירות?"
+            label={t(T.FEEDBACK.RATE_SERVICE)}
             value={ratings.service}
             onChange={(val) => setRatings({ ...ratings, service: val })}
+            starAriaLabel={starAriaLabel}
           />
           <StarRating
-            label="נראות וניקיון האולם"
+            label={t(T.FEEDBACK.RATE_VENUE)}
             value={ratings.venue}
             onChange={(val) => setRatings({ ...ratings, venue: val })}
+            starAriaLabel={starAriaLabel}
           />
         </div>
 
         <textarea
           className={styles.textArea}
-          placeholder="נשמח לשמוע פירוט, הערות או הארות נוספות (אופציונלי)..."
+          placeholder={t(T.FEEDBACK.COMMENTS_PLACEHOLDER)}
           value={comments}
           onChange={(e) => setComments(e.target.value)}
         />
@@ -214,7 +209,7 @@ const FeedbackPage: React.FC = () => {
           onClick={handleSubmit}
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'שולח...' : 'שליחת משוב'}
+          {isSubmitting ? t(T.FEEDBACK.SUBMITTING) : t(T.FEEDBACK.SUBMIT)}
         </button>
       </div>
     </div>

@@ -5,14 +5,14 @@
   gap: 16px;
   margin-top: 24px;
   padding-top: 16px;
-  border-top: 1px solid var(--maple-border, #e0e0e0);
+  border-top: 1px solid var(--brand-border, #e0e0e0);
 }
 
 .btn {
   padding: 8px 16px;
-  border: 1px solid var(--maple-border-strong, #ccc);
-  border-radius: var(--maple-radius-sm, 8px);
-  background: var(--maple-surface, #fff);
+  border: 1px solid var(--brand-border-strong, #ccc);
+  border-radius: var(--brand-radius-sm, 8px);
+  background: var(--brand-surface, #fff);
   cursor: pointer;
   font-family: inherit;
 }
@@ -24,5 +24,24 @@
 
 .info {
   font-size: 0.9rem;
-  color: var(--maple-text-secondary, #666);
+  color: var(--brand-text-secondary, #666);
+}
+
+@media (max-width: 480px) {
+  .bar {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    min-width: 88px;
+    min-height: 44px;
+  }
+
+  .info {
+    width: 100%;
+    text-align: center;
+    order: -1;
+  }
 }

@@ -1,90 +1,155 @@
-import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+
+import { useNavigationContext } from '../../context/navigationContext';
+
+import { useSidebar } from '../../context/SidebarProvider';
+
+import { useTranslation } from '../../i18n/useTranslation';
+
+import { resolveRouteTitleKey, resolveRouteIcon } from '@shared/i18n/navigationLookups';
+
+import { Icon } from '../ui/Icon';
+
+import {
+
+  resolveDefaultBackPath,
+
+  shouldShowGlobalBack,
+
+} from '../../utils/appNavigation';
+
 import './AppHeader.css';
 
-const NAV_ITEMS = [
-  { label: 'לוח שנה', path: '/', icon: '📅' },
-  { label: 'הגדרות מתחם', path: '/settings', icon: '⚙️' },
-  { label: 'ניהול אופציות', path: '/options-manager', icon: '' },
-  { label: 'ניהול הזמנות', path: '/bookings-manager', icon: '' },
-  { label: 'משובי לקוחות', path: '/feedback-manager', icon: '⭐' },
-  { label: 'שליחת ברכה', path: '/greeting', icon: '💌' },
-  { label: 'טופס הפקת אירוע', path: '/event-form-manager', icon: '' },
-];
+
 
 export const AppHeader = () => {
+
   const navigate = useNavigate();
+
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [menuOpen]);
+  const { override } = useNavigationContext();
 
-  const goTo = (path: string) => {
-    setMenuOpen(false);
-    navigate(path);
+  const { open } = useSidebar();
+
+  const { t, T } = useTranslation();
+
+
+
+  const showBack = shouldShowGlobalBack(location.pathname) || !!override;
+
+  const titleKey = resolveRouteTitleKey(location.pathname);
+  const pageTitle = titleKey ? t(titleKey) : '';
+  const pageIcon = resolveRouteIcon(location.pathname);
+
+
+
+  const handleBack = () => {
+
+    if (override?.onBack) {
+
+      override.onBack();
+
+      return;
+
+    }
+
+    const fallback = resolveDefaultBackPath(location.pathname);
+
+    if (window.history.length > 1) {
+
+      navigate(-1);
+
+      return;
+
+    }
+
+    navigate(fallback);
+
   };
 
+
+
   return (
-    <>
-      <header className="app-header">
-        <div className="app-header-start">
-          <button
-            type="button"
-            className="app-header-hamburger"
-            onClick={() => setMenuOpen(true)}
-            aria-label="פתיחת תפריט"
-            aria-expanded={menuOpen}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
+
+    <header className="app-header">
+
+      <div className="app-header-start">
+
+        <button
+
+          type="button"
+
+          className="app-header-hamburger"
+
+          onClick={open}
+
+          aria-label={t(T.COMMON.A11Y.OPEN_MENU)}
+
+        >
+
+          <span />
+
+          <span />
+
+          <span />
+
+        </button>
+
+
+
+        {showBack && (
 
           <button
-            type="button"
-            className="app-header-brand"
-            onClick={() => goTo('/')}
-            aria-label="חזרה ללוח השנה"
-          >
-            <img src="/logo.png" alt="מיפל - גן אירועים בעיר" className="app-header-logo" />
-          </button>
-        </div>
-      </header>
 
-      {menuOpen && (
-        <div className="nav-drawer-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />
-      )}
-
-      <nav className={`nav-drawer ${menuOpen ? 'nav-drawer-open' : ''}`} aria-hidden={!menuOpen}>
-        <div className="nav-drawer-header">
-          <img src="/logo.png" alt="" className="nav-drawer-logo" />
-          <button
             type="button"
-            className="nav-drawer-close"
-            onClick={() => setMenuOpen(false)}
-            aria-label="סגירת תפריט"
+
+            className="app-header-back"
+
+            onClick={handleBack}
+
+            aria-label={
+
+              pageTitle
+
+                ? t(T.NAV.HEADER_BACK_WITH_TITLE, { title: pageTitle })
+
+                : t(T.COMMON.ACTIONS.BACK)
+
+            }
+
           >
-            ✕
+
+            <span className="app-header-back-icon" aria-hidden="true">
+
+              →
+
+            </span>
+
+            <span className="app-header-back-text">{t(T.COMMON.ACTIONS.BACK)}</span>
+
           </button>
-        </div>
-        <ul className="nav-drawer-list">
-          {NAV_ITEMS.map((item) => (
-            <li key={item.path}>
-              <button
-                type="button"
-                className={`nav-drawer-item ${location.pathname === item.path ? 'active' : ''}`}
-                onClick={() => goTo(item.path)}
-              >
-                {item.icon && <span className="nav-drawer-icon">{item.icon}</span>}
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-    </>
+
+        )}
+
+
+
+        {pageTitle && (
+          <p className="app-header-title" title={pageTitle}>
+            {pageIcon && (
+              <span className="app-header-title-icon" aria-hidden="true">
+                <Icon name={pageIcon} size={18} />
+              </span>
+            )}
+            {pageTitle}
+          </p>
+        )}
+
+      </div>
+
+    </header>
+
   );
+
 };
+

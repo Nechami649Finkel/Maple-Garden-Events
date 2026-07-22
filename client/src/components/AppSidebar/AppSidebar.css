@@ -1,0 +1,189 @@
+/* ── Desktop sidebar (persistent) ── */
+.app-sidebar-desktop {
+  display: none;
+  grid-area: sidebar;
+  background: var(--brand-sidebar-bg);
+  border-inline-start: 1px solid var(--brand-sidebar-border);
+  flex-direction: column;
+  overflow: hidden;
+  z-index: var(--brand-z-sidebar);
+}
+
+@media (min-width: 1024px) {
+  .app-sidebar-desktop {
+    display: flex;
+  }
+
+  .app-sidebar-drawer,
+  .app-sidebar-overlay {
+    display: none !important;
+  }
+
+  .app-sidebar-desktop .app-sidebar-close {
+    display: none;
+  }
+}
+
+/* ── Mobile drawer ── */
+.app-sidebar-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(280px, 85vw);
+  height: 100dvh;
+  background: var(--brand-sidebar-bg);
+  border-inline-start: 1px solid var(--brand-sidebar-border);
+  box-shadow: var(--brand-shadow-lg);
+  z-index: var(--brand-z-drawer);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.28s;
+  direction: rtl;
+}
+
+.app-sidebar-drawer-open {
+  transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.app-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--brand-overlay);
+  z-index: calc(var(--brand-z-drawer) - 1);
+  animation: sidebarFadeIn 0.2s ease;
+}
+
+@keyframes sidebarFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Shared sidebar internals ── */
+.app-sidebar {
+  direction: rtl;
+}
+
+.app-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--brand-space-5) var(--brand-space-4);
+  border-bottom: 1px solid var(--brand-sidebar-border);
+  flex-shrink: 0;
+}
+
+.app-sidebar-brand-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--brand-space-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  min-width: 0;
+  flex: 1;
+}
+
+.app-sidebar-logo {
+  height: 36px;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.app-sidebar-venue {
+  font-size: var(--brand-sidebar-text-size);
+  font-weight: 600;
+  color: var(--brand-sidebar-text-active);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-sidebar-close {
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--brand-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--brand-transition);
+  flex-shrink: 0;
+}
+
+.app-sidebar-close:hover {
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+.app-sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: var(--brand-space-4) var(--brand-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--brand-space-2);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.app-sidebar-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--brand-space-3);
+  padding: 14px var(--brand-space-4);
+  background: none;
+  border: none;
+  border-radius: var(--brand-radius-sm);
+  font-size: var(--brand-sidebar-text-size);
+  font-weight: 500;
+  color: var(--brand-sidebar-text);
+  cursor: pointer;
+  text-align: right;
+  transition: background var(--brand-transition), color var(--brand-transition);
+  font-family: var(--brand-font);
+  border-inline-end: 3px solid transparent;
+}
+
+.app-sidebar-item:hover {
+  background: var(--brand-surface);
+  color: var(--brand-sidebar-text-active);
+}
+
+.app-sidebar-item-active {
+  background: var(--brand-sidebar-active);
+  color: var(--brand-sidebar-text-active);
+  border-inline-end-color: var(--brand-gold);
+  font-weight: 600;
+  box-shadow: var(--brand-shadow-sm);
+}
+
+.app-sidebar-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  opacity: 0.85;
+  color: var(--brand-green-dark);
+}
+
+.app-sidebar-item-active .app-sidebar-icon {
+  opacity: 1;
+  color: var(--brand-gold-deep);
+}
+

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מסמך אפיון טכני — מיפל גן אירועים בעיר</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #8CBF8E;
+      --green-dark: #6BA86E;
+      --green-deep: #4F8F52;
+      --bg: #F7F8F6;
+      --surface: #FFFFFF;
+      --text: #2D3748;
+      --text-secondary: #4A5568;
+      --text-muted: #718096;
+      --danger: #E53E3E;
+      --warning: #DD6B20;
+      --info: #4A6FA5;
+      --border: #E2E8F0;
+      --shadow: 0 4px 24px rgba(45, 55, 72, 0.08);
+      --radius: 12px;
+      --sidebar-width: 280px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Heebo', 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 16px;
+    }
+
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, var(--green-deep) 0%, var(--green-dark) 60%, var(--green) 100%);
+      color: #fff;
+      padding: 1.25rem 2rem;
+      box-shadow: 0 2px 16px rgba(79, 143, 82, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+
+    .brand-icon {
+      width: 44px; height: 44px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .brand h1 { font-size: 1.35rem; font-weight: 700; line-height: 1.3; }
+    .brand p { font-size: 0.85rem; opacity: 0.85; font-weight: 300; }
+
+    .meta-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+    .badge {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 0.25rem 0.85rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .layout {
+      display: flex;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 80px);
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      flex-shrink: 0;
+      position: sticky;
+      top: 80px;
+      height: calc(100vh - 80px);
+      overflow-y: auto;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      padding: 1.5rem 1rem;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar h2 {
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
+
+    .toc { list-style: none; }
+    .toc li { margin-bottom: 0.15rem; }
+
+    .toc a {
+      display: block;
+      padding: 0.35rem 0.6rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: background 0.15s, color 0.15s;
+      border-right: 3px solid transparent;
+    }
+
+    .toc a:hover, .toc a.active {
+      background: #EDF7ED;
+      color: var(--green-deep);
+      border-right-color: var(--green);
+      font-weight: 600;
+    }
+
+    .toc .toc-h1 a { font-weight: 600; color: var(--text); font-size: 0.9rem; }
+    .toc .toc-h2 a { padding-right: 1.2rem; }
+    .toc .toc-h3 a { padding-right: 2rem; font-size: 0.8rem; color: var(--text-muted); }
+
+    .content { flex: 1; padding: 2.5rem 3rem 4rem; min-width: 0; }
+
+    h1 {
+      font-size: 2rem; font-weight: 700; color: var(--green-deep);
+      margin: 2.5rem 0 1rem; padding: 1.25rem 1.5rem;
+      background: var(--surface); border-radius: var(--radius);
+      box-shadow: var(--shadow); border-right: 5px solid var(--green);
+      scroll-margin-top: 90px;
+    }
+
+    h1:first-of-type { margin-top: 0; }
+
+    h2 {
+      font-size: 1.45rem; font-weight: 600; color: var(--green-dark);
+      margin: 2rem 0 0.75rem; scroll-margin-top: 90px;
+    }
+
+    h3 {
+      font-size: 1.15rem; font-weight: 600; color: var(--text);
+      margin: 1.5rem 0 0.5rem; scroll-margin-top: 90px;
+    }
+
+    p { margin: 0.75rem 0; }
+    strong { font-weight: 600; }
+
+    hr { border: none; border-top: 2px solid var(--border); margin: 2rem 0; }
+
+    ul, ol { margin: 0.75rem 0 0.75rem 1.5rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .table-wrap {
+      overflow-x: auto; margin: 1.25rem 0;
+      border-radius: var(--radius); box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; background: var(--surface); }
+
+    thead tr { background: linear-gradient(135deg, var(--green-deep), var(--green-dark)); color: #fff; }
+    th { padding: 0.75rem 1rem; text-align: right; font-weight: 600; white-space: nowrap; }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-secondary); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #F0FAF0; }
+    tbody tr:nth-child(even) td { background: #FAFBFA; }
+
+    code {
+      font-family: 'Cascadia Code', Consolas, monospace;
+      font-size: 0.85em; background: #EDF2F7; color: var(--green-deep);
+      padding: 0.15em 0.45em; border-radius: 5px; direction: ltr; display: inline-block;
+    }
+
+    pre {
+      background: #1A202C; color: #E2E8F0;
+      padding: 1.25rem 1.5rem; border-radius: var(--radius);
+      overflow-x: auto; margin: 1.25rem 0; box-shadow: var(--shadow);
+      direction: ltr; text-align: left; font-size: 0.85rem; line-height: 1.6;
+    }
+
+    pre code { background: none; color: inherit; padding: 0; }
+
+    blockquote {
+      background: linear-gradient(to left, #FFF8F0, #FFFAF5);
+      border-right: 4px solid var(--warning);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 1rem 1.25rem; margin: 1.25rem 0; color: var(--text-secondary);
+    }
+
+    blockquote p { margin: 0; }
+
+    .status-ok { color: var(--green-deep); font-weight: 600; }
+    .status-warn { color: var(--warning); font-weight: 600; }
+    .status-no { color: var(--danger); font-weight: 600; }
+
+    .arch-diagram {
+      background: #1A202C; color: #E2E8F0;
+      padding: 1.25rem 1.5rem; border-radius: var(--radius);
+      overflow-x: auto; margin: 1.25rem 0; box-shadow: var(--shadow);
+      direction: ltr; text-align: left; font-size: 0.78rem; line-height: 1.5;
+      font-family: 'Cascadia Code', Consolas, monospace;
+      white-space: pre;
+    }
+
+    .site-footer {
+      text-align: center; padding: 2rem; color: var(--text-muted);
+      font-size: 0.85rem; border-top: 1px solid var(--border); background: var(--surface);
+    }
+
+    @media print {
+      .sidebar, .site-header { display: none; }
+      .content { padding: 1rem; }
+      .layout { display: block; }
+      h1 { page-break-after: avoid; }
+      h2, h3 { page-break-after: avoid; }
+      .table-wrap, pre, blockquote { page-break-inside: avoid; }
+    }
+
+    @media (max-width: 900px) {
+      .layout { flex-direction: column; }
+      .sidebar { position: static; width: 100%; height: auto; border-left: none; border-bottom: 1px solid var(--border); }
+      .content { padding: 1.5rem 1.25rem 3rem; }
+    }
+
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--green); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="brand">
+      <div class="brand-icon">🍁</div>
+      <div>
+        <h1>מיפל — גן אירועים בעיר</h1>
+        <p>מסמך אפיון טכני · Maple Garden Events</p>
+      </div>
+    </div>
+    <div class="meta-badges">
+      <span class="badge">גרסה 1.0</span>
+      <span class="badge">8 ביולי 2026</span>
+      <span class="badge">מבוסס קוד מקור</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar" id="sidebar">
+      <h2>תוכן עניינים</h2>
+      <ul class="toc" id="toc"></ul>
+    </nav>
+    <main class="content" id="content">
+
+      <h1>מסמך אפיון טכני — מיפל (Maple Garden Events)</h1>
+
+      <p><strong>פרויקט:</strong> מערכת ניהול אולם אירועים כשר</p>
+      <p><strong>גרסת מסמך:</strong> 1.0</p>
+      <p><strong>תאריך:</strong> 8 ביולי 2026</p>
+      <p><strong>מבוסס על:</strong> קוד המקור בפרויקט <code>Maple-Garden-Events</code></p>
+
+      <hr>
+
+      <h1 id="summary">תקציר מנהלים</h1>
+
+      <p>מיפל היא מערכת <strong>Full-Stack</strong> לניהול אולם אירועים: לוח שנה דו-תאריכי, אופציות והזמנות, הפקה, קבלה LIVE, תשלומים, חוזים, משוב לקוחות ותקשורת אוטומטית. הארכיטקטורה בנויה כ-<strong>Monorepo</strong> עם שני רכיבים עיקריים — אפליקציית אדמין ב-React ושרת API ב-Node.js — המתקשרים ב-<strong>REST</strong> וב-<strong>WebSockets</strong> מול בסיס נתונים <strong>PostgreSQL</strong>.</p>
+
+      <p>המערכת מיועדת לצוות פנימי קטן (מנהלים, מזכירות, הפקה, קבלה) ולדף משוב ציבורי חד-פעמי ללקוחות. היעד התפעולי הוא <strong>אמינות, מניעת כפילויות, וסנכרון בזמן אמת</strong> — לא עומס של אלפי משתמשים ציבוריים.</p>
+
+      <hr>
+
+      <h1 id="stack">1. חומרי גלם טכנולוגיים (Technology Stack)</h1>
+
+      <h2 id="structure">1.1 מבנה הפרויקט</h2>
+
+      <pre><code>Maple-Garden-Events/
+├── client/          # Frontend — React SPA
+├── server/          # Backend — Express API
+├── tests/e2e/       # בדיקות Playwright
+├── PRD.md           # מסמך אפיון עסקי (נפרד)
+└── package.json     # סקריפטים ראשיים (dev, e2e)</code></pre>
+
+      <h2 id="frontend">1.2 שכבת Frontend (Client)</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>רכיב</th><th>טכנולוגיה</th><th>גרסה</th><th>תפקיד</th></tr></thead>
+          <tbody>
+            <tr><td>Framework</td><td>React</td><td>19.x</td><td>ממשק אדמין RTL בעברית</td></tr>
+            <tr><td>שפה</td><td>TypeScript</td><td>6.x</td><td>Type-safety מלא</td></tr>
+            <tr><td>Build Tool</td><td>Vite</td><td>8.x</td><td>פיתוח מהיר + Bundle לפרודקשן</td></tr>
+            <tr><td>Routing</td><td>React Router</td><td>7.x</td><td>ניווט בין מודולים</td></tr>
+            <tr><td>State / Cache</td><td>TanStack Query</td><td>5.x</td><td>שליפת נתונים, cache, invalidation</td></tr>
+            <tr><td>State מקומי</td><td>Zustand</td><td>5.x</td><td>מצב UI נקודתי</td></tr>
+            <tr><td>HTTP Client</td><td>Fetch + Axios</td><td>—</td><td>קריאות API מאובטחות</td></tr>
+            <tr><td>Real-time</td><td>Socket.io Client</td><td>4.8</td><td>סנכרון לוח שנה, הזמנות, LIVE</td></tr>
+            <tr><td>Auth</td><td>@react-oauth/google</td><td>0.13</td><td>התחברות Google בצד לקוח</td></tr>
+            <tr><td>Charts</td><td>Recharts</td><td>3.x</td><td>סטטיסטיקות משוב</td></tr>
+            <tr><td>OCR (צ'קים)</td><td>Tesseract.js</td><td>7.x</td><td>זיהוי טקסט מצילום צ'ק</td></tr>
+            <tr><td>חתימה דיגיטלית</td><td>react-signature-canvas</td><td>—</td><td>חתימת לקוח בחוזה/LIVE</td></tr>
+            <tr><td>ניטור</td><td>@sentry/react</td><td>10.x</td><td>דיווח שגיאות בצד לקוח</td></tr>
+            <tr><td>UI</td><td>CSS Modules + רכיבי UI פנימיים</td><td>—</td><td>Design System עצמאי</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>מודולים כבדים (הזמנות, הפקה, הגדרות) נטענים ב-<code>React.lazy</code> לשיפור זמן טעינה ראשוני.</p>
+
+      <h2 id="backend">1.3 שכבת Backend (Server)</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>רכיב</th><th>טכנולוגיה</th><th>גרסה</th><th>תפקיד</th></tr></thead>
+          <tbody>
+            <tr><td>Runtime</td><td>Node.js</td><td>—</td><td>שרת אפליקציה</td></tr>
+            <tr><td>Framework</td><td>Express</td><td>5.x</td><td>REST API</td></tr>
+            <tr><td>שפה</td><td>TypeScript</td><td>6.x</td><td>לוגיקה עסקית מוקלדת</td></tr>
+            <tr><td>ORM</td><td>Prisma</td><td>6.x</td><td>גישה ל-PostgreSQL + מיגרציות</td></tr>
+            <tr><td>DB</td><td>PostgreSQL</td><td>—</td><td>אחסון נתונים (יעד: AWS RDS)</td></tr>
+            <tr><td>Auth</td><td>Google OAuth + JWT</td><td>—</td><td>אימות משתמשים מורשים</td></tr>
+            <tr><td>Validation</td><td>Zod</td><td>4.x</td><td>ולידציית קלט ב-API</td></tr>
+            <tr><td>Real-time</td><td>Socket.io</td><td>4.8</td><td>Broadcast לכל הלקוחות המחוברים</td></tr>
+            <tr><td>PDF</td><td>Puppeteer</td><td>25.x</td><td>הפקת חוזים וטפסי הפקה</td></tr>
+            <tr><td>Email</td><td>Nodemailer</td><td>8.x</td><td>תזכורות, משוב, התראות</td></tr>
+            <tr><td>WhatsApp</td><td>Green API (REST)</td><td>—</td><td>הודעות ללקוחות ומנהל</td></tr>
+            <tr><td>חשבוניות</td><td>EasyCount API</td><td>—</td><td>הפקת קבלות/חשבוניות</td></tr>
+            <tr><td>לוח עברי</td><td>hebcal / @hebcal/core</td><td>—</td><td>תאריכים עבריים, חגים, צומות</td></tr>
+            <tr><td>Scheduling</td><td>node-cron</td><td>4.x</td><td>תזכורות, גיבוי, משוב, ברכות</td></tr>
+            <tr><td>Logging</td><td>Winston + Daily Rotate</td><td>3.x</td><td>לוגים מובנים + רוטציה יומית</td></tr>
+            <tr><td>Security</td><td>Helmet, CSRF, Rate Limit</td><td>—</td><td>הגנות HTTP</td></tr>
+            <tr><td>ניטור</td><td>Sentry (Node)</td><td>10.x</td><td>שגיאות + traces</td></tr>
+            <tr><td>Storage</td><td>AWS SDK S3</td><td>3.x</td><td>גיבויי DB (מיושם); קבצים — בתכנון</td></tr>
+            <tr><td>Uploads</td><td>Multer (memory)</td><td>2.x</td><td>קבצים מצורפים (ברכות וכו')</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="infra">1.4 תשתית ופריסה (יעד)</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>רכיב</th><th>שירות מיועד</th></tr></thead>
+          <tbody>
+            <tr><td>אפליקציה</td><td>AWS ECS / App Runner</td></tr>
+            <tr><td>בסיס נתונים</td><td>AWS RDS PostgreSQL (Managed)</td></tr>
+            <tr><td>קבצים סטטיים (Frontend)</td><td>S3 + CDN</td></tr>
+            <tr><td>גיבויים</td><td>S3 (SSE) — מיושם ב-<code>databaseBackup.ts</code></td></tr>
+            <tr><td>ניטור</td><td>Sentry</td></tr>
+            <tr><td>בדיקות</td><td>Playwright E2E</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="data-model">1.5 מודל נתונים מרכזי (PostgreSQL / Prisma)</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ישות</th><th>תפקיד</th></tr></thead>
+          <tbody>
+            <tr><td><code>Booking</code></td><td>אופציה / הזמנה — ישות מרכזית</td></tr>
+            <tr><td><code>EventDate</code></td><td>תאריך בלוח שנה + סטטוס</td></tr>
+            <tr><td><code>EventForm</code></td><td>טופס הפקה + תפריט + שולחנות</td></tr>
+            <tr><td><code>EventCheckIn</code></td><td>קבלה LIVE</td></tr>
+            <tr><td><code>Feedback</code></td><td>משוב לקוח (Token ייחודי)</td></tr>
+            <tr><td><code>SystemSettings</code></td><td>הגדרות תמחור (Singleton)</td></tr>
+            <tr><td><code>AuthorizedUser</code></td><td>רשימת אימיילים מורשים</td></tr>
+            <tr><td><code>MenuCategory</code> / <code>Dish</code></td><td>תפריט</td></tr>
+            <tr><td><code>ScheduledGreeting</code></td><td>ברכות מתוזמנות</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>אילוצי ייחודיות קריטיים</h3>
+      <ul>
+        <li><code>Booking</code>: <code>@@unique([calendarDateId, timeSlot])</code> — מניעת double-booking</li>
+        <li><code>Booking.eventCode</code>: <code>@unique</code></li>
+        <li><code>Feedback</code>: <code>@@unique([bookingId, clientSide])</code></li>
+        <li><code>EventDate.date</code>: <code>@unique</code></li>
+      </ul>
+
+      <hr>
+
+      <h1 id="architecture">2. קשרי גומלין ואינטגרציה (Architecture &amp; Data Flow)</h1>
+
+      <h2 id="arch-diagram">2.1 תרשים ארכיטקטורה כללי</h2>
+
+      <div class="arch-diagram">┌─────────────────────────────────────────────────────────┐
+│              Client (React + Vite — CDN / S3)              │
+│  Router │ TanStack Query │ Socket.io │ LocalStorage       │
+└────────────────────────┬────────────────────────────────┘
+                         │ HTTPS / WSS
+┌────────────────────────▼────────────────────────────────┐
+│           AWS ECS / App Runner (Node.js + Express)       │
+│  Routes → Controllers → Services → Prisma ORM          │
+│  Middlewares: Auth, CSRF, RateLimit, Helmet             │
+│  Cron Jobs │ Socket.io │ Puppeteer (PDF) │ Presigned URL │
+└─────┬──────────┬──────────┬──────────┬──────────────────┘
+      │          │          │          │
+  AWS RDS     AWS S3     EasyCount   WhatsApp API
+ (PostgreSQL)  (SSE)        API     (Green API)
+                              │
+                          Nodemailer</div>
+
+      <h2 id="rest-api">2.2 זרימת תקשורת Client ↔ Server</h2>
+
+      <h3>REST API</h3>
+      <ul>
+        <li>כל הקריאות עוברות דרך <code>secureFetch</code> עם <code>credentials: 'include'</code></li>
+        <li>בסיס הנתיב: <code>/api</code> (או <code>http://localhost:5000/api</code> בפיתוח)</li>
+        <li>פורמט: JSON</li>
+        <li>בפרודקשן: השרת יכול לשרת גם את <code>client/dist</code> (SPA) כאשר <code>SERVE_CLIENT=true</code></li>
+      </ul>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>קבוצה</th><th>נתיב</th><th>תיאור</th></tr></thead>
+          <tbody>
+            <tr><td>Auth</td><td><code>/api/auth</code></td><td>login, refresh, logout, me, authorized-users</td></tr>
+            <tr><td>Calendar</td><td><code>/api/calendar</code></td><td>תאריכים, חסימות, לוח עברי</td></tr>
+            <tr><td>Bookings</td><td><code>/api/bookings</code></td><td>CRUD, אופציות, תוספות LIVE, PDF חוזה</td></tr>
+            <tr><td>Options</td><td><code>/api/options</code></td><td>ניהול אופציות</td></tr>
+            <tr><td>Event Forms</td><td><code>/api/event-forms</code></td><td>הפקה, שולחנות</td></tr>
+            <tr><td>Settings</td><td><code>/api/settings</code></td><td>תמחור, שירותים, צוות</td></tr>
+            <tr><td>Feedback</td><td><code>/api/feedback</code></td><td>ניהול + שליחה ציבורית</td></tr>
+            <tr><td>Check-In</td><td><code>/api/check-in</code></td><td>קבלה LIVE</td></tr>
+            <tr><td>Menu</td><td><code>/api/menu</code></td><td>קטגוריות ומנות</td></tr>
+            <tr><td>Kashrut</td><td><code>/api/kashrut</code></td><td>תעודות כשרות</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>WebSockets (Socket.io)</h3>
+      <ul>
+        <li>חיבור מאומת באמצעות JWT מ-cookie (<code>socketAuthMiddleware</code>)</li>
+        <li>שינוי בשרת מפעיל <code>queryClient.invalidateQueries</code> בכל הלקוחות — ללא רענון דף</li>
+      </ul>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>אירוע</th><th>מקור</th><th>פעולה ב-Client</th></tr></thead>
+          <tbody>
+            <tr><td><code>date-updated</code></td><td>שינוי בלוח שנה</td><td>Invalidate calendar, bookings</td></tr>
+            <tr><td><code>booking-updated</code></td><td>שינוי הזמנה</td><td>Invalidate bookings, calendar</td></tr>
+            <tr><td><code>settings-updated</code></td><td>הגדרות</td><td>Invalidate settings, kashrut</td></tr>
+            <tr><td><code>event-forms-updated</code></td><td>הפקה</td><td>Invalidate event-forms</td></tr>
+            <tr><td><code>check-in-updated</code></td><td>LIVE</td><td>Invalidate check-in</td></tr>
+            <tr><td><code>feedback-updated</code></td><td>משוב</td><td>Invalidate feedback-admin, feedback-stats</td></tr>
+            <tr><td><code>menuUpdated</code></td><td>תפריט</td><td>Invalidate menu</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="security">2.3 אבטחת מידע</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מנגנון</th><th>יישום</th></tr></thead>
+          <tbody>
+            <tr><td>אימות</td><td>Google OAuth → בדיקה מול <code>AuthorizedUser</code> → JWT</td></tr>
+            <tr><td>Session</td><td>Access Token (1 שעה) + Refresh Token (7 ימים) ב-HttpOnly cookies</td></tr>
+            <tr><td>CSRF</td><td>Cookie <code>maple_csrf</code> + Header <code>X-CSRF-Token</code> לכל פעולות כתיבה</td></tr>
+            <tr><td>Authorization</td><td><code>requireAuth</code> middleware על רוב ה-routes</td></tr>
+            <tr><td>Rate Limiting</td><td>500 בקשות/15 דק' (API), 150 כתיבות, 20 login, 60 refresh</td></tr>
+            <tr><td>HTTP Headers</td><td>Helmet</td></tr>
+            <tr><td>CORS</td><td>רשימה לבנה: localhost:5173 + CLIENT_URL</td></tr>
+            <tr><td>ולידציה</td><td>Zod schemas לכל endpoint רגיש</td></tr>
+            <tr><td>Socket Auth</td><td>JWT חובה לפני חיבור WebSocket</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="integrations">2.4 אינטגרציות חיצוניות</h2>
+
+      <h3>Google OAuth</h3>
+      <ol>
+        <li>המשתמש מתחבר ב-Google בצד הלקוח</li>
+        <li>ID Token נשלח ל-<code>POST /api/auth/login</code></li>
+        <li>השרת מאמת מול Google, בודק <code>AuthorizedUser</code>, מנפיק cookies</li>
+      </ol>
+
+      <h3>EasyCount (חשבוניות)</h3>
+      <ul>
+        <li>מצבי הפעלה: <code>off</code> | <code>simulation</code> | <code>sandbox</code> | <code>live</code></li>
+        <li>ברירת מחדל: <code>simulation</code> (ללא credentials)</li>
+        <li>סטטוס נשמר ב-<code>Booking.easycountStatus</code></li>
+        <li>Fallback: המשך תפעול גם בכשל API</li>
+      </ul>
+
+      <h3>WhatsApp (Green API)</h3>
+      <ul>
+        <li>שליחת תזכורות (צ'ק ביטחון, טופס הפקה, תפריט)</li>
+        <li>בדיקת <code>existsWhatsapp</code> לפני שליחה</li>
+        <li>Fallback לאימייל במקרה כשל</li>
+      </ul>
+
+      <h3>אימייל (Nodemailer)</h3>
+      <ul>
+        <li>תזכורות תפעוליות וכספיות</li>
+        <li>משוב אוטומטי לאחר אירוע</li>
+        <li>התראות מנהל (כשרות, חובות)</li>
+      </ul>
+
+      <h3>Puppeteer (PDF)</h3>
+      <p>הפקת חוזים חתומים וטפסי הפקה להורדה.</p>
+
+      <h3>Tesseract (OCR)</h3>
+      <p>זיהוי פרטי צ'ק ביטחון מצילום (צד לקוח).</p>
+
+      <h3>AWS S3</h3>
+      <ul>
+        <li><strong>מיושם:</strong> גיבוי DB דחוס (<code>pg_dump</code> → <code>.tar.gz</code> → S3)</li>
+        <li><strong>בתכנון:</strong> העלאת חתימות, צ'קים, גלריה — Presigned URLs + SSE</li>
+      </ul>
+
+      <h2 id="cron">2.5 תהליכי רקע (Cron Jobs)</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>תזמון</th><th>משימה</th></tr></thead>
+          <tbody>
+            <tr><td>09:00 יומי</td><td>תזכורות צ'ק ביטחון, טופס הפקה, חובות</td></tr>
+            <tr><td>08:00 יומי</td><td>התראת תוקף תעודות כשרות</td></tr>
+            <tr><td>כל 10 דקות</td><td>יצירת משוב + שליחת קישור לאחר אירוע</td></tr>
+            <tr><td>כל דקה</td><td>ברכות מתוזמנות</td></tr>
+            <tr><td>03:00 יומי (אופציונלי)</td><td>גיבוי DB ל-S3 (<code>BACKUP_ENABLED=true</code>)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="booking-flow">2.6 זרימת נתונים לדוגמה — שמירת הזמנה</h2>
+
+      <pre><code>1. משתמש בוחר תאריך בלוח שנה (Client)
+2. POST /api/bookings עם פרטי לקוח ומשבצת
+3. Server:
+   a. ולידציה (Zod)
+   b. בדיקת זמינות משבצת (bookingDateValidation)
+   c. יצירת Booking + EventDate (Transaction)
+   d. אילוץ DB @@unique מונע race condition
+4. emitBookingUpdated() → Socket.io
+5. כל הלקוחות: invalidateQueries → לוח שנה מתעדכן</code></pre>
+
+      <h2 id="gaps">2.7 מצב יישום מול תכנון</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>יכולת</th><th>סטטוס בקוד</th></tr></thead>
+          <tbody>
+            <tr><td>RBAC — 4 תפקידים</td><td><span class="status-warn">מתוכנן</span> — כרגע כל משתמש מורשה מקבל <code>role: 'manager'</code> ב-JWT</td></tr>
+            <tr><td>Fallback Offline (LIVE)</td><td><span class="status-warn">מתוכנן</span> — טרם מיושם בקוד הלקוח</td></tr>
+            <tr><td>S3 Presigned URLs לקבצים</td><td><span class="status-warn">מתוכנן</span> — כרגע העלאות מקומיות / memory</td></tr>
+            <tr><td>Twilio WhatsApp</td><td><span class="status-warn">מתוכנן</span> — מיושם Green API</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <hr>
+
+      <h1 id="performance">3. מטרות על ויכולות ביצועים (Scale &amp; Performance)</h1>
+
+      <h2 id="goals">3.1 יעד סופי של המערכת</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ממד</th><th>יעד</th></tr></thead>
+          <tbody>
+            <tr><td>משתמשים פנימיים</td><td>5–15 משתמשים במקביל (צוות אולם)</td></tr>
+            <tr><td>לקוחות קצה</td><td>דף משוב ציבורי — עומס נמוך, חד-פעמי</td></tr>
+            <tr><td>אירועים פעילים</td><td>מאות הזמנות בשנה (2026–2027+)</td></tr>
+            <tr><td>זמינות</td><td>99.5%+ (שעות עסקיות + ימי אירוע)</td></tr>
+            <tr><td>אמינות קריטית</td><td>0 double-booking, 0 אובדן חתימות/תשלומים</td></tr>
+            <tr><td>זמן תגובה</td><td>&lt; 2 שניות לרוב פעולות UI</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <blockquote>
+        <p><strong>הערת הקשר:</strong> דרישה של 1,000 משתמשים בו-זמנית רלוונטית בעיקר לפלטפורמות ציבוריות. מיפל היא מערכת B2B פנימית — פרופיל העומס האמיתי הוא עשרות בקשות בדקה בשיא (יום אירוע LIVE), לא אלפי חיבורים. הארכיטקטורה הנוכחית מתאימה לפרופיל זה.</p>
+      </blockquote>
+
+      <h2 id="perf-existing">3.2 יכולות ביצועים קיימות בקוד</h2>
+
+      <h3>בסיס נתונים</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מנגנון</th><th>תיאור</th></tr></thead>
+          <tbody>
+            <tr><td>אילוצי ייחודיות</td><td><code>calendarDateId + timeSlot</code> — מניעת כפילות ברמת DB</td></tr>
+            <tr><td>בדיקת שרת</td><td><code>validateSlotAvailability</code> לפני INSERT</td></tr>
+            <tr><td>טיפול ב-race</td><td><code>bookingSlotGuard</code> — זיהוי P2002 והחזרת 409</td></tr>
+            <tr><td>Retry</td><td><code>withDbRetry</code> — עד 5 ניסיונות על שגיאות חיבור</td></tr>
+            <tr><td>Pagination</td><td>רשימות מוגבלות ל-50 (מקסימום 100)</td></tr>
+            <tr><td>Transaction options</td><td>maxWait: 15s, timeout: 30s</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>שכבת אפליקציה</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מנגנון</th><th>תיאור</th></tr></thead>
+          <tbody>
+            <tr><td>TanStack Query</td><td>staleTime: 60s, refetchOnWindowFocus: false</td></tr>
+            <tr><td>Lazy Loading</td><td>Code-splitting למודולים כבדים</td></tr>
+            <tr><td>Rate Limiting</td><td>הגנה מפני abuse ו-DDoS בסיסי</td></tr>
+            <tr><td>Socket.io Broadcast</td><td>עדכון מיידי ללא polling</td></tr>
+            <tr><td>Request Logger</td><td>מדידת durationMs לכל בקשה</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>לוגינג וניטור</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>כלי</th><th>יישום</th></tr></thead>
+          <tbody>
+            <tr><td>Winston</td><td>לוגים JSON, רוטציה יומית (14 יום info, 30 יום error)</td></tr>
+            <tr><td>Request Logger</td><td>method, url, status, duration, IP</td></tr>
+            <tr><td>Sentry</td><td>שגיאות 500+, exceptions, traces (10% sample)</td></tr>
+            <tr><td>Error Handler</td><td>לכידה מרכזית + דיווח Sentry</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>יציבות וגיבוי</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מנגנון</th><th>תיאור</th></tr></thead>
+          <tbody>
+            <tr><td>גיבוי DB</td><td>pg_dump → דחיסה → S3, retention 30 יום</td></tr>
+            <tr><td>EasyCount Fallback</td><td>מצב simulation + סטטוס FAILED</td></tr>
+            <tr><td>WhatsApp Fallback</td><td>retry + אימייל חלופי</td></tr>
+            <tr><td>E2E Tests</td><td>Playwright — שלד Golden Path (בהשלמה)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="load-scenarios">3.3 הערכת עומס לפי תרחישים</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>תרחיש</th><th>עומס משוער</th><th>התאמה</th></tr></thead>
+          <tbody>
+            <tr><td>יום עבודה רגיל (3–5 משתמשים)</td><td>1–5 req/sec</td><td><span class="status-ok">✅ מעל ומעבר</span></td></tr>
+            <tr><td>סגירת הזמנה (פיק)</td><td>10–20 req/min</td><td><span class="status-ok">✅</span></td></tr>
+            <tr><td>יום אירוע LIVE (2–4 מכשירים)</td><td>עדכוני check-in + sockets</td><td><span class="status-ok">✅</span></td></tr>
+            <tr><td>שליחת ברכה המונית</td><td>100–500 אימיילים</td><td><span class="status-warn">⚠️ תלוי SMTP rate limits</span></td></tr>
+            <tr><td>1,000 משתמשים בו-זמנית</td><td>~100–500 req/sec</td><td><span class="status-no">❌ דורש הרחבה</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="scaling">3.4 מסלול הרחבה לעומסים גבוהים</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>שכבה</th><th>פעולה מומלצת</th></tr></thead>
+          <tbody>
+            <tr><td>Compute</td><td>Horizontal scaling — מספר instances ב-ECS + Load Balancer</td></tr>
+            <tr><td>WebSockets</td><td>Redis Adapter ל-Socket.io (סנכרון בין instances)</td></tr>
+            <tr><td>Cache</td><td>Redis ל-session, הגדרות, לוח שנה חודשי</td></tr>
+            <tr><td>DB</td><td>Read Replicas, אינדקסים ממוקדים</td></tr>
+            <tr><td>CDN</td><td>CloudFront ל-assets סטטיים</td></tr>
+            <tr><td>Queue</td><td>SQS / BullMQ לברכות, משוב, EasyCount (async)</td></tr>
+            <tr><td>Load Testing</td><td>k6 / Artillery — לפני go-live מורחב</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 id="kpis">3.5 KPIs טכניים מומלצים לניטור</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>מדד</th><th>סף התראה</th></tr></thead>
+          <tbody>
+            <tr><td>Response Time P95</td><td>&gt; 3 שניות</td></tr>
+            <tr><td>Error Rate (5xx)</td><td>&gt; 1%</td></tr>
+            <tr><td>DB Connection Pool</td><td>&gt; 80% utilization</td></tr>
+            <tr><td>Socket Connections</td><td>&gt; 50 בו-זמנית (חריג לאולם)</td></tr>
+            <tr><td>Cron Job Failures</td><td>כל כשל → Sentry alert</td></tr>
+            <tr><td>Backup Success</td><td>כשל יומי → התראה</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <hr>
+
+      <h1 id="conclusion">4. סיכום והמלצות לצוות</h1>
+
+      <h2 id="strengths">נקודות חוזק</h2>
+      <ol>
+        <li>הפרדה ברורה בין Client / Server / DB עם API מובנה</li>
+        <li>מניעת double-booking בשלוש שכבות: ולידציה, אילוץ DB, טיפול ב-conflict</li>
+        <li>סנכרון בזמן אמת לצוות מרובה משתמשים</li>
+        <li>אבטחה מרובת שכבות: OAuth, JWT, CSRF, Rate Limit, Helmet</li>
+        <li>תפעול אוטומטי: Cron jobs, גיבויים, התראות</li>
+        <li>ניטור: Winston + Sentry + request duration logging</li>
+      </ol>
+
+      <h2 id="golive">פערים להשלמה לפני Go-Live</h2>
+      <ol>
+        <li><strong>RBAC מלא</strong> — הוספת <code>role</code> ל-<code>AuthorizedUser</code> + middleware <code>requireRole</code></li>
+        <li><strong>Fallback Offline</strong> במסך LIVE — localStorage + sync</li>
+        <li><strong>S3 לקבצים</strong> — חתימות, צ'קים, גלריה (Presigned URLs)</li>
+        <li><strong>השלמת בדיקות E2E</strong> — Playwright Golden Path עם auth mock</li>
+        <li><strong>Load test</strong> — אימות עומס יום אירוע (10–20 משתמשים מקבילים)</li>
+      </ol>
+
+      <hr>
+
+      <p><em>מסמך זה הופק על בסיס ניתוח קוד המקור בפרויקט Maple-Garden-Events. מסמך עסקי נפרד: PRD.md / PRD.html.</em></p>
+
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    מיפל — גן אירועים בעיר · מסמך אפיון טכני v1.0 · 8 ביולי 2026
+  </footer>
+
+  <script>
+    (function () {
+      const content = document.getElementById('content');
+      const toc = document.getElementById('toc');
+      const headings = content.querySelectorAll('h1[id], h2[id], h3[id]');
+      headings.forEach((h) => {
+        const li = document.createElement('li');
+        li.className = 'toc-' + h.tagName.toLowerCase();
+        const a = document.createElement('a');
+        a.href = '#' + h.id;
+        a.textContent = h.textContent;
+        li.appendChild(a);
+        toc.appendChild(li);
+      });
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            document.querySelectorAll('.toc a').forEach((a) => a.classList.remove('active'));
+            const link = document.querySelector('.toc a[href="#' + e.target.id + '"]');
+            if (link) link.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-80px 0px -70% 0px' });
+      headings.forEach((h) => observer.observe(h));
+    })();
+  </script>
+</body>
+</html>

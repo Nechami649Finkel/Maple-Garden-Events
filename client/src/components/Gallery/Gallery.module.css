@@ -1,8 +1,8 @@
 .modelBadge {
   display: inline-block;
-  background: var(--maple-green-light);
-  color: var(--maple-green-dark);
-  border: 1px solid var(--maple-green-muted);
+  background: var(--brand-green-light);
+  color: var(--brand-green-dark);
+  border: 1px solid var(--brand-green-muted);
   padding: 4px 12px;
   border-radius: 20px;
   font-size: 0.85rem;
@@ -14,7 +14,7 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
-  font-family: var(--maple-font);
+  font-family: var(--brand-font);
 }
 
 .header {
@@ -24,12 +24,12 @@
 
 .title {
   font-size: 2.5rem;
-  color: var(--maple-text);
+  color: var(--brand-text);
   margin-bottom: 10px;
 }
 
 .subtitle {
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   font-size: 1.1rem;
 }
 
@@ -42,9 +42,9 @@
 }
 
 .tabBtn {
-  background: var(--maple-surface);
-  border: 1px solid var(--maple-border-strong);
-  color: var(--maple-text-secondary);
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-border-strong);
+  color: var(--brand-text-secondary);
   padding: 10px 24px;
   border-radius: 30px;
   font-size: 1rem;
@@ -54,14 +54,14 @@
 }
 
 .tabBtn:hover {
-  background: var(--maple-green-light);
-  color: var(--maple-green-dark);
+  background: var(--brand-green-light);
+  color: var(--brand-green-dark);
 }
 
 .tabBtnActive {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: white;
-  border-color: var(--maple-green);
+  border-color: var(--brand-green);
 }
 
 .grid {
@@ -71,17 +71,17 @@
 }
 
 .card {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: var(--maple-shadow-sm);
-  border: 1px solid var(--maple-border);
+  box-shadow: var(--brand-shadow-sm);
+  border: 1px solid var(--brand-border);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-5px);
-  box-shadow: var(--maple-shadow);
+  box-shadow: var(--brand-shadow);
 }
 
 .imagePlaceholder {
@@ -109,12 +109,12 @@
 .itemName {
   font-size: 1.25rem;
   font-weight: bold;
-  color: var(--maple-text);
+  color: var(--brand-text);
   margin: 0 0 10px 0;
 }
 
 .itemDesc {
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
   font-size: 0.95rem;
   margin: 0;
   line-height: 1.5;

@@ -1,16 +1,24 @@
-import React, { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import floorPlanImg from '../../assets/floor-plan.png';
 import {
   DEFAULT_TABLE_LAYOUT,
   DEFAULT_TABLE_SIZE,
   SECTION_BOUNDS,
+  buildLayoutForGuestCount,
   clampToSection,
   createTableInSection,
   getNextTableId,
 } from '../../constants/defaultTableLayout';
 import type { TableData, TableSection } from '../../constants/defaultTableLayout';
-import { exportFloorPlanAsImage } from '../../utils/exportFloorPlan';
+import { exportFloorPlanAsImage, renderFloorPlanToDataUrl } from '../../utils/exportFloorPlan';
+import { getAuthUser } from '../../services/api';
+import {
+  clearFloorPlanDraft,
+  loadFloorPlanDraft,
+  saveFloorPlanDraft,
+} from '../../utils/floorPlanDraft';
 import './FloorPlanBuilder.css';
+import { useTranslation } from '../../i18n/useTranslation';
 
 export type { TableData };
 
@@ -18,11 +26,46 @@ function clampPct(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-function resolveInitialTables(initialTables?: TableData[]): TableData[] {
+interface LayoutConfig {
+  guestCount: number;
+  seatingType?: string;
+  menPercent?: number;
+  womenPercent?: number;
+  includeHonorTables?: boolean;
+}
+
+function resolveInitialTables(
+  initialTables: TableData[] | undefined,
+  layoutConfig: LayoutConfig,
+): TableData[] {
   if (initialTables && initialTables.length > 0) {
     return initialTables.map(clampToSection);
   }
+  if (layoutConfig.guestCount > 0) {
+    return buildLayoutForGuestCount({
+      guestCount: layoutConfig.guestCount,
+      seatingType: layoutConfig.seatingType,
+      menPercent: layoutConfig.menPercent,
+      womenPercent: layoutConfig.womenPercent,
+      includeHonorTables: layoutConfig.includeHonorTables,
+    });
+  }
   return DEFAULT_TABLE_LAYOUT.map(t => ({ ...t }));
+}
+
+function resolveInitialTablesWithDraft(
+  initialTables: TableData[] | undefined,
+  layoutConfig: LayoutConfig,
+  draftEventId: string | undefined,
+  userEmail: string,
+): TableData[] {
+  if (draftEventId && userEmail) {
+    const draft = loadFloorPlanDraft(draftEventId, userEmail);
+    if (draft && draft.length > 0) {
+      return draft.map(clampToSection);
+    }
+  }
+  return resolveInitialTables(initialTables, layoutConfig);
 }
 
 interface TableItemProps {
@@ -117,17 +160,50 @@ const TableItem: React.FC<TableItemProps> = ({
 
 interface Props {
   initialTables?: TableData[];
-  onSave: (tables: TableData[]) => void;
+  guestCount?: number;
+  seatingType?: string;
+  menPercent?: number;
+  womenPercent?: number;
+  includeHonorTables?: boolean;
+  onSave: (tables: TableData[], imageDataUrl: string) => void;
   onClose?: () => void;
   downloadFileName?: string;
+  draftEventId?: string;
 }
 
-export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClose, downloadFileName }) => {
-  const [tables, setTables] = useState<TableData[]>(() => resolveInitialTables(initialTables));
+interface EditorProps extends Props {
+  userEmail: string;
+  initialTablesSeed: TableData[];
+}
+
+const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
+  initialTablesSeed,
+  userEmail,
+  draftEventId,
+  guestCount = 0,
+  seatingType = 'separate',
+  menPercent,
+  womenPercent,
+  includeHonorTables = true,
+  onSave,
+  onClose,
+  downloadFileName,
+}) => {
+  const { t, T } = useTranslation();
+  const [tables, setTables] = useState<TableData[]>(initialTablesSeed);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [layoutKey, setLayoutKey] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [saving, setSaving] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!draftEventId || !userEmail) return;
+    const timer = setTimeout(() => {
+      saveFloorPlanDraft(draftEventId, userEmail, tables);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [draftEventId, userEmail, tables]);
 
   const handleMove = useCallback((id: number, x: number, y: number) => {
     setTables(prev =>
@@ -148,7 +224,7 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
     const table = tables.find(t => t.id === selectedId);
     if (!table) return;
     if (table.isHonor && DEFAULT_TABLE_LAYOUT.some(d => d.id === table.id && d.isHonor)) {
-      alert('לא ניתן למחוק שולחן כבוד מברירת המחדל');
+      alert(t(T.FLOOR_PLAN.CANNOT_DELETE_HONOR));
       return;
     }
     setTables(prev => prev.filter(t => t.id !== selectedId));
@@ -156,9 +232,28 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
     setLayoutKey(k => k + 1);
   };
 
+  const handleRebuildFromGuests = () => {
+    if (guestCount <= 0) {
+      alert(t(T.FLOOR_PLAN.ENTER_GUEST_COUNT));
+      return;
+    }
+    if (!confirm(t(T.FLOOR_PLAN.REGEN_CONFIRM))) {
+      return;
+    }
+    setTables(buildLayoutForGuestCount({
+      guestCount,
+      seatingType,
+      menPercent,
+      womenPercent,
+      includeHonorTables,
+    }));
+    setSelectedId(null);
+    setLayoutKey(k => k + 1);
+  };
+
   const handleReset = () => {
-    if (confirm('לאפס לסידור ברירת המחדל?')) {
-      setTables(DEFAULT_TABLE_LAYOUT.map(t => ({ ...t })));
+    if (confirm(t(T.FLOOR_PLAN.RESET_CONFIRM))) {
+      setTables(DEFAULT_TABLE_LAYOUT.map((table) => ({ ...table })));
       setSelectedId(null);
       setLayoutKey(k => k + 1);
     }
@@ -173,9 +268,22 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
         downloadFileName ?? 'sidur-shulchanot.png'
       );
     } catch {
-      alert('שגיאה ביצירת התמונה');
+      alert(t(T.FLOOR_PLAN.IMAGE_CREATE_ERROR));
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const imageDataUrl = await renderFloorPlanToDataUrl(tables, floorPlanImg);
+      if (draftEventId) clearFloorPlanDraft(draftEventId);
+      onSave(tables, imageDataUrl);
+    } catch {
+      alert(t(T.FLOOR_PLAN.SAVE_ERROR));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -183,11 +291,16 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
     <div className="floor-plan-container">
       <div className="floor-plan-toolbar">
         <div className="toolbar-actions">
+          {guestCount > 0 && (
+            <button type="button" className="btn-rebuild" onClick={handleRebuildFromGuests}>
+              {t(T.FLOOR_PLAN.REFRESH_BY_GUESTS)}
+            </button>
+          )}
           <button type="button" className="btn-add-women" onClick={() => handleAddTable('women')}>
-            + שולחן נשים
+            + {t(T.FLOOR_PLAN.ADD_WOMEN_TABLE)}
           </button>
           <button type="button" className="btn-add-men" onClick={() => handleAddTable('men')}>
-            + שולחן גברים
+            + {t(T.FLOOR_PLAN.ADD_MEN_TABLE)}
           </button>
           <button
             type="button"
@@ -195,10 +308,10 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
             onClick={handleDeleteSelected}
             disabled={selectedId === null}
           >
-            מחק שולחן נבחר
+            {t(T.FLOOR_PLAN.DELETE_SELECTED)}
           </button>
           <button type="button" className="btn-reset" onClick={handleReset}>
-            איפוס לברירת מחדל
+            {t(T.FLOOR_PLAN.RESET_DEFAULT)}
           </button>
           <button
             type="button"
@@ -206,16 +319,16 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
             onClick={handleDownload}
             disabled={exporting}
           >
-            {exporting ? 'מוריד...' : '⬇ הורדת תמונה'}
+            {exporting ? t(T.FLOOR_PLAN.DOWNLOADING) : `⬇ ${t(T.FLOOR_PLAN.DOWNLOAD_IMAGE)}`}
           </button>
         </div>
         <div className="toolbar-save">
-          <button type="button" className="btn-save" onClick={() => onSave(tables)}>
-            שמור סידור
+          <button type="button" className="btn-save" onClick={handleSave} disabled={saving}>
+            {saving ? t(T.FLOOR_PLAN.SAVING) : t(T.FLOOR_PLAN.SAVE_LAYOUT)}
           </button>
           {onClose && (
             <button type="button" className="btn-close" onClick={onClose}>
-              סגור
+              {t(T.FLOOR_PLAN.CLOSE)}
             </button>
           )}
         </div>
@@ -225,9 +338,10 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
         <div className="hall-canvas" ref={canvasRef}>
           <img
             src={floorPlanImg}
-            alt="מפת אולם"
+            alt={t(T.FLOOR_PLAN.MAP_ALT)}
             className="hall-background"
             draggable={false}
+            loading="lazy"
           />
           <div className="tables-layer" key={layoutKey}>
             {tables.map(table => (
@@ -245,12 +359,65 @@ export const FloorPlanBuilder: React.FC<Props> = ({ initialTables, onSave, onClo
       </div>
 
       <div className="floor-plan-legend">
-        <span className="legend-item"><span className="legend-dot women" /> נשים</span>
-        <span className="legend-item"><span className="legend-dot men" /> גברים</span>
-        <span className="legend-item"><span className="legend-dot honor" /> שולחן כבוד (R)</span>
-        <span className="legend-hint">גררי שולחן עם העכבר / האצבע · לחיצה לבחירה</span>
+        <span className="legend-item"><span className="legend-dot women" /> {t(T.FLOOR_PLAN.LEGEND_WOMEN)}</span>
+        <span className="legend-item"><span className="legend-dot men" /> {t(T.FLOOR_PLAN.LEGEND_MEN)}</span>
+        <span className="legend-item"><span className="legend-dot honor" /> {t(T.FLOOR_PLAN.LEGEND_HONOR)}</span>
+        <span className="legend-hint">{t(T.FLOOR_PLAN.LEGEND_HINT)}</span>
       </div>
     </div>
+  );
+};
+
+export const FloorPlanBuilder: React.FC<Props> = (props) => {
+  const {
+    initialTables,
+    guestCount = 0,
+    seatingType = 'separate',
+    menPercent,
+    womenPercent,
+    includeHonorTables = true,
+    draftEventId,
+  } = props;
+
+  const layoutConfig = useMemo<LayoutConfig>(() => ({
+    guestCount,
+    seatingType,
+    menPercent,
+    womenPercent,
+    includeHonorTables,
+  }), [guestCount, seatingType, menPercent, womenPercent, includeHonorTables]);
+
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    getAuthUser().then((user) => {
+      setUserEmail(user?.email ?? '');
+    });
+  }, []);
+
+  const needsDraftUser = Boolean(draftEventId);
+  const userReady = !needsDraftUser || userEmail !== null;
+
+  const initialTablesSeed = useMemo(
+    () => resolveInitialTablesWithDraft(initialTables, layoutConfig, draftEventId, userEmail ?? ''),
+    [initialTables, layoutConfig, draftEventId, userEmail],
+  );
+
+  if (!userReady) {
+    return (
+      <div className="floor-plan-container">
+        <p>טוען טיוטה...</p>
+      </div>
+    );
+  }
+
+  return (
+    <FloorPlanBuilderEditor
+      key={`${draftEventId ?? 'none'}-${userEmail}`}
+      {...props}
+      userEmail={userEmail ?? ''}
+      initialTablesSeed={initialTablesSeed}
+    />
   );
 };
 

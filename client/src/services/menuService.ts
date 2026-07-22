@@ -1,25 +1,34 @@
-// client/src/services/menuService.ts
-import { apiFetch } from './api'; // מייבאים את פונקציית הקסם שלנו!
+import { apiFetch } from './api';
+import { API_URL } from '../config/api';
 
-const API_URL = 'http://localhost:5000/api/menu';
+const MENU_API = `${API_URL}/menu`;
 
 export const menuService = {
   getMenu: async () => {
-    const res = await apiFetch(API_URL);
+    const res = await apiFetch(MENU_API);
     return res.json();
   },
-  
+
   addDish: async (dishData: { name: string; price: number; categoryId: string }) => {
-    const res = await apiFetch(API_URL, {
+    const res = await apiFetch(MENU_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dishData),
     });
     return res.json();
   },
-  
-  deleteDish: async (id: string) => {
-    const res = await apiFetch(`${API_URL}/${id}`, { method: 'DELETE' });
+
+  updateDish: async (id: string, dishData: { name: string; price: number; description?: string }) => {
+    const res = await apiFetch(`${MENU_API}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dishData),
+    });
     return res.json();
-  }
+  },
+
+  deleteDish: async (id: string) => {
+    const res = await apiFetch(`${MENU_API}/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
 };

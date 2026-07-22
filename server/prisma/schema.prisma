@@ -6,8 +6,38 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model Tenant {
+  id                  String               @id @default(uuid())
+  name                String
+  subdomain           String               @unique
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  bookings            Booking[]
+  hallInvoices        HallInvoice[]
+  eventCheckIns       EventCheckIn[]
+  menuCategories      MenuCategory[]
+  dishes              Dish[]
+  eventDates          EventDate[]
+  eventForms          EventForm[]
+  cancellationLogs    CancellationLog[]
+  tablePositions      TablePosition[]
+  systemSettings      SystemSettings[]
+  extraServices       ExtraService[]
+  staffMembers        StaffMember[]
+  feedbacks           Feedback[]
+  kashrutCertificates KashrutCertificate[]
+  eventAdditions      EventAddition[]
+  authorizedUsers     AuthorizedUser[]
+  scheduledGreetings  ScheduledGreeting[]
+}
+
 model Booking {
   id                  String          @id @default(uuid())
+  tenantId            String
+  tenant              Tenant          @relation(fields: [tenantId], references: [id])
   clientAFullName     String
   clientAIdNumber     String
   clientAPhone        String
@@ -23,11 +53,16 @@ model Booking {
   timeOfDay           String
   timeSlot            String          @default("evening")
   guestCount          Int
+  minimumGuestCount   Int?
   finalPricePortion   Float
   managerComments     String?
   clientComments      String?
   totalPrice          Float
-  hallRentalPrice     Float?          // <--- הנה השדה החדש שהוספנו!
+  basePrice           Float           @default(0)
+  extrasPrice         Float           @default(0)
+  externalExtrasPrice Float           @default(0)
+  liveAdditionsTotal  Float           @default(0)
+  hallRentalPrice     Float?          
   paidAmount          Float           @default(0)
   paymentStatus       String          @default("pending")
   eventCode           String          @unique
@@ -49,31 +84,100 @@ model Booking {
   eventDate           EventDate       @relation(fields: [calendarDateId], references: [id])
   additions           EventAddition[]
   eventForm           EventForm?
+  eventCheckIn        EventCheckIn?
   feedbacks           Feedback[]
   clientSignatureUrl  String?
   depositCheckUrl     String?
   depositCheckDetails Json?
+  depositMethod       String?
+  easycountDocId      String?
+  easycountDocUrl     String?
+  easycountStatus     String?
+  easycountError      String?
+  vatType             String          @default("included")
   contractText        String?         @db.Text
+  paymentTemplateId   String?
+  paymentTermsText    String?         @db.Text
+  paymentDeadline     DateTime?
+  depositPaid         Boolean         @default(false)
+  lastPaymentReminderSent DateTime?
+  upgrades            Json?
+  kosherType          String?
+  hallInvoices        HallInvoice[]
 
   @@unique([calendarDateId, timeSlot])
+  @@index([tenantId])
 }
+
+model HallInvoice {
+  id               String    @id @default(uuid())
+  tenantId         String
+  tenant           Tenant    @relation(fields: [tenantId], references: [id])
+  bookingId        String
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  externalId       String    @unique
+  amount           Float
+  status           String    @default("pending")
+  paymentUrl       String?
+  installmentLabel String?
+  description      String?
+  paidAt           DateTime?
+  webhookPayload   Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([tenantId])
+}
+
+model EventCheckIn {
+  id                    String   @id @default(uuid())
+  tenantId              String
+  tenant                Tenant   @relation(fields: [tenantId], references: [id])
+  bookingId             String   @unique
+  familiesLabel         String?
+  orderedPortions       Int?
+  entertainerPortions   Int?
+  reservePortions       Int?
+  hallReceivedConfirmed Boolean  @default(false)
+  reserveTables         Json?
+  specialAdditions      String?
+  customerSignature     String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  booking               Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
 model MenuCategory {
-  id     String @id @default(uuid())
-  name   String
-  dishes Dish[]
+  id       String @id @default(uuid())
+  tenantId String
+  tenant   Tenant @relation(fields: [tenantId], references: [id])
+  name     String
+  dishes   Dish[]
+
+  @@index([tenantId])
 }
 
 model Dish {
   id          String       @id @default(uuid())
+  tenantId    String
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
   name        String
   description String?
   price       Float?
   categoryId  String
   category    MenuCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([tenantId])
 }
 
 model EventDate {
   id              String    @id @default(uuid())
+  tenantId        String
+  tenant          Tenant    @relation(fields: [tenantId], references: [id])
   date            DateTime  @unique
   status          String
   lockedBy        String?
@@ -82,10 +186,14 @@ model EventDate {
   clientEmail     String?
   optionExpiresAt DateTime?
   bookings        Booking[]
+
+  @@index([tenantId])
 }
 
 model EventForm {
   id                  String          @id @default(uuid())
+  tenantId            String
+  tenant              Tenant          @relation(fields: [tenantId], references: [id])
   bookingId           String          @unique
   eventTime           String?
   receptionType       String?
@@ -124,19 +232,28 @@ model EventForm {
   updatedAt           DateTime        @updatedAt
   booking             Booking         @relation(fields: [bookingId], references: [id])
   tables              TablePosition[]
-  menuSelections Json?
-  akumPaid Boolean?
+  menuSelections      Json?
+  akumPaid            Boolean?
+  tableLayoutImageUrl String?
+
+  @@index([tenantId])
 }
 
 model CancellationLog {
   id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
   reason     String
   clientName String?
   createdAt  DateTime @default(now())
+
+  @@index([tenantId])
 }
 
 model TablePosition {
   id          String    @id @default(uuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
   eventFormId String
   tableNumber Int
   positionX   Float
@@ -148,10 +265,13 @@ model TablePosition {
   eventForm   EventForm @relation(fields: [eventFormId], references: [id], onDelete: Cascade)
 
   @@unique([eventFormId, tableNumber])
+  @@index([tenantId])
 }
 
 model SystemSettings {
   id                     String   @id @default("global")
+  tenantId               String
+  tenant                 Tenant   @relation(fields: [tenantId], references: [id])
   vatRate                Float    @default(17.0)
   defaultAdvance         Float    @default(5000.0)
   optionDurationHours    Int      @default(48)
@@ -173,56 +293,81 @@ model SystemSettings {
   separateReceptionPrice Float    @default(3000.0)
   contractText           String?  @db.Text
   barPortionPrice        Float    @default(60.0)
+  paymentTemplates       Json?
+  defaultPaymentTemplateId String?
+  hiddenPriceFields      Json     @default("[]")
+
+  @@index([tenantId])
 }
 
 model ExtraService {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   name      String
   category  String
   price     Float
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model StaffMember {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   name      String   @unique
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
+
+  @@index([tenantId])
 }
 
 model Feedback {
-  id            String   @id @default(uuid())
-  bookingId     String
-  clientSide    String
-  clientName    String?
-  foodRating    Int?
-  serviceRating Int?
-  venueRating   Int?
-  averageScore  Float?
-  comments      String?
-  token         String   @unique
-  isCompleted   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  booking       Booking  @relation(fields: [bookingId], references: [id])
+  id                String    @id @default(uuid())
+  tenantId          String
+  tenant            Tenant    @relation(fields: [tenantId], references: [id])
+  bookingId         String
+  clientSide        String
+  clientName        String?
+  foodRating        Int?
+  serviceRating     Int?
+  venueRating       Int?
+  averageScore      Float?
+  comments          String?
+  token             String    @unique
+  isCompleted       Boolean   @default(false)
+  lastNotifiedAt    DateTime?
+  lastEmailSent     Boolean   @default(false)
+  lastWhatsappSent  Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  booking           Booking   @relation(fields: [bookingId], references: [id])
 
   @@unique([bookingId, clientSide])
+  @@index([tenantId])
 }
 
 model KashrutCertificate {
   id                  String    @id @default(uuid())
+  tenantId            String
+  tenant              Tenant    @relation(fields: [tenantId], references: [id])
   nameKey             String
   displayName         String
   imageUrl            String?
   validUntil          DateTime?
   updatedAt           DateTime  @updatedAt
   isGlobalCertificate Boolean   @default(false)
+
+  @@index([tenantId])
 }
 
 model EventAddition {
   id            String   @id @default(uuid())
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
   bookingId     String
   description   String
   cost          Float
@@ -231,9 +376,36 @@ model EventAddition {
   agreedToTerms Boolean
   createdAt     DateTime @default(now())
   booking       Booking  @relation(fields: [bookingId], references: [id])
+
+  @@index([tenantId])
 }
+
 model AuthorizedUser {
   id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
   email     String   @unique
+  role      String   @default("manager")
   createdAt DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+model ScheduledGreeting {
+  id             String    @id @default(uuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  subject        String
+  message        String    @db.Text
+  scheduledAt    DateTime
+  attachmentPath String?
+  attachmentName String?
+  status         String    @default("PENDING")
+  sentAt         DateTime?
+  sendStats      Json?
+  errorMessage   String?
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId])
 }

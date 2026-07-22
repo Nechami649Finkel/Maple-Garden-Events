@@ -1,28 +1,156 @@
 .app-layout {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: var(--brand-header-height) 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "header"
+    "main";
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
   direction: rtl;
-  font-family: var(--maple-font);
-  background: var(--maple-bg);
-  color: var(--maple-text);
+  font-family: var(--brand-font);
+  background: var(--brand-bg);
+  color: var(--brand-text);
+}
+
+@media (min-width: 1024px) {
+  .app-layout {
+    grid-template-columns: var(--brand-sidebar-width) 1fr;
+    grid-template-rows: var(--brand-header-height) 1fr;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main";
+  }
 }
 
 .app-layout-full {
-  min-height: 100vh;
+  height: 100dvh;
+}
+
+/* Calendar: full viewport on desktop; mobile keeps header + hamburger nav */
+@media (min-width: 1024px) {
+  .app-layout-calendar {
+    grid-template-rows: 1fr;
+    grid-template-areas:
+      "sidebar main";
+  }
+
+  .app-layout-calendar .app-header {
+    display: none;
+  }
 }
 
 .app-layout-main {
+  grid-area: main;
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-content {
   flex: 1;
-  padding: 24px;
-  max-width: 1200px;
+  padding: var(--brand-page-padding);
+  max-width: var(--brand-content-max);
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+}
+
+.page-content-full {
+  flex: 1;
+  padding: var(--brand-page-padding);
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .page-content,
+  .page-content-full {
+    padding: 16px 12px 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-content,
+  .page-content-full {
+    padding: 12px 10px 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-layout-viewport-fill {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-layout-main-fill {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-page-wrap {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-form-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .app-layout-main-fullwidth {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 1023px) {
+  .app-layout-viewport-fill {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .app-layout-main-fill {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-page-wrap {
+    flex: none;
+    min-height: auto;
+    overflow: visible;
+  }
+
+  .app-layout-main-fill > .maple-bs-form.maple-form-container {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .app-layout-main-fullwidth {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
 }

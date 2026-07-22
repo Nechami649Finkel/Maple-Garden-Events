@@ -1,4 +1,8 @@
 import prisma from '../config/prisma';
+import { neonTransactionOptions } from './dbRetry';
+import { logger } from './logger';
+
+type TransactionClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
 const SETTINGS_ID = 'global';
 const PAD_LENGTH = 5;
@@ -42,7 +46,7 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 5, delay = 2000): Pr
     return await fn();
   } catch (error) {
     if (retries <= 0) throw error;
-    console.log(`Connection failed, retrying in ${delay}ms... (${retries} retries left)`);
+    logger.warn('Connection failed, retrying', { delayMs: delay, retriesLeft: retries });
     await new Promise(resolve => setTimeout(resolve, delay));
     return withRetry(fn, retries - 1, delay);
   }
@@ -62,7 +66,7 @@ export async function initOrderSequence(): Promise<void> {
 
     if (!settings) {
       await prisma.systemSettings.create({
-        data: { id: SETTINGS_ID, nextEventNumber: maxFromCodes },
+        data: { id: SETTINGS_ID, tenantId: 'global', nextEventNumber: maxFromCodes },
       });
       return;
     }
@@ -76,28 +80,41 @@ export async function initOrderSequence(): Promise<void> {
   });
 }
 
-export async function allocateEventCode(prefix: EventCodePrefix): Promise<string> {
-  const sequence = await prisma.$transaction(async (tx) => {
-    let settings = await tx.systemSettings.findUnique({
-      where: { id: SETTINGS_ID },
-    });
-
-    if (!settings) {
-      settings = await tx.systemSettings.create({
-        data: { id: SETTINGS_ID, nextEventNumber: 0 },
-      });
-    }
-
-    const next = settings.nextEventNumber + 1;
-    await tx.systemSettings.update({
-      where: { id: SETTINGS_ID },
-      data: { nextEventNumber: next },
-    });
-
-    return next;
+async function allocateEventCodeInTx(
+  tx: TransactionClient,
+  prefix: EventCodePrefix
+): Promise<string> {
+  let settings = await tx.systemSettings.findUnique({
+    where: { id: SETTINGS_ID },
   });
 
-  return formatEventCode(prefix, sequence);
+  if (!settings) {
+    settings = await tx.systemSettings.create({
+      data: { id: SETTINGS_ID, tenantId: 'global', nextEventNumber: 0 },
+    });
+  }
+
+  const next = settings.nextEventNumber + 1;
+  await tx.systemSettings.update({
+    where: { id: SETTINGS_ID },
+    data: { nextEventNumber: next },
+  });
+
+  return formatEventCode(prefix, next);
+}
+
+export async function allocateEventCode(
+  prefix: EventCodePrefix,
+  tx?: TransactionClient
+): Promise<string> {
+  if (tx) {
+    return allocateEventCodeInTx(tx, prefix);
+  }
+
+  return prisma.$transaction(
+    (innerTx) => allocateEventCodeInTx(innerTx, prefix),
+    neonTransactionOptions
+  );
 }
 
 export async function peekNextEventCodes(

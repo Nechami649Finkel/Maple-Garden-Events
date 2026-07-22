@@ -1,0 +1,29 @@
+.skeleton {
+  border-radius: var(--brand-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--brand-border) 25%,
+    var(--brand-bg) 50%,
+    var(--brand-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--brand-space-3);
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background: var(--brand-border);
+  }
+}

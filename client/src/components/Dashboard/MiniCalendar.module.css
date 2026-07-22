@@ -1,0 +1,106 @@
+.wrap {
+  direction: rtl;
+}
+
+.monthLabel {
+  margin: 0 0 var(--brand-space-3);
+  font-size: var(--brand-text-sm);
+  font-weight: 600;
+  color: var(--brand-text-secondary);
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayHeader {
+  text-align: center;
+  font-size: var(--brand-text-xs);
+  font-weight: 600;
+  color: var(--brand-text-muted);
+  padding: var(--brand-space-1);
+}
+
+.emptyCell {
+  aspect-ratio: 1;
+}
+
+.cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 2px;
+  padding: 4px 5px;
+  border-radius: var(--brand-radius-sm);
+  text-decoration: none;
+  color: var(--brand-text);
+  transition: background var(--brand-transition);
+  position: relative;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.cell:hover {
+  background: var(--brand-gold-light);
+}
+
+.today {
+  box-shadow: inset 0 0 0 2px var(--brand-gold);
+}
+
+.hasBookings {
+  background: var(--brand-green-light);
+}
+
+.hasBookings:hover {
+  background: var(--brand-green-muted);
+}
+
+.cellHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dayNum {
+  flex-shrink: 0;
+  font-size: var(--brand-text-sm);
+  font-weight: 700;
+  color: var(--brand-text);
+  line-height: 1.1;
+}
+
+.today .dayNum {
+  font-weight: 800;
+}
+
+.hebrewDate {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  line-height: 1.2;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--brand-green-dark);
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: 2px;
+}

@@ -1,249 +1,769 @@
-import React from 'react';
-import { KOSHER_PRICING } from '../BookingForm';
+import { useState } from 'react';
+
 import CheckCamera from '../../CheckCamera/CheckCamera';
+
 import CheckDetailsForm from '../../CheckDetailsForm/CheckDetailsForm';
+
 import type { DepositCheckDetails } from '../../../utils/checkOcr';
+
 import { openContractPdf, printContract } from '../../../utils/contractPrint';
 
+import type { PaymentTermsTemplate } from '../../../utils/paymentTerms';
+import type { BookingFormData } from '../bookingFormTypes';
+
+import { useTranslation } from '../../../i18n/useTranslation';
+
+import { formatNumber } from '@shared/i18n/formatters';
+
+
+
 interface PaymentAndUpgradesSectionProps {
-  formData: any;
+  formData: BookingFormData;
+
   handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => void;
-  upgrades: Record<string, boolean>;
-  handleUpgradeChange: (key: string) => void;
+
   isHallOnly: boolean;
+
+  isOption?: boolean;
+
   depositMethod: string;
+
   setDepositMethod: (method: string) => void;
+
   checkScanning: boolean;
+
   onCheckCapture: (imageSrc: string) => void | Promise<void>;
+
   onCheckFileUpload: (e: React.ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+
   onDeleteCheck: () => void;
+
   onCheckDetailsChange: (details: DepositCheckDetails) => void;
-  totals: { base: number; discountVal: number; vatAmount: number; finalTotal: number };
+
+  totals: {
+
+    mainBase: number;
+
+    hallExtrasBase: number;
+
+    externalExtrasBase: number;
+
+    discountVal: number;
+
+    mainVat: number;
+
+    hallExtrasVat: number;
+
+    externalExtrasVat: number;
+
+    baseTotal: number;
+
+    hallExtrasTotal: number;
+
+    externalExtrasTotal: number;
+
+    hallTotal: number;
+
+    finalTotal: number;
+
+  };
+
   isFoodRelevant: boolean;
+
   kosherType: string;
+
   isEditMode: boolean;
+
   editId?: string;
+
   errors?: Record<string, string>;
-  styles: Record<string, string>;
+
+  vatRate?: number;
+
+  paymentTemplates: PaymentTermsTemplate[];
+
+  paymentTemplateId: string;
+
+  onPaymentTemplateChange: (templateId: string) => void;
+
+  paymentTermsCustom: boolean;
+
+  onPaymentTermsCustomChange: (custom: boolean) => void;
+
+  paymentTermsText: string;
+
+  onPaymentTermsTextChange: (text: string) => void;
+
+  eventDate?: string | null;
+
+  easycountMeta?: {
+
+    mode?: string;
+
+    label?: string;
+
+    canIssueRealDocuments?: boolean;
+
+  } | null;
+
 }
 
+
+
 const PaymentAndUpgradesSection = ({
+
   formData,
+
   handleChange,
-  upgrades,
-  handleUpgradeChange,
+
   isHallOnly,
+
+  isOption = false,
+
   depositMethod,
+
   setDepositMethod,
+
   checkScanning,
+
   onCheckCapture,
+
   onCheckFileUpload,
+
   onDeleteCheck,
+
   onCheckDetailsChange,
+
   totals,
+
   isFoodRelevant,
-  kosherType,
+
   isEditMode,
+
   editId,
+
   errors,
-  styles,
+
+  vatRate = 17,
+
+  paymentTemplates,
+
+  paymentTemplateId,
+
+  onPaymentTemplateChange,
+
+  paymentTermsCustom,
+
+  onPaymentTermsCustomChange,
+
+  paymentTermsText,
+
+  onPaymentTermsTextChange,
+
+  eventDate,
+
+  easycountMeta,
+
 }: PaymentAndUpgradesSectionProps) => {
+
+  const { t, T, locale } = useTranslation();
+
+  const [editingCustomPayment, setEditingCustomPayment] = useState(false);
+
+  const [customDraft, setCustomDraft] = useState('');
+
+
+
+  const fmt = (value: number) => formatNumber(value, locale);
+
+
+
+  const openCustomEditor = () => {
+
+    setCustomDraft(paymentTermsCustom ? paymentTermsText : '');
+
+    setEditingCustomPayment(true);
+
+  };
+
+
+
+  const saveCustomPayment = () => {
+
+    const text = customDraft.trim();
+
+    if (!text) {
+
+      alert(t(T.BOOKING.VALIDATION.CUSTOM_PAYMENT_REQUIRED));
+
+      return;
+
+    }
+
+    onPaymentTermsCustomChange(true);
+
+    onPaymentTermsTextChange(text);
+
+    setEditingCustomPayment(false);
+
+  };
+
+
+
+  const cancelCustomEditor = () => {
+
+    setEditingCustomPayment(false);
+
+    setCustomDraft('');
+
+  };
+
+
+
   const isCheckDeposit = depositMethod === 'check_upload' || depositMethod === 'check_capture';
+
   const hasCheckImage = !!formData.depositCheckUrl;
 
+
+
   return (
-    <>
-      <div className={styles.sectionCard}>
-        <h3 className={styles.sectionHeader}>חבילת תוספות ושדרוגים</h3>
-        <div className={styles.upgradesGrid}>
-          <label className={`${styles.upgradeLabel} ${isHallOnly ? styles.upgradeLabelDisabled : ''}`}>
-            <input type="checkbox" checked={isHallOnly ? false : upgrades.baseDesign} readOnly disabled={isHallOnly} />
-            <span>עיצוב בסיסי {isHallOnly ? '(לא רלוונטי)' : '(חובה) - 4,500 ₪'}</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.amplification} onChange={() => handleUpgradeChange('amplification')} />
-            <span>הגברה - 1,400 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.lighting} onChange={() => handleUpgradeChange('lighting')} />
-            <span>תאורה - 1,800 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.screens} onChange={() => handleUpgradeChange('screens')} />
-            <span>מסכים - 800 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.reception} onChange={() => handleUpgradeChange('reception')} />
-            <span>קבלת פנים - 2,000 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.separateReception} onChange={() => handleUpgradeChange('separateReception')} />
-            <span>קבלת פנים נפרדת - 3,000 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.extraSecurity} onChange={() => handleUpgradeChange('extraSecurity')} />
-            <span>מאבטח פיצול כניסה - 650 ₪</span>
-          </label>
-          <label className={styles.upgradeLabel}>
-            <input type="checkbox" checked={upgrades.fireworks} onChange={() => handleUpgradeChange('fireworks')} />
-            <span>זיקוקים - 700 ₪</span>
-          </label>
-        </div>
-      </div>
 
-      <div className={styles.sectionCard}>
-        <h3 className={styles.sectionHeader}>סיכום, פיקדון ותשלום</h3>
+    <div className="card mb-3">
 
-        {isHallOnly && (
-          <div className={styles.inputGroup} style={{ backgroundColor: '#f0fdf4', padding: '15px', borderRadius: '8px', border: '1px solid #bbf7d0', marginBottom: '20px' }}>
-            <label style={{ fontWeight: 'bold', fontSize: '1.1rem', color: '#166534' }}>מחיר השכרת אולם (₪) *</label>
-            <input
-              type="number"
-              name="hallRentalPrice"
-              value={formData.hallRentalPrice || ''}
-              onChange={handleChange}
-              className={`${styles.input} ${errors?.hallRentalPrice ? styles.inputError : ''}`}
-              placeholder="הזן סכום לשכירות האולם (ללא אוכל)..."
-              required={isHallOnly}
-              min={1}
-              step="any"
-              style={{ fontSize: '1.1rem', fontWeight: 'bold' }}
-            />
-            {errors?.hallRentalPrice && (
-              <span className={styles.errorMsg}>{errors.hallRentalPrice}</span>
-            )}
-          </div>
-        )}
+      <div className="card-header maple-section-header">{t(T.BOOKING.PAYMENT.SECTION_TITLE)}</div>
 
-        <div className={styles.paymentGrid}>
-          <div className={styles.inputGroup}>
-            <label>הנחה כוללת (%)</label>
-            <input type="number" name="discountPercent" value={formData.discountPercent} onChange={handleChange} className={styles.input} placeholder="0" />
-          </div>
-          <div className={styles.inputGroup}>
-            <label>הנחה בשקלים (₪)</label>
-            <input type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} className={styles.input} placeholder="0" />
-          </div>
-          <div className={`${styles.inputGroup} ${styles.vatRow}`}>
-            <label>הגדרת מע"מ (18%)</label>
-            <div className={styles.radioGroup}>
-              <label className={styles.radioLabel}>
-                <input type="radio" name="vatType" value="not_included" checked={formData.vatType === 'not_included'} onChange={handleChange} />
-                לא כולל מע"מ
-              </label>
-              <label className={styles.radioLabel}>
-                <input type="radio" name="vatType" value="included" checked={formData.vatType === 'included'} onChange={handleChange} />
-                כולל מע"מ
-              </label>
+      <div className="card-body">
+
+          {!isOption && easycountMeta && (
+
+            <div className={`alert ${easycountMeta.canIssueRealDocuments ? 'alert-success' : 'alert-warning'} mb-3`}>
+
+              <strong>EZCount:</strong> {easycountMeta.label || t(T.BOOKING.PAYMENT.EZCOUNT_SIMULATION)}
+
+              {!easycountMeta.canIssueRealDocuments && (
+
+                <span>{t(T.BOOKING.PAYMENT.EZCOUNT_SIMULATION_NOTE)}</span>
+
+              )}
+
             </div>
-          </div>
-        </div>
 
-        <div className={styles.depositOptions}>
-          <label className={styles.radioLabel}>
-            <input type="radio" name="deposit" value="credit_card" checked={depositMethod === 'credit_card'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>תשלום באשראי / מזומן</span>
-          </label>
-          <label className={styles.radioLabel}>
-            <input type="radio" name="deposit" value="check_upload" checked={depositMethod === 'check_upload'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>העלאת צילום צ'ק פיקדון</span>
-          </label>
-          <label className={`${styles.radioLabel} ${styles.depositHighlight}`}>
-            <input type="radio" name="deposit" value="check_capture" checked={depositMethod === 'check_capture'} onChange={(e) => setDepositMethod(e.target.value)} />
-            <span>📸 צילום צ'ק כעת</span>
-          </label>
-        </div>
-
-        {isCheckDeposit && (
-          <div className={styles.fileUploadBox} style={{ marginTop: '16px' }}>
-            <label style={{ display: 'block', fontWeight: 600, marginBottom: '10px' }}>תמונת צ'ק פיקדון</label>
-
-            {depositMethod === 'check_capture' && !hasCheckImage && (
-              <CheckCamera
-                disabled={checkScanning}
-                onCapture={onCheckCapture}
-                onRetake={onDeleteCheck}
-              />
-            )}
-
-            {(depositMethod === 'check_upload' || hasCheckImage) && (
-              <div style={{ marginTop: depositMethod === 'check_capture' && hasCheckImage ? '12px' : 0 }}>
-                {depositMethod === 'check_upload' && !hasCheckImage && (
-                  <input type="file" accept="image/*" onChange={onCheckFileUpload} className={styles.input} />
-                )}
-                {hasCheckImage && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <span style={{ color: '#16a34a', fontWeight: 600 }}>✓ צ'ק צולם/צורף בהצלחה</span>
-                    <button type="button" onClick={onDeleteCheck} style={{ padding: '6px 12px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer' }}>
-                      🗑️ מחק
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {(hasCheckImage || formData.depositCheckDetails) && (
-              <CheckDetailsForm
-                details={formData.depositCheckDetails || {}}
-                imageUrl={formData.depositCheckUrl || undefined}
-                scanning={checkScanning}
-                onChange={onCheckDetailsChange}
-                styles={styles}
-              />
-            )}
-          </div>
-        )}
-
-        <div className={styles.inputGroup}>
-          <label>תנאי תשלום והסדרים מול הלקוח</label>
-          <textarea name="paymentTerms" value={formData.paymentTerms} onChange={handleChange} className={styles.input} rows={2} placeholder="פירוט תנאי התשלום שסוכמו..."></textarea>
-        </div>
-
-        {isEditMode && formData.clientSignatureUrl && editId && (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '15px' }}>
-            <button
-              type="button"
-              onClick={() => openContractPdf(editId)}
-              className={styles.viewContractBtn}
-              style={{ backgroundColor: '#059669', color: 'white', padding: '10px 14px', borderRadius: '5px', border: 'none', cursor: 'pointer' }}
-            >
-              צפייה בחוזה החתום
-            </button>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await printContract(editId);
-                } catch {
-                  alert('לא הצלחנו להדפיס את החוזה. ודאי שמדפסת מחוברת ונסי שוב.');
-                }
-              }}
-              className={styles.viewContractBtn}
-              style={{ backgroundColor: '#1d4ed8', color: 'white', padding: '10px 14px', borderRadius: '5px', border: 'none', cursor: 'pointer' }}
-            >
-              הדפסת חוזה
-            </button>
-          </div>
-        )}
-
-        <div className={styles.totalsBox}>
-          <h4 className={styles.totalsTitle}>סה"כ הצעה / לתשלום</h4>
-          <div className={styles.totalsBreakdown}>
-            <span>סה"כ ביניים: ₪{totals.base.toLocaleString()}</span>
-            {totals.discountVal > 0 && <span className={styles.discountLine}>הנחות: -₪{totals.discountVal.toLocaleString()}</span>}
-            {totals.vatAmount > 0 && <span>תוספת מע"מ: ₪{totals.vatAmount.toLocaleString()}</span>}
-          </div>
-          <p className={styles.totalsFinal}>₪ {totals.finalTotal.toLocaleString()}</p>
-          {isFoodRelevant && formData.guestCount && (
-            <p className={styles.totalsNote}>
-              כולל {formData.guestCount} מנות בתשלום
-              {formData.optionalGuestCount ? ` + ${formData.optionalGuestCount} רזרבה (ללא חיוב)` : ''}, שדרוגים וכשרות {KOSHER_PRICING[kosherType].label}
-            </p>
           )}
+
+
+
+          {!isOption && (
+
+            <div className="mb-3">
+
+              <label className="form-label fw-semibold">{t(T.BOOKING.PAYMENT.ADVANCE_AMOUNT)}</label>
+
+              <input
+
+                type="number"
+
+                name="advancePaid"
+
+                value={formData.advancePaid ?? ''}
+
+                onChange={handleChange}
+
+                className="form-control"
+
+                placeholder="0"
+
+                min={0}
+
+                step="any"
+
+              />
+
+              <div className="form-text">{t(T.BOOKING.PAYMENT.ADVANCE_RECEIPT_HINT)}</div>
+
+            </div>
+
+          )}
+
+
+
+          {isHallOnly && (
+
+            <div className="p-3 mb-3 rounded border border-success bg-success-subtle">
+
+              <label className="form-label fw-bold text-success">
+
+                {isOption ? t(T.BOOKING.PAYMENT.HALL_RENTAL_PRICE) : t(T.BOOKING.PAYMENT.HALL_RENTAL_PRICE_REQUIRED)}
+
+              </label>
+
+              <input
+
+                type="number"
+
+                name="hallRentalPrice"
+
+                value={formData.hallRentalPrice || ''}
+
+                onChange={handleChange}
+
+                className={`form-control form-control-lg fw-bold ${errors?.hallRentalPrice ? 'is-invalid' : ''}`}
+
+                placeholder={t(T.BOOKING.PAYMENT.HALL_RENTAL_PLACEHOLDER)}
+
+                required={isHallOnly && !isOption}
+
+                min={1}
+
+                step="any"
+
+              />
+
+              {errors?.hallRentalPrice && (
+
+                <div className="invalid-feedback">{errors.hallRentalPrice}</div>
+
+              )}
+
+            </div>
+
+          )}
+
+
+
+          <div className="row g-3 mb-3">
+
+            <div className="col-md-4">
+
+              <label className="form-label">{t(T.BOOKING.PAYMENT.DISCOUNT_PERCENT)}</label>
+
+              <input type="number" name="discountPercent" value={formData.discountPercent} onChange={handleChange} className="form-control" placeholder="0" />
+
+            </div>
+
+            <div className="col-md-4">
+
+              <label className="form-label">{t(T.BOOKING.PAYMENT.DISCOUNT_AMOUNT)}</label>
+
+              <input type="number" name="discountAmount" value={formData.discountAmount} onChange={handleChange} className="form-control" placeholder="0" />
+
+            </div>
+
+            <div className="col-md-4">
+
+              <label className="form-label">{t(T.BOOKING.PAYMENT.VAT_SETTING, { vatRate })}</label>
+
+              <div className="d-flex flex-wrap gap-3 mt-1">
+
+                <div className="form-check">
+
+                  <input type="radio" className="form-check-input" name="vatType" id="vat-not-included" value="not_included" checked={formData.vatType === 'not_included'} onChange={handleChange} />
+
+                  <label className="form-check-label" htmlFor="vat-not-included">{t(T.BOOKING.PAYMENT.VAT_NOT_INCLUDED)}</label>
+
+                </div>
+
+                <div className="form-check">
+
+                  <input type="radio" className="form-check-input" name="vatType" id="vat-included" value="included" checked={formData.vatType === 'included'} onChange={handleChange} />
+
+                  <label className="form-check-label" htmlFor="vat-included">{t(T.BOOKING.PAYMENT.VAT_INCLUDED)}</label>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+
+          <div className="d-flex flex-wrap gap-3 mb-3">
+
+            <div className="form-check">
+
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-credit" value="credit_card" checked={depositMethod === 'credit_card'} onChange={(e) => setDepositMethod(e.target.value)} />
+
+              <label className="form-check-label" htmlFor="deposit-credit">{t(T.BOOKING.PAYMENT.DEPOSIT_CREDIT)}</label>
+
+            </div>
+
+            <div className="form-check">
+
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-upload" value="check_upload" checked={depositMethod === 'check_upload'} onChange={(e) => setDepositMethod(e.target.value)} />
+
+              <label className="form-check-label" htmlFor="deposit-upload">{t(T.BOOKING.PAYMENT.DEPOSIT_CHECK_UPLOAD)}</label>
+
+            </div>
+
+            <div className="form-check">
+
+              <input type="radio" className="form-check-input" name="deposit" id="deposit-capture" value="check_capture" checked={depositMethod === 'check_capture'} onChange={(e) => setDepositMethod(e.target.value)} />
+
+              <label className="form-check-label fw-semibold" htmlFor="deposit-capture">{t(T.BOOKING.PAYMENT.DEPOSIT_CHECK_CAPTURE)}</label>
+
+            </div>
+
+          </div>
+
+
+
+          {isCheckDeposit && (
+
+            <div className="border rounded p-3 mb-3">
+
+              <label className="form-label fw-semibold">{t(T.BOOKING.PAYMENT.CHECK_IMAGE)}</label>
+
+
+
+              {depositMethod === 'check_capture' && !hasCheckImage && (
+
+                <CheckCamera
+
+                  disabled={checkScanning}
+
+                  onCapture={onCheckCapture}
+
+                  onRetake={onDeleteCheck}
+
+                />
+
+              )}
+
+
+
+              {(depositMethod === 'check_upload' || hasCheckImage) && (
+
+                <div className={depositMethod === 'check_capture' && hasCheckImage ? 'mt-3' : ''}>
+
+                  {depositMethod === 'check_upload' && !hasCheckImage && (
+
+                    <input type="file" accept="image/*" onChange={onCheckFileUpload} className="form-control" />
+
+                  )}
+
+                  {hasCheckImage && (
+
+                    <div className="d-flex align-items-center gap-2 flex-wrap mb-2">
+
+                      <span className="text-success fw-semibold">{t(T.BOOKING.PAYMENT.CHECK_SUCCESS)}</span>
+
+                      <button type="button" onClick={onDeleteCheck} className="btn btn-sm btn-outline-danger">
+
+                        {t(T.BOOKING.PAYMENT.CHECK_DELETE)}
+
+                      </button>
+
+                    </div>
+
+                  )}
+
+                </div>
+
+              )}
+
+
+
+              {(hasCheckImage || formData.depositCheckDetails) && (
+
+                <CheckDetailsForm
+
+                  details={formData.depositCheckDetails || {}}
+
+                  imageUrl={formData.depositCheckUrl || undefined}
+
+                  scanning={checkScanning}
+
+                  onChange={onCheckDetailsChange}
+
+                />
+
+              )}
+
+            </div>
+
+          )}
+
+
+
+          <div className="mb-3">
+
+            <label className="form-label fw-bold">{t(T.BOOKING.PAYMENT.PAYMENT_TERMS)}</label>
+
+            <select
+
+              className="form-select"
+
+              value={paymentTemplateId}
+
+              onChange={(e) => {
+
+                onPaymentTermsCustomChange(false);
+
+                setEditingCustomPayment(false);
+
+                onPaymentTemplateChange(e.target.value);
+
+              }}
+
+            >
+
+              {paymentTemplates.map((template) => (
+
+                <option key={template.id} value={template.id}>{template.name}</option>
+
+              ))}
+
+            </select>
+
+
+
+            <div className="d-flex align-items-center gap-2 flex-wrap mt-2">
+
+              <span className="text-secondary">{t(T.BOOKING.PAYMENT.CUSTOM_TERMS_LABEL)}</span>
+
+              <button
+
+                type="button"
+
+                onClick={openCustomEditor}
+
+                title={t(T.BOOKING.PAYMENT.CUSTOM_TERMS_EDIT_ARIA)}
+
+                aria-label={t(T.BOOKING.PAYMENT.CUSTOM_TERMS_EDIT_ARIA)}
+
+                className={`btn btn-sm ${paymentTermsCustom ? 'btn-primary' : 'btn-outline-primary'}`}
+
+              >
+
+                ✏️
+
+              </button>
+
+              {paymentTermsCustom && (
+
+                <span className="badge text-bg-success">{t(T.BOOKING.PAYMENT.CUSTOM_TERMS_SAVED_BADGE)}</span>
+
+              )}
+
+            </div>
+
+
+
+            {editingCustomPayment && (
+
+              <div className="border border-primary rounded p-3 mt-2 bg-white">
+
+                <label className="form-label fw-semibold">
+
+                  {t(T.BOOKING.PAYMENT.CUSTOM_TERMS_EDITOR_LABEL)}
+
+                </label>
+
+                <textarea
+
+                  className="form-control"
+
+                  rows={4}
+
+                  value={customDraft}
+
+                  onChange={(e) => setCustomDraft(e.target.value)}
+
+                  placeholder={t(T.BOOKING.PAYMENT.CUSTOM_TERMS_PLACEHOLDER)}
+
+                  autoFocus
+
+                />
+
+                <div className="d-flex gap-2 mt-2">
+
+                  <button type="button" onClick={saveCustomPayment} className="btn btn-primary btn-sm">
+
+                    {t(T.BOOKING.PAYMENT.CUSTOM_TERMS_SAVE)}
+
+                  </button>
+
+                  <button type="button" onClick={cancelCustomEditor} className="btn btn-outline-secondary btn-sm">
+
+                    {t(T.BOOKING.PAYMENT.CUSTOM_TERMS_CANCEL)}
+
+                  </button>
+
+                </div>
+
+              </div>
+
+            )}
+
+
+
+            <div className={`p-3 mt-2 rounded border ${paymentTermsCustom ? 'border-success bg-success-subtle text-success' : 'border-info bg-info-subtle text-info-emphasis'}`}>
+
+              <strong className="d-block mb-1">
+
+                {paymentTermsCustom ? t(T.BOOKING.PAYMENT.PREVIEW_CUSTOM) : t(T.BOOKING.PAYMENT.PREVIEW_TEMPLATE)}
+
+              </strong>
+
+              {paymentTermsText || t(T.BOOKING.PAYMENT.PREVIEW_EMPTY)}
+
+              {eventDate && !paymentTermsCustom && (
+
+                <div className="small mt-1">{t(T.BOOKING.PAYMENT.PREVIEW_EVENT_DATE, { eventDate })}</div>
+
+              )}
+
+            </div>
+
+          </div>
+
+
+
+          {isEditMode && editId && (
+
+            <div className="d-flex gap-2 flex-wrap mb-3">
+
+              <button type="button" onClick={() => void openContractPdf(editId, t)} className="btn btn-success">
+
+                {t(T.BOOKING.PAYMENT.VIEW_CONTRACT)}
+
+              </button>
+
+              <button
+
+                type="button"
+
+                onClick={async () => {
+
+                  try {
+
+                    await printContract(editId, t);
+
+                  } catch (e) {
+
+                    alert(e instanceof Error ? e.message : t(T.BOOKING.PAYMENT.PRINT_FAILED));
+
+                  }
+
+                }}
+
+                className="btn btn-primary"
+
+              >
+
+                {t(T.BOOKING.PAYMENT.PRINT_CONTRACT)}
+
+              </button>
+
+            </div>
+
+          )}
+
+
+
+          <div className="maple-price-summary p-3">
+
+            <h5 className="mb-3">{t(T.BOOKING.PAYMENT.SUMMARY_TITLE)}</h5>
+
+
+
+            <div className="mb-3">
+
+              <strong className="d-block mb-1">{t(T.BOOKING.PAYMENT.BASE_PAYMENT)}</strong>
+
+              <div className="d-flex flex-column gap-1 small">
+
+                <span>{t(T.BOOKING.PAYMENT.SUBTOTAL, { amount: fmt(totals.mainBase) })}</span>
+
+                {totals.discountVal > 0 && <span className="text-danger">{t(T.BOOKING.PAYMENT.DISCOUNTS, { amount: fmt(totals.discountVal) })}</span>}
+
+                {totals.mainVat > 0 && <span>{t(T.BOOKING.PAYMENT.VAT, { amount: fmt(totals.mainVat) })}</span>}
+
+                <span className="fw-bold">₪{fmt(totals.baseTotal)}</span>
+
+              </div>
+
+            </div>
+
+
+
+            <div className="mb-3">
+
+              <strong className="d-block mb-1">{t(T.BOOKING.PAYMENT.HALL_EXTRAS)}</strong>
+
+              <div className="d-flex flex-column gap-1 small">
+
+                <span>{t(T.BOOKING.PAYMENT.HALL_EXTRAS_LINE, { amount: fmt(totals.hallExtrasBase) })}</span>
+
+                {totals.hallExtrasVat > 0 && <span>{t(T.BOOKING.PAYMENT.VAT, { amount: fmt(totals.hallExtrasVat) })}</span>}
+
+                <span className="fw-bold">₪{fmt(totals.hallExtrasTotal)}</span>
+
+              </div>
+
+            </div>
+
+
+
+            {totals.externalExtrasBase > 0 && (
+
+              <div className="mb-3">
+
+                <strong className="d-block mb-1">{t(T.BOOKING.PAYMENT.EXTERNAL_PAYMENT)}</strong>
+
+                <div className="d-flex flex-column gap-1 small">
+
+                  <span>{t(T.BOOKING.PAYMENT.UPGRADES_LINE, { amount: fmt(totals.externalExtrasBase) })}</span>
+
+                  {totals.externalExtrasVat > 0 && <span>{t(T.BOOKING.PAYMENT.VAT, { amount: fmt(totals.externalExtrasVat) })}</span>}
+
+                  <span className="fw-bold">₪{fmt(totals.externalExtrasTotal)}</span>
+
+                  <span className="text-muted">{t(T.BOOKING.PAYMENT.EXTERNAL_NOTE)}</span>
+
+                </div>
+
+              </div>
+
+            )}
+
+
+
+            <p className="fs-5 fw-bold mb-1">{t(T.BOOKING.PAYMENT.TOTAL_OFFER, { amount: fmt(totals.finalTotal) })}</p>
+
+            {isFoodRelevant && formData.guestCount && (
+
+              <p className="small text-muted mb-0">
+
+                {formData.optionalGuestCount
+
+                  ? t(T.BOOKING.PAYMENT.PORTIONS_SUMMARY_WITH_RESERVE, {
+
+                      count: formData.guestCount,
+
+                      extra: formData.optionalGuestCount,
+
+                    })
+
+                  : t(T.BOOKING.PAYMENT.PORTIONS_SUMMARY, { count: formData.guestCount })}
+
+              </p>
+
+            )}
+
+          </div>
+
         </div>
+
       </div>
-    </>
+
   );
+
 };
 
+
+
 export default PaymentAndUpgradesSection;
+
+

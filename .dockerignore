@@ -1,0 +1,34 @@
+# Dependencies
+**/node_modules
+**/.env
+**/.env.*
+!**/.env.example
+
+# Build artifacts
+**/dist
+**/build
+client/dist
+
+# Tests & reports
+test-results
+playwright-report
+blob-report
+playwright/.cache
+tests/e2e/.auth
+coverage
+
+# Git & IDE
+.git
+.github
+.cursor
+.vscode
+*.md
+!server/prisma/**
+
+# Logs & uploads
+**/logs
+**/uploads
+design-exports
+
+# Local scripts output
+server/scripts/last-public-url.txt

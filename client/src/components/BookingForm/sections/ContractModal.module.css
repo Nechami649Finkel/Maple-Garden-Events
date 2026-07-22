@@ -1,0 +1,276 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 32, 44, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--brand-z-modal-top);
+  direction: rtl;
+  padding: 16px;
+}
+
+.modal {
+  max-width: 850px;
+  width: 95%;
+  background: var(--brand-surface);
+  border-radius: var(--brand-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--brand-shadow-lg);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--brand-border);
+}
+
+.header {
+  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
+  color: #fff;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.header h3 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.headerClose {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.headerClose:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.body {
+  padding: 28px 30px;
+  direction: rtl;
+  text-align: right;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.contentWrap {
+  position: relative;
+}
+
+.draftWatermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: clamp(4rem, 10vw, 8rem);
+  color: rgba(140, 191, 142, 0.18);
+  font-weight: 900;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+  user-select: none;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbarTitle {
+  font-weight: 700;
+  color: var(--brand-text);
+  font-size: 1rem;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editBtn {
+  background: var(--brand-green-light);
+  color: var(--brand-green-deep);
+  border: 1px solid var(--brand-green-muted);
+  padding: 8px 16px;
+  border-radius: var(--brand-radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  font-family: var(--brand-font);
+}
+
+.editBtn:hover {
+  background: var(--brand-green-muted);
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+}
+
+.textarea {
+  width: 100%;
+  height: 400px;
+  padding: 20px;
+  margin-bottom: 20px;
+  border: 2px solid var(--brand-green);
+  border-radius: var(--brand-radius);
+  color: var(--brand-text);
+  line-height: 1.8;
+  font-size: 1rem;
+  resize: vertical;
+  font-family: inherit;
+  direction: rtl;
+  box-sizing: border-box;
+}
+
+.textPanel {
+  height: 400px;
+  overflow-y: auto;
+  background: var(--brand-surface);
+  padding: 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--brand-radius);
+  color: var(--brand-text);
+  line-height: 1.8;
+  font-size: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.disclaimer {
+  background: var(--brand-green-light);
+  padding: 18px 20px;
+  border-radius: var(--brand-radius);
+  margin-bottom: 20px;
+  border: 1px solid var(--brand-green-muted);
+}
+
+.disclaimer p {
+  font-size: 0.95rem;
+  color: var(--brand-green-deep);
+  margin: 0;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.signatureSection {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.signatureSection h4 {
+  margin: 0 0 14px;
+  color: var(--brand-text);
+  font-size: 1.05rem;
+}
+
+.signatureBox {
+  border: 2px solid var(--brand-border-strong);
+  background: var(--brand-bg);
+  border-radius: var(--brand-radius);
+  display: inline-block;
+  padding: 5px;
+  max-width: 100%;
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 24px;
+  padding-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.signBtn {
+  padding: 12px 36px;
+  font-size: 1.05rem;
+}
+
+.emptyMsg {
+  color: var(--brand-text-muted);
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: none;
+    max-height: 100dvh;
+    border-radius: var(--brand-radius-lg) var(--brand-radius-lg) 0 0;
+  }
+
+  .header {
+    padding: 14px 16px;
+  }
+
+  .header h3 {
+    font-size: 1.05rem;
+  }
+
+  .body {
+    padding: 16px;
+  }
+
+  .textPanel,
+  .textarea {
+    height: min(50vh, 360px);
+    padding: 16px;
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions :global(.maple-btn) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .signatureBox {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .editActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .editActions :global(.maple-btn) {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .editBtn {
+    width: 100%;
+    text-align: center;
+  }
+}
