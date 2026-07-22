@@ -34,7 +34,6 @@ import SignatureCanvas from 'react-signature-canvas';
 import ClientsSection from './sections/ClientsSection';
 import EventSettingsSection from './sections/EventSettingsSection';
 import UpgradesSection from './sections/UpgradesSection';
-import UpgradeTablesPanel from '../Contract/UpgradeTablesPanel';
 import PaymentAndUpgradesSection from './sections/PaymentAndUpgradesSection';
 import ContractModal from './sections/ContractModal';
 import MetaBar from './sections/MetaBar';
@@ -236,7 +235,6 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [servingStyle, setServingStyle] = useState(DEFAULT_SERVING_STYLE);
   const [kosherType, setKosherType] = useState(DEFAULT_KOSHER_TYPE);
   const [upgrades, setUpgrades] = useState({ ...DEFAULT_UPGRADES });
-  const [addingUpgradeKey, setAddingUpgradeKey] = useState<string | null>(null);
   const [depositMethod, setDepositMethod] = useState('');
   const [checkScanning, setCheckScanning] = useState(false);
   const [contractSigned, setContractSigned] = useState(false);
@@ -641,15 +639,12 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
   };
 
-  const handleUpgradeChange = (key: keyof typeof upgrades) => {
+  const handleUpgradeChange = async (key: keyof typeof upgrades) => {
     if (key === 'baseDesign') return;
-    setUpgrades((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
+    const newValue = !upgrades[key];
 
-  const handleAddUpgrade = async (key: UpgradeKey) => {
-    setAddingUpgradeKey(key);
-    try {
-      if (editId) {
+    if (editId && newValue) {
+      try {
         const res = await apiFetch(`${API_URL}/bookings/${editId}/upgrades`, {
           method: 'PATCH',
           body: JSON.stringify({ upgradeKey: key }),
@@ -662,12 +657,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         setUpgrades((prev) => ({ ...prev, [key]: true }));
         if (json.data?.contractText) setContractText(json.data.contractText);
         if (json.data?.paymentTermsText) setPaymentTermsText(json.data.paymentTermsText);
-        return;
+      } catch {
+        alert(t(T.BOOKING.ALERTS.UPGRADE_ADD_FAILED));
       }
-      setUpgrades((prev) => ({ ...prev, [key]: true }));
-    } finally {
-      setAddingUpgradeKey(null);
+      return;
     }
+
+    setUpgrades((prev) => ({ ...prev, [key]: newValue }));
   };
 
   const processCheckImage = async (imageSrc: string) => {
@@ -1154,17 +1150,6 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
                 upgradesPricing={upgradesPricing}
                 upgradeDisplayOrder={visibleUpgradeKeys}
                 isHallOnly={isHallOnly}
-              />
-              <UpgradeTablesPanel
-                upgrades={upgrades}
-                onAddUpgrade={handleAddUpgrade}
-                upgradesPricing={upgradesPricing}
-                kosherType={kosherType}
-                guestCount={Number(formData.guestCount) || 0}
-                isHallOnly={isHallOnly}
-                isFoodRelevant={isFoodRelevant}
-                upgradeDisplayOrder={visibleUpgradeKeys}
-                addingKey={addingUpgradeKey}
               />
               {!isOption && (
                 <div className="card border-info mb-3">
