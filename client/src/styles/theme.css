@@ -1,57 +1,64 @@
 :root {
+  /* ── Base palette ── */
+  --brand-color-primary: #29443F;
+  --brand-color-bg: #F4F6F9;
+  --brand-color-surface-alt: #EDF0F8;
+  --brand-color-white: #FFFFFF;
+
   /* ── Surfaces ── */
-  --brand-bg: #F5F4F1;
-  --brand-surface: #FFFFFF;
-  --brand-surface-raised: #FAFAF8;
+  --brand-bg: var(--brand-color-bg);
+  --brand-surface: var(--brand-color-white);
+  --brand-surface-raised: var(--brand-color-surface-alt);
 
   /* ── Text ── */
-  --brand-charcoal: #1C1F23;
-  --brand-text: #2A2E33;
-  --brand-text-secondary: #4A5058;
-  --brand-text-muted: #6B7280;
+  --brand-charcoal: var(--brand-color-primary);
+  --brand-text: var(--brand-color-primary);
+  --brand-text-secondary: #4A5C58;
+  --brand-text-muted: #7A8B88;
 
   /* ── Borders ── */
-  --brand-border: #E8E6E1;
-  --brand-border-strong: #D4D0C8;
+  --brand-border: #E0E4EC;
+  --brand-border-strong: #CED4DF;
 
-  /* ── Champagne gold accents ── */
-  --brand-gold: #B8956A;
-  --brand-gold-light: #F5EFE6;
-  --brand-gold-deep: #96784F;
+  /* ── Brand accents (derived from primary) ── */
+  --brand-gold: var(--brand-color-primary);
+  --brand-gold-light: var(--brand-color-surface-alt);
+  --brand-gold-deep: #1F332F;
 
-  /* ── Sage brand (refined green) ── */
-  --brand-green: #6B9E6E;
-  --brand-green-dark: #4F7F52;
-  --brand-green-deep: #3D6340;
-  --brand-green-light: #EEF4EF;
-  --brand-green-muted: #C5D9C7;
+  /* ── Brand greens (primary scale) ── */
+  --brand-green: var(--brand-color-primary);
+  --brand-green-dark: #223834;
+  --brand-green-deep: #1A2B28;
+  --brand-green-light: var(--brand-color-surface-alt);
+  --brand-green-muted: #D5DCE8;
 
-  /* ── Sidebar (light) ── */
-  --brand-sidebar-bg: #F4F7F4;
-  --brand-sidebar-text: #4A5058;
-  --brand-sidebar-text-active: #3D6340;
-  --brand-sidebar-active: #EEF4EF;
-  --brand-sidebar-border: #E8E6E1;
+  /* ── Sidebar ── */
+  --brand-sidebar-bg: var(--brand-color-bg);
+  --brand-sidebar-text: #4A5C58;
+  --brand-sidebar-text-active: var(--brand-color-primary);
+  --brand-sidebar-active: var(--brand-color-surface-alt);
+  --brand-sidebar-border: var(--brand-border);
   --brand-sidebar-width: 260px;
   --brand-sidebar-collapsed: 72px;
+  --brand-sidebar-text-size: clamp(15px, 0.9375rem + 0.1vw, 16px);
 
   /* ── Panel headers & active tabs ── */
-  --brand-panel-header-bg: linear-gradient(135deg, #EEF4EF 0%, #F5EFE6 100%);
-  --brand-panel-header-text: #3D6340;
-  --brand-tab-active-bg: #4F7F52;
-  --brand-overlay: rgba(74, 80, 88, 0.22);
+  --brand-panel-header-bg: linear-gradient(135deg, var(--brand-color-surface-alt) 0%, var(--brand-color-bg) 100%);
+  --brand-panel-header-text: var(--brand-color-primary);
+  --brand-tab-active-bg: var(--brand-color-primary);
+  --brand-overlay: rgba(41, 68, 63, 0.22);
 
   /* ── Gradients ── */
-  --brand-accent-gradient: linear-gradient(135deg, #6B9E6E 0%, #4F7F52 100%);
+  --brand-accent-gradient: linear-gradient(135deg, #29443F 0%, #1F332F 100%);
 
   /* ── Semantic ── */
   --brand-danger: #C53030;
   --brand-warning: #C05621;
   --brand-info: #3D6B9E;
-  --brand-success: #4F7F52;
+  --brand-success: var(--brand-color-primary);
 
   /* ── Focus / a11y ── */
-  --brand-focus-ring: #B8956A;
+  --brand-focus-ring: var(--brand-color-primary);
   --brand-focus-offset: 2px;
   --brand-focus-width: 2px;
 
@@ -78,9 +85,9 @@
   --brand-radius-full: 9999px;
 
   /* ── Shadows ── */
-  --brand-shadow-sm: 0 1px 3px rgba(28, 31, 35, 0.06);
-  --brand-shadow: 0 4px 12px rgba(28, 31, 35, 0.08);
-  --brand-shadow-lg: 0 8px 24px rgba(28, 31, 35, 0.12);
+  --brand-shadow-sm: 0 1px 3px rgba(41, 68, 63, 0.06);
+  --brand-shadow: 0 4px 12px rgba(41, 68, 63, 0.08);
+  --brand-shadow-lg: 0 8px 24px rgba(41, 68, 63, 0.12);
 
   /* ── Typography ── */
   --brand-font: 'Heebo', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -104,14 +111,14 @@
   --brand-z-modal-top: 1100;
 
   /* ── Event form section accents ── */
-  --brand-section-time: #B8956A;
-  --brand-section-guests: #4F7F52;
-  --brand-section-design: #96784F;
+  --brand-section-time: var(--brand-color-primary);
+  --brand-section-guests: var(--brand-color-primary);
+  --brand-section-design: #1F332F;
   --brand-section-equip: #3D6B9E;
   --brand-section-ent: #7B6B9E;
-  --brand-section-pay: #96784F;
-  --brand-section-menu-bg: #EEF4EF;
-  --brand-section-notes: #6B7280;
+  --brand-section-pay: #1F332F;
+  --brand-section-menu-bg: var(--brand-color-surface-alt);
+  --brand-section-notes: #7A8B88;
 
   /* ── Event form density ── */
   --brand-form-section-pad: clamp(8px, 1vw, 14px);
@@ -167,7 +174,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  border-bottom: 3px solid var(--brand-gold);
+  border-bottom: 3px solid var(--brand-color-primary);
 }
 
 .maple-modal-header h3,
@@ -255,3 +262,4 @@
   color: var(--brand-text-muted);
   font-size: var(--brand-text-base);
 }
+

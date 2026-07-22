@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   background: rgba(26, 32, 44, 0.5);
-  z-index: var(--maple-z-panel);
+  z-index: var(--brand-z-panel);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -12,14 +12,14 @@
 }
 
 .panel {
-  background: var(--maple-surface);
+  background: var(--brand-surface);
   width: min(480px, 92vw);
   height: min(480px, 85vh);
   max-height: calc(100dvh - 32px);
-  box-shadow: var(--maple-shadow-lg);
+  box-shadow: var(--brand-shadow-lg);
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--maple-border);
+  border: 1px solid var(--brand-border);
   border-radius: 20px;
   overflow: hidden;
 }
@@ -30,7 +30,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 24px 28px;
-  border-bottom: 1px solid var(--maple-border);
+  border-bottom: 1px solid var(--brand-border);
 }
 
 .headerText {
@@ -41,30 +41,30 @@
   margin: 0;
   font-size: 1.375rem;
   font-weight: 700;
-  color: var(--maple-text);
+  color: var(--brand-text);
   line-height: 1.3;
 }
 
 .subtitle {
   margin: 6px 0 0;
   font-size: 1rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
 
 .closeBtn {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   font-size: 1rem;
   cursor: pointer;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   flex-shrink: 0;
 }
 
 .closeBtn:hover {
-  color: var(--maple-text);
+  color: var(--brand-text);
 }
 
 .body {
@@ -81,7 +81,7 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .summary {
@@ -92,13 +92,13 @@
 
 .summaryLabel {
   font-size: 0.875rem;
-  color: var(--maple-text-secondary);
+  color: var(--brand-text-secondary);
 }
 
 .slots {
   margin: 0;
   font-size: 0.8125rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
   line-height: 1.4;
 }
 
@@ -110,7 +110,7 @@
 }
 
 .primaryBtn {
-  background: var(--maple-green);
+  background: var(--brand-green);
   color: white;
   border: none;
   border-radius: 10px;
@@ -118,33 +118,33 @@
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .primaryBtn:hover {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
 }
 
 .optionBtn {
-  background: var(--maple-surface);
-  color: var(--maple-green-dark);
-  border: 2px dashed var(--maple-green);
+  background: var(--brand-surface);
+  color: var(--brand-green-dark);
+  border: 2px dashed var(--brand-green);
   border-radius: 10px;
   padding: 16px;
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--maple-transition);
+  transition: background var(--brand-transition);
 }
 
 .optionBtn:hover {
-  background: var(--maple-green-light);
+  background: var(--brand-green-light);
 }
 
 .secondaryBtn {
   background: transparent;
-  color: var(--maple-text);
-  border: 1px solid var(--maple-border-strong);
+  color: var(--brand-text);
+  border: 1px solid var(--brand-border-strong);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 0.875rem;
@@ -154,11 +154,12 @@
 }
 
 .secondaryBtn:hover {
-  background: var(--maple-bg);
+  background: var(--brand-bg);
 }
 
 .emptyHint {
   margin: 0;
   font-size: 0.875rem;
-  color: var(--maple-text-muted);
+  color: var(--brand-text-muted);
 }
+

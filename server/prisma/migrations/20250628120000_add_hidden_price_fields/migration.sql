@@ -1,1 +1,0 @@
-ALTER TABLE "SystemSettings" ADD COLUMN IF NOT EXISTS "hiddenPriceFields" JSONB NOT NULL DEFAULT '[]';

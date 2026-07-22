@@ -341,6 +341,7 @@ const FloorPlanBuilderEditor: React.FC<EditorProps> = ({
             alt={t(T.FLOOR_PLAN.MAP_ALT)}
             className="hall-background"
             draggable={false}
+            loading="lazy"
           />
           <div className="tables-layer" key={layoutKey}>
             {tables.map(table => (

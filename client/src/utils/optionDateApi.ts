@@ -81,7 +81,8 @@ export async function fetchCalendarDays(
   return data as CalendarDayApi[];
 }
 
-function getHebrewDateLabel(dateStr: string): string {
+/** Day + Hebrew month label, e.g. "יט בתמוז" (falls back when API omits hebrewDate). */
+export function getHebrewDateLabel(dateStr: string): string {
   try {
     return new Intl.DateTimeFormat('he-IL-u-ca-hebrew', { day: 'numeric', month: 'long' }).format(
       new Date(`${dateStr}T12:00:00`),

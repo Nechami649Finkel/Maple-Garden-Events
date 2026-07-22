@@ -38,12 +38,18 @@
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
-  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0.28s;
   direction: rtl;
 }
 
 .app-sidebar-drawer-open {
   transform: translateX(0);
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .app-sidebar-overlay {
@@ -93,7 +99,7 @@
 }
 
 .app-sidebar-venue {
-  font-size: var(--brand-text-sm);
+  font-size: var(--brand-sidebar-text-size);
   font-weight: 600;
   color: var(--brand-sidebar-text-active);
   white-space: nowrap;
@@ -125,10 +131,10 @@
 .app-sidebar-list {
   list-style: none;
   margin: 0;
-  padding: var(--brand-space-3) var(--brand-space-2);
+  padding: var(--brand-space-4) var(--brand-space-3);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--brand-space-2);
   overflow-y: auto;
   flex: 1;
 }
@@ -138,11 +144,11 @@
   display: flex;
   align-items: center;
   gap: var(--brand-space-3);
-  padding: 11px var(--brand-space-3);
+  padding: 14px var(--brand-space-4);
   background: none;
   border: none;
   border-radius: var(--brand-radius-sm);
-  font-size: var(--brand-text-sm);
+  font-size: var(--brand-sidebar-text-size);
   font-weight: 500;
   color: var(--brand-sidebar-text);
   cursor: pointer;
@@ -180,3 +186,4 @@
   opacity: 1;
   color: var(--brand-gold-deep);
 }
+

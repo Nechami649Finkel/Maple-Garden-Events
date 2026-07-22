@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middlewares/auth';
 import prisma from '../config/prisma';
 import { buildBookingPdfData, generateEventProductionPDF } from '../utils/pdfGenerator';
 import { sendEventFormEmailIfAllowed } from '../utils/eventFormEmail';
@@ -14,8 +15,9 @@ function mapTableCreate(table: {
   isHonor?: boolean;
   width?: number | null;
   height?: number | null;
-}) {
+}, tenantId: string) {
   return {
+    tenantId,
     tableNumber: table.id,
     positionX: table.x,
     positionY: table.y,
@@ -94,8 +96,9 @@ export const eventFormController = {
     }
   },
 
-  async upsertForm(req: Request, res: Response) {
+  async upsertForm(req: AuthRequest, res: Response) {
     try {
+      const { tenantId } = req.user!;
       const bookingId = typeof req.params.bookingId === 'string' ? req.params.bookingId : '';
       const { tables, ...rawBody } = req.body as { tables?: Parameters<typeof mapTableCreate>[0][] } & Record<string, unknown>;
       const formData = pickEventFormDbFields(rawBody);
@@ -107,14 +110,15 @@ export const eventFormController = {
           ...formData,
           tables: tableRows ? {
             deleteMany: {},
-            create: tableRows.map(mapTableCreate)
+            create: tableRows.map(t => mapTableCreate(t, tenantId))
           } : undefined
         },
         create: { 
+          tenantId,
           bookingId, 
           ...formData,
           tables: tableRows ? {
-            create: tableRows.map(mapTableCreate)
+            create: tableRows.map(t => mapTableCreate(t, tenantId))
           } : undefined
         }
       });
@@ -192,8 +196,9 @@ export const eventFormController = {
     }
   },
 
-  async saveTables(req: Request, res: Response) {
+  async saveTables(req: AuthRequest, res: Response) {
     try {
+      const { tenantId } = req.user!;
       const bookingId = typeof req.params.bookingId === 'string' ? req.params.bookingId : '';
       const { tables, tableLayoutImageUrl } = req.body;
 
@@ -207,14 +212,15 @@ export const eventFormController = {
           ...(typeof tableLayoutImageUrl === 'string' ? { tableLayoutImageUrl } : {}),
           tables: {
             deleteMany: {},
-            create: tables.map(mapTableCreate),
+            create: tables.map(t => mapTableCreate(t, tenantId)),
           },
         },
         create: {
+          tenantId,
           bookingId,
           ...(typeof tableLayoutImageUrl === 'string' ? { tableLayoutImageUrl } : {}),
           tables: {
-            create: tables.map(mapTableCreate),
+            create: tables.map(t => mapTableCreate(t, tenantId)),
           },
         },
         include: { tables: true },

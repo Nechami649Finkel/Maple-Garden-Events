@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { AccessibilitySettings } from '../../accessibility/accessibilitySettings';
-import { useAccessibility } from '../../context/AccessibilityContext';
+import { useAccessibility } from '../../context/accessibilityContext';
 import { useTranslation } from '../../i18n/useTranslation';
 import { T, type TranslationKey } from '@shared/i18n';
 import styles from './AccessibilityWidget.module.css';

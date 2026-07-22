@@ -216,7 +216,7 @@
 .secondaryBtn:hover { background: #e2e8f0; }
 
 .listHeader {
-  background: var(--maple-green-dark);
+  background: var(--brand-green-dark);
   padding: 16px 20px;
   display: flex;
   align-items: center;
@@ -355,3 +355,4 @@
     grid-template-columns: 1fr;
   }
 }
+

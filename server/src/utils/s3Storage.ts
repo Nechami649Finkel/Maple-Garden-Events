@@ -120,6 +120,12 @@ export async function uploadPrivateFile(params: {
 
 export async function getPresignedDownloadUrl(storedOrKey: string, expiresIn = DEFAULT_PRESIGN_TTL): Promise<string> {
   const objectKey = assertAllowedS3ObjectKey(storedOrKey);
+  
+  if (process.env.CLOUDFRONT_DOMAIN) {
+    // If CloudFront is configured, serve through CDN for performance & edge caching
+    return `https://${process.env.CLOUDFRONT_DOMAIN}/${objectKey}`;
+  }
+
   const bucket = getBucket();
   const s3 = getS3Client();
 

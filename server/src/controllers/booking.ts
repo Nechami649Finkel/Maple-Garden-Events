@@ -4,6 +4,7 @@ import prisma from '../config/prisma';
 import { mailFailureMessage, sendBumpEmail, sendOptionInterestEmail } from '../utils/mailer';
 import { sendBumpWhatsApp, sendOptionInterestWhatsApp } from '../utils/whatsapp';
 import { catchAsync } from '../middlewares/errorHandler';
+import { invalidateCache } from '../middlewares/cacheMiddleware';
 import { AuthRequest } from '../middlewares/auth';
 import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
 import { getContractText, resolveContractWithPaymentTerms, resolveDefaultPaymentTermsText } from '../utils/getContractText';
@@ -254,6 +255,8 @@ function validateHallRentalPriceInput(data: { eventType?: string; hallRentalPric
 }
 
 export const createBooking = catchAsync(async (req: AuthRequest, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const data = req.body;
   const isManager = req.user?.role === 'manager'; 
   const currentUserName = req.user?.name || "נציג מערכת";
@@ -287,7 +290,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
 
   // חישוב מחירים — מקור אמת בשרת; דוחה מניפולציה מהלקוח
-  const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+  const systemSettings = await prisma.systemSettings.findFirst({ where: { id: 'global',
+      tenantId
+} });
   const priceCheck = validateClientPricing(data, systemSettings, 0);
   if (!priceCheck.valid) {
     return res.status(400).json({ success: false, message: priceCheck.message });
@@ -400,8 +405,10 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
       if (isOverrideTarget && eventDate) {
         await releaseOptionDateInTx(tx, eventDate.id);
-        eventDate = await tx.eventDate.findUnique({
-          where: { id: eventDate.id },
+        eventDate = await tx.eventDate.findFirst({
+          where: { id: eventDate.id,
+              tenantId
+        },
           include: { bookings: true },
         });
         if (!eventDate) {
@@ -428,7 +435,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
       if (!eventDate) {
         eventDate = await tx.eventDate.create({
-          data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate },
+          data: { date: calendarDateForStorage(calendarKey), status: newStatus, optionExpiresAt: expiryDate,
+              tenantId
+        },
           include: { bookings: true },
         });
       } else if (!isOverrideTarget) {
@@ -445,17 +454,15 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           updatePayload.optionExpiresAt = null;
         }
         if (Object.keys(updatePayload).length > 0) {
-          eventDate = await tx.eventDate.update({
-            where: { id: eventDate.id },
-            data: updatePayload,
-            include: { bookings: true },
-          });
+          eventDate = await tx.eventDate.update({ where: { id: eventDate.id }, data: updatePayload, include: { bookings: true } });
         }
       }
 
       await lockEventDateRow(tx, eventDate.id);
-      eventDate = await tx.eventDate.findUnique({
-        where: { id: eventDate.id },
+      eventDate = await tx.eventDate.findFirst({
+        where: { id: eventDate.id,
+            tenantId
+        },
         include: { bookings: true },
       });
       if (!eventDate) {
@@ -476,11 +483,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       );
 
       if (newStatus === 'BOOKED' && eventDate.status !== 'BOOKED') {
-        eventDate = await tx.eventDate.update({
-          where: { id: eventDate.id },
-          data: { status: 'BOOKED', optionExpiresAt: null },
-          include: { bookings: true },
-        });
+        eventDate = await tx.eventDate.update({ where: { id: eventDate.id }, data: { status: 'BOOKED', optionExpiresAt: null }, include: { bookings: true } });
       }
 
       const timeString = formatStoredTimeOfDay(slot, data.startTime, data.endTime);
@@ -501,9 +504,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           clientBEmail: data.clientBEmail || null,
           clientBAddress: clientBAddressCombined || null,
           
-          eventDate: { 
-            connect: { id: eventDate.id } 
-          },
+          eventDate: { connect: { id: eventDate.id } },
           
           eventType: data.eventType,
           timeOfDay: timeString,
@@ -556,6 +557,7 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           paymentTermsText: paymentTermsText || null,
           upgrades: lineItemOptions.upgrades,
           kosherType: data.kosherType || null,
+          tenant: { connect: { id: tenantId } }
         }
       });
       } catch (createErr) {
@@ -585,7 +587,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
   if (createdBookings.length > 0) {
     emitBookingUpdated(createdBookings[0].id);
     if (!isOption) {
-      void syncBookingPaymentMetadata(createdBookings[0].id);
+      syncBookingPaymentMetadata(createdBookings[0].id).catch(err => {
+        logger.error(`Background payment sync failed for booking ${createdBookings[0].id}`, { error: err });
+      });
     }
   }
 
@@ -633,8 +637,10 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
   let responseData: typeof createdBookings = createdBookings;
   if (createdBookings.length > 0 && easycountResult) {
-    const refreshed = await prisma.booking.findUnique({
-      where: { id: createdBookings[0].id },
+    const refreshed = await prisma.booking.findFirst({
+      where: { id: createdBookings[0].id,
+          tenantId
+    },
       include: { eventDate: true },
     });
     if (refreshed) responseData = [refreshed];
@@ -649,9 +655,13 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
 });
 
 export const getBookingById = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const id = req.params.id as string;
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id,
+        tenantId
+    },
     include: { eventDate: true },
   });
 
@@ -663,10 +673,14 @@ export const getBookingById = catchAsync(async (req: Request, res: Response) => 
 });
 
 export const reissueEasyCountReceipt = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const id = req.params.id as string;
   const force = req.body?.force === true;
 
-  const booking = await prisma.booking.findUnique({ where: { id } });
+  const booking = await prisma.booking.findFirst({ where: { id,
+      tenantId
+} });
   if (!booking) {
     return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
   }
@@ -685,8 +699,10 @@ export const reissueEasyCountReceipt = catchAsync(async (req: Request, res: Resp
     });
   }
 
-  const refreshed = await prisma.booking.findUnique({
-    where: { id },
+  const refreshed = await prisma.booking.findFirst({
+    where: { id,
+        tenantId
+    },
     include: { eventDate: true },
   });
 
@@ -699,9 +715,13 @@ export const reissueEasyCountReceipt = catchAsync(async (req: Request, res: Resp
 });
 
 export const getRelatedOptionBookings = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const id = req.params.id as string;
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id,
+        tenantId
+    },
     include: { eventDate: true },
   });
 
@@ -721,6 +741,7 @@ export const getRelatedOptionBookings = catchAsync(async (req: Request, res: Res
       createdBy: booking.createdBy,
       isOption: true,
       createdAt: { gte: createdAtStart, lte: createdAtEnd },
+        tenantId
     },
     include: { eventDate: true },
     orderBy: { eventDate: { date: 'asc' } },
@@ -730,11 +751,15 @@ export const getRelatedOptionBookings = catchAsync(async (req: Request, res: Res
 });
 
 export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const id = req.params.id as string;
   const data = req.body;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id,
+        tenantId
+    },
     include: { eventDate: true },
   });
 
@@ -825,7 +850,9 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     calculatedTotals: data.calculatedTotals,
   };
 
-  const systemSettings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+  const systemSettings = await prisma.systemSettings.findFirst({ where: { id: 'global',
+      tenantId
+} });
   const priceCheck = validateClientPricing(pricingPayload, systemSettings, liveTotal);
   if (!priceCheck.valid) {
     return res.status(400).json({ success: false, message: priceCheck.message });
@@ -876,8 +903,10 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     if (slot) {
       const calendarKey = calendarKeyFromDbDate(booking.eventDate.date);
-      const freshDate = await tx.eventDate.findUnique({
-        where: { id: booking.eventDate.id },
+      const freshDate = await tx.eventDate.findFirst({
+        where: { id: booking.eventDate.id,
+            tenantId
+        },
         include: { bookings: true },
       });
       const siblingBookings = (freshDate?.bookings ?? []).filter((b) => b.id !== id);
@@ -967,8 +996,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     let updatedBooking;
     try {
-      updatedBooking = await tx.booking.update({
-      where: { id },
+      updatedBooking = await tx.booking.update({ where: { id },
       data: updateData,
       include: { eventDate: true },
     });
@@ -981,13 +1009,13 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 
     if (isConverting) {
       const remainingOptions = await tx.booking.count({
-        where: { calendarDateId: booking.eventDate.id, isOption: true, id: { not: id } },
+        where: { calendarDateId: booking.eventDate.id, isOption: true, id: { not: id },
+            tenantId
+        },
       });
 
       if (remainingOptions === 0) {
-        await tx.eventDate.update({
-          where: { id: booking.eventDate.id },
-          data: { status: 'BOOKED', optionExpiresAt: null },
+        await tx.eventDate.update({ where: { id: booking.eventDate.id }, data: { status: 'BOOKED', optionExpiresAt: null },
         });
       } else {
         await syncEventDateWithOptionBookings(tx, booking.eventDate.id);
@@ -1003,8 +1031,7 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       if (data.optionDurationHours) {
         const expiryDate = new Date();
         expiryDate.setHours(expiryDate.getHours() + Number(data.optionDurationHours));
-        await tx.eventDate.update({
-          where: { id: booking.eventDate.id },
+        await tx.eventDate.update({ where: { id: booking.eventDate.id },
           data: { optionExpiresAt: expiryDate },
         });
       }
@@ -1078,10 +1105,10 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       }
     }
 
-    const refreshed = await prisma.booking.findUnique({
-      where: { id: updated.id },
-      include: { eventDate: true },
-    });
+    const refreshed = await prisma.booking.findFirst({
+      where: { id: updated.id,
+          tenantId
+    }, include: { eventDate: true } });
 
     return res.status(200).json({
       success: true,
@@ -1104,8 +1131,12 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
   }
 
   const responseBooking = easycountResult
-    ? await prisma.booking.findUnique({ where: { id }, include: { eventDate: true } })
+    ? await prisma.booking.findFirst({ where: { id,
+        tenantId
+    }, include: { eventDate: true } })
     : updated;
+
+  await invalidateCache('calendar');
 
   res.status(200).json({
     success: true,
@@ -1116,6 +1147,8 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
 });
 
 export const addBookingUpgrade = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const id = req.params.id as string;
   const upgradeKey = String(req.body.upgradeKey || '').trim();
 
@@ -1123,8 +1156,10 @@ export const addBookingUpgrade = catchAsync(async (req: Request, res: Response) 
     return res.status(400).json({ success: false, message: 'שדרוג לא תקין.' });
   }
 
-  const booking = await prisma.booking.findUnique({
-    where: { id },
+  const booking = await prisma.booking.findFirst({
+    where: { id,
+        tenantId
+    },
     include: { eventDate: true, eventForm: true },
   });
 
@@ -1138,8 +1173,7 @@ export const addBookingUpgrade = catchAsync(async (req: Request, res: Response) 
 
   const refreshed = await refreshBookingUpgradesAndContract(booking, booking.eventForm, upgradeKey);
 
-  const updated = await prisma.booking.update({
-    where: { id },
+  const updated = await prisma.booking.update({ where: { id },
     data: {
       upgrades: refreshed.upgrades,
       extrasPrice: refreshed.extrasPrice,
@@ -1162,7 +1196,11 @@ export const addBookingUpgrade = catchAsync(async (req: Request, res: Response) 
 });
 
 export const getContractTemplate = catchAsync(async (_req: Request, res: Response) => {
-  const settings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
+    const tenantId = (_req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+  const settings = await prisma.systemSettings.findFirst({ where: { id: 'global',
+      tenantId
+} });
   const paymentMeta = getPaymentTemplatesFromSettings(settings);
   const paymentTermsText = await resolveDefaultPaymentTermsText();
   const contractBaseText = await getContractText();
@@ -1196,6 +1234,8 @@ export const getNextEventCode = catchAsync(async (req: Request, res: Response) =
 });
 
 export const getCancellationStats = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { month, year } = req.query; 
 
   let dateFilter = {};
@@ -1243,6 +1283,8 @@ export const getCancellationStats = catchAsync(async (req: Request, res: Respons
 });
 
 export const addEventAddition = async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   try {
     const bookingId = req.params.id as string; 
     const { description, cost, staffName, signature, agreedToTerms } = req.body;
@@ -1259,11 +1301,18 @@ export const addEventAddition = async (req: Request, res: Response) => {
           cost: Number(cost),
           staffName,
           signature,
-          agreedToTerms
+          agreedToTerms,
+            tenantId
         }
       });
 
-      const currentBooking = await tx.booking.findUnique({ where: { id: bookingId } });
+      const currentBookingList = await tx.$queryRaw<any[]>`
+        SELECT "liveAdditionsTotal", "basePrice", "extrasPrice" 
+        FROM "Booking" 
+        WHERE id = ${bookingId} 
+        FOR UPDATE
+      `;
+      const currentBooking = currentBookingList[0];
       if (currentBooking) {
         const additionCost = Number(cost) || 0;
         const currentLive = Number(currentBooking.liveAdditionsTotal) || 0;
@@ -1271,9 +1320,7 @@ export const addEventAddition = async (req: Request, res: Response) => {
         const basePrice = Number(currentBooking.basePrice) || 0;
         const extrasPrice = Number(currentBooking.extrasPrice) || 0;
 
-        await tx.booking.update({
-          where: { id: bookingId },
-          data: {
+        await tx.booking.update({ where: { id: bookingId }, data: {
             liveAdditionsTotal: newLiveTotal,
             totalPrice: basePrice + extrasPrice + newLiveTotal,
           },
@@ -1292,11 +1339,14 @@ export const addEventAddition = async (req: Request, res: Response) => {
 };
 
 export const finalizeBooking = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { bookingId, advancePaid, akumApprovalCode, hasMusic, clientSignature, tables } = req.body;
 
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { eventDate: true, eventForm: true }
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId,
+        tenantId
+    }, include: { eventDate: true, eventForm: true }
   });
 
   if (!booking || !booking.eventDate) return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
@@ -1317,8 +1367,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    const updatedBooking = await tx.booking.update({
-      where: { id: bookingId },
+    const updatedBooking = await tx.booking.update({ where: { id: bookingId },
       data: {
         hasMusic,
         akumApprovalCode,
@@ -1332,9 +1381,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
       }
     });
 
-    await tx.eventDate.update({
-      where: { id: booking.eventDate.id },
-      data: { status: 'BOOKED', optionExpiresAt: null }
+    await tx.eventDate.update({ where: { id: booking.eventDate.id }, data: { status: 'BOOKED', optionExpiresAt: null }
     });
 
     if (tables && Array.isArray(tables)) {
@@ -1344,6 +1391,7 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
           tables: {
             deleteMany: {},
             create: tables.map((table: any) => ({
+              tenantId,
               tableNumber: table.id,
               positionX: table.x,
               positionY: table.y,
@@ -1351,9 +1399,11 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
           }
         },
         create: {
+          tenantId,
           bookingId,
           tables: {
             create: tables.map((table: any) => ({
+              tenantId,
               tableNumber: table.id,
               positionX: table.x,
               positionY: table.y,
@@ -1363,10 +1413,12 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
       });
     }
 
-    return updatedBooking;
+    return tx.booking.findFirst({
+      where: { id: bookingId }
+    });
   });
 
-  if (finalSignature) {
+  if (finalSignature && updated) {
     try {
       const contractPdfBuffer = await generateContractPDF(
         buildBookingPdfData(
@@ -1398,10 +1450,10 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
     }
   }
 
-  const refreshed = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { eventDate: true, eventForm: true },
-  });
+  const refreshed = await prisma.booking.findFirst({
+    where: { id: bookingId,
+        tenantId
+    }, include: { eventDate: true, eventForm: true } });
 
   emitDateUpdated({ dateId: booking.eventDate.id, status: 'BOOKED' });
   emitBookingUpdated(bookingId);
@@ -1414,9 +1466,16 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
 });
 
 export const getAllBookings = catchAsync(async (req: Request, res: Response) => {
-  const { page, limit, skip } = parsePagination(req.query as Record<string, unknown>);
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+  const { page, limit, skip: pageSkip } = parsePagination(req.query as Record<string, unknown>);
+  const cursor = req.query.cursor as string | undefined;
   const status = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : undefined;
-  const search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  let search = typeof req.query.search === 'string' ? req.query.search.trim() : '';
+  
+  if (search.length > 100) {
+    search = search.substring(0, 100);
+  }
 
   if (status === 'OPTION') {
     await syncDesyncedOptionDates();
@@ -1440,37 +1499,55 @@ export const getAllBookings = catchAsync(async (req: Request, res: Response) => 
     ];
   }
 
+  const findManyArgs: Prisma.BookingFindManyArgs = {
+    where,
+    take: cursor ? limit + 1 : limit, 
+    skip: cursor ? 1 : pageSkip,
+    orderBy: cursor ? { id: 'desc' } : { eventDate: { date: 'desc' } }, 
+    include: { eventDate: true, eventForm: true, additions: true },
+  };
+
+  if (cursor) {
+    findManyArgs.cursor = { id: cursor };
+  }
+
   const [bookings, total] = await Promise.all([
-    prisma.booking.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { eventDate: { date: 'desc' } },
-      include: { eventDate: true, eventForm: true, additions: true },
-    }),
-    prisma.booking.count({ where }),
+    prisma.booking.findMany(findManyArgs),
+    cursor ? Promise.resolve(0) : prisma.booking.count({ where }),
   ]);
+
+  let nextCursor: string | undefined = undefined;
+  if (cursor && bookings.length > limit) {
+    const nextItem = bookings.pop();
+    nextCursor = nextItem?.id;
+  }
 
   res.status(200).json({
     success: true,
     data: bookings,
-    pagination: paginationMeta(page, limit, total),
+    pagination: cursor ? {
+      nextCursor,
+      hasMore: !!nextCursor,
+      limit,
+    } : paginationMeta(page, limit, total),
   });
 });
 
 export const releaseOptions = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { dateIds, cancelReason, clientName } = req.body; 
   
   if (!dateIds || dateIds.length === 0) return res.status(400).json({ success: false, message: 'לא נבחרו תאריכים לשחרור.' });
 
   await prisma.$transaction(async (tx) => {
-    await tx.eventDate.updateMany({
-      where: { id: { in: dateIds } },
-      data: { status: 'AVAILABLE', optionExpiresAt: null, clientName: null, clientPhone: null, clientEmail: null }
+    await tx.eventDate.updateMany({ where: { id: { in: dateIds } }, data: { status: 'AVAILABLE', optionExpiresAt: null, clientName: null, clientPhone: null, clientEmail: null }
     });
 
     await tx.booking.deleteMany({ 
-      where: { eventDate: { id: { in: dateIds } } } 
+      where: { eventDate: { id: { in: dateIds } },
+          tenantId
+    } 
     });
     
     if (cancelReason) {
@@ -1478,6 +1555,7 @@ export const releaseOptions = catchAsync(async (req: Request, res: Response) => 
         data: {
           reason: cancelReason,
           clientName: clientName || 'לא צוין',
+            tenantId
         }
       });
     }
@@ -1485,19 +1563,23 @@ export const releaseOptions = catchAsync(async (req: Request, res: Response) => 
 
   emitDateUpdatedMany(dateIds.map((dateId: string) => ({ dateId, status: 'AVAILABLE' })));
   emitBookingUpdated();
+  
+  await invalidateCache('calendar');
 
   res.status(200).json({ success: true, message: 'התאריכים שוחררו והסטטיסטיקה נשמרה בהצלחה.' });
 });
 
 export const bumpOption = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   let { dateId, bookingId } = req.body as { dateId?: string; bookingId?: string };
   let targetBookingId = bookingId;
 
   if (bookingId) {
-    const sourceBooking = await prisma.booking.findUnique({
-      where: { id: bookingId },
-      include: { eventDate: true },
-    });
+    const sourceBooking = await prisma.booking.findFirst({
+      where: { id: bookingId,
+          tenantId
+    }, include: { eventDate: true } });
     if (!sourceBooking?.isOption || !sourceBooking.eventDate) {
       return res.status(400).json({ success: false, message: 'ההזמנה אינה אופציה פעילה.' });
     }
@@ -1508,10 +1590,11 @@ export const bumpOption = catchAsync(async (req: Request, res: Response) => {
     return res.status(400).json({ success: false, message: 'חסר מזהה תאריך.' });
   }
 
-  const eventDate = await prisma.eventDate.findUnique({
-    where: { id: dateId },
-    include: { bookings: true },
-  });
+  const eventDate = await prisma.eventDate.findFirst({
+    where: { id: dateId,
+        tenantId
+    },
+    include: { bookings: true } });
 
   if (!eventDate) {
     return res.status(400).json({ success: false, message: 'התאריך לא נמצא.' });
@@ -1587,6 +1670,8 @@ export const bumpOption = catchAsync(async (req: Request, res: Response) => {
   emitDateUpdated({ dateId, status: 'OPTION' });
   emitBookingUpdated();
 
+  await invalidateCache('calendar');
+
   res.status(200).json({
     success: true,
     message: 'הדד-ליין עודכן ל-3 שעות מעכשיו.',
@@ -1599,14 +1684,18 @@ export const bumpOption = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const notifyOptionInterest = catchAsync(async (req: Request, res: Response) => {
+    const tenantId = (req as any).user?.tenantId;
+    if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
   const { bookingId, message } = req.body as { bookingId?: string; message?: string };
 
   if (!bookingId) {
     return res.status(400).json({ success: false, message: 'חסר מזהה הזמנה.' });
   }
 
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId,
+        tenantId
+    },
     include: { eventDate: true },
   });
 

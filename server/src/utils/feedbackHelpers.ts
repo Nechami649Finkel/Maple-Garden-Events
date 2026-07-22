@@ -189,6 +189,7 @@ export async function ensureFeedbackRecordsForBooking(booking: {
 
   await prisma.feedback.createMany({
     data: sides.map((side) => ({
+      tenantId: (booking as any).tenantId,
       bookingId: booking.id,
       clientSide: side.side,
       clientName: side.name,

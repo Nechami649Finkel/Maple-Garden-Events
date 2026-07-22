@@ -26,25 +26,53 @@ export const AuthorizedUsers = () => {
   const [users, setUsers] = useState<AuthorizedUser[]>([]);
   const [email, setEmail] = useState('');
   const [newRole, setNewRole] = useState('manager');
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const roleLabel = (role: keyof typeof ROLE_KEYS) =>
     t(T.SETTINGS[ROLE_KEYS[role] as keyof typeof T.SETTINGS] as typeof T.SETTINGS.ROLE_MANAGER);
 
-  const loadUsers = useCallback(() => {
-    apiFetch(AUTH_USERS_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error(`${t(T.UI.SERVER_ERROR)}: ${res.status}`);
-        return res.json();
-      })
-      .then((data: unknown) => {
-        if (Array.isArray(data)) setUsers(data as AuthorizedUser[]);
-      })
-      .catch((err) => console.error(t(T.SETTINGS.USERS_LOAD_ERROR), err));
+  const loadUsers = useCallback(async () => {
+    try {
+      const res = await apiFetch(AUTH_USERS_URL);
+      if (!res.ok) {
+        throw new Error(`${res.status}`);
+      }
+      const data: unknown = await res.json();
+      if (Array.isArray(data)) {
+        setUsers(data as AuthorizedUser[]);
+        setLoadError(null);
+      }
+    } catch (err) {
+      console.error(t(T.SETTINGS.USERS_LOAD_ERROR), err);
+      setLoadError(t(T.SETTINGS.USERS_LOAD_ERROR));
+    }
   }, [t, T]);
 
+  // Mount-only fetch — do NOT depend on loadUsers/t (unstable wrappers caused a 429 loop).
   useEffect(() => {
-    loadUsers();
-  }, [loadUsers]);
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await apiFetch(AUTH_USERS_URL);
+        if (cancelled) return;
+        if (!res.ok) throw new Error(`${res.status}`);
+        const data: unknown = await res.json();
+        if (!cancelled && Array.isArray(data)) {
+          setUsers(data as AuthorizedUser[]);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('authorized-users load failed', err);
+          setLoadError('load-failed');
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleAddEmail = async () => {
     const emailToSave = email.toLowerCase().trim();
@@ -58,7 +86,7 @@ export const AuthorizedUsers = () => {
       });
       if (!res.ok) throw new Error(t(T.SETTINGS.USER_ADD_ERROR));
       setEmail('');
-      loadUsers();
+      await loadUsers();
     } catch {
       alert(t(T.SETTINGS.USER_ADD_ERROR));
     }
@@ -72,7 +100,7 @@ export const AuthorizedUsers = () => {
         body: JSON.stringify({ role }),
       });
       if (!res.ok) throw new Error(t(T.SETTINGS.ROLE_UPDATE_ERROR));
-      loadUsers();
+      await loadUsers();
     } catch {
       alert(t(T.SETTINGS.ROLE_UPDATE_ERROR));
     }
@@ -83,7 +111,7 @@ export const AuthorizedUsers = () => {
     try {
       const res = await apiFetch(`${AUTH_USERS_URL}/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error(t(T.SETTINGS.USER_DELETE_ERROR));
-      loadUsers();
+      await loadUsers();
     } catch {
       alert(t(T.SETTINGS.USER_DELETE_ERROR));
     }
@@ -98,6 +126,10 @@ export const AuthorizedUsers = () => {
       marginTop: '20px',
     }}>
       <h3 style={{ marginTop: 0, marginBottom: '20px', color: '#2c3e50' }}>{t(T.SETTINGS.USERS_TITLE)}</h3>
+
+      {loadError && (
+        <p style={{ color: '#b91c1c', marginBottom: '12px' }}>{t(T.SETTINGS.USERS_LOAD_ERROR)}</p>
+      )}
 
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <input
