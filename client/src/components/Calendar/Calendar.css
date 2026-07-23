@@ -363,6 +363,15 @@
     var(--event-pill-height) * var(--calendar-max-events)
     + var(--event-pill-gap) * (var(--calendar-max-events) - 1)
   );
+  position: relative;
+  z-index: 1;
+}
+
+.cell-events-container.has-events {
+  /* Prefer event labels over empty reserved rows when the cell is short. */
+  min-height: var(--event-pill-height);
+  justify-content: flex-start;
+  margin-top: 2px;
 }
 
 .cell-events-container:empty {
@@ -390,7 +399,10 @@
   border-radius: 8px;
   flex-shrink: 0;
   height: var(--event-pill-height);
+  min-height: var(--event-pill-height);
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================================
