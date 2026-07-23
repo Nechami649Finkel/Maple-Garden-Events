@@ -24,6 +24,7 @@ import authRoutes from './routes/auth.routes';
 import checkInRoutes from './routes/checkIn.routes';
 import easyCountRoutes from './routes/easyCount.routes';
 import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
+import whatsappWebhookRoutes from './routes/whatsappWebhook.routes';
 import filesRoutes from './routes/files.routes';
 import checkScanRoutes from './routes/checkScan.routes';
 
@@ -96,6 +97,7 @@ app.use(csrfProtection);
 
 // Must mount before express.json so the route's express.raw can capture the original body.
 app.use('/api/webhooks/easy-count', easyCountWebhookRoutes);
+app.use('/api/webhooks/whatsapp', whatsappWebhookRoutes);
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
