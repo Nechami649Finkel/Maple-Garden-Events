@@ -108,6 +108,8 @@
     "META": {
       "ORDER_NUMBER_OPTION": "מספר אופציה",
       "ORDER_NUMBER_BOOKING": "מספר הזמנה",
+      "ORDER_NUMBER_PENDING_OPTION": "יוקצה בעת השמירה (OPT-xxxxx)",
+      "ORDER_NUMBER_PENDING_BOOKING": "יוקצה בעת השמירה (EVT-xxxxx)",
       "CREATED_BY_OPTION": "מי סגר את האופציה *",
       "CREATED_BY_BOOKING": "שם הנציג / סוכן ",
       "SELECT_CREATED_BY_OPTION": "בחרי מי סגר את האופציה",

@@ -108,6 +108,8 @@
     "META": {
       "ORDER_NUMBER_OPTION": "Option number",
       "ORDER_NUMBER_BOOKING": "Booking number",
+      "ORDER_NUMBER_PENDING_OPTION": "Assigned on save (OPT-xxxxx)",
+      "ORDER_NUMBER_PENDING_BOOKING": "Assigned on save (EVT-xxxxx)",
       "CREATED_BY_OPTION": "Who closed the option *",
       "CREATED_BY_BOOKING": "Representative / agent name",
       "SELECT_CREATED_BY_OPTION": "Select who closed the option",
