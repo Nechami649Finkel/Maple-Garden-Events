@@ -430,6 +430,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           const { id, createdAt, updatedAt, booking, bookingId, tables, ...cleanForm } = form;
           const bookingSource: Booking = {
             ...selected,
+            kosherType: selected.kosherType ?? booking?.kosherType,
             depositCheckUrl: selected.depositCheckUrl ?? booking?.depositCheckUrl,
             depositCheckDetails: selected.depositCheckDetails ?? booking?.depositCheckDetails,
             depositCheckStatus: selected.depositCheckStatus ?? booking?.depositCheckStatus,
