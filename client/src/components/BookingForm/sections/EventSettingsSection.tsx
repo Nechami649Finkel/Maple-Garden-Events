@@ -142,7 +142,6 @@ const EventSettingsSection = ({
               <div className="col-md-4">
                 <label className="form-label">{t(T.BOOKING.EVENT.MINIMUM_GUEST_COUNT)}</label>
                 <input type="number" name="minimumGuestCount" min="0" value={formData.minimumGuestCount} readOnly className="form-control bg-light" />
-                <div className="form-text maple-hint">{t(T.BOOKING.EVENT.MINIMUM_AUTO_HINT)}</div>
                 {Number(formData.minimumGuestCount || formData.guestCount) > 0 &&
                   Number(formData.minimumGuestCount || formData.guestCount) < 300 && (
                   <div className="form-text text-warning fw-semibold" role="status">
