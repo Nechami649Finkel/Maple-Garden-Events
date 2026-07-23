@@ -141,21 +141,40 @@ export async function getAuthUser(): Promise<AuthUserInfo | null> {
       const refreshed = await refreshSession();
       if (refreshed) {
         response = await secureFetch(`${API_BASE}/api/auth/me`);
+      } else {
+        clearUserCache();
+        return null;
       }
     }
-    if (!response.ok) return loadUserCache();
+    if (!response.ok) {
+      clearUserCache();
+      return null;
+    }
     const json = await response.json();
     if (json.user) {
       saveUserCache(json.user);
       return json.user as AuthUserInfo;
     }
+    clearUserCache();
     return null;
   } catch {
+    // Offline / network failure: fall back to short-lived session cache if present.
     return loadUserCache();
   }
 }
 
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 8000;
+
 export async function checkAuthSession(): Promise<boolean> {
-  const user = await getAuthUser();
-  return user !== null;
+  try {
+    const user = await Promise.race([
+      getAuthUser(),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), AUTH_BOOTSTRAP_TIMEOUT_MS);
+      }),
+    ]);
+    return user !== null;
+  } catch {
+    return false;
+  }
 }
