@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { formatDate, formatDateTime, formatCurrency } from '@shared/i18n/formatters';
+import { formatDate, formatDateTime } from '@shared/i18n/formatters';
 import {
   translateByValue,
   EVENT_TYPE_KEY_BY_VALUE,
@@ -20,7 +20,6 @@ import MenuSelectionForm from '../MenuSelectionForm/MenuSelectionForm';
 import FloorPlanBuilder from '../FloorPlanBuilder/FloorPlanBuilder';
 import type { TableData } from '../FloorPlanBuilder/FloorPlanBuilder';
 import { serverTablesToClient, clientTablesToServer } from '../../constants/defaultTableLayout';
-import { calculatePortionBilling } from '../../utils/portionBilling';
 import { hasEventEnded } from '../../utils/eventStart';
 import { todayCalendarKey } from '../../utils/dateLocal';
 import { API_URL } from '../../config/api';
@@ -34,7 +33,6 @@ import {
 import {
   useBookingsQuery,
   useEventFormsQuery,
-  useGlobalSettingsQuery,
   useKashrutQuery,
 } from '../../hooks/queries';
 import {
@@ -229,7 +227,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   });
   const { data: allForms = [] } = useEventFormsQuery();
   const { data: kashruts = [] } = useKashrutQuery();
-  const { data: globalSettings } = useGlobalSettingsQuery();
 
   const bookings = useMemo(
     () =>
@@ -264,15 +261,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [tableLayoutSaving, setTableLayoutSaving] = useState(false);
   const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
   const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
-  const [barPortionPrice, setBarPortionPrice] = useState(60);
   const [showCamera, setShowCamera] = useState(false);
-
-  const portionBilling = calculatePortionBilling({
-    finalGuestCount: formData.finalGuestCount || 0,
-    seatingType: formData.seatingType || 'separate',
-    menPercent: formData.menPercent,
-    pricePerPortion: barPortionPrice,
-  });
 
   const menuStats = useMemo(() => {
     if (!selectedMenu) return null;
@@ -404,12 +393,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setKashrutImage(kashruts[0].imageUrl);
     }
   }, [kashruts]);
-
-  useEffect(() => {
-    if (globalSettings?.barPortionPrice) {
-      setBarPortionPrice(Number(globalSettings.barPortionPrice));
-    }
-  }, [globalSettings]);
 
   useEffect(() => {
     if (designExport) return;
@@ -690,9 +673,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       depositCheckUrl: checkUrl || formData.depositCheckUrl,
       notes: JSON.stringify(notesList),
       menuSelections: selectedMenu,
-      guestPortionCount: portionBilling?.totalBillablePortions,
-      pricePerPortion: portionBilling?.pricePerPortion ?? barPortionPrice,
-      totalPrice: portionBilling?.totalAmount,
     });
   };
   const handleDownloadPDF = async () => {
@@ -1566,25 +1546,6 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       <div className={styles.splitBadgeEmpty}>{t(T.COMMON.LABELS.EM_DASH)}</div>
                     )}
                   </div>
-                </div>
-              )}
-
-              {portionBilling && (
-                <div
-                  className={styles.portionStrip}
-                  title={
-                    portionBilling.seatingType === 'separate'
-                      ? `${t(T.EVENT_FORM.PORTIONS_MEN, { men: portionBilling.menCount, portions: portionBilling.menBillablePortions })} · ${t(T.EVENT_FORM.PORTIONS_WOMEN, { women: portionBilling.womenCount, portions: portionBilling.womenBillablePortions })}`
-                      : t(T.EVENT_FORM.PORTIONS_TOTAL, {
-                          guests: formData.finalGuestCount ?? 0,
-                          portions: portionBilling.totalBillablePortions,
-                        })
-                  }
-                >
-                  <span className={styles.portionStripLabel}>{t(T.EVENT_FORM.PORTIONS_BILLABLE)}</span>
-                  <span className={styles.portionStripStrong}>
-                    {portionBilling.totalBillablePortions} × {portionBilling.pricePerPortion} ₪ = {formatCurrency(portionBilling.totalAmount, locale)}
-                  </span>
                 </div>
               )}
               </div>
