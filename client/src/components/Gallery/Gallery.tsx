@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
+import { useNavigationOverride } from '../../context/navigationContext';
 import styles from './Gallery.module.css';
 
 const catalogData = [
@@ -31,7 +33,35 @@ const catalogData = [
 
 const Gallery = () => {
   const { t, T } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [activeCategory, setActiveCategory] = useState(catalogData[0].categoryId);
+
+  const galleryState = location.state as {
+    fromEventForm?: boolean;
+    bookingId?: string;
+  } | null;
+
+  const handleBackToEventForm = useCallback(() => {
+    const bookingId =
+      galleryState?.bookingId ||
+      (typeof sessionStorage !== 'undefined'
+        ? sessionStorage.getItem('eventFormReturnBookingId')
+        : null);
+    navigate('/event-form-manager', {
+      state: bookingId ? { bookingId, restoreEventForm: true } : { restoreEventForm: true },
+    });
+  }, [galleryState?.bookingId, navigate]);
+
+  const navigationOverride = useMemo(
+    () =>
+      galleryState?.fromEventForm || galleryState?.bookingId
+        ? { onBack: handleBackToEventForm }
+        : null,
+    [galleryState?.fromEventForm, galleryState?.bookingId, handleBackToEventForm],
+  );
+
+  useNavigationOverride(navigationOverride);
 
   const categoryLabels = useMemo(
     () => ({
