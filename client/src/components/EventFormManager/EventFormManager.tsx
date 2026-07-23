@@ -68,6 +68,7 @@ interface Booking {
   timeOfDay: string;
   eventForm?: any;
   akumApprovalCode?: string;
+  kosherType?: string | null;
   depositCheckUrl?: string | null;
   depositCheckDetails?: DepositCheckDetails | null;
   depositCheckStatus?: boolean | null;
@@ -140,6 +141,28 @@ const KASHRUT_LIST = [
   "הרב גרוס",
   'בדץ ע"ח'
 ];
+
+/** Map Contract Form kosherType codes → Event Production Form kashrut values. */
+const CONTRACT_KOSHER_TO_EVENT_KASHRUT: Record<string, string> = {
+  rubin: 'רובין',
+  רובין: 'רובין',
+  bad_reuven: 'רובין',
+  machpud: 'מחפוד',
+  מחפוד: 'מחפוד',
+  landa: 'לנדא',
+  לנדא: 'לנדא',
+  kehilot: 'בדץ קהילות',
+  'בדץ קהילות': 'בדץ קהילות',
+  gross: 'הרב גרוס',
+  'הרב גרוס': 'הרב גרוס',
+  badatz: 'בדץ ע"ח',
+  'בדץ ע"ח': 'בדץ ע"ח',
+};
+
+const kashrutFromContract = (kosherType?: string | null): string | undefined => {
+  if (!kosherType) return undefined;
+  return CONTRACT_KOSHER_TO_EVENT_KASHRUT[kosherType] || CONTRACT_KOSHER_TO_EVENT_KASHRUT[kosherType.trim()];
+};
 
 interface SegmentedControlProps {
   value: string;
@@ -360,6 +383,8 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       menCount,
       womenCount,
       eventTime: cleanForm.eventTime || (receptionVisible ? DEFAULT_RECEPTION_TIME : undefined),
+      // Prefer saved event-form value; otherwise seed from contract choice (still editable).
+      kashrut: cleanForm.kashrut || kashrutFromContract(booking.kosherType),
       depositCheckUrl: cleanForm.depositCheckUrl || booking.depositCheckUrl || undefined,
       depositCheckDetails:
         cleanForm.depositCheckDetails ?? booking.depositCheckDetails ?? null,

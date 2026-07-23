@@ -1559,9 +1559,9 @@
   },
   "EVENT_FORM": {
     "KASHRUT": {
-      "RUBIN": "רובין",
-      "MACHPUD": "מחפוד",
-      "LANDA": "לנדא",
+      "RUBIN": "הרב רובין",
+      "MACHPUD": "הרב מחפוד",
+      "LANDA": "הרב לנדא",
       "KEHILOT": "בדץ קהילות",
       "GROSS": "הרב גרוס",
       "BADATZ": "בדץ ע\"ח"
