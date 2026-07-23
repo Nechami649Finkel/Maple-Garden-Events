@@ -221,7 +221,12 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
   const calendarEventTypeFilter = location.state?.eventTypeFilter || '';
   const [isOption, setIsOption] = useState(isOptionMode);
-  const defaultEventTypeForForm = calendarEventTypeFilter === DEFAULT_EVENT_TYPE ? DEFAULT_EVENT_TYPE : '';
+  // Option forms default to Wedding; still editable. Closing an event keeps filter-based default.
+  const defaultEventTypeForForm = isOptionMode
+    ? DEFAULT_EVENT_TYPE
+    : calendarEventTypeFilter === DEFAULT_EVENT_TYPE
+      ? DEFAULT_EVENT_TYPE
+      : '';
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
   const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
