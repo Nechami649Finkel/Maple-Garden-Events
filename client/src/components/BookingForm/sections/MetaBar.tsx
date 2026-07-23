@@ -19,7 +19,17 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
         <label className="form-label">
           {isOption ? t(T.BOOKING.META.ORDER_NUMBER_OPTION) : t(T.BOOKING.META.ORDER_NUMBER_BOOKING)}
         </label>
-        <input type="text" value={orderNumber} readOnly className="form-control bg-light" />
+        <input
+          type="text"
+          value={orderNumber}
+          readOnly
+          placeholder={
+            isOption
+              ? t(T.BOOKING.META.ORDER_NUMBER_PENDING_OPTION)
+              : t(T.BOOKING.META.ORDER_NUMBER_PENDING_BOOKING)
+          }
+          className="form-control bg-light"
+        />
       </div>
 
       <div className="col">

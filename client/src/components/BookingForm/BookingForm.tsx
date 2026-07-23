@@ -289,7 +289,15 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     const restore = window.confirm(t(T.BOOKING.FORM.DRAFT_RESTORE_CONFIRM));
     if (restore) {
-      setFormData((prev) => ({ ...prev, ...(draft.formData as typeof prev) }));
+      const draftEventType = String((draft.formData as { eventType?: string }).eventType || '');
+      setFormData((prev) => ({
+        ...prev,
+        ...(draft.formData as typeof prev),
+        // Keep Wedding default on option drafts that were saved without an event type.
+        eventType:
+          draftEventType ||
+          (isOptionMode ? DEFAULT_EVENT_TYPE : prev.eventType),
+      }));
       setMenuNotesList(draft.menuNotesList);
       setInternalNotesList(draft.internalNotesList);
       setServingStyle(draft.servingStyle);
@@ -414,22 +422,38 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   }, [isOption, formData.timeOfDay, formData.eventType, selectedDatesDisplay]);
 
   useEffect(() => {
-    if (isEditMode && convertFromOption) return;
+    // Existing bookings already have a code; convert-from-option uses the EVT peek below.
+    if (isEditMode || convertFromOption) return;
+
+    let cancelled = false;
     const dateCount = Math.max(selectedDatesDisplay.length, 1);
     const prefix = isOption ? 'OPT' : 'EVT';
 
     const loadNextCode = async () => {
       try {
-        const res = await apiFetch(`${API_URL}/bookings/next-code?prefix=${prefix}&count=${dateCount}`);
+        const res = await apiFetch(
+          `${API_URL}/bookings/next-code?prefix=${prefix}&count=${dateCount}`,
+        );
         const json = await res.json();
+        if (cancelled) return;
         if (!res.ok || !json.success) return;
-        const codes: string[] = json.data.codes || [];
+        const codes: string[] = Array.isArray(json.data?.codes)
+          ? json.data.codes
+          : json.data?.code
+            ? [json.data.code]
+            : [];
         if (codes.length === 0) return;
-        if (codes.length === 1) setOrderNumber(codes[0]);
-        else setOrderNumber(`${codes[0]} – ${codes[codes.length - 1]}`);
-      } catch {}
+        setOrderNumber(
+          codes.length === 1 ? codes[0] : `${codes[0]} – ${codes[codes.length - 1]}`,
+        );
+      } catch {
+        // Keep empty; MetaBar shows "assigned on save" placeholder.
+      }
     };
     loadNextCode();
+    return () => {
+      cancelled = true;
+    };
   }, [isEditMode, convertFromOption, isOption, selectedDatesDisplay.length]);
 
   useEffect(() => {
