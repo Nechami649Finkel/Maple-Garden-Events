@@ -222,6 +222,9 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const calendarEventTypeFilter = location.state?.eventTypeFilter || '';
   const [isOption, setIsOption] = useState(isOptionMode);
   // Option forms default to Wedding; still editable. Closing an event keeps filter-based default.
+  // Option UI must not inherit the calendar's "אירוע אחר" filter — that filter hides Wedding
+  // from the select options and leaves the field looking like the empty placeholder.
+  const metaBarEventTypeFilter = isOptionMode ? '' : calendarEventTypeFilter;
   const defaultEventTypeForForm = isOptionMode
     ? DEFAULT_EVENT_TYPE
     : calendarEventTypeFilter === DEFAULT_EVENT_TYPE
@@ -289,7 +292,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     const restore = window.confirm(t(T.BOOKING.FORM.DRAFT_RESTORE_CONFIRM));
     if (restore) {
-      const draftEventType = String((draft.formData as { eventType?: string }).eventType || '');
+      const draftEventType = String((draft.formData as { eventType?: string }).eventType || '').trim();
       setFormData((prev) => ({
         ...prev,
         ...(draft.formData as typeof prev),
@@ -315,6 +318,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     setDraftRestored(true);
   }, [isEditMode, userEmail, draftRestored, isOptionMode]);
+
+  // Hard guarantee: new option forms always show Wedding, even if a draft/filter raced.
+  useEffect(() => {
+    if (isEditMode || !isOptionMode) return;
+    if (formData.eventType) return;
+    setFormData((prev) => (prev.eventType ? prev : { ...prev, eventType: DEFAULT_EVENT_TYPE }));
+  }, [isEditMode, isOptionMode, formData.eventType]);
 
   const buildDraftSnapshot = (): BookingDraftSnapshot => ({
     formData: { ...formData },
@@ -1137,7 +1147,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         )}
 
         <form className="card-body" onSubmit={handleSubmit}>
-          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} calendarEventTypeFilter={calendarEventTypeFilter} />
+          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} calendarEventTypeFilter={metaBarEventTypeFilter} />
           {convertFromOption && relatedOptions.length > 1 && (
             <FinalizeOptionDatesBar
               relatedOptions={relatedOptions}

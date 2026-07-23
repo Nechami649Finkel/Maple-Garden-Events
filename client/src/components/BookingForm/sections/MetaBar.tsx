@@ -65,6 +65,11 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
             {isOption ? t(T.BOOKING.META.SELECT_EVENT_TYPE_OPTIONAL) : t(T.BOOKING.META.SELECT_EVENT_TYPE)}
           </option>
           {EVENT_TYPE_VALUES.filter(type => {
+            // Never hide the currently selected value — otherwise the select falls back
+            // to the empty "בחירה" placeholder even when eventType is set (e.g. חתונה).
+            if (type === formData.eventType) return true;
+            // Option forms always offer the full list (incl. Wedding default).
+            if (isOption) return true;
             const isOtherEvent = calendarEventTypeFilter === 'אירוע אחר' || formData.eventType === 'אירוע אחר';
             return !(isOtherEvent && type === 'חתונה');
           }).map(type => (
