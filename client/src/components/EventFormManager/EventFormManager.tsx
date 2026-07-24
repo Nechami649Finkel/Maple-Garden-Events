@@ -408,7 +408,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     setShowCamera(false);
     secureFetch(`${API_URL}/event-forms/${selected.id}`, { credentials: 'include' })
       .then(r => r.json())
-      .then(form => {
+      .then(async (form) => {
         if (form && form.id) {
           const { id, createdAt, updatedAt, booking, bookingId, tables, ...cleanForm } = form;
           const bookingSource: Booking = {
@@ -430,12 +430,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           setSavedTables(tables?.length ? serverTablesToClient(tables) : undefined);
           setTableLayoutImageUrl(form.tableLayoutImageUrl || null);
 
-          const currentUser = getAuthUser();
-          if (currentUser && currentUser.email) {
+          const currentUser = await getAuthUser();
+          if (currentUser?.email) {
             const draft = loadEventFormDraft(selected.id, currentUser.email);
             if (draft) {
               if (window.confirm('מצאנו טיוטה מקומית לא שמורה. האם תרצה לשחזר אותה?')) {
-                setFormData(draft.formData);
+                setFormData(draft.formData as EventFormData);
                 setHasHonorTable(draft.hasHonorTable);
                 setHasEntertainers(draft.hasEntertainers);
                 setNotesList(draft.notesList);
@@ -488,21 +488,27 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
 
   useEffect(() => {
     if (!selected || actionBusy) return;
-    const currentUser = getAuthUser();
-    if (!currentUser || !currentUser.email) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const timer = setTimeout(() => {
-      const snapshot: EventFormDraftSnapshot = {
-        formData,
-        hasHonorTable,
-        hasEntertainers,
-        notesList,
-        selectedMenu,
-      };
-      saveEventFormDraft(selected.id, currentUser.email, snapshot);
-    }, 1000);
+    getAuthUser().then((currentUser) => {
+      if (cancelled || !currentUser?.email) return;
+      timer = setTimeout(() => {
+        const snapshot: EventFormDraftSnapshot = {
+          formData,
+          hasHonorTable,
+          hasEntertainers,
+          notesList,
+          selectedMenu,
+        };
+        saveEventFormDraft(selected.id, currentUser.email, snapshot);
+      }, 1000);
+    });
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, [selected, formData, hasHonorTable, hasEntertainers, notesList, selectedMenu, actionBusy]);
 
   const handleTableLayoutSave = async (tables: TableData[], imageDataUrl: string) => {
@@ -741,9 +747,9 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     );
   };
 
-  const openGallery = () => {
+  const openGallery = async () => {
     if (!selected) return;
-    const currentUser = getAuthUser();
+    const currentUser = await getAuthUser();
     if (currentUser?.email) {
       saveEventFormDraft(selected.id, currentUser.email, {
         formData,
