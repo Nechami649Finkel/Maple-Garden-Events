@@ -1774,3 +1774,42 @@ export const notifyOptionInterest = catchAsync(async (req: Request, res: Respons
     skippedReasons,
   });
 });
+
+export const signAndSendContract = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = (req as any).user?.tenantId;
+  const bookingId = req.params.id as string;
+  const { clientSignature } = req.body;
+  if (!clientSignature) { return res.status(400).json({ success: false, message: 'חתימה חסרה' }); }
+
+  const booking = await prisma.booking.findFirst({
+    where: { id: bookingId, tenantId },
+    include: { eventDate: true, eventForm: true },
+  });
+  if (!booking) return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה' });
+
+  const updated = await prisma.booking.update({
+    where: { id: bookingId },
+    data: { clientSignatureUrl: clientSignature },
+    include: { eventDate: true, eventForm: true }
+  });
+
+  const systemSettings = await prisma.systemSettings.findFirst({ where: { id: 'global', tenantId } });
+  const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
+  const contractPdfBuffer = await generateContractPDF(buildBookingPdfData(updated, { upgradesPricing }));
+  const clientEmail = updated.clientAEmail || updated.clientBEmail;
+
+  let emailSent = false;
+  let whatsappSent = false;
+  const { sendPDFToClient, sendWhatsAppMessage } = await import('../Services/emailService');
+  const formattedDate = updated.eventDate?.date ? updated.eventDate.date.toISOString() : new Date().toISOString();
+  if (clientEmail) {
+    emailSent = await sendPDFToClient(clientEmail, updated.clientAFullName, formattedDate, contractPdfBuffer);
+    await prisma.booking.update({ where: { id: bookingId }, data: { isContractSigned: true }});
+  }
+  const phone = (updated.clientAPhone || updated.clientBPhone)?.split(' | ')[0]?.trim();
+  if (phone) {
+    whatsappSent = await sendWhatsAppMessage(phone, updated.clientAFullName, formattedDate);
+  }
+
+  res.status(200).json({ success: true, message: 'החוזה נחתם ונשלח בהצלחה', emailSent, whatsappSent });
+});

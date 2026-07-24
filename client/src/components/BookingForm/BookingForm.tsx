@@ -1324,6 +1324,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         contractText={contractText}
         onContractTextChange={setContractText}
         bookingId={editId}
+        savedSignature={savedSignature}
       />
 
       {isMenuViewOpen && (

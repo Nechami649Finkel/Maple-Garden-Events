@@ -12,53 +12,56 @@
 }
 
 .modal {
-  max-width: 850px;
+  max-width: 794px; /* A4 width at 96 DPI */
   width: 95%;
-  background: var(--brand-surface);
-  border-radius: var(--brand-radius-lg);
+  background: #ffffff;
+  border-radius: 4px;
   overflow: hidden;
-  box-shadow: var(--brand-shadow-lg);
-  max-height: 90vh;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  height: 90vh; /* Fill most of the screen vertically */
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--brand-border);
+  border: none;
 }
 
 .header {
-  background: linear-gradient(135deg, var(--brand-green) 0%, var(--brand-green-dark) 100%);
-  color: #fff;
-  padding: 18px 24px;
+  background: #ffffff;
+  color: var(--brand-text);
+  padding: 24px 32px 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+  border-bottom: 2px solid var(--brand-border);
 }
 
 .header h3 {
   margin: 0;
-  color: #fff;
-  font-size: 1.35rem;
+  color: var(--brand-text);
+  font-size: 1.5rem;
   font-weight: 700;
 }
 
 .headerClose {
-  border-color: rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
+  border-color: var(--brand-border-strong);
+  background: transparent;
+  color: var(--brand-text-muted);
 }
 
 .headerClose:hover {
-  background: rgba(255, 255, 255, 0.28);
-  color: #fff;
+  background: var(--brand-bg);
+  color: var(--brand-text);
 }
 
 .body {
-  padding: 28px 30px;
+  padding: 32px 40px;
   direction: rtl;
   text-align: right;
   overflow-y: auto;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .contentWrap {
@@ -124,10 +127,11 @@
 
 .textarea {
   width: 100%;
-  height: 400px;
+  flex: 1;
+  min-height: 300px;
   padding: 20px;
   margin-bottom: 20px;
-  border: 2px solid var(--brand-green);
+  border: 1px solid var(--brand-border);
   border-radius: var(--brand-radius);
   color: var(--brand-text);
   line-height: 1.8;
@@ -139,13 +143,12 @@
 }
 
 .textPanel {
-  height: 400px;
+  flex: 1;
+  min-height: 300px;
   overflow-y: auto;
-  background: var(--brand-surface);
-  padding: 24px;
+  background: #ffffff;
+  padding: 0 10px;
   margin-bottom: 20px;
-  border: 1px solid var(--brand-border);
-  border-radius: var(--brand-radius);
   color: var(--brand-text);
   line-height: 1.8;
   font-size: 1rem;
