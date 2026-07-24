@@ -13,6 +13,7 @@
     "start": "node dist/server.js",
     "migrate:event-codes": "ts-node scripts/migrate-legacy-event-codes.ts",
     "fix:contract-sync": "ts-node scripts/fix-contract-sync.ts",
+    "sync:contract-text": "npm run copy:shared && ts-node scripts/sync-contract-text.ts",
     "migrate:hall-invoices": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_hall_invoices.sql",
     "migrate:hall-totals": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/recalculate_hall_total_price.sql",
     "migrate:hall-billing": "npm run migrate:hall-invoices && npm run migrate:hall-totals && prisma generate --schema prisma/schema.prisma",
