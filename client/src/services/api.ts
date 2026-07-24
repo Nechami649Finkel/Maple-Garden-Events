@@ -89,8 +89,10 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
 }
 
 export const apiFetch = async (url: string, options: RequestInit = {}) => {
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers || {}),
   };
 

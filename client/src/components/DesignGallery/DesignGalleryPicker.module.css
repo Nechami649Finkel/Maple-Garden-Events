@@ -1,0 +1,154 @@
+.picker {
+  direction: rtl;
+  width: 100%;
+}
+
+.compact {
+  margin-top: 12px;
+}
+
+.hint {
+  color: var(--brand-text-secondary, #64748b);
+  font-size: 0.95rem;
+  margin: 0 0 16px;
+  text-align: center;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tabBtn {
+  background: var(--brand-surface, #fff);
+  border: 1px solid var(--brand-border-strong, #cbd5e1);
+  color: var(--brand-text-secondary, #64748b);
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.tabBtn:hover {
+  background: var(--brand-green-light, #ecfdf5);
+  color: var(--brand-green-dark, #065f46);
+}
+
+.tabBtnActive {
+  background: var(--brand-green, #059669);
+  color: #fff;
+  border-color: var(--brand-green, #059669);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.compact .grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  text-align: center;
+  background: var(--brand-surface, #fff);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid var(--brand-border, #e2e8f0);
+  box-shadow: none;
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+  color: inherit;
+}
+
+.card:hover {
+  border-color: var(--brand-green-muted, #6ee7b7);
+  transform: translateY(-2px);
+}
+
+.cardSelected {
+  border-color: var(--brand-green, #059669);
+  background: var(--brand-green-light, #ecfdf5);
+}
+
+.image,
+.imagePlaceholder {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.compact .image,
+.compact .imagePlaceholder {
+  height: 100px;
+}
+
+.cardContent {
+  padding: 12px;
+}
+
+.modelBadge {
+  display: inline-block;
+  background: var(--brand-green-light, #ecfdf5);
+  color: var(--brand-green-dark, #065f46);
+  border: 1px solid var(--brand-green-muted, #6ee7b7);
+  padding: 2px 10px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.itemName {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--brand-text, #0f172a);
+  margin: 0 0 6px;
+}
+
+.compact .itemName {
+  font-size: 0.95rem;
+}
+
+.itemDesc {
+  color: var(--brand-text-secondary, #64748b);
+  font-size: 0.85rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.selectedBadge {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--brand-green-dark, #065f46);
+}
+
+.stateMsg {
+  text-align: center;
+  color: var(--brand-text-secondary, #64748b);
+  padding: 28px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+}

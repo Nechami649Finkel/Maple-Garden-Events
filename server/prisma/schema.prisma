@@ -32,6 +32,7 @@ model Tenant {
   eventAdditions      EventAddition[]
   authorizedUsers     AuthorizedUser[]
   scheduledGreetings  ScheduledGreeting[]
+  designGalleryItems  DesignGalleryItem[]
 }
 
 model Booking {
@@ -312,6 +313,25 @@ model ExtraService {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId])
+}
+
+/** Catalog of design options (tablecloths, napkins, etc.) with images for the event form gallery. */
+model DesignGalleryItem {
+  id          String   @id @default(uuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  category    String
+  name        String
+  description String?
+  modelCode   String?
+  imageUrl    String
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, category])
 }
 
 model StaffMember {

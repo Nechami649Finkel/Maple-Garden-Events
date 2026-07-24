@@ -15,11 +15,13 @@ import { getS3Client } from './s3Client';
 const S3_KEY_PREFIX = 's3:';
 const DEFAULT_PRESIGN_TTL = Number(process.env.S3_PRESIGN_TTL_SECONDS || 3600);
 
-/** Matches uploadPrivateFile layout: {category}/{bookingId}/{uuid}-{safeName} */
+/** Matches uploadPrivateFile layout: {category}/{bookingId}/{uuid}-{safeName}
+ *  and gallery layout: gallery/{tenantId}/{uuid}-{safeName}
+ */
 const UUID =
   '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const ALLOWED_S3_OBJECT_KEY_RE = new RegExp(
-  `^(contracts|checks|signatures|documents)/${UUID}/[A-Za-z0-9._-]+$`,
+  `^((contracts|checks|signatures|documents)/${UUID}/[A-Za-z0-9._-]+|gallery/${UUID}/[A-Za-z0-9._-]+)$`,
   'i',
 );
 
@@ -115,6 +117,32 @@ export async function uploadPrivateFile(params: {
   );
 
   logger.info('Uploaded private file to S3', { bucket, objectKey, category: params.category });
+  return toStoredS3Key(objectKey);
+}
+
+/** Tenant-scoped gallery image (not booking-scoped). */
+export async function uploadGalleryFile(params: {
+  tenantId: string;
+  fileName: string;
+  contentType: string;
+  body: Buffer;
+}): Promise<string> {
+  const bucket = getBucket();
+  const safeName = params.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const objectKey = `gallery/${params.tenantId}/${randomUUID()}-${safeName}`;
+  const s3 = getS3Client();
+
+  await s3.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: objectKey,
+      Body: params.body,
+      ContentType: params.contentType,
+      ServerSideEncryption: 'AES256',
+    }),
+  );
+
+  logger.info('Uploaded gallery file to S3', { bucket, objectKey, tenantId: params.tenantId });
   return toStoredS3Key(objectKey);
 }
 

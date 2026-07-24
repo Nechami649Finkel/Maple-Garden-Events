@@ -26,6 +26,9 @@ import easyCountRoutes from './routes/easyCount.routes';
 import easyCountWebhookRoutes from './routes/easyCountWebhook.routes';
 import filesRoutes from './routes/files.routes';
 import checkScanRoutes from './routes/checkScan.routes';
+import designGalleryRoutes from './routes/designGallery.routes';
+import { getGalleryUploadDir } from './utils/galleryLocalStorage';
+import fs from 'fs';
 
 validateEnv();
 
@@ -101,6 +104,11 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use(requestLogger);
 
+// Local gallery images when S3 is not configured
+const galleryUploadDir = getGalleryUploadDir();
+fs.mkdirSync(galleryUploadDir, { recursive: true });
+app.use('/uploads/gallery', express.static(galleryUploadDir, { maxAge: '7d' }));
+
 app.use('/api/easy-count', easyCountRoutes);
 app.use('/api/check-in', checkInRoutes);
 app.use('/api/auth', authRoutes);
@@ -114,6 +122,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/files', filesRoutes);
 app.use('/api/scan-check', checkScanRoutes);
+app.use('/api/design-gallery', designGalleryRoutes);
 
 const shouldServeClient =
   process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production';

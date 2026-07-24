@@ -30,6 +30,9 @@ import {
   clearEventFormDraft,
   type EventFormDraftSnapshot,
 } from '../../utils/eventFormDraft';
+import { consumePendingDesignSelections } from '../../utils/designGallerySelection';
+import { DesignGalleryPicker } from '../DesignGallery/DesignGalleryPicker';
+import type { DesignFormField } from '@shared/gallery';
 import {
   useBookingsQuery,
   useEventFormsQuery,
@@ -445,6 +448,11 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
               }
             }
           }
+
+          const pendingDesign = consumePendingDesignSelections(selected.id);
+          if (pendingDesign && Object.keys(pendingDesign).length > 0) {
+            setFormData((prev) => ({ ...prev, ...pendingDesign }));
+          }
         } else {
           setFormData(hydrateFormFromBooking({}, selected));
           setHasHonorTable(null);
@@ -452,6 +460,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
           setNotesList([]);
           setSavedTables(undefined);
           setTableLayoutImageUrl(null);
+          const pendingDesign = consumePendingDesignSelections(selected.id);
+          if (pendingDesign && Object.keys(pendingDesign).length > 0) {
+            setFormData((prev) => ({ ...prev, ...pendingDesign }));
+          }
         }
       })
       .catch(() => {
@@ -461,6 +473,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
         setNotesList([]);
         setSavedTables(undefined);
         setTableLayoutImageUrl(null);
+        const pendingDesign = consumePendingDesignSelections(selected.id);
+        if (pendingDesign && Object.keys(pendingDesign).length > 0) {
+          setFormData((prev) => ({ ...prev, ...pendingDesign }));
+        }
       });
   }, [selected, designExport]);
 
@@ -1201,6 +1217,18 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       />
                     </div>
                   </div>
+                  <DesignGalleryPicker
+                    compact
+                    selectedValues={{
+                      tableclothId: formData.tableclothId,
+                      napkinId: formData.napkinId,
+                      centerpiece: formData.centerpiece,
+                      bridgeChair: formData.bridgeChair,
+                    }}
+                    onSelect={(field: DesignFormField, value: string) => {
+                      handleInputChange(field, value);
+                    }}
+                  />
                 </div>
 
                 <div className={`${styles.boardSubSection} ${styles.boardSubSectionEquip}`}>
