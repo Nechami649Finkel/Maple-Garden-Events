@@ -18,8 +18,10 @@ export async function getBarPortionPrice(): Promise<number> {
 function applyBarPortionPrice(text: string, barPortionPrice: number): string {
   let result = text.replace(/\{\{BAR_PORTION_PRICE\}\}/g, String(barPortionPrice));
   result = result.replace(/עלות למנה: [\d.]+ ש"ח/g, `עלות למנה: ${barPortionPrice} ש"ח`);
+  // Prefer the current contract wording ("מנות בר").
+  result = result.replace(/מינימום מנות לחיוב:/g, 'מינימום מנות בר לחיוב:');
 
-  if (!result.includes('מינימום מנות לחיוב')) {
+  if (!result.includes('מינימום מנות בר לחיוב')) {
     result = `${result.trim()}\n\n${buildPortionMinimumClause(barPortionPrice)}`;
   }
 

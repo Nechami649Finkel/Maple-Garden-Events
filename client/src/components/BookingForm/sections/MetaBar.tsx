@@ -28,7 +28,7 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
               : t(T.BOOKING.META.ORDER_NUMBER_PENDING_BOOKING))
           }
           readOnly
-          className="form-control bg-light text-secondary fw-medium"
+          className="form-control bg-light text-dark fw-semibold"
         />
       </div>
 

@@ -56,5 +56,5 @@ export function calculatePortionBilling(params: {
 }
 
 export function buildPortionMinimumClause(barPortionPrice: number): string {
-  return `מינימום מנות לחיוב: באירוע עם ישיבה נפרדת (גברים ונשים), המזמין מתחייב לתשלום מינימום של ${MIN_PORTIONS_PER_UNIT} מנות בכל יחידה, גם אם כמות המוזמנים בפועל באותה יחידה נמוכה מכך. באירוע עם ישיבה מעורבת, המזמין מתחייב לתשלום מינימום של ${MIN_PORTIONS_MIXED} מנות. עלות למנה: ${barPortionPrice} ש"ח.`;
+  return `מינימום מנות בר לחיוב: באירוע עם ישיבה נפרדת (גברים ונשים), המזמין מתחייב לתשלום מינימום של ${MIN_PORTIONS_PER_UNIT} מנות בכל יחידה, גם אם כמות המוזמנים בפועל באותה יחידה נמוכה מכך. באירוע עם ישיבה מעורבת, המזמין מתחייב לתשלום מינימום של ${MIN_PORTIONS_MIXED} מנות. עלות למנה: ${barPortionPrice} ש"ח.`;
 }
