@@ -1167,7 +1167,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
           <div className="row g-3 maple-form-columns">
             <div className="col-lg-4">
-              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} setErrors={setErrors} isWedding={isWedding} isOption={isOption} />
+              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} isWedding={isWedding} isOption={isOption} />
               <UpgradesSection
                 upgrades={upgrades}
                 handleUpgradeChange={handleUpgradeChange}
