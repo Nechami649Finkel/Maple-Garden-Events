@@ -21,14 +21,14 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
         </label>
         <input
           type="text"
-          value={orderNumber}
-          readOnly
-          placeholder={
-            isOption
+          value={
+            orderNumber ||
+            (isOption
               ? t(T.BOOKING.META.ORDER_NUMBER_PENDING_OPTION)
-              : t(T.BOOKING.META.ORDER_NUMBER_PENDING_BOOKING)
+              : t(T.BOOKING.META.ORDER_NUMBER_PENDING_BOOKING))
           }
-          className="form-control bg-light"
+          readOnly
+          className="form-control bg-light text-secondary fw-medium"
         />
       </div>
 
