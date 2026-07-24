@@ -581,7 +581,7 @@
         "GREETING": "Hello {clientName}!",
         "BODY": "Attached is your event production form in PDF.",
         "NOTE": "Please keep this form for use on the day of the event.",
-        "SIGNATURE": "Maple Events Garden",
+        "SIGNATURE": "{venueName}",
         "ATTACHMENT": "Production_Form_{clientName}.pdf",
         "LOG_LABEL": "Production PDF to {email}"
       }
@@ -628,7 +628,7 @@
       "CEILING_EXCEEDED": "This invoice would exceed the hall ceiling (₪{ceiling}). Paid: ₪{paid}, pending: ₪{pending}."
     },
     "PDF": {
-      "VENUE_NAME": "Maple Events Garden",
+      "VENUE_NAME": "{venueName}",
       "CONTRACT_TITLE": "Contract",
       "EVENT_FORM_TITLE": "Event production form",
       "PRODUCED": "Produced:",
@@ -636,14 +636,14 @@
       "CLIENTS_AND_EVENT": "Client and event details",
       "EVENT_DETAILS": "Event details",
       "FINANCIAL_SUMMARY": "Financial summary",
-      "TERMS_TITLE": "General booking terms — Maple Events Garden",
+      "TERMS_TITLE": "General booking terms — {venueName}",
       "LAYOUT_AND_DESIGN": "Event layout and design",
       "MENU_TITLE": "Event menu (selected dishes)",
       "APPROVALS": "Approvals and production details",
       "TABLE_LAYOUT": "Table layout",
       "EVENT_NOTES": "Event notes",
       "MANAGER_NOTES": "Manager notes",
-      "FOOTER": "Maple Events Garden | Page",
+      "FOOTER": "{venueName} | Page",
       "PAGE_OF": "of",
       "DRAFT_WATERMARK": "Draft - sample",
       "CLIENT_SIDE_A": "Party A (client)",
@@ -690,7 +690,7 @@
       "CHECK_DATE": "Date on check",
       "AKUM_CODE": "ACUM code",
       "NOTES": "Notes",
-      "SIGNATURE_TEXT": "By signing I confirm the details in this contract. I declare that I have read and understood Maple Events Garden terms and agree to them fully.",
+      "SIGNATURE_TEXT": "By signing I confirm the details in this contract. I declare that I have read and understood the terms of {venueName} above and agree to them fully.",
       "SIGNED_BY": "Signed by:",
       "SIGNATURE_ALT": "Client signature",
       "DEPOSIT_CHECK_ALT": "Deposit check",

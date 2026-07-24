@@ -1789,13 +1789,22 @@ export const signAndSendContract = catchAsync(async (req: Request, res: Response
 
   const updated = await prisma.booking.update({
     where: { id: bookingId },
-    data: { clientSignatureUrl: clientSignature },
+    data: {
+      clientSignatureUrl: clientSignature,
+      isContractSigned: true,
+    },
     include: { eventDate: true, eventForm: true }
   });
 
   const systemSettings = await prisma.systemSettings.findFirst({ where: { id: 'global', tenantId } });
   const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
-  const contractPdfBuffer = await generateContractPDF(buildBookingPdfData(updated, { upgradesPricing }));
+  // Always pass the fresh signature explicitly so the emailed PDF includes it.
+  const contractPdfBuffer = await generateContractPDF(
+    buildBookingPdfData(updated, {
+      upgradesPricing,
+      clientSignatureUrl: clientSignature,
+    }),
+  );
   const clientEmail = updated.clientAEmail || updated.clientBEmail;
 
   let emailSent = false;
@@ -1804,12 +1813,18 @@ export const signAndSendContract = catchAsync(async (req: Request, res: Response
   const formattedDate = updated.eventDate?.date ? updated.eventDate.date.toISOString() : new Date().toISOString();
   if (clientEmail) {
     emailSent = await sendPDFToClient(clientEmail, updated.clientAFullName, formattedDate, contractPdfBuffer);
-    await prisma.booking.update({ where: { id: bookingId }, data: { isContractSigned: true }});
   }
   const phone = (updated.clientAPhone || updated.clientBPhone)?.split(' | ')[0]?.trim();
   if (phone) {
     whatsappSent = await sendWhatsAppMessage(phone, updated.clientAFullName, formattedDate);
   }
 
-  res.status(200).json({ success: true, message: 'החוזה נחתם ונשלח בהצלחה', emailSent, whatsappSent });
+  res.status(200).json({
+    success: true,
+    message: emailSent
+      ? 'החוזה נחתם ונשלח בהצלחה'
+      : 'החוזה נחתם ונשמר. שליחת המייל נכשלה או שאין אימייל ללקוח.',
+    emailSent,
+    whatsappSent,
+  });
 });

@@ -37,5 +37,13 @@ export function getBrandConfig(): BrandConfig {
   return currentBrand;
 }
 
+/** Params for i18n strings that include `{venueName}`. */
+export function getBrandI18nParams(locale?: string): { venueName: string } {
+  const brand = getBrandConfig();
+  return {
+    venueName: locale === 'en' ? brand.publicVenueNameEn : brand.publicVenueName,
+  };
+}
+
 export * from './types';
 export * from './defaultBrand';

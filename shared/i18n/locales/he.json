@@ -581,7 +581,7 @@
         "GREETING": "שלום {clientName}!",
         "BODY": "מצורף טופס הפקת האירוע שלך ב-PDF.",
         "NOTE": "אנא שמור את הטופס הזה כדי להשתמש בו ביום האירוע.",
-        "SIGNATURE": "גן {venueName}",
+        "SIGNATURE": "{venueName}",
         "ATTACHMENT": "טופס_הפקה_{clientName}.pdf",
         "LOG_LABEL": "טופס PDF ל-{email}"
       }
@@ -628,7 +628,7 @@
       "CEILING_EXCEEDED": "הפקת חשבונית זו תחרוג מתקרת האולם (₪{ceiling}). שולם: ₪{paid}, ממתין: ₪{pending}."
     },
     "PDF": {
-      "VENUE_NAME": "גן {venueName}",
+      "VENUE_NAME": "{venueName}",
       "CONTRACT_TITLE": "חוזה התקשרות",
       "EVENT_FORM_TITLE": "טופס הפקת אירוע",
       "PRODUCED": "הופק:",
@@ -643,7 +643,7 @@
       "TABLE_LAYOUT": "סידור שולחנות",
       "EVENT_NOTES": "הערות לאירוע",
       "MANAGER_NOTES": "הערות מנהל",
-      "FOOTER": "גן {venueName} | עמוד",
+      "FOOTER": "{venueName} | עמוד",
       "PAGE_OF": "מתוך",
       "DRAFT_WATERMARK": "טיוטה - דוגמא",
       "CLIENT_SIDE_A": "צד א' (הלקוח)",

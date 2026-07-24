@@ -3,6 +3,8 @@ import { BrandConfig } from './types';
 export const defaultBrand: BrandConfig = {
   id: 'maple',
   displayName: 'מייפל אירועים',
+  publicVenueName: 'גן אירועים מייפל',
+  publicVenueNameEn: 'Maple Events Garden',
   shortName: 'מייפל',
   phone: '03-6777772',
   supportEmail: 'maple.events.il@gmail.com',
