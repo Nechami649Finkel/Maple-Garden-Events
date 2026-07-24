@@ -150,8 +150,8 @@ const OptionsManager = () => {
                     </h3>
                     <p className={styles.clientText}>
                       {t(T.OPTIONS.CLIENT_LINE, {
-                        name: option.clientAFullName,
-                        phone: option.clientAPhone,
+                        name: option.clientAFullName ?? '',
+                        phone: option.clientAPhone ?? '',
                       })}
                     </p>
                     <p className={styles.expiryText}>

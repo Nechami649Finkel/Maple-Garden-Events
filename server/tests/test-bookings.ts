@@ -6,11 +6,17 @@ async function runBookingLimitsTest() {
     
     // ניצור תאריך פיקטיבי בבסיס הנתונים רק לצורך הטסט
     const testDate = new Date('2099-01-01T00:00:00.000Z');
+
+    const tenant = await prisma.tenant.upsert({
+        where: { subdomain: 'maple-test' },
+        create: { name: 'Maple Test', subdomain: 'maple-test' },
+        update: {},
+    });
     
     let dateRecord = await prisma.eventDate.findUnique({ where: { date: testDate } });
     if (!dateRecord) {
         dateRecord = await prisma.eventDate.create({
-            data: { date: testDate, status: 'AVAILABLE' }
+            data: { date: testDate, status: 'AVAILABLE', tenantId: tenant.id }
         });
     }
     const dateId = dateRecord.id;

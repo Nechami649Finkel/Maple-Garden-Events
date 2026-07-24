@@ -249,7 +249,7 @@ const BookingsManager = () => {
           {upcomingBookings.length > 0 &&
             renderSection(t(T.BOOKINGS.SECTION_UPCOMING), upcomingBookings, 'confirmed')}
           {pastBookings.length > 0 &&
-            renderSection(t(T.BOOKINGS.PAST_SECTION), pastBookings, 'past')}
+            renderSection(t(T.BOOKINGS.SECTION_PAST), pastBookings, 'past')}
             
           {hasNextPage && (
             <div className={styles.loadMoreContainer} style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
