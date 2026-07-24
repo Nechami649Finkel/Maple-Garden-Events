@@ -52,7 +52,16 @@ const EventSettingsSection = ({
 
   const slotLabel = (slot: TimeSlot) => t(TIME_SLOT_KEYS[slot]);
 
-  const dateStr = selectedDatesDisplay.map((d) => d.date).join(', ');
+  const formatGregorianDate = (isoDate: string) => {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoDate;
+  };
+
+  const dateStr = selectedDatesDisplay.map((d) => formatGregorianDate(d.date)).join(', ');
   const hebrewDateDisplay = selectedDatesDisplay.map((d) => {
     if (d.hebrewDate) {
       return `${d.hebrewDate} (${formatWeekdayLabel(d.date)})`;
@@ -75,9 +84,7 @@ const EventSettingsSection = ({
                   name="calendarDateId"
                   value={dateStr}
                   readOnly
-                  dir="ltr"
                   className="form-control bg-light"
-                  style={{ unicodeBidi: 'isolate', textAlign: 'left' }}
                 />
               </div>
               <div className="col-md-6">
