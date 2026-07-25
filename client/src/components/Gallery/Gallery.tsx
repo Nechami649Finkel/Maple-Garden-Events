@@ -1,17 +1,25 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useNavigationOverride } from '../../context/navigationContext';
 import { DesignGalleryPicker } from '../DesignGallery/DesignGalleryPicker';
 import { getAuthUser } from '../../services/api';
-import { recordDesignSelection } from '../../utils/designGallerySelection';
-import type { DesignFormField } from '@shared/gallery';
+import { recordDesignSelection, readPendingDesignSelections } from '../../utils/designGallerySelection';
+import {
+  DESIGN_CATEGORY_TO_FORM_FIELD,
+  DESIGN_GALLERY_CATEGORIES,
+  type DesignFormField,
+} from '@shared/gallery';
 import styles from './Gallery.module.css';
 
 const Gallery = () => {
   const { t, T } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
+  const [selectedValues, setSelectedValues] = useState<Partial<Record<DesignFormField, string>>>(() => {
+    const pending = readPendingDesignSelections();
+    return pending?.fields ?? {};
+  });
 
   const galleryState = location.state as {
     fromEventForm?: boolean;
@@ -40,6 +48,7 @@ const Gallery = () => {
 
   const handleSelect = useCallback(
     async (field: DesignFormField, value: string) => {
+      setSelectedValues((prev) => ({ ...prev, [field]: value }));
       if (!fromEventForm || !bookingId) return;
       const user = await getAuthUser();
       recordDesignSelection({
@@ -52,6 +61,10 @@ const Gallery = () => {
     [bookingId, fromEventForm],
   );
 
+  const selectedCount = DESIGN_GALLERY_CATEGORIES.filter(
+    (cat) => selectedValues[DESIGN_CATEGORY_TO_FORM_FIELD[cat]],
+  ).length;
+
   return (
     <div className={styles.galleryContainer}>
       <div className={styles.header}>
@@ -61,9 +74,19 @@ const Gallery = () => {
             ? t(T.EVENT_FORM.DESIGN_PICKER_HINT)
             : t(T.SETTINGS.DESIGN_GALLERY_HINT)}
         </p>
+        {fromEventForm ? (
+          <button type="button" className="btn btn-primary mt-3" onClick={handleBackToEventForm}>
+            {t(T.EVENT_FORM.DESIGN_DONE)}
+            {selectedCount > 0 ? ` (${selectedCount})` : ''}
+          </button>
+        ) : null}
       </div>
 
-      <DesignGalleryPicker onSelect={handleSelect} />
+      <DesignGalleryPicker
+        selectedValues={selectedValues}
+        onSelect={handleSelect}
+        showSelectedTab
+      />
     </div>
   );
 };

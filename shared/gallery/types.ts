@@ -46,3 +46,33 @@ export function designItemSelectionLabel(item: {
   if (code) return `${code} — ${item.name}`;
   return item.name;
 }
+
+/** Whether a stored form value refers to this gallery item. */
+export function matchesDesignSelection(
+  item: { name: string; modelCode?: string | null },
+  storedValue: string | null | undefined,
+): boolean {
+  if (!storedValue?.trim()) return false;
+  const value = storedValue.trim();
+  const label = designItemSelectionLabel(item);
+  if (value === label || value === item.name) return true;
+  const code = item.modelCode?.trim();
+  return Boolean(code && value === code);
+}
+
+/** Prefer model code for compact summary rows. */
+export function designModelDisplay(
+  item: { name: string; modelCode?: string | null } | null | undefined,
+  storedValue?: string | null,
+): string {
+  const code = item?.modelCode?.trim();
+  if (code) return code;
+  const raw = (storedValue || item?.name || '').trim();
+  if (!raw) return '';
+  const sep = raw.includes(' — ') ? ' — ' : raw.includes(' - ') ? ' - ' : null;
+  if (sep) {
+    const left = raw.split(sep)[0]?.trim();
+    if (left) return left;
+  }
+  return raw;
+}

@@ -31,7 +31,8 @@ import {
   type EventFormDraftSnapshot,
 } from '../../utils/eventFormDraft';
 import { consumePendingDesignSelections } from '../../utils/designGallerySelection';
-import { DesignGalleryPicker } from '../DesignGallery/DesignGalleryPicker';
+import { DesignSelectionSummary } from '../DesignGallery/DesignSelectionSummary';
+import { DesignGalleryModal } from '../DesignGallery/DesignGalleryModal';
 import type { DesignFormField } from '@shared/gallery';
 import {
   useBookingsQuery,
@@ -265,6 +266,7 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
   const [hasHonorTable, setHasHonorTable] = useState<boolean | null>(designExport?.hasHonorTable ?? null);
   const [hasEntertainers, setHasEntertainers] = useState<boolean | null>(designExport?.hasEntertainers ?? null);
   const [showCamera, setShowCamera] = useState(false);
+  const [isDesignGalleryOpen, setIsDesignGalleryOpen] = useState(false);
 
   const menuStats = useMemo(() => {
     if (!selectedMenu) return null;
@@ -326,6 +328,10 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
       setIsKashrutModalOpen(false);
       return;
     }
+    if (isDesignGalleryOpen) {
+      setIsDesignGalleryOpen(false);
+      return;
+    }
     if (isTableLayoutModalOpen) {
       setIsTableLayoutModalOpen(false);
       return;
@@ -333,12 +339,19 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     if (selected) {
       setSelected(null);
     }
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isDesignGalleryOpen, isTableLayoutModalOpen, selected]);
 
   const navigationOverride = useMemo(() => {
-    const inSubStep = showCamera || isTableLayoutOpen || isMenuOpen || isKashrutModalOpen || isTableLayoutModalOpen || !!selected;
+    const inSubStep =
+      showCamera
+      || isTableLayoutOpen
+      || isMenuOpen
+      || isKashrutModalOpen
+      || isDesignGalleryOpen
+      || isTableLayoutModalOpen
+      || !!selected;
     return inSubStep ? { onBack: handleStepBack } : null;
-  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isTableLayoutModalOpen, selected, handleStepBack]);
+  }, [showCamera, isTableLayoutOpen, isMenuOpen, isKashrutModalOpen, isDesignGalleryOpen, isTableLayoutModalOpen, selected, handleStepBack]);
 
   useNavigationOverride(navigationOverride);
 
@@ -763,23 +776,24 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
     );
   };
 
-  const openGallery = async () => {
-    if (!selected) return;
-    const currentUser = await getAuthUser();
-    if (currentUser?.email) {
-      saveEventFormDraft(selected.id, currentUser.email, {
-        formData,
-        hasHonorTable,
-        hasEntertainers,
-        notesList,
-        selectedMenu,
-      });
-    }
-    sessionStorage.setItem(EVENT_FORM_RETURN_BOOKING_KEY, selected.id);
-    navigate('/gallery', {
-      state: { fromEventForm: true, bookingId: selected.id },
-    });
+  const openGallery = () => {
+    setIsDesignGalleryOpen(true);
   };
+
+  const designSelectedValues = useMemo(
+    () => ({
+      tableclothId: formData.tableclothId,
+      napkinId: formData.napkinId,
+      centerpiece: formData.centerpiece,
+      bridgeChair: formData.bridgeChair,
+    }),
+    [
+      formData.tableclothId,
+      formData.napkinId,
+      formData.centerpiece,
+      formData.bridgeChair,
+    ],
+  );
 
   const handleSaveForm = async () => {
     if (!selected || actionBusy) return;
@@ -1165,69 +1179,12 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                       <SectionIcon>
                         <svg viewBox="0 0 24 24"><path d="M12 2l2.4 4.8L20 8l-3.6 3.5.85 5L12 14.8 6.75 16.5 7.6 11.5 4 8l5.6-1.2L12 2z"/></svg>
                       </SectionIcon>
-                      {t(T.EVENT_FORM.SECTION_DESIGN)}
+                      {t(T.EVENT_FORM.SECTION_DESIGNS_GALLERY)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={openGallery}
-                      className="btn btn-sm btn-outline-secondary"
-                    >
-                      {t(T.EVENT_FORM.SECTION_GALLERY)}
-                    </button>
                   </div>
-                  <div className="row g-2">
-                    <div className="col-6">
-                      <label className="form-label">{t(T.EVENT_FORM.LABEL_TABLECLOTHS)}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_TABLECLOTH)}
-                        value={formData.tableclothId || ''}
-                        onChange={e => handleInputChange('tableclothId', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label">{t(T.EVENT_FORM.LABEL_NAPKINS)}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_NAPKIN)}
-                        value={formData.napkinId || ''}
-                        onChange={e => handleInputChange('napkinId', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label">{t(T.EVENT_FORM.LABEL_CENTERPIECES)}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_CENTERPIECE)}
-                        value={formData.centerpiece || ''}
-                        onChange={e => handleInputChange('centerpiece', e.target.value)}
-                      />
-                    </div>
-                    <div className="col-6">
-                      <label className="form-label">{t(T.EVENT_FORM.LABEL_BRIDE_CHAIR)}</label>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder={t(T.EVENT_FORM.PLACEHOLDER_CHAIR)}
-                        value={formData.bridgeChair || ''}
-                        onChange={e => handleInputChange('bridgeChair', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <DesignGalleryPicker
-                    compact
-                    selectedValues={{
-                      tableclothId: formData.tableclothId,
-                      napkinId: formData.napkinId,
-                      centerpiece: formData.centerpiece,
-                      bridgeChair: formData.bridgeChair,
-                    }}
-                    onSelect={(field: DesignFormField, value: string) => {
-                      handleInputChange(field, value);
-                    }}
+                  <DesignSelectionSummary
+                    selectedValues={designSelectedValues}
+                    onOpenGallery={openGallery}
                   />
                 </div>
 
@@ -1717,6 +1674,15 @@ const EventFormManager = ({ designExport }: EventFormManagerProps = {}) => {
                   </div>
                 </div>
               )}
+
+              <DesignGalleryModal
+                isOpen={isDesignGalleryOpen}
+                onClose={() => setIsDesignGalleryOpen(false)}
+                selectedValues={designSelectedValues}
+                onSelect={(field: DesignFormField, value: string) => {
+                  handleInputChange(field, value);
+                }}
+              />
             </div>
 
             <div className={`card mb-0 ${styles.boardNotes}`}>

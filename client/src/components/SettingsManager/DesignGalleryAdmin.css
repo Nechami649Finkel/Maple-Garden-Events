@@ -4,12 +4,112 @@
   margin: 0 0 16px;
 }
 
-.design-gallery-form {
+.design-gallery-launch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.design-gallery-count {
+  color: #64748b;
+  font-size: 14px;
+}
+
+.design-gallery-manager-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  background: rgba(26, 32, 44, 0.5);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  direction: rtl;
+}
+
+.design-gallery-manager {
+  width: min(980px, 96vw);
+  max-height: 92vh;
+  background: #fff;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.design-gallery-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.design-gallery-manager-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.design-gallery-close {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #f1f5f9;
+  cursor: pointer;
+}
+
+.design-gallery-manager-body {
+  padding: 16px 20px 20px;
+  overflow: auto;
+}
+
+.design-gallery-cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.design-gallery-cat-tabs button {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.design-gallery-cat-tabs button.is-active {
+  background: #059669;
+  border-color: #059669;
+  color: #fff;
+}
+
+.design-gallery-form,
+.design-gallery-edit-form {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 12px;
   align-items: end;
   margin-bottom: 20px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.design-gallery-form-title,
+.design-gallery-edit-form h4 {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  font-size: 1rem;
 }
 
 .design-gallery-form-span {
@@ -45,6 +145,13 @@
   background: #f8fafc;
 }
 
+.design-gallery-thumb-btn {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: zoom-in;
+}
+
 .design-gallery-thumb {
   width: 72px;
   height: 54px;
@@ -52,6 +159,7 @@
   border-radius: 6px;
   flex-shrink: 0;
   background: #e2e8f0;
+  display: block;
 }
 
 .design-gallery-thumb.placeholder {
@@ -71,7 +179,8 @@
   font-size: 13px;
 }
 
-.design-gallery-actions {
+.design-gallery-actions,
+.design-gallery-edit-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
