@@ -811,7 +811,7 @@
         "INVOICE_OPTION_NOT_ALLOWED": "Cannot issue an invoice for an option — convert to a closed event first.",
         "INVOICE_DESCRIPTION": "Event invoice {eventCode}",
         "INVOICE_NOT_FOUND": "Invoice not found.",
-        "NOT_CONFIGURED": "Easy Count is not configured — add EASY_COUNT_API_URL and EASY_COUNT_API_KEY to .env"
+        "NOT_CONFIGURED": "EasyCount is not configured — add EASYCOUNT_API_URL and EASYCOUNT_API_KEY to .env"
       },
       "FEEDBACK": {
         "INVALID_LINK": "The link is invalid or expired.",

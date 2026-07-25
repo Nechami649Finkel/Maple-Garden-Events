@@ -61,7 +61,7 @@ create_secret_placeholder() {
     aws secretsmanager create-secret \
       --name "$name" \
       --description "Maple Events staging environment variables" \
-      --secret-string '{"NODE_ENV":"production","SERVE_CLIENT":"true","EASY_COUNT_MOCK_MODE":"true"}' \
+      --secret-string '{"NODE_ENV":"production","SERVE_CLIENT":"true","EASYCOUNT_MODE":"simulation","EASYCOUNT_MOCK_MODE":"true"}' \
       --region "$AWS_REGION"
     echo "✓ Created secret: $name — update with real values from infra/env.staging.example"
   fi

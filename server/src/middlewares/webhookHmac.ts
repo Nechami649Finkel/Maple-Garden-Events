@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { HmacVerificationError, verifyHmacSha256 } from '../utils/hmac';
+import { getEasyCountWebhookSecret } from '../Services/easyCount/config';
 import { catchAsync } from './errorHandler';
 
 export type WebhookHmacOptions = {
+  /** Primary env key (legacy keys may still be resolved by getSecret). */
   secretEnv: string;
   signatureHeader: string;
+  getSecret?: () => string | undefined;
 };
 
 /**
@@ -22,11 +25,15 @@ export function createWebhookHmacMiddleware(options: WebhookHmacOptions) {
       ? signatureHeader[0]
       : signatureHeader;
 
+    const secret = options.getSecret
+      ? options.getSecret()
+      : process.env[options.secretEnv];
+
     try {
       verifyHmacSha256(
         rawBody,
         typeof signature === 'string' ? signature : undefined,
-        process.env[options.secretEnv],
+        secret,
       );
     } catch (err) {
       if (err instanceof HmacVerificationError) {
@@ -49,8 +56,9 @@ export function createWebhookHmacMiddleware(options: WebhookHmacOptions) {
 }
 
 export const webhookHmacMiddleware = createWebhookHmacMiddleware({
-  secretEnv: 'EASY_COUNT_WEBHOOK_SECRET',
+  secretEnv: 'EASYCOUNT_WEBHOOK_SECRET',
   signatureHeader: 'x-easycount-signature',
+  getSecret: getEasyCountWebhookSecret,
 });
 
 /** @deprecated Use webhookHmacMiddleware */

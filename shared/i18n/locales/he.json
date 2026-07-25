@@ -811,7 +811,7 @@
         "INVOICE_OPTION_NOT_ALLOWED": "לא ניתן להפיק חשבונית לאופציה — יש להמיר לאירוע סגור תחילה.",
         "INVOICE_DESCRIPTION": "חשבון אירוע {eventCode}",
         "INVOICE_NOT_FOUND": "חשבונית לא נמצאה.",
-        "NOT_CONFIGURED": "Easy Count לא מוגדר — הוסיפי EASY_COUNT_API_URL ו-EASY_COUNT_API_KEY ל-.env"
+        "NOT_CONFIGURED": "EasyCount לא מוגדר — הוסיפי EASYCOUNT_API_URL ו-EASYCOUNT_API_KEY ל-.env"
       },
       "FEEDBACK": {
         "INVALID_LINK": "הקישור אינו חוקי או שפג תוקפו.",

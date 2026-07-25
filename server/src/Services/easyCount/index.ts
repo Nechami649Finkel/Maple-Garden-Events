@@ -1,3 +1,12 @@
+/**
+ * Unified EasyCount facade — single public entry for:
+ * - Advance receipts (createDoc)
+ * - Hall invoices (REST)
+ * - Webhook payment sync → BookingPayment ledger
+ * - Balance / remaining calculations
+ * - Configuration / mode meta
+ */
+
 import { randomUUID } from 'crypto';
 import prisma from '../../config/prisma';
 import { postEasyCountInvoice } from './apiClient';
@@ -9,6 +18,29 @@ import { syncBookingPaymentMetadata } from '../paymentDeadlineService';
 import type { EasyCountInvoiceRequest, EasyCountInvoiceResult } from './types';
 
 export type { EasyCountInvoiceRequest, EasyCountInvoiceResult } from './types';
+export type { EasyCountMode } from './config';
+export type {
+  EasyCountIssueResult,
+  EasyCountReceiptInput,
+  EasyCountBookingResult,
+} from './advanceReceipt';
+
+export {
+  getEasyCountMeta,
+  isEasyCountConfigured,
+  isEasyCountMockMode,
+  resolveEasyCountMode,
+  getEasyCountWebhookSecret,
+} from './config';
+
+export {
+  issueAdvanceReceipt,
+  issueEasyCountReceiptForBooking,
+  ensureAdvanceOnLedger,
+  canIssueEasyCountReceipt,
+  formatEasyCountUserMessage,
+} from './advanceReceipt';
+
 export { parseEasyCountWebhook } from './apiClient';
 export {
   applyHallInvoicePayment,
@@ -71,7 +103,6 @@ export async function createHallInvoice(
 
   const hallAmount = resolveHallInvoiceAmount(booking);
 
-  // C5: טוען חשבוניות pending/paid לפני אימות — מונע חריגה מתקרת האולם
   const existingInvoices = await prisma.hallInvoice.findMany({
     where: { bookingId: booking.id },
   });
@@ -82,7 +113,8 @@ export async function createHallInvoice(
   assertInvoiceAmountWithinBalance(amount, balance);
 
   const payload: EasyCountInvoiceRequest = {
-    tenantId: booking.tenantId, bookingId: booking.id,
+    tenantId: booking.tenantId,
+    bookingId: booking.id,
     eventCode: booking.eventCode,
     clientName: booking.clientAFullName,
     clientEmail: booking.clientAEmail,
@@ -97,7 +129,8 @@ export async function createHallInvoice(
   const stored = await prisma.hallInvoice.create({
     data: {
       id: randomUUID(),
-      tenantId: booking.tenantId, bookingId: booking.id,
+      tenantId: booking.tenantId,
+      bookingId: booking.id,
       externalId: remote.externalId,
       amount,
       status: remote.status,
@@ -108,7 +141,6 @@ export async function createHallInvoice(
   });
 
   void hallAmount;
-
   void syncBookingPaymentMetadata(booking.id);
 
   return {
@@ -129,11 +161,4 @@ export async function listHallInvoices(bookingId: string) {
     where: { bookingId },
     orderBy: { createdAt: 'desc' },
   });
-}
-
-export function isEasyCountConfigured(): boolean {
-  return Boolean(
-    process.env.EASY_COUNT_MOCK_MODE === 'true'
-    || (process.env.EASY_COUNT_API_URL?.trim() && process.env.EASY_COUNT_API_KEY?.trim()),
-  );
 }

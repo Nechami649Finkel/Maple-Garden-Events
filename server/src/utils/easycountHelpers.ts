@@ -1,4 +1,23 @@
-import { getEasyCountMeta, type EasyCountIssueResult, type EasyCountMode } from '../Services/easycount.service';
+/**
+ * Presentation helpers for EasyCount statuses.
+ * Core issuance / ledger logic lives in Services/easyCount.
+ */
+
+import {
+  canIssueEasyCountReceipt,
+  formatEasyCountUserMessage,
+  getEasyCountMeta,
+  type EasyCountIssueResult,
+  type EasyCountMode,
+} from '../Services/easyCount';
+
+export {
+  canIssueEasyCountReceipt,
+  formatEasyCountUserMessage,
+  getEasyCountMeta,
+  type EasyCountIssueResult,
+  type EasyCountMode,
+};
 
 export function formatEasyCountStatusLabel(status?: string | null): string {
   switch (status) {
@@ -15,28 +34,6 @@ export function formatEasyCountStatusLabel(status?: string | null): string {
   }
 }
 
-export function formatEasyCountUserMessage(
-  result: EasyCountIssueResult,
-  mode?: EasyCountMode,
-): string {
-  const resolvedMode = mode ?? getEasyCountMeta().mode;
-
-  switch (result.status) {
-    case 'SIMULATED':
-      return 'קבלת מקדמה נרשמה בסימולציה — לא הופק מסמך מס אמיתי.';
-    case 'ISSUED':
-      return resolvedMode === 'sandbox'
-        ? 'קבלת בדיקה הופקה בהצלחה ב-EZCount Sandbox.'
-        : 'קבלת המקדמה הופקה בהצלחה ב-EZCount.';
-    case 'FAILED':
-      return `שגיאה בהפקת קבלה ב-EZCount: ${result.error || 'נסי שוב או פני לתמיכה.'}`;
-    case 'SKIPPED':
-      return 'הפקת קבלה EZCount דולגה.';
-    default:
-      return '';
-  }
-}
-
 export function canRetryEasyCountReceipt(booking: {
   advancePaid?: number | null;
   isOption?: boolean;
@@ -45,16 +42,4 @@ export function canRetryEasyCountReceipt(booking: {
   if (booking.isOption) return false;
   if (!booking.advancePaid || booking.advancePaid <= 0) return false;
   return !booking.easycountStatus || booking.easycountStatus === 'FAILED';
-}
-
-export function canIssueEasyCountReceipt(booking: {
-  advancePaid?: number | null;
-  isOption?: boolean;
-  easycountStatus?: string | null;
-}): boolean {
-  if (booking.isOption) return false;
-  if (!booking.advancePaid || booking.advancePaid <= 0) return false;
-  return !booking.easycountStatus
-    || booking.easycountStatus === 'FAILED'
-    || booking.easycountStatus === 'SIMULATED';
 }

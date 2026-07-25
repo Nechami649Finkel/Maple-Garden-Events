@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { HmacVerificationError, verifyHmacSha256 } from '../../utils/hmac';
+import { getEasyCountWebhookSecret } from './config';
 
 export {
   computeHallBalanceBreakdown,
@@ -26,7 +27,7 @@ export function verifyEasyCountWebhookSignature(
     verifyHmacSha256(
       buffer,
       signatureHeader,
-      process.env.EASY_COUNT_WEBHOOK_SECRET,
+      getEasyCountWebhookSecret(),
     );
     return true;
   } catch (err) {

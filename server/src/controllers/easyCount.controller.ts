@@ -3,18 +3,24 @@ import { catchAsync } from '../middlewares/errorHandler';
 import {
   applyHallInvoicePayment,
   createHallInvoice,
+  getEasyCountMeta,
   isEasyCountConfigured,
+  isEasyCountMockMode,
   loadHallBalanceForBooking,
   parseEasyCountWebhook,
 } from '../Services/easyCount';
 import { emitBookingUpdated } from '../utils/realtime';
 
 export const getEasyCountStatus = catchAsync(async (_req: Request, res: Response) => {
+  const meta = getEasyCountMeta();
   res.json({
     success: true,
     data: {
       configured: isEasyCountConfigured(),
-      mockMode: process.env.EASY_COUNT_MOCK_MODE === 'true',
+      mockMode: isEasyCountMockMode(),
+      mode: meta.mode,
+      label: meta.label,
+      canIssueRealDocuments: meta.canIssueRealDocuments,
     },
   });
 });

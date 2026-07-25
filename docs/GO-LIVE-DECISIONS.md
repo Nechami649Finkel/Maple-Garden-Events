@@ -18,9 +18,9 @@
 ## 3. EasyCount — Mock ב-staging, Live רק אחרי UAT
 
 - **החלטה:**
-  - **Staging:** `EASY_COUNT_MOCK_MODE=true`
-  - **Production (Go-Live):** `EASY_COUNT_MOCK_MODE=true` עד סיום UAT מלא
-  - **Production (לאחר UAT):** `EASY_COUNT_MOCK_MODE=false` + מפתחות אמיתיים
+  - **Staging:** `EASYCOUNT_MOCK_MODE=true` / `EASYCOUNT_MODE=simulation`
+  - **Production (Go-Live):** `EASYCOUNT_MOCK_MODE=true` עד סיום UAT מלא
+  - **Production (לאחר UAT):** `EASYCOUNT_MOCK_MODE=false` + `EASYCOUNT_MODE=live` + מפתחות אמיתיים
 - **יישום:** ראה [`infra/env.staging.example`](../infra/env.staging.example) ו-[`infra/env.production.example`](../infra/env.production.example).
 
 ## 4. הגשת Client — SERVE_CLIENT=true

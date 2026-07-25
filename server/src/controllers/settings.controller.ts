@@ -4,7 +4,7 @@ import { catchAsync } from '../middlewares/errorHandler';
 import { DEFAULT_CONTRACT_TEXT } from '../utils/defaultContractText';
 import { emitSettingsUpdated } from '../utils/realtime';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
-import { getEasyCountMeta } from '../Services/easycount.service';
+import { getEasyCountMeta } from '../Services/easyCount';
 import { getBrandConfig } from '../vendor/shared/brand/index';
 
 export const settingsController = {

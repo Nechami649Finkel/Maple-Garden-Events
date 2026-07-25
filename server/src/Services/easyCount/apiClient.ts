@@ -1,14 +1,18 @@
 import type { EasyCountInvoiceRequest, EasyCountInvoiceResult } from './types';
 import { generateMockExternalId } from './helpers';
-
-function useMockMode(): boolean {
-  return process.env.EASY_COUNT_MOCK_MODE === 'true';
-}
+import {
+  easyCountFetch,
+  getEasyCountApiKey,
+  getEasyCountMerchantId,
+  getInvoiceApiBaseUrl,
+  isEasyCountMockMode,
+} from './config';
+import { logger } from '../../utils/logger';
 
 export async function postEasyCountInvoice(
   payload: EasyCountInvoiceRequest,
 ): Promise<EasyCountInvoiceResult> {
-  if (useMockMode()) {
+  if (isEasyCountMockMode()) {
     return {
       externalId: generateMockExternalId(),
       paymentUrl: undefined,
@@ -16,68 +20,85 @@ export async function postEasyCountInvoice(
     };
   }
 
-  const baseUrl = process.env.EASY_COUNT_API_URL?.trim().replace(/\/$/, '');
-  const apiKey = process.env.EASY_COUNT_API_KEY?.trim();
+  const baseUrl = getInvoiceApiBaseUrl();
+  const apiKey = getEasyCountApiKey();
   if (!baseUrl || !apiKey) {
     const err: Error & { statusCode?: number } = new Error(
-      'Easy Count לא מוגדר — הוסיפי EASY_COUNT_API_URL ו-EASY_COUNT_API_KEY ל-.env',
+      'EasyCount לא מוגדר — הוסיפי EASYCOUNT_API_URL ו-EASYCOUNT_API_KEY ל-.env',
     );
     err.statusCode = 503;
     throw err;
   }
 
-  const merchantId = process.env.EASY_COUNT_MERCHANT_ID?.trim();
-  const response = await fetch(`${baseUrl}/invoices`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-      ...(merchantId ? { 'X-Merchant-Id': merchantId } : {}),
-    },
-    body: JSON.stringify({
-      reference: payload.bookingId,
-      customer: {
-        name: payload.clientName,
-        email: payload.clientEmail ?? undefined,
-        phone: payload.clientPhone,
-      },
-      amount: payload.amount,
-      currency: 'ILS',
-      description: payload.description,
-      metadata: {
-        eventCode: payload.eventCode,
-        installmentLabel: payload.installmentLabel,
-      },
-    }),
-  });
+  const merchantId = getEasyCountMerchantId();
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    const err: Error & { statusCode?: number } = new Error(
-      `Easy Count API error (${response.status}): ${text || response.statusText}`,
-    );
-    err.statusCode = response.status >= 400 && response.status < 500 ? 502 : 503;
+  try {
+    const response = await easyCountFetch(`${baseUrl}/invoices`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+        ...(merchantId ? { 'X-Merchant-Id': merchantId } : {}),
+      },
+      body: JSON.stringify({
+        reference: payload.bookingId,
+        customer: {
+          name: payload.clientName,
+          email: payload.clientEmail ?? undefined,
+          phone: payload.clientPhone,
+        },
+        amount: payload.amount,
+        currency: 'ILS',
+        description: payload.description,
+        metadata: {
+          eventCode: payload.eventCode,
+          installmentLabel: payload.installmentLabel,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      const err: Error & { statusCode?: number } = new Error(
+        `EasyCount API error (${response.status}): ${text || response.statusText}`,
+      );
+      err.statusCode = response.status >= 400 && response.status < 500 ? 502 : 503;
+      logger.error('[EZCount] postInvoice failed', {
+        bookingId: payload.bookingId,
+        status: response.status,
+        body: text.slice(0, 500),
+      });
+      throw err;
+    }
+
+    const data = (await response.json()) as {
+      id?: string;
+      invoiceId?: string;
+      paymentUrl?: string;
+      payment_url?: string;
+      status?: string;
+    };
+
+    const externalId = String(data.id ?? data.invoiceId ?? '');
+    if (!externalId) {
+      throw new Error('EasyCount API returned no invoice id');
+    }
+
+    return {
+      externalId,
+      paymentUrl: data.paymentUrl ?? data.payment_url,
+      status: normalizeRemoteStatus(data.status),
+    };
+  } catch (error) {
+    if (error instanceof Error && (error as Error & { statusCode?: number }).statusCode) {
+      throw error;
+    }
+    const message = error instanceof Error ? error.message : 'Unknown EasyCount invoice error';
+    logger.error('[EZCount] postInvoice error', { bookingId: payload.bookingId, message });
+    const err: Error & { statusCode?: number } = new Error(message);
+    err.statusCode = 503;
     throw err;
   }
-
-  const data = (await response.json()) as {
-    id?: string;
-    invoiceId?: string;
-    paymentUrl?: string;
-    payment_url?: string;
-    status?: string;
-  };
-
-  const externalId = String(data.id ?? data.invoiceId ?? '');
-  if (!externalId) {
-    throw new Error('Easy Count API returned no invoice id');
-  }
-
-  return {
-    externalId,
-    paymentUrl: data.paymentUrl ?? data.payment_url,
-    status: normalizeRemoteStatus(data.status),
-  };
 }
 
 function normalizeRemoteStatus(status?: string): EasyCountInvoiceResult['status'] {

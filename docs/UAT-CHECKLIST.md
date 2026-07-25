@@ -58,4 +58,4 @@ Run all tests on the **staging** environment before promoting to production.
 | Manager | | | [ ] |
 | Dev | | | [ ] |
 
-After all items pass, set `EASY_COUNT_MOCK_MODE=false` in production secrets (when ready).
+After all items pass, set `EASYCOUNT_MOCK_MODE=false` and `EASYCOUNT_MODE=live` in production secrets (when ready).

@@ -6,7 +6,7 @@ import { startCronJobs } from './utils/cronJobs';
 import { initOrderSequence } from './utils/eventCode';
 import { logger } from './utils/logger';
 import { verifyEmailConnection } from './utils/mailer';
-import { getEasyCountMeta } from './Services/easycount.service';
+import { getEasyCountMeta } from './Services/easyCount';
 import app from './app';
 import { getCorsOrigins } from './config/corsOrigins';
 

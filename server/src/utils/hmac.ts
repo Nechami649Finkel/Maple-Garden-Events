@@ -22,7 +22,7 @@ export function verifyHmacSha256(
   const key = secret?.trim();
   if (!key) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('EASY_COUNT_WEBHOOK_SECRET is required in production');
+      throw new Error('EASYCOUNT_WEBHOOK_SECRET is required in production');
     }
     throw new HmacVerificationError('Webhook signing secret is not configured');
   }

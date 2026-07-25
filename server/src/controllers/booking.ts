@@ -57,133 +57,18 @@ import {
   type TxClient,
 } from '../utils/eventDateLock';
 import { releaseOwnedOptionDates } from '../utils/optionRelease';
-import { getEasyCountMeta, issueAdvanceReceipt } from '../Services/easycount.service';
 import {
-  formatEasyCountUserMessage,
-  canIssueEasyCountReceipt,
-} from '../utils/easycountHelpers';
+  ensureAdvanceOnLedger,
+  issueEasyCountReceiptForBooking,
+  type EasyCountBookingResult,
+} from '../Services/easyCount';
 import { syncContractFields } from '../utils/contractFields';
 import {
-  recordAdvancePayment,
   recordPayment,
   getBookingFinancialSnapshot,
 } from '../Services/bookingPayment.service';
 
-export type EasyCountBookingResult = {
-  issued: boolean;
-  status: string | null;
-  message: string;
-  docId: string | null;
-  docUrl: string | null;
-};
-
-/** Persist advance on the payment ledger even when EasyCount is skipped/unavailable. */
-async function ensureAdvanceOnLedger(bookingId: string): Promise<void> {
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking || booking.isOption || booking.advancePaid <= 0) return;
-  await recordAdvancePayment({
-    bookingId: booking.id,
-    tenantId: booking.tenantId,
-    amount: booking.advancePaid,
-    depositMethod: booking.depositMethod,
-    easycountDocId: booking.easycountDocId,
-  });
-}
-
-async function issueEasyCountReceiptForBooking(
-  bookingId: string,
-  options?: { force?: boolean },
-): Promise<EasyCountBookingResult | null> {
-  const booking = await prisma.booking.findUnique({
-    where: { id: bookingId },
-    include: { eventDate: true },
-  });
-
-  if (!booking || booking.isOption || booking.advancePaid <= 0) {
-    return null;
-  }
-
-  const force = options?.force === true;
-  const alreadyIssued =
-    booking.easycountStatus === 'ISSUED'
-    || (!force && booking.easycountStatus === 'SIMULATED' && !!booking.easycountDocId);
-
-  if (alreadyIssued && !force) {
-    return {
-      issued: false,
-      status: booking.easycountStatus,
-      message: 'קבלה כבר הופקה עבור מקדמה זו.',
-      docId: booking.easycountDocId,
-      docUrl: booking.easycountDocUrl,
-    };
-  }
-
-  if (!force && !canIssueEasyCountReceipt(booking)) {
-    return null;
-  }
-
-  const settings = await prisma.systemSettings.findUnique({ where: { id: 'global' } });
-  const result = await issueAdvanceReceipt({
-    eventCode: booking.eventCode,
-    clientName: booking.clientAFullName,
-    clientIdNumber: booking.clientAIdNumber,
-    clientEmail: booking.clientAEmail || booking.clientBEmail,
-    amount: booking.advancePaid,
-    depositMethod: booking.depositMethod,
-    eventType: booking.eventType,
-    vatRate: settings?.vatRate ?? 17,
-    vatType: booking.vatType,
-    eventDate: booking.eventDate?.date ?? null,
-  });
-
-  if (result.status === 'SKIPPED') {
-    // Mode off — still persist advance on the ledger so remaining balance stays accurate.
-    await recordAdvancePayment({
-      bookingId,
-      tenantId: booking.tenantId,
-      amount: booking.advancePaid,
-      depositMethod: booking.depositMethod,
-    }).catch((ledgerError) => {
-      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
-    });
-    return null;
-  }
-
-  const message = formatEasyCountUserMessage(result, getEasyCountMeta().mode);
-
-  await prisma.booking.update({
-    where: { id: bookingId },
-    data: {
-      easycountDocId: result.docId,
-      easycountDocUrl: result.docUrl,
-      easycountStatus: result.status,
-      easycountError: result.status === 'FAILED' ? (result.error || message) : null,
-    },
-  });
-
-  // Ledger: advance receipt → BookingPayment + remaining balance aggregates
-  if (result.status === 'ISSUED' || result.status === 'SIMULATED') {
-    await recordAdvancePayment({
-      bookingId,
-      tenantId: booking.tenantId,
-      amount: booking.advancePaid,
-      depositMethod: booking.depositMethod,
-      easycountDocId: result.docId,
-    }).catch((ledgerError) => {
-      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
-    });
-  }
-
-  emitBookingUpdated(bookingId);
-
-  return {
-    issued: result.status === 'ISSUED' || result.status === 'SIMULATED',
-    status: result.status,
-    message,
-    docId: result.docId,
-    docUrl: result.docUrl,
-  };
-}
+export type { EasyCountBookingResult };
 
 function canEditBookingDate(eventDate: Date): boolean {
   const today = localStartOfDay(new Date());
