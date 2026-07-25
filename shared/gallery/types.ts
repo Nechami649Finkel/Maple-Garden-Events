@@ -25,13 +25,48 @@ export type DesignGalleryItemDto = {
   name: string;
   description?: string | null;
   modelCode?: string | null;
-  /** Resolved URL for display (presigned S3 or local path). */
+  /** Full-resolution image — use in lightbox only. */
   imageUrl: string;
+  /** Compressed thumbnail for grids; falls back to imageUrl when absent. */
+  thumbnailUrl?: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
+
+/** Prefer thumbnail for list/grid rendering. */
+export function designItemThumbSrc(item: {
+  imageUrl?: string | null;
+  thumbnailUrl?: string | null;
+}): string {
+  return (item.thumbnailUrl || item.imageUrl || '').trim();
+}
+
+/** Full image for lightbox / zoom. */
+export function designItemFullSrc(item: {
+  imageUrl?: string | null;
+  thumbnailUrl?: string | null;
+}): string {
+  return (item.imageUrl || item.thumbnailUrl || '').trim();
+}
+
+export function designItemMatchesSearch(
+  item: {
+    name?: string | null;
+    description?: string | null;
+    modelCode?: string | null;
+  },
+  query: string,
+): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const haystack = [item.name, item.description, item.modelCode]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(q);
+}
 
 export function isDesignGalleryCategory(value: string): value is DesignGalleryCategory {
   return (DESIGN_GALLERY_CATEGORIES as readonly string[]).includes(value);

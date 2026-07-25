@@ -73,7 +73,29 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  margin-bottom: 12px;
+}
+
+.design-gallery-search-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   margin-bottom: 16px;
+}
+
+.design-gallery-search-wrap label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.design-gallery-search-wrap input {
+  width: 100%;
+  max-width: 420px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
 }
 
 .design-gallery-cat-tabs button {

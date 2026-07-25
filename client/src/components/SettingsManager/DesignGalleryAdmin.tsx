@@ -6,10 +6,14 @@ import { apiFetch } from '../../services/api';
 import { API_URL } from '../../config/api';
 import {
   DESIGN_GALLERY_CATEGORIES,
+  designItemFullSrc,
+  designItemMatchesSearch,
+  designItemThumbSrc,
   type DesignGalleryCategory,
   type DesignGalleryItemDto,
 } from '@shared/gallery';
 import { DesignImageLightbox } from '../DesignGallery/DesignImageLightbox';
+import { useToast } from '../ui/Toast/ToastProvider';
 import './DesignGalleryAdmin.css';
 
 function categoryLabel(
@@ -48,6 +52,7 @@ const emptyForm = {
 
 export function DesignGalleryAdmin() {
   const { t, T } = useTranslation();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
   const { data: items = [], isLoading, isError } = useDesignGalleryQuery({
     includeInactive: true,
@@ -55,6 +60,7 @@ export function DesignGalleryAdmin() {
 
   const [managerOpen, setManagerOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<DesignGalleryCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -73,13 +79,21 @@ export function DesignGalleryAdmin() {
     [items],
   );
 
-  const filteredItems = useMemo(
-    () =>
+  const filteredItems = useMemo(() => {
+    const byCategory =
       activeCategory === 'all'
         ? sortedItems
-        : sortedItems.filter((item) => item.category === activeCategory),
-    [sortedItems, activeCategory],
-  );
+        : sortedItems.filter((item) => item.category === activeCategory);
+    return byCategory.filter((item) => designItemMatchesSearch(item, searchQuery));
+  }, [sortedItems, activeCategory, searchQuery]);
+
+  const setCategoryTab = (cat: DesignGalleryCategory | 'all') => {
+    setActiveCategory(cat);
+    setSearchQuery('');
+    if (cat !== 'all') {
+      setForm((prev) => ({ ...prev, category: cat }));
+    }
+  };
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: sortedItems.length };
@@ -150,7 +164,7 @@ export function DesignGalleryAdmin() {
       }
       await invalidate();
       resetForm();
-      alert(t(T.SETTINGS.DESIGN_SAVE_SUCCESS));
+      showToast(t(T.SETTINGS.DESIGN_SAVE_SUCCESS), 'success');
     } catch {
       alert(t(T.SETTINGS.DESIGN_SAVE_ERROR));
     } finally {
@@ -211,7 +225,7 @@ export function DesignGalleryAdmin() {
       await invalidate();
       setEditing(null);
       setEditFile(null);
-      alert(t(T.SETTINGS.DESIGN_SAVE_SUCCESS));
+      showToast(t(T.SETTINGS.DESIGN_SAVE_SUCCESS), 'success');
     } catch {
       alert(t(T.SETTINGS.DESIGN_SAVE_ERROR));
     } finally {
@@ -306,7 +320,7 @@ export function DesignGalleryAdmin() {
                 <button
                   type="button"
                   className={activeCategory === 'all' ? 'is-active' : ''}
-                  onClick={() => setActiveCategory('all')}
+                  onClick={() => setCategoryTab('all')}
                 >
                   {t(T.SETTINGS.DESIGN_CATEGORY_ALL)} ({counts.all || 0})
                 </button>
@@ -315,14 +329,23 @@ export function DesignGalleryAdmin() {
                     key={cat}
                     type="button"
                     className={activeCategory === cat ? 'is-active' : ''}
-                    onClick={() => {
-                      setActiveCategory(cat);
-                      setForm((prev) => ({ ...prev, category: cat }));
-                    }}
+                    onClick={() => setCategoryTab(cat)}
                   >
                     {categoryLabel(t, T, cat)} ({counts[cat] || 0})
                   </button>
                 ))}
+              </div>
+
+              <div className="design-gallery-search-wrap">
+                <label htmlFor="admin-design-search">{t(T.EVENT_FORM.DESIGN_SEARCH_LABEL)}</label>
+                <input
+                  id="admin-design-search"
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t(T.EVENT_FORM.DESIGN_SEARCH_PLACEHOLDER)}
+                  autoComplete="off"
+                />
               </div>
 
               <form className="design-gallery-form" onSubmit={handleCreate}>
@@ -397,21 +420,34 @@ export function DesignGalleryAdmin() {
               {isError ? (
                 <p className="design-gallery-error">{t(T.SETTINGS.DESIGN_LOAD_ERROR)}</p>
               ) : filteredItems.length === 0 ? (
-                <p className="design-gallery-empty">{t(T.SETTINGS.DESIGN_EMPTY)}</p>
+                <p className="design-gallery-empty">
+                  {searchQuery.trim()
+                    ? t(T.EVENT_FORM.DESIGN_SEARCH_EMPTY)
+                    : t(T.SETTINGS.DESIGN_EMPTY)}
+                </p>
               ) : (
                 <div className="design-gallery-list">
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item) => {
+                    const thumb = designItemThumbSrc(item);
+                    const full = designItemFullSrc(item);
+                    return (
                     <div
                       key={item.id}
                       className={`design-gallery-item ${!item.isActive ? 'is-inactive' : ''}`}
                     >
-                      {item.imageUrl ? (
+                      {thumb ? (
                         <button
                           type="button"
                           className="design-gallery-thumb-btn"
-                          onClick={() => setLightboxSrc(item.imageUrl)}
+                          onClick={() => setLightboxSrc(full)}
                         >
-                          <img src={item.imageUrl} alt="" className="design-gallery-thumb" />
+                          <img
+                            src={thumb}
+                            alt=""
+                            className="design-gallery-thumb"
+                            loading="lazy"
+                            decoding="async"
+                          />
                         </button>
                       ) : (
                         <div className="design-gallery-thumb placeholder" />
@@ -448,7 +484,8 @@ export function DesignGalleryAdmin() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

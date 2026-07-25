@@ -7,6 +7,7 @@ import { initAccessibilitySettings } from './accessibility/accessibilitySettings
 import { I18nProvider } from './i18n/I18nProvider';
 import { initDocumentLocale } from './i18n/languageStorage';
 import { initBrand } from './brand/initBrand';
+import { ToastProvider } from './components/ui/Toast/ToastProvider';
 import './index.css';
 import App from './App.tsx';
 import { ErrorFallback } from './components/ErrorFallback/ErrorFallback';
@@ -26,11 +27,13 @@ createRoot(document.getElementById('root')!).render(
     <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <QueryClientProvider client={queryClient}>
         <I18nProvider>
-          <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
-            <ErrorFallback error={error instanceof Error ? error : undefined} resetError={resetError} />
-          )}>
-            <App />
-          </Sentry.ErrorBoundary>
+          <ToastProvider>
+            <Sentry.ErrorBoundary fallback={({ error, resetError }) => (
+              <ErrorFallback error={error instanceof Error ? error : undefined} resetError={resetError} />
+            )}>
+              <App />
+            </Sentry.ErrorBoundary>
+          </ToastProvider>
         </I18nProvider>
       </QueryClientProvider>
     </GoogleOAuthProvider>

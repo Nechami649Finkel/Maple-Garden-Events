@@ -317,18 +317,20 @@ model ExtraService {
 
 /** Catalog of design options (tablecloths, napkins, etc.) with images for the event form gallery. */
 model DesignGalleryItem {
-  id          String   @id @default(uuid())
-  tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
-  category    String
-  name        String
-  description String?
-  modelCode   String?
-  imageUrl    String
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  category     String
+  name         String
+  description  String?
+  modelCode    String?
+  imageUrl     String
+  /** Lightweight WebP (or equivalent) for grid display; falls back to imageUrl when null. */
+  thumbnailUrl String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([tenantId])
   @@index([tenantId, category])

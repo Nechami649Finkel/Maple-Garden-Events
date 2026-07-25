@@ -10,6 +10,36 @@
   text-align: center;
 }
 
+.searchWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 auto 18px;
+  width: min(420px, 100%);
+}
+
+.searchLabel {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand-text-secondary, #64748b);
+}
+
+.searchInput {
+  width: 100%;
+  border: 1px solid var(--brand-border-strong, #cbd5e1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  background: var(--brand-surface, #fff);
+  color: var(--brand-text, #0f172a);
+}
+
+.searchInput:focus {
+  outline: 2px solid var(--brand-green-muted, #6ee7b7);
+  outline-offset: 1px;
+  border-color: var(--brand-green, #059669);
+}
+
 .tabs {
   display: flex;
   justify-content: center;

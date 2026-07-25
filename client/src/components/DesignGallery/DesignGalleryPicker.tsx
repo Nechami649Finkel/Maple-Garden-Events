@@ -1,10 +1,14 @@
 import { useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useDesignGalleryQuery } from '../../hooks/queries';
+import { useToast } from '../ui/Toast/ToastProvider';
 import {
   DESIGN_CATEGORY_TO_FORM_FIELD,
   DESIGN_GALLERY_CATEGORIES,
+  designItemFullSrc,
+  designItemMatchesSearch,
   designItemSelectionLabel,
+  designItemThumbSrc,
   designModelDisplay,
   matchesDesignSelection,
   type DesignFormField,
@@ -20,7 +24,6 @@ type Props = {
   selectedValues?: Partial<Record<DesignFormField, string>>;
   onSelect: (field: DesignFormField, value: string, item: DesignGalleryItemDto) => void;
   initialCategory?: DesignGalleryCategory;
-  /** Show the "Selected Details" summary tab. */
   showSelectedTab?: boolean;
 };
 
@@ -44,7 +47,9 @@ export function DesignGalleryPicker({
   showSelectedTab = true,
 }: Props) {
   const { t, T } = useTranslation();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<TabId>(initialCategory);
+  const [searchQuery, setSearchQuery] = useState('');
   const [lightbox, setLightbox] = useState<{ src: string; caption: string } | null>(null);
   const { data: items = [], isLoading, isError, refetch, isFetching } = useDesignGalleryQuery();
 
@@ -58,10 +63,20 @@ export function DesignGalleryPicker({
 
   const list = items as DesignGalleryItemDto[];
 
+  const switchTab = (tab: TabId) => {
+    setActiveTab(tab);
+    setSearchQuery('');
+  };
+
   const filtered = useMemo(() => {
     if (activeTab === 'selected') return [];
-    return list.filter((item) => item.category === activeTab && item.isActive !== false);
-  }, [list, activeTab]);
+    return list.filter(
+      (item) =>
+        item.category === activeTab
+        && item.isActive !== false
+        && designItemMatchesSearch(item, searchQuery),
+    );
+  }, [list, activeTab, searchQuery]);
 
   const selectedDetails = useMemo(() => {
     return DESIGN_GALLERY_CATEGORIES.map((category) => {
@@ -76,8 +91,13 @@ export function DesignGalleryPicker({
         item: item ?? null,
         model: designModelDisplay(item, stored),
       };
-    }).filter((row) => row.stored);
-  }, [list, selectedValues, categoryLabels]);
+    }).filter((row) => {
+      if (!row.stored) return false;
+      if (!searchQuery.trim()) return true;
+      if (row.item) return designItemMatchesSearch(row.item, searchQuery);
+      return row.stored.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    });
+  }, [list, selectedValues, categoryLabels, searchQuery]);
 
   const selectedForCategory =
     activeTab !== 'selected'
@@ -89,16 +109,26 @@ export function DesignGalleryPicker({
     if (!DESIGN_GALLERY_CATEGORIES.includes(category)) return;
     const field = DESIGN_CATEGORY_TO_FORM_FIELD[category];
     onSelect(field, designItemSelectionLabel(item), item);
+    showToast(t(T.EVENT_FORM.DESIGN_TOAST_SELECTED, { name: item.name }), 'success');
   };
 
   const openLightbox = (item: DesignGalleryItemDto, e?: MouseEvent) => {
     e?.stopPropagation();
-    if (!item.imageUrl) return;
+    const full = designItemFullSrc(item);
+    if (!full) return;
     setLightbox({
-      src: item.imageUrl,
+      src: full,
       caption: `${designModelDisplay(item) || item.name}${item.name ? ` · ${item.name}` : ''}`,
     });
   };
+
+  const showSearchEmpty =
+    !isLoading
+    && !isFetching
+    && !isError
+    && Boolean(searchQuery.trim())
+    && ((activeTab === 'selected' && selectedDetails.length === 0)
+      || (activeTab !== 'selected' && filtered.length === 0));
 
   return (
     <div className={styles.picker}>
@@ -112,7 +142,7 @@ export function DesignGalleryPicker({
             role="tab"
             aria-selected={activeTab === category}
             className={`${styles.tabBtn} ${activeTab === category ? styles.tabBtnActive : ''}`}
-            onClick={() => setActiveTab(category)}
+            onClick={() => switchTab(category)}
           >
             {categoryLabels[category]}
           </button>
@@ -123,12 +153,29 @@ export function DesignGalleryPicker({
             role="tab"
             aria-selected={activeTab === 'selected'}
             className={`${styles.tabBtn} ${activeTab === 'selected' ? styles.tabBtnActive : ''}`}
-            onClick={() => setActiveTab('selected')}
+            onClick={() => switchTab('selected')}
           >
             {t(T.EVENT_FORM.DESIGN_SELECTED_TAB)}
-            {selectedDetails.length > 0 ? ` (${selectedDetails.length})` : ''}
+            {selectedDetails.length > 0 && !searchQuery.trim()
+              ? ` (${selectedDetails.length})`
+              : ''}
           </button>
         ) : null}
+      </div>
+
+      <div className={styles.searchWrap}>
+        <label className={styles.searchLabel} htmlFor="design-gallery-search">
+          {t(T.EVENT_FORM.DESIGN_SEARCH_LABEL)}
+        </label>
+        <input
+          id="design-gallery-search"
+          type="search"
+          className={styles.searchInput}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={t(T.EVENT_FORM.DESIGN_SEARCH_PLACEHOLDER)}
+          autoComplete="off"
+        />
       </div>
 
       {isLoading || isFetching ? (
@@ -140,32 +187,39 @@ export function DesignGalleryPicker({
             {t(T.GREETING.REFRESH)}
           </button>
         </div>
+      ) : showSearchEmpty ? (
+        <div className={styles.stateMsg}>{t(T.EVENT_FORM.DESIGN_SEARCH_EMPTY)}</div>
       ) : activeTab === 'selected' ? (
         selectedDetails.length === 0 ? (
           <div className={styles.stateMsg}>{t(T.EVENT_FORM.DESIGN_SELECTED_EMPTY)}</div>
         ) : (
           <div className={styles.selectedGrid}>
-            {selectedDetails.map((row) => (
-              <div key={row.category} className={styles.selectedCard}>
-                {row.item?.imageUrl ? (
-                  <button
-                    type="button"
-                    className={styles.imageButton}
-                    onClick={() => openLightbox(row.item!)}
-                    aria-label={t(T.EVENT_FORM.DESIGN_ZOOM_ARIA, { name: row.item.name })}
-                  >
-                    <img src={row.item.imageUrl} alt="" className={styles.image} loading="lazy" />
-                  </button>
-                ) : (
-                  <div className={styles.imagePlaceholder} />
-                )}
-                <div className={styles.cardContent}>
-                  <div className={styles.categoryTag}>{row.label}</div>
-                  {row.model ? <div className={styles.modelBadge}>{row.model}</div> : null}
-                  <h3 className={styles.itemName}>{row.item?.name || row.stored}</h3>
+            {selectedDetails.map((row) => {
+              const thumb = row.item ? designItemThumbSrc(row.item) : '';
+              return (
+                <div key={row.category} className={styles.selectedCard}>
+                  {thumb ? (
+                    <button
+                      type="button"
+                      className={styles.imageButton}
+                      onClick={() => row.item && openLightbox(row.item)}
+                      aria-label={t(T.EVENT_FORM.DESIGN_ZOOM_ARIA, {
+                        name: row.item?.name || row.stored,
+                      })}
+                    >
+                      <img src={thumb} alt="" className={styles.image} loading="lazy" decoding="async" />
+                    </button>
+                  ) : (
+                    <div className={styles.imagePlaceholder} />
+                  )}
+                  <div className={styles.cardContent}>
+                    <div className={styles.categoryTag}>{row.label}</div>
+                    {row.model ? <div className={styles.modelBadge}>{row.model}</div> : null}
+                    <h3 className={styles.itemName}>{row.item?.name || row.stored}</h3>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )
       ) : filtered.length === 0 ? (
@@ -177,19 +231,20 @@ export function DesignGalleryPicker({
             const isSelected =
               matchesDesignSelection(item, selectedForCategory)
               || selectedForCategory === label;
+            const thumb = designItemThumbSrc(item);
             return (
               <div
                 key={item.id}
                 className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
               >
-                {item.imageUrl ? (
+                {thumb ? (
                   <button
                     type="button"
                     className={styles.imageButton}
                     onClick={(e) => openLightbox(item, e)}
                     aria-label={t(T.EVENT_FORM.DESIGN_ZOOM_ARIA, { name: item.name })}
                   >
-                    <img src={item.imageUrl} alt="" className={styles.image} loading="lazy" />
+                    <img src={thumb} alt="" className={styles.image} loading="lazy" decoding="async" />
                   </button>
                 ) : (
                   <div className={styles.imagePlaceholder} />

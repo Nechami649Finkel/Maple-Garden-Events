@@ -18,6 +18,8 @@ import {
   isLocalGalleryUrl,
   saveLocalGalleryFile,
 } from '../utils/galleryLocalStorage';
+import { createGalleryThumbnail } from '../utils/galleryThumbnails';
+import { logger } from '../utils/logger';
 import type { DesignGalleryCategory } from '../vendor/shared/gallery';
 
 const IMAGE_MIME_TYPES = new Set([
@@ -37,6 +39,11 @@ function tenantIdFrom(req: Request): string | null {
   return (req as any).user?.tenantId ?? null;
 }
 
+type StoredImagePair = {
+  imageUrl: string;
+  thumbnailUrl: string | null;
+};
+
 async function toDto(item: {
   id: string;
   category: string;
@@ -44,19 +51,26 @@ async function toDto(item: {
   description: string | null;
   modelCode: string | null;
   imageUrl: string;
+  thumbnailUrl?: string | null;
   sortOrder: number;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }) {
-  const resolved = (await resolveFileUrl(item.imageUrl)) || item.imageUrl;
+  const [resolvedFull, resolvedThumb] = await Promise.all([
+    resolveFileUrl(item.imageUrl),
+    item.thumbnailUrl ? resolveFileUrl(item.thumbnailUrl) : Promise.resolve(null),
+  ]);
+  const imageUrl = resolvedFull || item.imageUrl;
+  const thumbnailUrl = resolvedThumb || item.thumbnailUrl || imageUrl;
   return {
     id: item.id,
     category: item.category,
     name: item.name,
     description: item.description,
     modelCode: item.modelCode,
-    imageUrl: resolved,
+    imageUrl,
+    thumbnailUrl,
     sortOrder: item.sortOrder,
     isActive: item.isActive,
     createdAt: item.createdAt.toISOString(),
@@ -64,22 +78,45 @@ async function toDto(item: {
   };
 }
 
-async function persistImage(
+async function persistImagePair(
   tenantId: string,
   file: Express.Multer.File,
-): Promise<string> {
-  if (isS3StorageEnabled()) {
-    return uploadGalleryFile({
-      tenantId,
-      fileName: file.originalname || 'design.jpg',
-      contentType: file.mimetype || 'image/jpeg',
-      body: file.buffer,
+): Promise<StoredImagePair> {
+  let thumbnailUrl: string | null = null;
+  try {
+    const thumbBuffer = await createGalleryThumbnail(file.buffer);
+    if (isS3StorageEnabled()) {
+      thumbnailUrl = await uploadGalleryFile({
+        tenantId,
+        fileName: 'thumb.webp',
+        contentType: 'image/webp',
+        body: thumbBuffer,
+      });
+    } else {
+      thumbnailUrl = await saveLocalGalleryFile({
+        fileName: 'thumb.webp',
+        body: thumbBuffer,
+      });
+    }
+  } catch (err) {
+    logger.warn('Failed to generate gallery thumbnail — using full image in grid', {
+      error: err instanceof Error ? err.message : String(err),
     });
   }
-  return saveLocalGalleryFile({
-    fileName: file.originalname || 'design.jpg',
-    body: file.buffer,
-  });
+
+  const imageUrl = isS3StorageEnabled()
+    ? await uploadGalleryFile({
+        tenantId,
+        fileName: file.originalname || 'design.jpg',
+        contentType: file.mimetype || 'image/jpeg',
+        body: file.buffer,
+      })
+    : await saveLocalGalleryFile({
+        fileName: file.originalname || 'design.jpg',
+        body: file.buffer,
+      });
+
+  return { imageUrl, thumbnailUrl };
 }
 
 async function removeStoredImage(imageUrl: string | null | undefined): Promise<void> {
@@ -140,9 +177,9 @@ export const designGalleryController = {
       return res.status(400).json({ success: false, message: 'יש להזין שם עיצוב' });
     }
 
-    let imageUrl: string;
+    let pair: StoredImagePair;
     try {
-      imageUrl = await persistImage(tenantId, file);
+      pair = await persistImagePair(tenantId, file);
     } catch (err) {
       if (err instanceof UploadValidationError) {
         return res.status(err.statusCode).json({ success: false, message: err.message });
@@ -157,7 +194,8 @@ export const designGalleryController = {
         category,
         description,
         modelCode,
-        imageUrl,
+        imageUrl: pair.imageUrl,
+        thumbnailUrl: pair.thumbnailUrl,
         sortOrder,
       },
     });
@@ -183,6 +221,7 @@ export const designGalleryController = {
       sortOrder?: number;
       isActive?: boolean;
       imageUrl?: string;
+      thumbnailUrl?: string | null;
     } = {};
 
     if (typeof req.body.name === 'string') data.name = req.body.name.trim();
@@ -203,8 +242,13 @@ export const designGalleryController = {
 
     if (req.file) {
       try {
-        data.imageUrl = await persistImage(tenantId, req.file);
-        await removeStoredImage(existing.imageUrl);
+        const pair = await persistImagePair(tenantId, req.file);
+        data.imageUrl = pair.imageUrl;
+        data.thumbnailUrl = pair.thumbnailUrl;
+        await Promise.all([
+          removeStoredImage(existing.imageUrl),
+          removeStoredImage(existing.thumbnailUrl),
+        ]);
       } catch {
         return res.status(500).json({ success: false, message: 'שגיאה בהעלאת התמונה' });
       }
@@ -229,7 +273,10 @@ export const designGalleryController = {
     }
 
     await prisma.designGalleryItem.delete({ where: { id } });
-    await removeStoredImage(existing.imageUrl);
+    await Promise.all([
+      removeStoredImage(existing.imageUrl),
+      removeStoredImage(existing.thumbnailUrl),
+    ]);
 
     res.json({ success: true });
   }),
