@@ -60,7 +60,7 @@ const formatDateLocal = (date: Date): string => {
 const CalendarCell = memo(({ 
   day, 
   todayStr, 
-  month, 
+  month: _month, 
   eventTypeFilter, 
   openDayPanel,
   t,

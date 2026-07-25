@@ -5,7 +5,7 @@ import { DEFAULT_CONTRACT_TEXT } from '../utils/defaultContractText';
 import { emitSettingsUpdated } from '../utils/realtime';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
 import { getEasyCountMeta } from '../Services/easyCount';
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 
 export const settingsController = {
   // =========================================

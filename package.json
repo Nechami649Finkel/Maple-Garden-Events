@@ -1,17 +1,28 @@
 {
   "name": "maple-events",
   "private": true,
+  "workspaces": [
+    "shared",
+    "client",
+    "server"
+  ],
   "scripts": {
-    "dev": "concurrently -k -n server,client -c blue,green \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev": "concurrently -k -n server,client -c blue,green \"npm run dev -w server\" \"npm run dev -w client\"",
     "dev:win": "powershell -ExecutionPolicy Bypass -File scripts/dev-start.ps1",
     "dev:check": "node scripts/dev-check.mjs",
-    "build": "npm run build --prefix client && npm run build --prefix server",
-    "build:client": "npm run build --prefix client",
-    "build:server": "npm run build --prefix server",
+    "build:shared": "npm run build -w @maple/shared",
+    "build:client": "npm run build -w client",
+    "build:server": "npm run build:shared && npm run build -w server",
+    "build": "npm run build:shared && npm run build -w client && npm run build -w server",
+    "test": "npm run test -w server --if-present && npm run test -w client --if-present",
+    "test:client": "npm run test -w client",
+    "test:server": "npm run test -w server",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:report": "playwright show-report",
+    "lint": "npm run lint -w client",
+    "typecheck": "npm run typecheck -w @maple/shared --if-present && npm run typecheck -w client",
     "export:booking-design": "playwright test tests/e2e/export-booking-form-design.spec.ts",
     "export:booking-design-pdf": "playwright test tests/e2e/export-booking-form-design.spec.ts",
     "export:event-form-design": "playwright test tests/e2e/export-event-form-design.spec.ts",
@@ -20,5 +31,8 @@
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "concurrently": "^10.0.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

@@ -1,0 +1,57 @@
+{
+  "name": "@maple/shared",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Shared brand, contract, gallery, and i18n modules for Maple Garden Events",
+  "main": "./dist/i18n/index.js",
+  "types": "./dist/i18n/index.d.ts",
+  "exports": {
+    "./brand": {
+      "types": "./dist/brand/index.d.ts",
+      "default": "./dist/brand/index.js"
+    },
+    "./brand/*": {
+      "types": "./dist/brand/*.d.ts",
+      "default": "./dist/brand/*.js"
+    },
+    "./contract": {
+      "types": "./dist/contract/index.d.ts",
+      "default": "./dist/contract/index.js"
+    },
+    "./contract/*": {
+      "types": "./dist/contract/*.d.ts",
+      "default": "./dist/contract/*.js"
+    },
+    "./gallery": {
+      "types": "./dist/gallery/index.d.ts",
+      "default": "./dist/gallery/index.js"
+    },
+    "./gallery/*": {
+      "types": "./dist/gallery/*.d.ts",
+      "default": "./dist/gallery/*.js"
+    },
+    "./i18n": {
+      "types": "./dist/i18n/index.d.ts",
+      "default": "./dist/i18n/index.js"
+    },
+    "./i18n/*": {
+      "types": "./dist/i18n/*.d.ts",
+      "default": "./dist/i18n/*.js"
+    }
+  },
+  "files": [
+    "dist",
+    "brand",
+    "contract",
+    "gallery",
+    "i18n"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "^6.0.3"
+  }
+}

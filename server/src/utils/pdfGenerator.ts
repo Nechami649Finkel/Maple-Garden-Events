@@ -20,8 +20,8 @@ import { renderUpgradesSectionsHtml } from './contract/upgradeTablesHtml';
 import { DEFAULT_UPGRADES_PRICING } from './pricing';
 import { HALL_ONLY_EVENT_TYPE } from '../validators/booking.validator';
 import { logger } from './logger';
-import { getBrandConfig } from '../vendor/shared/brand';
-import { CONTRACT_ANNEX_PLACEHOLDER, VENUE_MINIMUM_PORTIONS } from '../vendor/shared/contract';
+import { getBrandConfig } from '@maple/shared/brand';
+import { CONTRACT_ANNEX_PLACEHOLDER, VENUE_MINIMUM_PORTIONS } from '@maple/shared/contract';
 import {
   DEFAULT_LOCALE,
   getServerTranslation,

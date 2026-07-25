@@ -1,4 +1,4 @@
-import { BrandConfig } from './types';
+import type { BrandConfig } from './types';
 
 export const defaultBrand: BrandConfig = {
   id: 'maple',

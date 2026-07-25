@@ -202,7 +202,7 @@ const Dashboard = () => {
                         {b.eventDate?.date
                           ? formatDate(b.eventDate.date, locale)
                           : t(T.COMMON.LABELS.EM_DASH)}{' '}
-                        · {formatEventType(b.eventType)}
+                        · {formatEventType(b.eventType ?? '')}
                       </span>
                     </div>
                     <Badge variant={b._type === 'option' ? 'option' : 'confirmed'}>

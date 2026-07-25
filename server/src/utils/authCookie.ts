@@ -2,7 +2,7 @@ import { randomBytes, timingSafeEqual } from 'crypto';
 import { Response } from 'express';
 import jwt from 'jsonwebtoken';
 
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 
 const brand = getBrandConfig();
 

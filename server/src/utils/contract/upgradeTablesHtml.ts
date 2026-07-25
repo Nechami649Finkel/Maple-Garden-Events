@@ -3,7 +3,7 @@ import {
   formatMoneyLine,
   paymentNoteText,
   type ExtrasLineItem,
-} from '../../vendor/shared/contract';
+} from '@maple/shared/contract';
 import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../../i18n/getServerTranslation';
 
 function esc(value: string): string {

@@ -16,7 +16,7 @@ import {
 } from '../utils/feedbackAnomaly';
 import { sendManagerFinancialAlertEmail } from '../utils/mailer';
 import { sendManagerFinancialAlert } from '../utils/whatsapp';
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import { logger } from '../utils/logger';
 import { calendarKeyFromDbDate } from '../utils/dateLocal';

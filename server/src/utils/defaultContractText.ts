@@ -1,4 +1,4 @@
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 
 export const DEFAULT_CONTRACT_TEXT = getBrandConfig().contract.defaultContractText;
 

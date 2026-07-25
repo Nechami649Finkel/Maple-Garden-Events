@@ -31,7 +31,7 @@ export function canSendRealMail(): boolean {
   return !!(getEmailUser() && getEmailPass());
 }
 
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 
 export function getFromAddress(locale: Locale = DEFAULT_LOCALE): string {
   const brand = getBrandConfig();

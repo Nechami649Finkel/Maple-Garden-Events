@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import { LOCALE_STORAGE_KEY, type Locale } from '../vendor/shared/i18n/types';
+import { LOCALE_STORAGE_KEY, type Locale } from '@maple/shared/i18n';
 import { resolveRequestLocale } from './getServerTranslation';
 
 export function resolveLocaleFromRequest(req: Request, fallback?: Locale): Locale {

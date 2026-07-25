@@ -14,18 +14,14 @@ if (-not (Test-Path "$Root\client\.env")) {
     Write-Host "Created client\.env from example" -ForegroundColor Yellow
 }
 
-# --- dependencies ---
-if (-not (Test-Path "$Root\server\node_modules")) {
-    Write-Host "Installing server dependencies..." -ForegroundColor Yellow
-    Push-Location "$Root\server"; npm install; npx prisma generate; Pop-Location
-}
-if (-not (Test-Path "$Root\client\node_modules")) {
-    Write-Host "Installing client dependencies..." -ForegroundColor Yellow
-    Push-Location "$Root\client"; npm install; Pop-Location
-}
-if (-not (Test-Path "$Root\node_modules\concurrently")) {
-    Write-Host "Installing root dev tools..." -ForegroundColor Yellow
-    Push-Location $Root; npm install; Pop-Location
+# --- dependencies (npm workspaces at repo root) ---
+if (-not (Test-Path "$Root\node_modules")) {
+    Write-Host "Installing workspace dependencies..." -ForegroundColor Yellow
+    Push-Location $Root
+    npm install
+    npm run build -w @maple/shared
+    npm exec -w server -- prisma generate
+    Pop-Location
 }
 
 # --- start both ---
@@ -36,8 +32,6 @@ Write-Host "Health: http://localhost:5173/api/health" -ForegroundColor Green
 Write-Host "Press Ctrl+C in each window to stop." -ForegroundColor DarkGray
 Write-Host ""
 
-Start-Process cmd -ArgumentList '/k', "cd /d `"$Root\server`" && npm run dev"
+Start-Process cmd -ArgumentList '/k', "cd /d `"$Root`" && npm run dev -w server"
 Start-Sleep -Seconds 2
-Start-Process cmd -ArgumentList '/k', "cd /d `"$Root\client`" && npm run dev"
-Start-Sleep -Seconds 5
-Start-Process "http://localhost:5173"
+Start-Process cmd -ArgumentList '/k', "cd /d `"$Root`" && npm run dev -w client"

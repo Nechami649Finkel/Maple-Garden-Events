@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { DESIGN_GALLERY_CATEGORIES } from '../vendor/shared/gallery';
+import { DESIGN_GALLERY_CATEGORIES } from '@maple/shared/gallery';
 
 const categorySchema = z.enum(DESIGN_GALLERY_CATEGORIES);
 

@@ -20,7 +20,7 @@ import {
 } from '../utils/galleryLocalStorage';
 import { createGalleryThumbnail } from '../utils/galleryThumbnails';
 import { logger } from '../utils/logger';
-import type { DesignGalleryCategory } from '../vendor/shared/gallery';
+import type { DesignGalleryCategory } from '@maple/shared/gallery';
 
 const IMAGE_MIME_TYPES = new Set([
   'image/jpeg',

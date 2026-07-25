@@ -8,7 +8,7 @@ import { logger } from '../utils/logger';
 import { toCalendarDateKey, parseCalendarDate, addCalendarDays } from '../utils/dateLocal';
 import { sendManagerFinancialAlert } from '../utils/whatsapp';
 import { sendManagerFinancialAlertEmail } from '../utils/mailer';
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 import { DEFAULT_LOCALE, getServerTranslation, T } from '../i18n/getServerTranslation';
 import { getBookingFinancialSnapshot } from './bookingPayment.service';
 

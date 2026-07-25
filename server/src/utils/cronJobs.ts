@@ -1,4 +1,4 @@
-import { getBrandConfig } from '../vendor/shared/brand/index';
+import { getBrandConfig } from '@maple/shared/brand';
 const brand = getBrandConfig();
 import cron from 'node-cron';
 import prisma from '../config/prisma';

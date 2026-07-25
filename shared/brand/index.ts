@@ -1,4 +1,4 @@
-import { BrandConfig } from './types';
+import type { BrandConfig } from './types';
 import { defaultBrand } from './defaultBrand';
 
 let currentBrand: BrandConfig | null = null;

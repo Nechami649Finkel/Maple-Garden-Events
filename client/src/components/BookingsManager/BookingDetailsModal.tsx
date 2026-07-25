@@ -36,6 +36,7 @@ interface BookingDetailsModalProps {
 
 const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDetailsModalProps) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { t, T, locale } = useTranslation();
   const [issuingReceipt, setIssuingReceipt] = useState(false);
 
@@ -324,7 +325,9 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               bookingId={booking.id}
               isOption={booking.isOption}
               onPaymentUpdated={() => {
-                /* hall invoice webhooks update ledger — parent list refreshes via realtime */
+                void queryClient.invalidateQueries({
+                  queryKey: ['booking-payments', booking.id],
+                });
               }}
             />
 

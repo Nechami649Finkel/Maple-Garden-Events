@@ -8,27 +8,29 @@
     "build": "vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "@maple/shared": "*",
     "@react-oauth/google": "^0.13.5",
     "@sentry/react": "^10.59.0",
     "@tanstack/react-query": "^5.101.0",
-    "axios": "^1.16.1",
     "bootstrap": "^5.3.8",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "react-draggable": "^4.6.0",
     "react-router-dom": "^7.15.1",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "react-webcam": "^7.2.0",
-    "react-zoom-pan-pinch": "^4.0.3",
     "recharts": "^3.8.1",
-    "socket.io-client": "^4.8.3",
-    "zustand": "^5.0.13"
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -38,9 +40,11 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
+    "jsdom": "^26.1.0",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vite-plugin-compression": "^0.5.1"
+    "vite-plugin-compression": "^0.5.1",
+    "vitest": "^3.2.4"
   }
 }

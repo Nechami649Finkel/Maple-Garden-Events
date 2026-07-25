@@ -1,42 +1,18 @@
-import fs from 'fs';
-import path from 'path';
-import { createTranslator } from '../vendor/shared/i18n/resolve';
-import { getBrandI18nParams } from '../vendor/shared/brand/index';
 import {
+  getTranslator,
   DEFAULT_LOCALE,
   isLocale,
+  T,
+  TP,
   type Locale,
-  type TranslationParams,
-  type TranslationTree,
   type Translator,
-} from '../vendor/shared/i18n/types';
-
-let cachedCatalog: Record<Locale, TranslationTree> | null = null;
-
-function loadCatalog(): Record<Locale, TranslationTree> {
-  const localesDir = path.join(__dirname, '../vendor/shared/i18n/locales');
-
-  return {
-    en: JSON.parse(fs.readFileSync(path.join(localesDir, 'en.json'), 'utf8')) as TranslationTree,
-    he: JSON.parse(fs.readFileSync(path.join(localesDir, 'he.json'), 'utf8')) as TranslationTree,
-  };
-}
-
-function getCatalog(): Record<Locale, TranslationTree> {
-  if (!cachedCatalog) {
-    cachedCatalog = loadCatalog();
-  }
-  return cachedCatalog;
-}
+  type TranslationParams,
+  type TranslationKey,
+  type PluralKey,
+} from '@maple/shared/i18n';
 
 export function getServerTranslation(locale: Locale = DEFAULT_LOCALE): Translator {
-  const base = createTranslator(locale, getCatalog());
-  const venueParams = getBrandI18nParams(locale);
-  return {
-    locale: base.locale,
-    t: (key, params) => base.t(key, { ...venueParams, ...params }),
-    tp: (key, count, params) => base.tp(key, count, { ...venueParams, ...params }),
-  };
+  return getTranslator(locale);
 }
 
 export function resolveRequestLocale(
@@ -93,6 +69,5 @@ export function createServerError(
 }
 
 export { resolveLocaleFromRequest } from './resolveLocale';
-export { DEFAULT_LOCALE, isLocale, type Locale, type Translator } from '../vendor/shared/i18n/types';
-export { T, TP } from '../vendor/shared/i18n/keys';
-export type { PluralKey, TranslationKey } from '../vendor/shared/i18n/keys';
+export { DEFAULT_LOCALE, isLocale, T, TP };
+export type { Locale, Translator, PluralKey, TranslationKey };

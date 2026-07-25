@@ -22,9 +22,16 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "paths": {
-      "@shared/*": ["../shared/*"]
+      "@shared/*": ["../shared/*"],
+      "@maple/shared/*": ["../shared/*"]
     }
   },
-  "include": ["src", "../shared/contract/**/*.ts", "../shared/i18n/**/*.ts"],
-  "exclude": ["../shared/**/*.test.ts"]
+  "include": [
+    "src",
+    "../shared/brand/**/*.ts",
+    "../shared/contract/**/*.ts",
+    "../shared/gallery/**/*.ts",
+    "../shared/i18n/**/*.ts"
+  ],
+  "exclude": ["../shared/**/*.test.ts", "src/**/*.{test,spec}.{ts,tsx}"]
 }
