@@ -55,6 +55,55 @@ export function formatDepositMethodLabel(
   return key ? translate(key) : method;
 }
 
+/** Ledger payment methods (BookingPayment.paymentMethod) */
+export type BookingPaymentMethod =
+  | 'cash'
+  | 'credit_card'
+  | 'check'
+  | 'bank_transfer'
+  | 'easycount'
+  | 'other';
+
+export const BOOKING_PAYMENT_METHOD_KEYS: Record<BookingPaymentMethod, TranslationKey> = {
+  cash: T.PAYMENTS.METHOD_CASH,
+  credit_card: T.PAYMENTS.METHOD_CREDIT_CARD,
+  check: T.PAYMENTS.METHOD_CHECK,
+  bank_transfer: T.PAYMENTS.METHOD_BANK_TRANSFER,
+  easycount: T.PAYMENTS.METHOD_EASYCOUNT,
+  other: T.PAYMENTS.METHOD_OTHER,
+};
+
+export const BOOKING_PAYMENT_METHODS = Object.keys(
+  BOOKING_PAYMENT_METHOD_KEYS,
+) as BookingPaymentMethod[];
+
+export function formatBookingPaymentMethodLabel(
+  translate: (key: TranslationKey) => string,
+  method?: string | null,
+): string {
+  if (!method) return '';
+  const key = BOOKING_PAYMENT_METHOD_KEYS[method as BookingPaymentMethod];
+  return key ? translate(key) : method;
+}
+
+/** Ledger payment sources (BookingPayment.source) */
+export type BookingPaymentSource = 'ADVANCE' | 'EASYCOUNT_INVOICE' | 'MANUAL';
+
+export const BOOKING_PAYMENT_SOURCE_KEYS: Record<BookingPaymentSource, TranslationKey> = {
+  ADVANCE: T.PAYMENTS.SOURCE_ADVANCE,
+  EASYCOUNT_INVOICE: T.PAYMENTS.SOURCE_EASYCOUNT,
+  MANUAL: T.PAYMENTS.SOURCE_MANUAL,
+};
+
+export function formatBookingPaymentSourceLabel(
+  translate: (key: TranslationKey) => string,
+  source?: string | null,
+): string {
+  if (!source) return '';
+  const key = BOOKING_PAYMENT_SOURCE_KEYS[source as BookingPaymentSource];
+  return key ? translate(key) : source;
+}
+
 export function canRetryEasyCountReceipt(booking: {
   advancePaid?: number | null;
   isOption?: boolean;

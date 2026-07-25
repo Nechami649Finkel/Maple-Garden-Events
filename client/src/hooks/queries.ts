@@ -1,9 +1,17 @@
-import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { API_URL } from '../config/api';
 import { apiFetch } from '../services/api';
-import { type BookingApi } from '../utils/bookingApi';
+import {
+  type BookingApi,
+  type BookingFinancialSnapshot,
+  type CreateBookingPaymentInput,
+  type BookingPaymentRow,
+} from '../utils/bookingApi';
 import { type CalendarDayApi } from '../utils/optionDateApi';
 import { tClient, T } from '../i18n/clientTranslation';
+
+export const bookingPaymentsQueryKey = (bookingId: string) =>
+  ['booking-payments', bookingId] as const;
 
 export interface PaginationMeta {
   page: number;
@@ -306,5 +314,61 @@ export function useCheckInQuery(bookingId: string | null | undefined) {
       return json.data;
     },
     enabled: Boolean(bookingId),
+  });
+}
+
+export function useBookingPaymentsQuery(bookingId: string | null | undefined) {
+  return useQuery({
+    queryKey: bookingPaymentsQueryKey(bookingId || ''),
+    enabled: Boolean(bookingId),
+    queryFn: async (): Promise<BookingFinancialSnapshot> => {
+      const res = await apiFetch(`${API_URL}/bookings/${bookingId}/payments`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || tClient(T.PAYMENTS.LOAD_ERROR));
+      return {
+        totalCost: Number(json.data?.totalCost ?? 0),
+        totalPaid: Number(json.data?.totalPaid ?? 0),
+        remainingBalance: Number(json.data?.remainingBalance ?? 0),
+        payments: (json.data?.payments ?? []) as BookingPaymentRow[],
+      };
+    },
+  });
+}
+
+export type CreateBookingPaymentResult = {
+  payment: BookingPaymentRow;
+  totalCost: number;
+  totalPaid: number;
+  remainingBalance: number;
+  paymentStatus: string;
+};
+
+export function useCreateBookingPaymentMutation(bookingId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateBookingPaymentInput): Promise<CreateBookingPaymentResult> => {
+      const res = await apiFetch(`${API_URL}/bookings/${bookingId}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || tClient(T.PAYMENTS.CREATE_ERROR));
+      return {
+        payment: json.data.payment as BookingPaymentRow,
+        totalCost: Number(json.data.totalCost ?? 0),
+        totalPaid: Number(json.data.totalPaid ?? 0),
+        remainingBalance: Number(json.data.remainingBalance ?? 0),
+        paymentStatus: String(json.data.paymentStatus ?? ''),
+      };
+    },
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: bookingPaymentsQueryKey(bookingId) }),
+        queryClient.invalidateQueries({ queryKey: ['bookings'] }),
+        queryClient.invalidateQueries({ queryKey: ['hall-invoices', bookingId] }),
+        queryClient.invalidateQueries({ queryKey: ['calendar'] }),
+      ]);
+    },
   });
 }

@@ -19,6 +19,8 @@ function onDateUpdated(queryClient: QueryClient): void {
 function onBookingUpdated(queryClient: QueryClient): void {
   queryClient.invalidateQueries({ queryKey: ['bookings'] });
   queryClient.invalidateQueries({ queryKey: ['calendar'] });
+  queryClient.invalidateQueries({ queryKey: ['booking-payments'] });
+  queryClient.invalidateQueries({ queryKey: ['hall-invoices'] });
 }
 
 function onSettingsUpdated(queryClient: QueryClient): void {

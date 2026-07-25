@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { calendarKeyFromDbDate } from '../../utils/dateLocal';
 import { formatTimeOfDayDisplay } from '../../utils/timeSlot';
 import { parseNotes, parseNotesBundle } from '../../utils/notesStorage';
@@ -15,6 +16,7 @@ import { API_URL } from '../../config/api';
 import { canEditBooking } from '../../utils/bookingEdit';
 import { NotesList } from '../NotesList/NotesList';
 import HallInvoicesPanel from './HallInvoicesPanel';
+import BookingPaymentsPanel from './BookingPaymentsPanel';
 import { useTranslation } from '../../i18n/useTranslation';
 import { formatDate, formatDateTime, formatCurrency } from '@shared/i18n/formatters';
 import {
@@ -310,7 +312,21 @@ const BookingDetailsModal = ({ booking, onClose, onBookingUpdated }: BookingDeta
               </div>
             )}
 
-            <HallInvoicesPanel bookingId={booking.id} isOption={booking.isOption} />
+            <BookingPaymentsPanel
+              bookingId={booking.id}
+              isOption={booking.isOption}
+              onPaymentUpdated={(patch) => {
+                onBookingUpdated?.({ ...booking, ...patch });
+              }}
+            />
+
+            <HallInvoicesPanel
+              bookingId={booking.id}
+              isOption={booking.isOption}
+              onPaymentUpdated={() => {
+                /* hall invoice webhooks update ledger — parent list refreshes via realtime */
+              }}
+            />
 
             <div className={styles.popupRow}>
               <label>{t(T.BOOKINGS.LABEL_MUSIC)}</label>
