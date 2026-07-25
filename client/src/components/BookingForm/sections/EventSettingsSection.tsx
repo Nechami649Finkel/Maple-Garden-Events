@@ -193,6 +193,12 @@ const EventSettingsSection = ({
                       className="form-control"
                     />
                   </div>
+                  {Number(formData.guestCount) > 0 &&
+                    Number(formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
+                    <div className={`form-text text-warning fw-semibold ${styles.hint}`} role="status">
+                      {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className={styles.field} aria-hidden="true" />
@@ -218,31 +224,18 @@ const EventSettingsSection = ({
                         className="form-control"
                       />
                     </div>
+                    {Number(formData.guestCount) > 0 &&
+                      Number(formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
+                      <div className={`form-text text-warning fw-semibold ${styles.hint}`} role="status">
+                        {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+                      </div>
+                    )}
                   </div>
                   <div className={styles.field} aria-hidden="true" />
                 </div>
               )}
 
               <div className={styles.row2}>
-                <div className={styles.field}>
-                  <label className={styles.label}>{t(T.BOOKING.EVENT.MINIMUM_GUEST_COUNT)}</label>
-                  <div className={styles.control}>
-                    <input
-                      type="number"
-                      name="minimumGuestCount"
-                      min="0"
-                      value={formData.minimumGuestCount}
-                      readOnly
-                      className="form-control bg-light"
-                    />
-                  </div>
-                  {Number(formData.minimumGuestCount || formData.guestCount) > 0 &&
-                    Number(formData.minimumGuestCount || formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
-                    <div className={`form-text text-warning fw-semibold ${styles.hint}`} role="status">
-                      {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
-                    </div>
-                  )}
-                </div>
                 <div className={styles.field}>
                   <label className={styles.label}>{t(T.BOOKING.EVENT.OPTIONAL_GUEST_COUNT)}</label>
                   <div className={styles.control}>
@@ -259,6 +252,7 @@ const EventSettingsSection = ({
                     {t(T.BOOKING.EVENT.OPTIONAL_GUEST_HINT)}
                   </div>
                 </div>
+                <div className={styles.field} aria-hidden="true" />
               </div>
 
               <div className={styles.row2}>
