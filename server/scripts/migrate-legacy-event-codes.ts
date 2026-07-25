@@ -2,8 +2,8 @@
  * One-time migration: assign EVT-/OPT- codes to bookings with legacy eventCode values.
  *
  * Usage (from server/):
- *   npm run migrate:event-codes
- *   npm run migrate:event-codes -- --dry-run
+ *   npm run data:backfill-event-codes
+ *   npm run data:backfill-event-codes -- --dry-run
  */
 import dotenv from 'dotenv';
 import prisma from '../src/config/prisma';

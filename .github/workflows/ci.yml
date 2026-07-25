@@ -37,6 +37,16 @@ jobs:
           npm ci --ignore-scripts --registry=https://registry.npmjs.org/
           npx prisma generate
 
+      - name: Validate Prisma schema & migration history
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://prisma:prisma@127.0.0.1:5432/prisma
+        run: |
+          npx prisma validate
+          test -f prisma/migrations/migration_lock.toml
+          test -d prisma/migrations/20260725215013_init
+          test -f prisma/migrations/20260725215013_init/migration.sql
+
       - name: Lint client
         working-directory: client
         run: npm run lint

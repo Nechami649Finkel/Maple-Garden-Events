@@ -26,7 +26,9 @@ git pull
 git push origin main   # triggers deploy.yml → production
 ```
 
-Wait for GitHub Actions deploy + smoke test to pass.
+Wait for GitHub Actions: CI → **Prisma migrate deploy** → App Runner → smoke test.
+Schema changes must already be in `server/prisma/migrations/` (created via `npm run db:migrate` locally).
+See [`DATABASE-MIGRATIONS.md`](DATABASE-MIGRATIONS.md).
 
 ### 3. Backup production DB (before import)
 
