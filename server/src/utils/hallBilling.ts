@@ -49,6 +49,8 @@ function isHallOnlyEventType(eventType?: string): boolean {
 export interface ServerPricingInput {
   eventType?: string;
   guestCount?: unknown;
+  /** Contractual minimum portions — billable portions = max(guestCount, minimumGuestCount). */
+  minimumGuestCount?: unknown;
   finalPricePortion?: unknown;
   hallRentalPrice?: unknown;
   kosherType?: string | null;
@@ -60,8 +62,25 @@ export interface ServerPricingInput {
 }
 
 /**
+ * Billable portion count for food events:
+ * Max(Actual Portions, Minimum Portions).
+ */
+export function resolveBillablePortions(
+  guestCount?: unknown,
+  minimumGuestCount?: unknown,
+): number {
+  const actual = Number(guestCount) || 0;
+  const minimum = Number(minimumGuestCount) || 0;
+  return Math.max(actual, minimum, 0);
+}
+
+/**
  * חישוב מחיר מלא בצד השרת — מקור אמת: SystemSettings + שדות ההזמנה.
  * משקף את לוגיקת calculateTotals() ב-BookingForm.tsx.
+ *
+ * Formula (food events):
+ * (pricePerPortion × max(actualPortions, minimumPortions))
+ * + hall upgrades/extras − discounts (+ VAT rules).
  */
 export function computeServerPriceBreakdown(
   data: ServerPricingInput,
@@ -75,22 +94,21 @@ export function computeServerPriceBreakdown(
   const vatType = data.vatType === 'not_included' ? 'not_included' : 'included';
   const upgradesPricing = buildUpgradesPricingFromSettings(systemSettings);
   const upgrades = resolveEffectiveUpgrades(data.upgrades);
+  const billablePortions = resolveBillablePortions(data.guestCount, data.minimumGuestCount);
 
   let mainBase = 0;
   if (isHallOnly) {
     mainBase = Number(data.hallRentalPrice) || 0;
   } else if (isFoodRelevant) {
-    const portions = Number(data.guestCount) || 0;
     const portionPrice = Number(data.finalPricePortion) || 0;
-    mainBase = portions * portionPrice;
+    mainBase = billablePortions * portionPrice;
   }
 
   let hallExtrasBase = 0;
   if (isFoodRelevant) {
-    const portions = Number(data.guestCount) || 0;
     const kosherKey = data.kosherType || 'machpud';
     const kosherExtra = KOSHER_PRICING[kosherKey]?.extra ?? KOSHER_PRICING.machpud.extra;
-    hallExtrasBase += portions * kosherExtra;
+    hallExtrasBase += billablePortions * kosherExtra;
   }
   for (const key of HALL_UPGRADE_KEYS) {
     if (upgrades[key]) {
@@ -177,6 +195,7 @@ export function extractHallPriceBreakdown(
     eventType?: string;
     calculatedTotals?: CalculatedTotalsInput | null;
     guestCount?: unknown;
+    minimumGuestCount?: unknown;
     finalPricePortion?: unknown;
     hallRentalPrice?: unknown;
   },
@@ -218,7 +237,8 @@ export function extractHallPriceBreakdown(
   if (isHallOnlyEventType(data.eventType)) {
     fallback = Number(data.hallRentalPrice) || 0;
   } else {
-    fallback = (Number(data.guestCount) || 0) * (Number(data.finalPricePortion) || 0);
+    const portions = resolveBillablePortions(data.guestCount, data.minimumGuestCount);
+    fallback = portions * (Number(data.finalPricePortion) || 0);
   }
 
   return {

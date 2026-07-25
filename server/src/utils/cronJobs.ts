@@ -21,6 +21,7 @@ import { runDatabaseBackup } from './databaseBackup';
 import { processDueScheduledGreetings } from '../Services/greetingService';
 import { checkOverduePayments } from '../Services/paymentDeadlineService';
 import { computeHallBalanceBreakdown } from '../Services/easyCount/hallBalance';
+import { processPreviousDayFinancialSummaries } from '../Services/eventFinancialSummary.service';
 import { DEFAULT_LOCALE, getServerTranslation, T } from '../i18n/getServerTranslation';
 
 export const startCronJobs = () => {
@@ -36,7 +37,7 @@ export const startCronJobs = () => {
   }
   
   // הגדרות למנהל
-  const MANAGER_PHONE = '0501234567'; 
+  const MANAGER_PHONE = process.env.MANAGER_PHONE || '0501234567';
   const MANAGER_EMAIL = process.env.MANAGER_EMAIL || brand.messaging.managerAlertEmail; 
 
   // ==========================================
@@ -182,6 +183,19 @@ export const startCronJobs = () => {
       );
     } catch (error) {
       logger.error('שגיאה במשוב יומי לאירועי אתמול:', error);
+    }
+  });
+
+  // ==========================================
+  // טיימר 3ג: סיכום כספי למנהל — בוקר אחרי האירוע (09:15)
+  // ==========================================
+  cron.schedule('15 9 * * *', async () => {
+    logger.info('--- שולח סיכומים כספיים לאירועי אתמול ---');
+    try {
+      const { checked, sent, date } = await processPreviousDayFinancialSummaries();
+      logger.info(`✅ סיכום כספי (${date}): נשלחו ${sent}/${checked}`);
+    } catch (error) {
+      logger.error('שגיאה בסיכום כספי לאירועי אתמול:', error);
     }
   });
 

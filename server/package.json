@@ -20,6 +20,7 @@
     "migrate:design-gallery": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_design_gallery_items.sql && prisma generate --schema prisma/schema.prisma",
     "migrate:design-gallery-thumbs": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_design_gallery_thumbnails.sql && prisma generate --schema prisma/schema.prisma",
     "migrate:feedback-completed-at": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_feedback_completed_at.sql && prisma generate --schema prisma/schema.prisma",
+    "migrate:booking-payments": "prisma db execute --schema prisma/schema.prisma --file prisma/migrations/add_booking_payments.sql && prisma generate --schema prisma/schema.prisma",
     "verify:double-booking": "ts-node scripts/verify-no-double-booking.ts",
     "sentry:verify": "ts-node scripts/sentry-verify.ts",
     "seed:authorized-users": "ts-node scripts/seed-authorized-users.ts",
