@@ -1,6 +1,7 @@
 import {
   ANNEX_TITLE,
   AVAILABLE_UPGRADES_INTRO,
+  CONTRACT_ANNEX_PLACEHOLDER,
   SECTION_DIVIDER,
 } from './constants';
 import type { ExtrasLineItem } from './types';
@@ -24,7 +25,7 @@ export function renderSelectedExtrasSection(items: ExtrasLineItem[]): string {
   });
   const total = items.reduce((sum, item) => sum + item.price, 0);
   lines.push('────────────────');
-  lines.push(`סה"כ תוספות: ${formatMoneyLine(total)}`);
+  lines.push(`סה״כ תוספות: ${formatMoneyLine(total)}`);
   return lines.join('\n');
 }
 
@@ -104,8 +105,8 @@ export function stripAnnexUpgradeSections(contractText: string): string {
 }
 
 export function mergeContractAnnexIntoBase(baseContract: string, annex: string): string {
-  if (baseContract.includes('{{CONTRACT_ANNEX}}')) {
-    return baseContract.replace('{{CONTRACT_ANNEX}}', annex);
+  if (baseContract.includes(CONTRACT_ANNEX_PLACEHOLDER)) {
+    return baseContract.split(CONTRACT_ANNEX_PLACEHOLDER).join(annex);
   }
 
   const marker = 'הנהלת מייפל אירועים מאחלת';

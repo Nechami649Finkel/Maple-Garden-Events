@@ -10,8 +10,7 @@ function esc(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/>/g, '&gt;');
 }
 
 function renderUpgradeTableRows(items: ExtrasLineItem[], emptyMessage: string): string {

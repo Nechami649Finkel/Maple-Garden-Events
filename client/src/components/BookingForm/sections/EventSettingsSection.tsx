@@ -11,6 +11,7 @@ import {
   SERVING_STYLE_KEYS,
   TIME_SLOT_KEYS,
 } from '@shared/i18n/bookingLookups';
+import { VENUE_MINIMUM_PORTIONS } from '@shared/contract';
 
 interface EventSettingsSectionProps {
   formData: BookingFormData;
@@ -150,7 +151,7 @@ const EventSettingsSection = ({
                 <label className="form-label">{t(T.BOOKING.EVENT.MINIMUM_GUEST_COUNT)}</label>
                 <input type="number" name="minimumGuestCount" min="0" value={formData.minimumGuestCount} readOnly className="form-control bg-light" />
                 {Number(formData.minimumGuestCount || formData.guestCount) > 0 &&
-                  Number(formData.minimumGuestCount || formData.guestCount) < 300 && (
+                  Number(formData.minimumGuestCount || formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
                   <div className="form-text text-warning fw-semibold" role="status">
                     {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
                   </div>
