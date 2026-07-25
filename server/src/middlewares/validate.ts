@@ -8,6 +8,29 @@ import {
   T,
 } from '../i18n/getServerTranslation';
 
+/** Express 5 exposes req.query as a getter-only property — reassign via defineProperty. */
+function setRequestQuery(req: Request, query: Request['query']): void {
+  Object.defineProperty(req, 'query', {
+    value: query,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+}
+
+function setRequestParams(req: Request, params: Request['params']): void {
+  try {
+    req.params = params;
+  } catch {
+    Object.defineProperty(req, 'params', {
+      value: params,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    });
+  }
+}
+
 export const validate = (schema: ZodSchema): RequestHandler =>
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -20,8 +43,12 @@ export const validate = (schema: ZodSchema): RequestHandler =>
       if (parsed && typeof parsed === 'object') {
         const result = parsed as { body?: unknown; query?: unknown; params?: unknown };
         if (result.body !== undefined) req.body = result.body;
-        if (result.params !== undefined) req.params = result.params as Request['params'];
-        if (result.query !== undefined) req.query = result.query as Request['query'];
+        if (result.params !== undefined) {
+          setRequestParams(req, result.params as Request['params']);
+        }
+        if (result.query !== undefined) {
+          setRequestQuery(req, result.query as Request['query']);
+        }
       }
 
       next();
