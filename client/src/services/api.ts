@@ -45,7 +45,14 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
   const headers = new Headers(options.headers || {});
 
   if (isMutatingMethod(method)) {
-    const csrf = getCsrfToken();
+    let csrf = getCsrfToken();
+    // Cookie may be stale/missing after restart — refresh session to mint a new CSRF token.
+    if (!csrf && !retried && !url.includes('/api/auth/')) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        csrf = getCsrfToken();
+      }
+    }
     if (csrf) {
       headers.set(CSRF_HEADER, csrf);
     }
@@ -70,6 +77,18 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       }
       if (!url.includes('/api/auth/me') && !shouldSkipAuthRedirect()) {
         window.location.href = '/';
+      }
+    }
+
+    // Retry once on CSRF failure after refreshing cookies.
+    if (response.status === 403 && !retried && isMutatingMethod(method) && !isAuthEndpoint) {
+      const body = await response.clone().json().catch(() => null);
+      const msg = typeof body?.message === 'string' ? body.message : '';
+      if (/csrf/i.test(msg)) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          return secureFetch(url, options, true);
+        }
       }
     }
 

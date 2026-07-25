@@ -5,6 +5,8 @@ import { openContractPdf } from '../../../utils/contractPrint';
 import ContractTextViewer from './ContractTextViewer';
 import modalStyles from './ContractModal.module.css';
 import { useTranslation } from '../../../i18n/useTranslation';
+import { secureFetch } from '../../../services/api';
+import { API_URL } from '../../../config/api';
 
 interface ContractModalProps {
   isOpen: boolean;
@@ -91,21 +93,20 @@ const ContractModal = ({
     if (bookingId) {
       setIsSigning(true);
       try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`/api/bookings/${bookingId}/sign-and-send`, {
+        const response = await secureFetch(`${API_URL}/bookings/${bookingId}/sign-and-send`, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ clientSignature: dataUrl }),
         });
-        const resData = await response.json();
-        if (resData.success) {
+        const resData = await response.json().catch(() => ({}));
+        if (response.ok && resData.success) {
           alert('החוזה נחתם בהצלחה ונשלח למייל (ולוואטסאפ אם מוגדר) של בעל האירוע.');
         } else {
           console.error(resData);
-          alert('החתימה נשמרה אך אירעה שגיאה בשליחת המסמך: ' + (resData.message || ''));
+          alert(
+            'החתימה נשמרה אך אירעה שגיאה בשליחת המסמך: '
+              + (resData.message || `HTTP ${response.status}`),
+          );
         }
       } catch (err) {
         console.error(err);
