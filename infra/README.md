@@ -109,8 +109,20 @@ aws apprunner create-service \
 | `ECR_REPOSITORY` | e.g. `maple-events` |
 | `APP_RUNNER_SERVICE_ARN_STAGING` | Staging service ARN |
 | `APP_RUNNER_SERVICE_ARN_PRODUCTION` | Production service ARN |
-| `DATABASE_URL_STAGING` | For prisma migrate deploy |
-| `DATABASE_URL_PRODUCTION` | For prisma migrate deploy |
+| `DATABASE_URL_STAGING` | RDS URL — GitHub Actions runs `scripts/db-migrate-deploy.sh` before App Runner deploy |
+| `DATABASE_URL_PRODUCTION` | Same for production |
+
+### Database migrations
+
+Schema is managed only via **Prisma Migrate** (`server/prisma/migrations/`).
+
+Deploy order (see [`docs/DATABASE-MIGRATIONS.md`](../docs/DATABASE-MIGRATIONS.md)):
+
+1. `docker build` → push ECR  
+2. `bash server/scripts/db-migrate-deploy.sh` (CI, using `DATABASE_URL_*`)  
+3. App Runner starts new revision → entrypoint runs migrate again (idempotent) → `node dist/server.js`
+
+Local: `cd server && npm run db:migrate`
 
 ## 7. Run Setup Script
 

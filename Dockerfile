@@ -46,16 +46,22 @@ ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 WORKDIR /app/server
 
 COPY server/package.json server/package-lock.json ./
+# prisma is a production dependency so `migrate deploy` works at container start
 RUN npm ci --omit=dev
 COPY server/prisma ./prisma
-RUN npx prisma generate
+COPY server/scripts/db-migrate-deploy.sh ./scripts/db-migrate-deploy.sh
+COPY server/scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
+RUN chmod +x ./scripts/db-migrate-deploy.sh ./scripts/docker-entrypoint.sh \
+  && npx prisma generate
 
 COPY --from=server-build /app/server/dist ./dist
 COPY --from=client-build /app/client/dist ../client/dist
 
 EXPOSE 5000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+# Allow migrate + cold start before health checks fail
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||5000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
-CMD ["node", "dist/server.js"]
+# Migrate (idempotent) before accepting traffic — safe for App Runner multi-instance
+ENTRYPOINT ["bash", "./scripts/docker-entrypoint.sh"]
