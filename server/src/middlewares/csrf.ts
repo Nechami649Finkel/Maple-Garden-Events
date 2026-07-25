@@ -6,6 +6,7 @@ const CSRF_SKIP = [
   /^\/api\/auth\/refresh$/,
   /^\/api\/feedback\/[^/]+$/,
   /^\/api\/webhooks\/easy-count$/,
+  /^\/api\/webhooks\/whatsapp$/,
 ];
 
 function requestPath(req: Request): string {

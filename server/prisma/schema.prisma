@@ -30,8 +30,9 @@ model Tenant {
   feedbacks           Feedback[]
   kashrutCertificates KashrutCertificate[]
   eventAdditions      EventAddition[]
-  authorizedUsers     AuthorizedUser[]
-  scheduledGreetings  ScheduledGreeting[]
+  authorizedUsers          AuthorizedUser[]
+  scheduledGreetings       ScheduledGreeting[]
+  whatsappInboundMessages  WhatsAppInboundMessage[]
 }
 
 model Booking {
@@ -103,7 +104,8 @@ model Booking {
   lastPaymentReminderSent DateTime?
   upgrades            Json?
   kosherType          String?
-  hallInvoices        HallInvoice[]
+  hallInvoices             HallInvoice[]
+  whatsappInboundMessages  WhatsAppInboundMessage[]
 
   @@unique([calendarDateId, timeSlot])
   @@index([tenantId])
@@ -408,4 +410,23 @@ model ScheduledGreeting {
   createdAt      DateTime  @default(now())
 
   @@index([tenantId])
+}
+
+/** Inbound Meta WhatsApp Cloud messages linked (when possible) to a booking. */
+model WhatsAppInboundMessage {
+  id                   String   @id @default(uuid())
+  tenantId             String
+  tenant               Tenant   @relation(fields: [tenantId], references: [id])
+  bookingId            String?
+  booking              Booking? @relation(fields: [bookingId], references: [id])
+  fromPhone            String
+  waMessageId          String   @unique
+  messageType          String
+  text                 String?  @db.Text
+  forwardedToManager   Boolean  @default(false)
+  createdAt            DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([fromPhone])
+  @@index([bookingId])
 }

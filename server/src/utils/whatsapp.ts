@@ -7,6 +7,10 @@ import {
   type Locale,
   type Translator,
 } from '../i18n/getServerTranslation';
+import {
+  isWhatsAppCloudConfigured,
+  sendWhatsAppCloudText,
+} from '../Services/whatsappCloud.service';
 
 export type WhatsAppSendResult = {
   sent: boolean;
@@ -106,6 +110,16 @@ async function deliverWhatsApp(
   locale: Locale = DEFAULT_LOCALE,
 ): Promise<WhatsAppSendResult> {
   const { t } = getServerTranslation(locale);
+
+  // Prefer Meta WhatsApp Cloud API when configured; fall back to Green API.
+  if (isWhatsAppCloudConfigured()) {
+    const result = await sendWhatsAppCloudText(phone, message);
+    if (result.simulated) {
+      logger.info(t(T.SERVER.WHATSAPP.SIMULATION), { type, phone, message, provider: 'meta-cloud' });
+      return { sent: false, simulated: true, hasWhatsApp: null };
+    }
+    return { sent: result.ok, simulated: false, hasWhatsApp: result.ok ? true : null };
+  }
 
   if (isGreenApiConfigured()) {
     const hasWhatsApp = await checkHasWhatsApp(phone);

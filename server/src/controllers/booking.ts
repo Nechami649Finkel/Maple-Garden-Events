@@ -16,6 +16,7 @@ import { parseNotesBundle } from '../utils/notesStorage';
 import { getPaymentTemplatesFromSettings } from '../utils/paymentTerms';
 import { syncBookingPaymentMetadata } from '../Services/paymentDeadlineService';
 import { sendPDFToClient } from '../Services/emailService';
+import { notifyContractClosedViaWhatsApp } from '../Services/whatsappDealNotify.service';
 import {
   emitBookingUpdated,
   emitDateUpdated,
@@ -619,6 +620,15 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
           contractPdfBuffer
         );
       }
+      if (newStatus === 'BOOKED') {
+        await notifyContractClosedViaWhatsApp(
+          {
+            ...savedBooking,
+            eventDate: { date: parseCalendarDate(toCalendarDateKey(String(firstDateString))) },
+          },
+          contractPdfBuffer,
+        );
+      }
     } catch (pdfError) {
       logger.error("שגיאה בהפקת או שליחת החוזה הראשוני למייל:", pdfError);
     }
@@ -1091,6 +1101,10 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
             contractPdfBuffer,
           );
         }
+        await notifyContractClosedViaWhatsApp(
+          { ...updated, eventDate: booking.eventDate },
+          contractPdfBuffer,
+        );
       } catch (pdfError) {
         logger.error('שגיאה בהפקת או שליחת חוזה ה-PDF:', pdfError);
       }
@@ -1436,6 +1450,10 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
           contractPdfBuffer
         );
       }
+      await notifyContractClosedViaWhatsApp(
+        { ...updated, eventDate: booking.eventDate },
+        contractPdfBuffer,
+      );
     } catch (pdfError) {
       logger.error("שגיאה בהפקת או שליחת חוזה ה-PDF:", pdfError);
     }

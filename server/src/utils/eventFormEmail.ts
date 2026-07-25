@@ -1,5 +1,6 @@
 import prisma from '../config/prisma';
-import { sendPDFToClient, sendWhatsAppMessage } from '../Services/emailService';
+import { sendPDFToClient } from '../Services/emailService';
+import { notifyEventFormViaWhatsApp } from '../Services/whatsappDealNotify.service';
 import { buildBookingPdfData, generateEventProductionPDF } from './pdfGenerator';
 import { DEFAULT_LOCALE, getServerTranslation, T, type Locale } from '../i18n/getServerTranslation';
 
@@ -55,14 +56,11 @@ export async function sendEventFormEmailIfAllowed(
     }
 
     const emails: string[] = [];
-    const phones: string[] = [];
 
     if (booking.clientAEmail) emails.push(booking.clientAEmail);
-    if (booking.clientAPhone) phones.push(booking.clientAPhone);
 
     if (booking.eventType === 'חתונה') {
       if (booking.clientBEmail) emails.push(booking.clientBEmail);
-      if (booking.clientBPhone) phones.push(booking.clientBPhone);
     }
 
     if (emails.length === 0) {
@@ -82,13 +80,7 @@ export async function sendEventFormEmailIfAllowed(
       );
     }
 
-    for (const phone of phones) {
-      await sendWhatsAppMessage(
-        phone,
-        booking.clientAFullName,
-        booking.eventDate.date.toString(),
-      );
-    }
+    await notifyEventFormViaWhatsApp(booking, pdfBuffer);
 
     return { sent: true };
   } catch (e) {
