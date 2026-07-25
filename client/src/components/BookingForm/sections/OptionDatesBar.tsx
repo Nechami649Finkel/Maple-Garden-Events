@@ -143,18 +143,20 @@ export const OptionDatePickerModal = ({
   for (let day = 1; day <= daysInMonth; day++) {
     const date = formatDateLocal(new Date(year, month, day));
     const srv = serverMap.get(date);
-    const validationResult = timeSlot
-      ? validateOptionDateSelection(date, srv, timeSlot, excludeDates)
-      : null;
-    const validationError = validationResult
-      ? formatValidationError(t, validationResult)
-      : t(T.BOOKING.OPTION_DATES.SELECT_SLOT_BEFORE_DATE);
-    const disabled = !!validationError;
+    let validationError: string | undefined;
+    if (!timeSlot) {
+      validationError = t(T.BOOKING.OPTION_DATES.SELECT_SLOT_BEFORE_DATE);
+    } else {
+      const validationResult = validateOptionDateSelection(date, srv, timeSlot, excludeDates);
+      validationError = validationResult
+        ? formatValidationError(t, validationResult)
+        : undefined;
+    }
     cells.push({
       date,
       hebrewDate: srv?.hebrewDate ?? '',
-      disabled,
-      reason: validationError || undefined,
+      disabled: Boolean(validationError),
+      reason: validationError,
     });
   }
 
