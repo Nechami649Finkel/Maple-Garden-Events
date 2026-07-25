@@ -17,7 +17,14 @@ type TextBlock =
 
 function isHeadingLine(line: string): boolean {
   const trimmed = line.trim();
-  return trimmed.endsWith(':') && trimmed.length > 1 && trimmed.length < 80 && !/^\d+\./.test(trimmed);
+  // Short section titles only (e.g. "ביטול הזמנה:") — avoid bolding long prose that ends with ":".
+  return (
+    trimmed.endsWith(':')
+    && trimmed.length > 1
+    && trimmed.length <= 40
+    && !/^\d+\./.test(trimmed)
+    && !/[.!?…]/.test(trimmed.slice(0, -1))
+  );
 }
 
 function isBulletLine(line: string): boolean {
