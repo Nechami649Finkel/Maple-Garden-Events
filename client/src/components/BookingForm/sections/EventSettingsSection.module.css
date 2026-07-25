@@ -1,0 +1,88 @@
+.settingsBody {
+  direction: rtl;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: start;
+  min-width: 0;
+}
+
+/* Bottom-align controls so uneven label heights don't stagger inputs */
+.rowAlignEnd {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+  gap: 0.85rem;
+  align-items: end;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+}
+
+.label {
+  display: block;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  text-align: right;
+  font-size: var(--brand-form-label-size, 0.82rem);
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--brand-text-secondary, #4a5568);
+}
+
+.rowAlignEnd .label {
+  min-height: 2.5em; /* room for 2-line labels like משעה/עד שעה מדויקת */
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+}
+
+.control {
+  min-width: 0;
+  width: 100%;
+}
+
+.control :global(.form-control),
+.control :global(.form-select) {
+  width: 100%;
+  min-height: var(--brand-form-input-height, 2.35rem);
+}
+
+.hint,
+.note {
+  margin: 0.3rem 0 0;
+  text-align: right;
+}
+
+.note {
+  margin: 0;
+}
+
+.full {
+  min-width: 0;
+}
+
+@media (max-width: 767.98px) {
+  .row2,
+  .rowAlignEnd {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .rowAlignEnd .label {
+    min-height: 0;
+  }
+}
