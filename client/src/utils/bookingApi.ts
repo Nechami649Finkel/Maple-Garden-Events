@@ -13,6 +13,49 @@ export type EventAdditionApi = {
   signature?: string | null;
 };
 
+/** Ledger row from GET/POST /api/bookings/:id/payments */
+export type BookingPaymentMethod =
+  | 'cash'
+  | 'credit_card'
+  | 'check'
+  | 'bank_transfer'
+  | 'easycount'
+  | 'other';
+
+export type BookingPaymentSource = 'ADVANCE' | 'EASYCOUNT_INVOICE' | 'MANUAL';
+
+export type BookingPaymentRow = {
+  id: string;
+  tenantId: string;
+  bookingId: string;
+  amount: number;
+  paidAt: string;
+  paymentMethod: BookingPaymentMethod | string;
+  easycountTransactionId?: string | null;
+  hallInvoiceId?: string | null;
+  source: BookingPaymentSource | string;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** Financial snapshot from GET /api/bookings/:id/payments */
+export type BookingFinancialSnapshot = {
+  totalCost: number;
+  totalPaid: number;
+  remainingBalance: number;
+  payments: BookingPaymentRow[];
+};
+
+/** Body for POST /api/bookings/:id/payments */
+export type CreateBookingPaymentInput = {
+  amount: number;
+  paymentMethod: BookingPaymentMethod;
+  paidAt?: string;
+  easycountTransactionId?: string | null;
+  notes?: string | null;
+};
+
 /** Booking payload from GET /api/bookings (list & detail) */
 export type BookingApi = {
   id: string;
