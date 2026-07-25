@@ -1477,6 +1477,8 @@
     "STATS_LOAD_ERROR": "Error loading statistics",
     "INVALID_LINK": "Link is missing or invalid.",
     "LINK_USED": "The link is invalid or has already been used.",
+    "ALREADY_PARTICIPATED_TITLE": "Thank you — you already participated",
+    "ALREADY_PARTICIPATED_MESSAGE": "Feedback for this event was already received. Thank you for sharing!",
     "LOAD_ERROR_PUBLIC": "A server error occurred. Please try again later.",
     "RATE_ALL_PROMPT": "Please rate all categories so we can improve!",
     "SAVE_ERROR": "Could not save feedback",

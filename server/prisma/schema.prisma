@@ -347,20 +347,29 @@ model StaffMember {
   @@index([tenantId])
 }
 
+/**
+ * Feedback token + result (hybrid FeedbackToken / FeedbackResult).
+ * - token / isCompleted / completedAt → one-time response link per side
+ * - foodRating / serviceRating / venueRating / comments → quantitative result
+ * bookingId is the event reference (no separate Event table).
+ */
 model Feedback {
   id                String    @id @default(uuid())
   tenantId          String
   tenant            Tenant    @relation(fields: [tenantId], references: [id])
   bookingId         String
+  /** Side A / Side B ('A' | 'B') for dual-sided events */
   clientSide        String
   clientName        String?
   foodRating        Int?
   serviceRating     Int?
+  /** Venue / hall quality (maps to "Cleanliness" category in product language). */
   venueRating       Int?
   averageScore      Float?
   comments          String?
   token             String    @unique
   isCompleted       Boolean   @default(false)
+  completedAt       DateTime?
   lastNotifiedAt    DateTime?
   lastEmailSent     Boolean   @default(false)
   lastWhatsappSent  Boolean   @default(false)

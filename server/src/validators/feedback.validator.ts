@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const ratingSchema = z.coerce.number().int().min(1).max(5).optional();
+const ratingSchema = z.coerce.number().int().min(1).max(5);
 
 export const feedbackTokenParamSchema = z.object({
   params: z.object({

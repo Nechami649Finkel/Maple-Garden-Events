@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import prisma from '../config/prisma';
 import { getEventEndDateTime } from './eventStart';
 import { mailFailureMessage, sendFeedbackRequestEmail } from './mailer';
+import { calendarDayBounds } from './dateLocal';
 import { toLocalDateKey } from './timeSlot';
 import { sendFeedbackRequestWhatsApp } from './whatsapp';
 import { logger } from './logger';
@@ -226,7 +227,37 @@ export function hasEventEnded(
   return now >= endAt;
 }
 
-/** שולח משוב אוטומטית לכל אירוע BOOKED שהסתיים וטרם נוצר לו feedback */
+async function dispatchFeedbackForBooking(booking: {
+  id: string;
+  tenantId: string;
+  eventType: string;
+  clientAFullName: string;
+  clientAPhone: string;
+  clientAEmail?: string | null;
+  clientBFullName?: string | null;
+  clientBPhone?: string | null;
+  clientBEmail?: string | null;
+}): Promise<{ linksSent: number; records: number }> {
+  const records = await ensureFeedbackRecordsForBooking(booking);
+  let linksSent = 0;
+  for (const record of records) {
+    if (record.lastNotifiedAt) continue;
+    const contact = contactForSide(booking, record.clientSide);
+    const result = await sendFeedbackLinkForRecord(record, contact);
+    if (result.emailSent || result.whatsappSent) {
+      linksSent++;
+      logger.info(`✅ נשלח משוב אוטומטי ל-${record.clientName} (צד ${record.clientSide})`);
+    } else {
+      logger.warn(`⚠️ משוב לא נשלח ל-${record.clientName}: ${result.skippedReasons.join('; ')}`);
+    }
+  }
+  if (records.length > 0) {
+    emitFeedbackUpdated({ bookingId: booking.id });
+  }
+  return { linksSent, records: records.length };
+}
+
+/** Near-real-time: BOOKED events whose end time has passed and have no feedback rows yet. */
 export async function processEndedEventsFeedback(now: Date = new Date()) {
   const candidates = await prisma.booking.findMany({
     where: {
@@ -248,21 +279,60 @@ export async function processEndedEventsFeedback(now: Date = new Date()) {
     if (!hasEventEnded(booking, booking.eventDate.date, booking.eventForm, now)) continue;
 
     eventsProcessed++;
-    const records = await ensureFeedbackRecordsForBooking(booking);
-    for (const record of records) {
-      const contact = contactForSide(booking, record.clientSide);
-      const result = await sendFeedbackLinkForRecord(record, contact);
-      if (result.emailSent || result.whatsappSent) {
-        linksSent++;
-        logger.info(`✅ נשלח משוב אוטומטי ל-${record.clientName} (צד ${record.clientSide})`);
-      } else {
-        logger.warn(`⚠️ משוב לא נשלח ל-${record.clientName}: ${result.skippedReasons.join('; ')}`);
-      }
-    }
-    if (records.length > 0) {
-      emitFeedbackUpdated({ bookingId: booking.id });
-    }
+    const result = await dispatchFeedbackForBooking(booking);
+    linksSent += result.linksSent;
   }
 
   return { eventsProcessed, linksSent, checked: candidates.length };
+}
+
+/**
+ * Daily batch: completed events from the previous civil day.
+ * Creates Side A/B tokens for dual-sided events and dispatches Email + WhatsApp.
+ */
+export async function processPreviousDayEndedEventsFeedback(now: Date = new Date()) {
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+  const yesterdayKey = toLocalDateKey(yesterday);
+  const { start, end } = calendarDayBounds(yesterdayKey);
+
+  const candidates = await prisma.booking.findMany({
+    where: {
+      isOption: false,
+      eventDate: {
+        status: 'BOOKED',
+        date: { gte: start, lte: end },
+      },
+      OR: [
+        { feedbacks: { none: {} } },
+        { feedbacks: { some: { lastNotifiedAt: null, isCompleted: false } } },
+      ],
+    },
+    include: {
+      eventDate: true,
+      eventForm: { select: { eventTime: true } },
+      feedbacks: true,
+    },
+  });
+
+  let eventsProcessed = 0;
+  let linksSent = 0;
+
+  for (const booking of candidates) {
+    if (!booking.eventDate) continue;
+    // Only after the event end time (covers late-night previous-day events run next morning).
+    if (!hasEventEnded(booking, booking.eventDate.date, booking.eventForm, now)) continue;
+
+    eventsProcessed++;
+    const result = await dispatchFeedbackForBooking(booking);
+    linksSent += result.linksSent;
+  }
+
+  logger.info('Previous-day feedback batch finished', {
+    date: yesterdayKey,
+    eventsProcessed,
+    linksSent,
+    checked: candidates.length,
+  });
+
+  return { eventsProcessed, linksSent, checked: candidates.length, date: yesterdayKey };
 }

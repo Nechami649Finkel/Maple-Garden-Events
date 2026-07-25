@@ -13,7 +13,10 @@ import {
   sendSecurityCheckReminderEmail,
   sendManagerFinancialAlertEmail,
 } from './mailer';
-import { processEndedEventsFeedback } from './feedbackHelpers';
+import {
+  processEndedEventsFeedback,
+  processPreviousDayEndedEventsFeedback,
+} from './feedbackHelpers';
 import { runDatabaseBackup } from './databaseBackup';
 import { processDueScheduledGreetings } from '../Services/greetingService';
 import { checkOverduePayments } from '../Services/paymentDeadlineService';
@@ -164,6 +167,21 @@ export const startCronJobs = () => {
       }
     } catch (error) {
       logger.error('שגיאה בתהליך שליחת משוב אוטומטי:', error);
+    }
+  });
+
+  // ==========================================
+  // טיימר 3ב: משוב לאירועי אתמול (יומי ב-10:00)
+  // ==========================================
+  cron.schedule('0 10 * * *', async () => {
+    try {
+      const { eventsProcessed, linksSent, checked, date } =
+        await processPreviousDayEndedEventsFeedback();
+      logger.info(
+        `--- משוב יומי (${date}): ${linksSent} קישורים, ${eventsProcessed} אירועים, ${checked} נבדקו ---`,
+      );
+    } catch (error) {
+      logger.error('שגיאה במשוב יומי לאירועי אתמול:', error);
     }
   });
 
