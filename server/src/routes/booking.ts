@@ -9,6 +9,8 @@ import {
   notifyOptionInterestSchema,
   releaseOptionsSchema,
   reissueEasyCountSchema,
+  listBookingPaymentsSchema,
+  createBookingPaymentSchema,
 } from '../validators/bookingActions.validator';
 import { sendGreetingSchema } from '../validators/greeting.validator';
 import { requireAuth } from '../middlewares/auth';
@@ -38,6 +40,8 @@ import {
   reissueEasyCountReceipt,
   addBookingUpgrade,
   signAndSendContract,
+  getBookingPayments,
+  createBookingPayment,
 } from '../controllers/booking';
 import { sendGreeting, getScheduledGreetings, cancelScheduledGreetingHandler } from '../controllers/greeting';
 import { buildBookingPdfData, generateContractPDF } from '../utils/pdfGenerator';
@@ -85,6 +89,10 @@ router.get('/:id/contract-pdf', requireRole(...MANAGEMENT), catchAsync(async (re
 router.post('/:id/invoice', requireRole(...MANAGER_ONLY), validate(createHallInvoiceSchema), createBookingHallInvoice);
 router.get('/:id/invoices', requireRole(...FINANCE_READ), getBookingHallInvoices);
 router.post('/:id/easycount-receipt', requireRole(...MANAGER_ONLY), validate(reissueEasyCountSchema), reissueEasyCountReceipt);
+
+// --- יומן תשלומים / יתרה ---
+router.get('/:id/payments', requireRole(...FINANCE_READ), validate(listBookingPaymentsSchema), getBookingPayments);
+router.post('/:id/payments', requireRole(...MANAGER_ONLY), validate(createBookingPaymentSchema), createBookingPayment);
 
 // --- סטטיסטיקה וקודים (קריאה) ---
 router.get('/stats/cancellations', requireRole(...MANAGEMENT), getCancellationStats); 

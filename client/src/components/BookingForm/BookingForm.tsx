@@ -754,19 +754,23 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
   const calculateTotals = () => {
   let mainBase = 0;
+  // Billable portions = max(actual, contractual minimum)
+  const billablePortions = Math.max(
+    Number(formData.guestCount) || 0,
+    Number(formData.minimumGuestCount) || 0,
+    0,
+  );
 
   if (isHallOnly) {
     mainBase += Number(formData.hallRentalPrice) || 0;
   } else if (isFoodRelevant) {
-    const portions = Number(formData.guestCount) || 0;
     const portionPrice = Number(formData.finalPricePortion) || 0;
-    mainBase += portions * portionPrice;
+    mainBase += billablePortions * portionPrice;
   }
 
   let hallExtrasBase = 0;
   if (isFoodRelevant) {
-    const portions = Number(formData.guestCount) || 0;
-    hallExtrasBase += portions * (KOSHER_TYPE_EXTRAS[kosherType as keyof typeof KOSHER_TYPE_EXTRAS] ?? 0);
+    hallExtrasBase += billablePortions * (KOSHER_TYPE_EXTRAS[kosherType as keyof typeof KOSHER_TYPE_EXTRAS] ?? 0);
   }
   HALL_UPGRADE_KEYS.forEach((key) => {
     if (upgrades[key]) hallExtrasBase += upgradesPricing[key] ?? 0;

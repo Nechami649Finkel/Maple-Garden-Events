@@ -602,7 +602,8 @@
       "ALERTS": {
         "MISSING_SECURITY_CHECK": "חסר צ'ק ביטחון",
         "OPEN_BALANCE": "חוב פתוח לאירוע קרוב",
-        "KASHRUT_EXPIRY": "תוקף תעודת כשרות"
+        "KASHRUT_EXPIRY": "תוקף תעודת כשרות",
+        "EVENT_FINANCIAL_SUMMARY": "סיכום כספי לאירוע"
       },
       "SECURITY_CHECK_DETAILS": "האירוע נסגר בתאריך {date} וטרם התקבל צ'ק.",
       "OPEN_BALANCE_DETAILS": "האירוע מתקיים ב-{eventDate}, נותר לתשלום: ₪{amount}{pendingNote}",
@@ -610,7 +611,16 @@
       "KASHRUT_EXPIRED": "פג תוקף!",
       "KASHRUT_EXPIRING": "עומד לפוג בקרוב.",
       "KASHRUT_UNKNOWN_DATE": "לא ידוע",
-      "KASHRUT_DETAILS": "תעודת הכשרות של \"{name}\" {status} (תאריך פקיעה: {date}). נא להיכנס למערכת, לעדכן תאריך חדש ולהעלות צילום תעודה מעודכן."
+      "KASHRUT_DETAILS": "תעודת הכשרות של \"{name}\" {status} (תאריך פקיעה: {date}). נא להיכנס למערכת, לעדכן תאריך חדש ולהעלות צילום תעודה מעודכן.",
+      "FINANCIAL_SUMMARY": {
+        "HEADER": "סיכום כספי — אירוע {eventCode} ({eventDate})",
+        "TOTAL_COST": "עלות כוללת: {amount}",
+        "PAYMENTS_HEADER": "תשלומים:",
+        "PAYMENT_LINE": "{index}. {amount} · {date} · {method}{easycount}",
+        "PAYMENT_EASYCOUNT": " · EasyCount: {id}",
+        "NO_PAYMENTS": "לא נרשמו תשלומים",
+        "REMAINING": "יתרה לתשלום: {amount}"
+      }
     },
     "PAYMENT": {
       "MANAGER_ALERT_TYPE": "איחור בתשלום",

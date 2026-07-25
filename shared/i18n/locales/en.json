@@ -602,7 +602,8 @@
       "ALERTS": {
         "MISSING_SECURITY_CHECK": "Missing security check",
         "OPEN_BALANCE": "Open balance for upcoming event",
-        "KASHRUT_EXPIRY": "Kashrut certificate expiry"
+        "KASHRUT_EXPIRY": "Kashrut certificate expiry",
+        "EVENT_FINANCIAL_SUMMARY": "Event financial summary"
       },
       "SECURITY_CHECK_DETAILS": "The event was closed on {date} and no security check has been received.",
       "OPEN_BALANCE_DETAILS": "Event on {eventDate}, remaining balance: ₪{amount}{pendingNote}",
@@ -610,7 +611,16 @@
       "KASHRUT_EXPIRED": "expired!",
       "KASHRUT_EXPIRING": "expiring soon.",
       "KASHRUT_UNKNOWN_DATE": "Unknown",
-      "KASHRUT_DETAILS": "The kashrut certificate for \"{name}\" {status} (expiry: {date}). Please update the date and upload a new certificate."
+      "KASHRUT_DETAILS": "The kashrut certificate for \"{name}\" {status} (expiry: {date}). Please update the date and upload a new certificate.",
+      "FINANCIAL_SUMMARY": {
+        "HEADER": "Financial summary — event {eventCode} ({eventDate})",
+        "TOTAL_COST": "Total cost: {amount}",
+        "PAYMENTS_HEADER": "Payments:",
+        "PAYMENT_LINE": "{index}. {amount} · {date} · {method}{easycount}",
+        "PAYMENT_EASYCOUNT": " · EasyCount: {id}",
+        "NO_PAYMENTS": "No payments recorded",
+        "REMAINING": "Remaining balance: {amount}"
+      }
     },
     "PAYMENT": {
       "MANAGER_ALERT_TYPE": "Payment overdue",

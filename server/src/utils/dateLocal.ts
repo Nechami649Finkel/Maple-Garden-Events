@@ -85,3 +85,10 @@ export function prismaCalendarDayWhere(calendarKey: string) {
 export function calendarKeyFromDbDate(dbDate: Date): string {
   return toCalendarDateKey(dbDate);
 }
+
+/** Shift a civil calendar day by `deltaDays` (can be negative). */
+export function addCalendarDays(input: string | Date, deltaDays: number): Date {
+  const base = parseCalendarDate(input);
+  base.setDate(base.getDate() + deltaDays);
+  return base;
+}

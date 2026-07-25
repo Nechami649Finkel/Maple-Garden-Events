@@ -17,6 +17,7 @@ model Tenant {
 
   bookings            Booking[]
   hallInvoices        HallInvoice[]
+  bookingPayments     BookingPayment[]
   eventCheckIns       EventCheckIn[]
   menuCategories      MenuCategory[]
   dishes              Dish[]
@@ -106,7 +107,10 @@ model Booking {
   upgrades            Json?
   kosherType          String?
   hallInvoices             HallInvoice[]
+  payments                 BookingPayment[]
   whatsappInboundMessages  WhatsAppInboundMessage[]
+  /** Set after the post-event financial summary WhatsApp is sent to the manager. */
+  financialSummarySentAt   DateTime?
 
   @@unique([calendarDateId, timeSlot])
   @@index([tenantId])
@@ -128,10 +132,40 @@ model HallInvoice {
   webhookPayload   Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  payments         BookingPayment[]
 
   @@index([bookingId])
   @@index([status])
   @@index([tenantId])
+}
+
+/**
+ * Immutable-style payment ledger for an event/booking.
+ * Aggregates (advancePaid / totalPaid) are recomputed from this table.
+ */
+model BookingPayment {
+  id                     String       @id @default(uuid())
+  tenantId               String
+  tenant                 Tenant       @relation(fields: [tenantId], references: [id])
+  bookingId              String
+  booking                Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount                 Float
+  paidAt                 DateTime     @default(now())
+  /** cash | credit_card | check | bank_transfer | easycount | other */
+  paymentMethod          String
+  /** EasyCount receipt / transaction / invoice external id — unique when present */
+  easycountTransactionId String?      @unique
+  hallInvoiceId          String?
+  hallInvoice            HallInvoice? @relation(fields: [hallInvoiceId], references: [id], onDelete: SetNull)
+  /** ADVANCE | EASYCOUNT_INVOICE | MANUAL */
+  source                 String       @default("MANUAL")
+  notes                  String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  @@index([bookingId])
+  @@index([tenantId])
+  @@index([paidAt])
 }
 
 model EventCheckIn {

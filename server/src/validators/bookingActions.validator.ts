@@ -60,3 +60,25 @@ export const reissueEasyCountSchema = z.object({
     force: z.boolean().optional(),
   }).optional(),
 });
+
+export const listBookingPaymentsSchema = z.object({
+  params: z.object({ id: z.string().uuid() }),
+});
+
+export const createBookingPaymentSchema = z.object({
+  params: z.object({ id: z.string().uuid() }),
+  body: z.object({
+    amount: z.coerce.number().finite().positive(),
+    paidAt: z.union([z.string(), z.date()]).optional(),
+    paymentMethod: z.enum([
+      'cash',
+      'credit_card',
+      'check',
+      'bank_transfer',
+      'easycount',
+      'other',
+    ]),
+    easycountTransactionId: z.string().max(200).optional().nullable(),
+    notes: z.string().max(500).optional().nullable(),
+  }),
+});

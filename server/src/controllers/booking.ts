@@ -63,6 +63,11 @@ import {
   canIssueEasyCountReceipt,
 } from '../utils/easycountHelpers';
 import { syncContractFields } from '../utils/contractFields';
+import {
+  recordAdvancePayment,
+  recordPayment,
+  getBookingFinancialSnapshot,
+} from '../Services/bookingPayment.service';
 
 export type EasyCountBookingResult = {
   issued: boolean;
@@ -71,6 +76,19 @@ export type EasyCountBookingResult = {
   docId: string | null;
   docUrl: string | null;
 };
+
+/** Persist advance on the payment ledger even when EasyCount is skipped/unavailable. */
+async function ensureAdvanceOnLedger(bookingId: string): Promise<void> {
+  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+  if (!booking || booking.isOption || booking.advancePaid <= 0) return;
+  await recordAdvancePayment({
+    bookingId: booking.id,
+    tenantId: booking.tenantId,
+    amount: booking.advancePaid,
+    depositMethod: booking.depositMethod,
+    easycountDocId: booking.easycountDocId,
+  });
+}
 
 async function issueEasyCountReceiptForBooking(
   bookingId: string,
@@ -118,7 +136,18 @@ async function issueEasyCountReceiptForBooking(
     eventDate: booking.eventDate?.date ?? null,
   });
 
-  if (result.status === 'SKIPPED') return null;
+  if (result.status === 'SKIPPED') {
+    // Mode off — still persist advance on the ledger so remaining balance stays accurate.
+    await recordAdvancePayment({
+      bookingId,
+      tenantId: booking.tenantId,
+      amount: booking.advancePaid,
+      depositMethod: booking.depositMethod,
+    }).catch((ledgerError) => {
+      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+    });
+    return null;
+  }
 
   const message = formatEasyCountUserMessage(result, getEasyCountMeta().mode);
 
@@ -131,6 +160,19 @@ async function issueEasyCountReceiptForBooking(
       easycountError: result.status === 'FAILED' ? (result.error || message) : null,
     },
   });
+
+  // Ledger: advance receipt → BookingPayment + remaining balance aggregates
+  if (result.status === 'ISSUED' || result.status === 'SIMULATED') {
+    await recordAdvancePayment({
+      bookingId,
+      tenantId: booking.tenantId,
+      amount: booking.advancePaid,
+      depositMethod: booking.depositMethod,
+      easycountDocId: result.docId,
+    }).catch((ledgerError) => {
+      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+    });
+  }
 
   emitBookingUpdated(bookingId);
 
@@ -642,6 +684,9 @@ export const createBooking = catchAsync(async (req: AuthRequest, res: Response) 
       } catch (easycountError) {
         logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
+      await ensureAdvanceOnLedger(savedBooking.id).catch((ledgerError) => {
+        logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+      });
     }
   }
 
@@ -850,6 +895,8 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
   const pricingPayload = {
     eventType: data.eventType ?? booking.eventType,
     guestCount: data.guestCount ?? booking.guestCount,
+    minimumGuestCount:
+      data.minimumGuestCount ?? booking.minimumGuestCount ?? data.guestCount ?? booking.guestCount,
     finalPricePortion: data.finalPricePortion ?? booking.finalPricePortion,
     hallRentalPrice: data.hallRentalPrice ?? (booking as { hallRentalPrice?: number | null }).hallRentalPrice,
     kosherType: data.kosherType !== undefined ? data.kosherType : (booking as { kosherType?: string | null }).kosherType,
@@ -1117,6 +1164,9 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
       } catch (easycountError) {
         logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
       }
+      await ensureAdvanceOnLedger(updated.id).catch((ledgerError) => {
+        logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+      });
     }
 
     const refreshed = await prisma.booking.findFirst({
@@ -1142,6 +1192,9 @@ export const updateBooking = catchAsync(async (req: AuthRequest, res: Response) 
     } catch (easycountError) {
       logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
+    await ensureAdvanceOnLedger(updated.id).catch((ledgerError) => {
+      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+    });
   }
 
   const responseBooking = easycountResult
@@ -1466,6 +1519,9 @@ export const finalizeBooking = catchAsync(async (req: Request, res: Response) =>
     } catch (easycountError) {
       logger.error('שגיאה בהפקת קבלת EZCount:', easycountError);
     }
+    await ensureAdvanceOnLedger(bookingId).catch((ledgerError) => {
+      logger.error('שגיאה ברישום מקדמה ליומן תשלומים:', ledgerError);
+    });
   }
 
   const refreshed = await prisma.booking.findFirst({
@@ -1844,5 +1900,79 @@ export const signAndSendContract = catchAsync(async (req: Request, res: Response
       : 'החוזה נחתם ונשמר. שליחת המייל נכשלה או שאין אימייל ללקוח.',
     emailSent,
     whatsappSent,
+  });
+});
+
+/** GET /bookings/:id/payments — payment ledger + remaining balance */
+export const getBookingPayments = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = (req as { user?: { tenantId?: string } }).user?.tenantId;
+  if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+
+  const id = String(req.params.id);
+  const booking = await prisma.booking.findFirst({
+    where: { id, tenantId },
+    select: { id: true },
+  });
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
+  }
+
+  const snapshot = await getBookingFinancialSnapshot(id);
+  res.json({
+    success: true,
+    data: {
+      totalCost: snapshot.totalCost,
+      totalPaid: snapshot.totalPaid,
+      remainingBalance: snapshot.remainingBalance,
+      payments: snapshot.payments,
+    },
+  });
+});
+
+/** POST /bookings/:id/payments — manual ledger entry */
+export const createBookingPayment = catchAsync(async (req: Request, res: Response) => {
+  const tenantId = (req as { user?: { tenantId?: string } }).user?.tenantId;
+  if (!tenantId) return res.status(403).json({ error: 'Tenant context is missing.' });
+
+  const id = String(req.params.id);
+  const booking = await prisma.booking.findFirst({
+    where: { id, tenantId },
+  });
+  if (!booking) {
+    return res.status(404).json({ success: false, message: 'ההזמנה לא נמצאה.' });
+  }
+  if (booking.isOption) {
+    return res.status(400).json({ success: false, message: 'לא ניתן לרשום תשלום לאופציה.' });
+  }
+
+  const paidAtRaw = req.body?.paidAt;
+  const paidAt = paidAtRaw ? new Date(paidAtRaw) : new Date();
+  if (Number.isNaN(paidAt.getTime())) {
+    return res.status(400).json({ success: false, message: 'תאריך תשלום לא תקין.' });
+  }
+
+  const result = await recordPayment({
+    bookingId: id,
+    tenantId,
+    amount: Number(req.body?.amount),
+    paidAt,
+    paymentMethod: String(req.body?.paymentMethod || 'other'),
+    easycountTransactionId: req.body?.easycountTransactionId ?? null,
+    source: 'MANUAL',
+    notes: req.body?.notes ?? null,
+  });
+
+  emitBookingUpdated(id);
+
+  const snapshot = await getBookingFinancialSnapshot(id);
+  res.status(201).json({
+    success: true,
+    data: {
+      payment: result.payment,
+      totalCost: snapshot.totalCost,
+      totalPaid: snapshot.totalPaid,
+      remainingBalance: snapshot.remainingBalance,
+      paymentStatus: result.paymentStatus,
+    },
   });
 });
