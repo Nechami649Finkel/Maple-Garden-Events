@@ -13,6 +13,16 @@ interface ClientsSectionProps {
 
 type EmailFieldName = 'clientAEmail' | 'clientBEmail';
 
+function FieldRow({
+  children,
+  single = false,
+}: {
+  children: ReactNode;
+  single?: boolean;
+}) {
+  return <div className={`${styles.row} ${single ? styles.rowSingle : ''}`}>{children}</div>;
+}
+
 function Field({
   label,
   wide = false,
@@ -22,10 +32,19 @@ function Field({
   wide?: boolean;
   children: ReactNode;
 }) {
+  if (wide) {
+    return (
+      <div className={styles.fieldWide}>
+        <label className={styles.label}>{label}</label>
+        <div className={styles.control}>{children}</div>
+      </div>
+    );
+  }
+
   return (
-    <div className={wide ? styles.fieldWide : styles.field}>
+    <div className={styles.field}>
       <label className={styles.label}>{label}</label>
-      {children}
+      <div className={styles.control}>{children}</div>
     </div>
   );
 }
@@ -60,6 +79,7 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
         }}
         className={`${styles.input} ${styles.emailInput}`}
         autoComplete="off"
+        title={formData[fieldName] || undefined}
       />
       {activeEmailField === fieldName && formData[fieldName].includes('@') && (
         <ul className="maple-email-suggestions">
@@ -86,49 +106,54 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
         <div className={`${styles.sides} ${isWedding ? styles.sidesSplit : ''}`}>
           <section className={styles.sidePanel}>
             <h4 className={styles.sideTitle}>{sideATitle}</h4>
-            <div className={styles.fieldsGrid}>
+            <div className={styles.fieldsStack}>
               {isOption ? (
                 <>
-                  <Field label={t(T.BOOKING.CLIENTS.FIRST_NAME)}>
-                    <input
-                      type="text"
-                      name="clientAFirstName"
-                      required
-                      value={formData.clientAFirstName}
-                      onChange={handleChange}
-                      className={`${styles.input} ${errors?.clientAFirstName ? 'is-invalid' : ''}`}
-                    />
-                    {errors?.clientAFirstName && (
-                      <div className={styles.error}>{errors.clientAFirstName}</div>
-                    )}
-                  </Field>
-                  <Field label={t(T.BOOKING.CLIENTS.LAST_NAME)}>
-                    <input
-                      type="text"
-                      name="clientALastName"
-                      required
-                      value={formData.clientALastName}
-                      onChange={handleChange}
-                      className={`${styles.input} ${errors?.clientALastName ? 'is-invalid' : ''}`}
-                    />
-                    {errors?.clientALastName && (
-                      <div className={styles.error}>{errors.clientALastName}</div>
-                    )}
-                  </Field>
-                  <Field label={t(T.BOOKING.CLIENTS.ID_NUMBER)}>
-                    <input
-                      type="text"
-                      name="clientAIdNumber"
-                      value={formData.clientAIdNumber}
-                      onChange={handleChange}
-                      className={styles.input}
-                    />
-                  </Field>
-                  {/* Keep the 2-column rhythm so phones start on a fresh row */}
-                  <div className={styles.field} aria-hidden="true" />
+                  <FieldRow>
+                    <Field label={t(T.BOOKING.CLIENTS.FIRST_NAME)}>
+                      <input
+                        type="text"
+                        name="clientAFirstName"
+                        required
+                        value={formData.clientAFirstName}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors?.clientAFirstName ? 'is-invalid' : ''}`}
+                        title={formData.clientAFirstName || undefined}
+                      />
+                      {errors?.clientAFirstName && (
+                        <div className={styles.error}>{errors.clientAFirstName}</div>
+                      )}
+                    </Field>
+                    <Field label={t(T.BOOKING.CLIENTS.LAST_NAME)}>
+                      <input
+                        type="text"
+                        name="clientALastName"
+                        required
+                        value={formData.clientALastName}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors?.clientALastName ? 'is-invalid' : ''}`}
+                        title={formData.clientALastName || undefined}
+                      />
+                      {errors?.clientALastName && (
+                        <div className={styles.error}>{errors.clientALastName}</div>
+                      )}
+                    </Field>
+                  </FieldRow>
+                  <FieldRow single>
+                    <Field label={t(T.BOOKING.CLIENTS.ID_NUMBER)} wide>
+                      <input
+                        type="text"
+                        name="clientAIdNumber"
+                        value={formData.clientAIdNumber}
+                        onChange={handleChange}
+                        className={styles.input}
+                        title={formData.clientAIdNumber || undefined}
+                      />
+                    </Field>
+                  </FieldRow>
                 </>
               ) : (
-                <>
+                <FieldRow>
                   <Field label={t(T.BOOKING.CLIENTS.FULL_NAME)}>
                     <input
                       type="text"
@@ -137,6 +162,7 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
                       value={formData.clientAFullName}
                       onChange={handleChange}
                       className={`${styles.input} ${errors?.clientAFullName ? 'is-invalid' : ''}`}
+                      title={formData.clientAFullName || undefined}
                     />
                     {errors?.clientAFullName && (
                       <div className={styles.error}>{errors.clientAFullName}</div>
@@ -149,31 +175,36 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
                       value={formData.clientAIdNumber}
                       onChange={handleChange}
                       className={styles.input}
+                      title={formData.clientAIdNumber || undefined}
                     />
                   </Field>
-                </>
+                </FieldRow>
               )}
 
-              <Field label={t(T.BOOKING.CLIENTS.PHONE_1)}>
-                <input
-                  type="tel"
-                  name="clientAPhone"
-                  required
-                  value={formData.clientAPhone}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors?.clientAPhone ? 'is-invalid' : ''}`}
-                />
-                {errors?.clientAPhone && <div className={styles.error}>{errors.clientAPhone}</div>}
-              </Field>
-              <Field label={t(T.BOOKING.CLIENTS.PHONE_2)}>
-                <input
-                  type="tel"
-                  name="clientAPhone2"
-                  value={formData.clientAPhone2}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </Field>
+              <FieldRow>
+                <Field label={t(T.BOOKING.CLIENTS.PHONE_1)}>
+                  <input
+                    type="tel"
+                    name="clientAPhone"
+                    required
+                    value={formData.clientAPhone}
+                    onChange={handleChange}
+                    className={`${styles.input} ${errors?.clientAPhone ? 'is-invalid' : ''}`}
+                    title={formData.clientAPhone || undefined}
+                  />
+                  {errors?.clientAPhone && <div className={styles.error}>{errors.clientAPhone}</div>}
+                </Field>
+                <Field label={t(T.BOOKING.CLIENTS.PHONE_2)}>
+                  <input
+                    type="tel"
+                    name="clientAPhone2"
+                    value={formData.clientAPhone2}
+                    onChange={handleChange}
+                    className={styles.input}
+                    title={formData.clientAPhone2 || undefined}
+                  />
+                </Field>
+              </FieldRow>
 
               {renderEmailField(
                 'clientAEmail',
@@ -181,24 +212,28 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
                 isOption,
               )}
 
-              <Field label={t(T.BOOKING.CLIENTS.CITY)}>
-                <input
-                  type="text"
-                  name="clientACity"
-                  value={formData.clientACity}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </Field>
-              <Field label={t(T.BOOKING.CLIENTS.ADDRESS)}>
-                <input
-                  type="text"
-                  name="clientAAddress"
-                  value={formData.clientAAddress}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </Field>
+              <FieldRow>
+                <Field label={t(T.BOOKING.CLIENTS.CITY)}>
+                  <input
+                    type="text"
+                    name="clientACity"
+                    value={formData.clientACity}
+                    onChange={handleChange}
+                    className={styles.input}
+                    title={formData.clientACity || undefined}
+                  />
+                </Field>
+                <Field label={t(T.BOOKING.CLIENTS.ADDRESS)}>
+                  <input
+                    type="text"
+                    name="clientAAddress"
+                    value={formData.clientAAddress}
+                    onChange={handleChange}
+                    className={styles.input}
+                    title={formData.clientAAddress || undefined}
+                  />
+                </Field>
+              </FieldRow>
             </div>
           </section>
 
@@ -207,73 +242,85 @@ const ClientsSection = ({ formData, handleChange, errors, isWedding, isOption }:
               <div className={styles.divider} aria-hidden="true" />
               <section className={styles.sidePanel}>
                 <h4 className={styles.sideTitle}>{sideBTitle}</h4>
-                <div className={styles.fieldsGrid}>
-                  <Field label={t(T.BOOKING.CLIENTS.FULL_NAME)}>
-                    <input
-                      type="text"
-                      name="clientBFullName"
-                      required={!isOption}
-                      value={formData.clientBFullName}
-                      onChange={handleChange}
-                      className={`${styles.input} ${errors?.clientBFullName ? 'is-invalid' : ''}`}
-                    />
-                    {errors?.clientBFullName && (
-                      <div className={styles.error}>{errors.clientBFullName}</div>
-                    )}
-                  </Field>
-                  <Field label={t(T.BOOKING.CLIENTS.ID_NUMBER)}>
-                    <input
-                      type="text"
-                      name="clientBIdNumber"
-                      value={formData.clientBIdNumber}
-                      onChange={handleChange}
-                      className={styles.input}
-                    />
-                  </Field>
+                <div className={styles.fieldsStack}>
+                  <FieldRow>
+                    <Field label={t(T.BOOKING.CLIENTS.FULL_NAME)}>
+                      <input
+                        type="text"
+                        name="clientBFullName"
+                        required={!isOption}
+                        value={formData.clientBFullName}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors?.clientBFullName ? 'is-invalid' : ''}`}
+                        title={formData.clientBFullName || undefined}
+                      />
+                      {errors?.clientBFullName && (
+                        <div className={styles.error}>{errors.clientBFullName}</div>
+                      )}
+                    </Field>
+                    <Field label={t(T.BOOKING.CLIENTS.ID_NUMBER)}>
+                      <input
+                        type="text"
+                        name="clientBIdNumber"
+                        value={formData.clientBIdNumber}
+                        onChange={handleChange}
+                        className={styles.input}
+                        title={formData.clientBIdNumber || undefined}
+                      />
+                    </Field>
+                  </FieldRow>
 
-                  <Field label={t(T.BOOKING.CLIENTS.PHONE_1)}>
-                    <input
-                      type="tel"
-                      name="clientBPhone"
-                      required={!isOption}
-                      value={formData.clientBPhone}
-                      onChange={handleChange}
-                      className={`${styles.input} ${errors?.clientBPhone ? 'is-invalid' : ''}`}
-                    />
-                    {errors?.clientBPhone && (
-                      <div className={styles.error}>{errors.clientBPhone}</div>
-                    )}
-                  </Field>
-                  <Field label={t(T.BOOKING.CLIENTS.PHONE_2)}>
-                    <input
-                      type="tel"
-                      name="clientBPhone2"
-                      value={formData.clientBPhone2}
-                      onChange={handleChange}
-                      className={styles.input}
-                    />
-                  </Field>
+                  <FieldRow>
+                    <Field label={t(T.BOOKING.CLIENTS.PHONE_1)}>
+                      <input
+                        type="tel"
+                        name="clientBPhone"
+                        required={!isOption}
+                        value={formData.clientBPhone}
+                        onChange={handleChange}
+                        className={`${styles.input} ${errors?.clientBPhone ? 'is-invalid' : ''}`}
+                        title={formData.clientBPhone || undefined}
+                      />
+                      {errors?.clientBPhone && (
+                        <div className={styles.error}>{errors.clientBPhone}</div>
+                      )}
+                    </Field>
+                    <Field label={t(T.BOOKING.CLIENTS.PHONE_2)}>
+                      <input
+                        type="tel"
+                        name="clientBPhone2"
+                        value={formData.clientBPhone2}
+                        onChange={handleChange}
+                        className={styles.input}
+                        title={formData.clientBPhone2 || undefined}
+                      />
+                    </Field>
+                  </FieldRow>
 
                   {renderEmailField('clientBEmail', T.BOOKING.CLIENTS.EMAIL)}
 
-                  <Field label={t(T.BOOKING.CLIENTS.CITY)}>
-                    <input
-                      type="text"
-                      name="clientBCity"
-                      value={formData.clientBCity}
-                      onChange={handleChange}
-                      className={styles.input}
-                    />
-                  </Field>
-                  <Field label={t(T.BOOKING.CLIENTS.ADDRESS)}>
-                    <input
-                      type="text"
-                      name="clientBAddress"
-                      value={formData.clientBAddress}
-                      onChange={handleChange}
-                      className={styles.input}
-                    />
-                  </Field>
+                  <FieldRow>
+                    <Field label={t(T.BOOKING.CLIENTS.CITY)}>
+                      <input
+                        type="text"
+                        name="clientBCity"
+                        value={formData.clientBCity}
+                        onChange={handleChange}
+                        className={styles.input}
+                        title={formData.clientBCity || undefined}
+                      />
+                    </Field>
+                    <Field label={t(T.BOOKING.CLIENTS.ADDRESS)}>
+                      <input
+                        type="text"
+                        name="clientBAddress"
+                        value={formData.clientBAddress}
+                        onChange={handleChange}
+                        className={styles.input}
+                        title={formData.clientBAddress || undefined}
+                      />
+                    </Field>
+                  </FieldRow>
                 </div>
               </section>
             </>
