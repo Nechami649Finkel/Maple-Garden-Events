@@ -54,5 +54,8 @@ export const CONTRACT_ANNEX_PLACEHOLDER = '{{CONTRACT_ANNEX}}';
 export const SECTION_DIVIDER = '────────────────────────────────';
 export const ANNEX_TITLE = 'נספח ההזמנה — פירוט לאירוע זה';
 
+/** Venue policy floor for billable portions (contracts + manager-approval threshold). */
+export const VENUE_MINIMUM_PORTIONS = 300;
+
 export const AVAILABLE_UPGRADES_INTRO =
   'להלן שירותים נוספים הניתנים לשדרוג האירוע. בחירה בהם תחייב את המזמין/ה בתוספת התשלום המפורט, בכפוף לזמינות ולאישור הנהלת גן מייפל אירועים.';
