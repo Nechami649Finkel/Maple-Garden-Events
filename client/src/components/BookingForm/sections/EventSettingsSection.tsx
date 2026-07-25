@@ -12,6 +12,7 @@ import {
   TIME_SLOT_KEYS,
 } from '@shared/i18n/bookingLookups';
 import { VENUE_MINIMUM_PORTIONS } from '@shared/contract';
+import styles from './EventSettingsSection.module.css';
 
 interface EventSettingsSectionProps {
   formData: BookingFormData;
@@ -74,41 +75,83 @@ const EventSettingsSection = ({
   return (
     <div className="card mb-3">
       <div className="card-header maple-section-header">{t(T.BOOKING.EVENT.SECTION_TITLE)}</div>
-      <div className="card-body">
-        <div className="row g-3">
+      <div className={`card-body ${styles.settingsBody}`}>
+        <div className={styles.stack}>
           {!isOption && (
-            <>
-              <div className="col-md-6">
-                <label className="form-label">{t(T.BOOKING.EVENT.FINAL_DATE_GREGORIAN)}</label>
-                <input
-                  type="text"
-                  name="calendarDateId"
-                  value={dateStr}
-                  readOnly
-                  className="form-control bg-light"
-                />
+            <div className={styles.row2}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.FINAL_DATE_GREGORIAN)}</label>
+                <div className={styles.control}>
+                  <input
+                    type="text"
+                    name="calendarDateId"
+                    value={dateStr}
+                    readOnly
+                    className="form-control bg-light"
+                  />
+                </div>
               </div>
-              <div className="col-md-6">
-                <label className="form-label">{t(T.BOOKING.EVENT.FINAL_DATE_HEBREW)}</label>
-                <input type="text" value={hebrewDateDisplay} readOnly className="form-control bg-light" />
+              <div className={styles.field}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.FINAL_DATE_HEBREW)}</label>
+                <div className={styles.control}>
+                  <input type="text" value={hebrewDateDisplay} readOnly className="form-control bg-light" />
+                </div>
               </div>
-            </>
+            </div>
           )}
 
-          <div className="col-md-6">
-            <label className="form-label">
-              {isOption ? t(T.BOOKING.EVENT.TIME_OF_DAY_OPTIONAL) : t(T.BOOKING.EVENT.TIME_OF_DAY)}
-            </label>
-            <select name="timeOfDay" required={!isOption} value={formData.timeOfDay} onChange={handleChange} className="form-select">
-              {isOption && <option value="">{t(T.BOOKING.EVENT.TIME_NOT_SELECTED)}</option>}
-              {sortSlotsForDisplay(availableSlots).map((slot: TimeSlot) => (
-                <option key={slot} value={slot}>
-                  {slotLabel(slot)} ({SLOT_HOURS[slot].start} - {SLOT_HOURS[slot].end})
-                </option>
-              ))}
-            </select>
+          <div>
+            <div className={styles.rowAlignEnd}>
+              <div className={styles.field}>
+                <label className={styles.label}>
+                  {isOption ? t(T.BOOKING.EVENT.TIME_OF_DAY_OPTIONAL) : t(T.BOOKING.EVENT.TIME_OF_DAY)}
+                </label>
+                <div className={styles.control}>
+                  <select
+                    name="timeOfDay"
+                    required={!isOption}
+                    value={formData.timeOfDay}
+                    onChange={handleChange}
+                    className="form-select"
+                  >
+                    {isOption && <option value="">{t(T.BOOKING.EVENT.TIME_NOT_SELECTED)}</option>}
+                    {sortSlotsForDisplay(availableSlots).map((slot: TimeSlot) => (
+                      <option key={slot} value={slot}>
+                        {slotLabel(slot)} ({SLOT_HOURS[slot].start} - {SLOT_HOURS[slot].end})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.START_TIME)}</label>
+                <div className={styles.control}>
+                  <input
+                    type="time"
+                    name="startTime"
+                    value={formData.startTime}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
+              </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.END_TIME)}</label>
+                <div className={styles.control}>
+                  <input
+                    type="time"
+                    name="endTime"
+                    value={formData.endTime}
+                    onChange={handleChange}
+                    className="form-control"
+                  />
+                </div>
+              </div>
+            </div>
             {!isEditMode && takenSlots.length > 0 && availableSlots.length > 0 && (
-              <div className="form-text maple-hint">
+              <div className={`form-text maple-hint ${styles.hint}`}>
                 {t(T.BOOKING.EVENT.AVAILABLE_SLOTS, {
                   slots: availableSlots.map((s: TimeSlot) => slotLabel(s)).join(', '),
                 })}
@@ -116,77 +159,142 @@ const EventSettingsSection = ({
             )}
           </div>
 
-          <div className="col-md-3">
-            <label className="form-label">{t(T.BOOKING.EVENT.START_TIME)}</label>
-            <input type="time" name="startTime" value={formData.startTime} onChange={handleChange} className="form-control" />
-          </div>
-          <div className="col-md-3">
-            <label className="form-label">{t(T.BOOKING.EVENT.END_TIME)}</label>
-            <input type="time" name="endTime" value={formData.endTime} onChange={handleChange} className="form-control" />
-          </div>
-          <div className="col-12">
-            <p className="maple-time-note">{t(T.BOOKING.EVENT.OVERTIME_NOTE)}</p>
-          </div>
+          <p className={`maple-time-note ${styles.note}`}>{t(T.BOOKING.EVENT.OVERTIME_NOTE)}</p>
 
           {formData.eventType !== HALL_ONLY_EVENT_TYPE && (
-            <div className="col-md-6">
-              <label className="form-label">{t(T.BOOKING.EVENT.SERVING_STYLE)}</label>
-              <select value={servingStyle || DEFAULT_SERVING_STYLE} onChange={(e) => setServingStyle(e.target.value)} className="form-select">
-                {Object.entries(SERVING_STYLE_KEYS).map(([value, key]) => (
-                  <option key={value} value={value}>{t(key)}</option>
-                ))}
-              </select>
+            <div className={styles.row2}>
+              <div className={styles.field}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.SERVING_STYLE)}</label>
+                <div className={styles.control}>
+                  <select
+                    value={servingStyle || DEFAULT_SERVING_STYLE}
+                    onChange={(e) => setServingStyle(e.target.value)}
+                    className="form-select"
+                  >
+                    {Object.entries(SERVING_STYLE_KEYS).map(([value, key]) => (
+                      <option key={value} value={value}>{t(key)}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {isFoodRelevant ? (
+                <div className={styles.field}>
+                  <label className={styles.label}>
+                    {isOption ? t(T.BOOKING.EVENT.GUEST_COUNT_OPTIONAL) : t(T.BOOKING.EVENT.GUEST_COUNT)}
+                  </label>
+                  <div className={styles.control}>
+                    <input
+                      type="number"
+                      name="guestCount"
+                      required={!isOption}
+                      value={formData.guestCount}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
+                  </div>
+                  {Number(formData.guestCount) > 0 &&
+                    Number(formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
+                    <div className={`form-text text-warning fw-semibold ${styles.hint}`} role="status">
+                      {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className={styles.field} aria-hidden="true" />
+              )}
             </div>
           )}
 
           {isFoodRelevant && (
             <>
-              <div className="col-md-4">
-                <label className="form-label">
-                  {isOption ? t(T.BOOKING.EVENT.GUEST_COUNT_OPTIONAL) : t(T.BOOKING.EVENT.GUEST_COUNT)}
-                </label>
-                <input type="number" name="guestCount" required={!isOption} value={formData.guestCount} onChange={handleChange} className="form-control" />
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">{t(T.BOOKING.EVENT.MINIMUM_GUEST_COUNT)}</label>
-                <input type="number" name="minimumGuestCount" min="0" value={formData.minimumGuestCount} readOnly className="form-control bg-light" />
-                {Number(formData.minimumGuestCount || formData.guestCount) > 0 &&
-                  Number(formData.minimumGuestCount || formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
-                  <div className="form-text text-warning fw-semibold" role="status">
-                    {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+              {formData.eventType === HALL_ONLY_EVENT_TYPE && (
+                <div className={styles.row2}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      {isOption ? t(T.BOOKING.EVENT.GUEST_COUNT_OPTIONAL) : t(T.BOOKING.EVENT.GUEST_COUNT)}
+                    </label>
+                    <div className={styles.control}>
+                      <input
+                        type="number"
+                        name="guestCount"
+                        required={!isOption}
+                        value={formData.guestCount}
+                        onChange={handleChange}
+                        className="form-control"
+                      />
+                    </div>
+                    {Number(formData.guestCount) > 0 &&
+                      Number(formData.guestCount) < VENUE_MINIMUM_PORTIONS && (
+                      <div className={`form-text text-warning fw-semibold ${styles.hint}`} role="status">
+                        {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className="col-md-4">
-                <label className="form-label">{t(T.BOOKING.EVENT.OPTIONAL_GUEST_COUNT)}</label>
-                <input type="number" name="optionalGuestCount" min="0" value={formData.optionalGuestCount} onChange={handleChange} className="form-control" />
-                <div className="form-text maple-hint">{t(T.BOOKING.EVENT.OPTIONAL_GUEST_HINT)}</div>
+                  <div className={styles.field} aria-hidden="true" />
+                </div>
+              )}
+
+              <div className={styles.row2}>
+                <div className={styles.field}>
+                  <label className={styles.label}>{t(T.BOOKING.EVENT.OPTIONAL_GUEST_COUNT)}</label>
+                  <div className={styles.control}>
+                    <input
+                      type="number"
+                      name="optionalGuestCount"
+                      min="0"
+                      value={formData.optionalGuestCount}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
+                  </div>
+                  <div className={`form-text maple-hint ${styles.hint}`}>
+                    {t(T.BOOKING.EVENT.OPTIONAL_GUEST_HINT)}
+                  </div>
+                </div>
+                <div className={styles.field} aria-hidden="true" />
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label">
-                  {isOption ? t(T.BOOKING.EVENT.PORTION_PRICE_OPTIONAL) : t(T.BOOKING.EVENT.PORTION_PRICE_REQUIRED)}
-                </label>
-                <input type="number" name="finalPricePortion" value={formData.finalPricePortion} required={!isOption} onChange={handleChange} className="form-control" />
+              <div className={styles.row2}>
+                <div className={styles.field}>
+                  <label className={styles.label}>
+                    {isOption ? t(T.BOOKING.EVENT.PORTION_PRICE_OPTIONAL) : t(T.BOOKING.EVENT.PORTION_PRICE_REQUIRED)}
+                  </label>
+                  <div className={styles.control}>
+                    <input
+                      type="number"
+                      name="finalPricePortion"
+                      value={formData.finalPricePortion}
+                      required={!isOption}
+                      onChange={handleChange}
+                      className="form-control"
+                    />
+                  </div>
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label}>{t(T.BOOKING.EVENT.KOSHER_TYPE)}</label>
+                  <div className={styles.control}>
+                    <select
+                      value={kosherType}
+                      onChange={(e) => setKosherType(e.target.value)}
+                      className="form-select"
+                    >
+                      {(Object.keys(KOSHER_TYPE_KEYS) as Array<keyof typeof KOSHER_TYPE_KEYS>).map((key) => {
+                        const extra = KOSHER_TYPE_EXTRAS[key];
+                        return (
+                          <option key={key} value={key}>
+                            {t(KOSHER_TYPE_KEYS[key])}
+                            {extra > 0 ? ` ${t(T.BOOKING.EVENT.KOSHER_EXTRA, { extra: formatNumber(extra, locale) })}` : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label">{t(T.BOOKING.EVENT.KOSHER_TYPE)}</label>
-                <select value={kosherType} onChange={(e) => setKosherType(e.target.value)} className="form-select">
-                  {(Object.keys(KOSHER_TYPE_KEYS) as Array<keyof typeof KOSHER_TYPE_KEYS>).map((key) => {
-                    const extra = KOSHER_TYPE_EXTRAS[key];
-                    return (
-                      <option key={key} value={key}>
-                        {t(KOSHER_TYPE_KEYS[key])}
-                        {extra > 0 ? ` ${t(T.BOOKING.EVENT.KOSHER_EXTRA, { extra: formatNumber(extra, locale) })}` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">{t(T.BOOKING.EVENT.VIEW_MENU)}</label>
+              <div className={styles.full}>
+                <label className={styles.label}>{t(T.BOOKING.EVENT.VIEW_MENU)}</label>
                 <div
                   onClick={() => setIsMenuViewOpen(true)}
                   onKeyDown={(e) => e.key === 'Enter' && setIsMenuViewOpen(true)}
