@@ -45,7 +45,14 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
   const headers = new Headers(options.headers || {});
 
   if (isMutatingMethod(method)) {
-    const csrf = getCsrfToken();
+    let csrf = getCsrfToken();
+    // Cookie may be stale/missing after restart — refresh session to mint a new CSRF token.
+    if (!csrf && !retried && !url.includes('/api/auth/')) {
+      const refreshed = await refreshSession();
+      if (refreshed) {
+        csrf = getCsrfToken();
+      }
+    }
     if (csrf) {
       headers.set(CSRF_HEADER, csrf);
     }
@@ -73,6 +80,18 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
       }
     }
 
+    // Retry once on CSRF failure after refreshing cookies.
+    if (response.status === 403 && !retried && isMutatingMethod(method) && !isAuthEndpoint) {
+      const body = await response.clone().json().catch(() => null);
+      const msg = typeof body?.message === 'string' ? body.message : '';
+      if (/csrf/i.test(msg)) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          return secureFetch(url, options, true);
+        }
+      }
+    }
+
     return response;
   } catch (error) {
     const isNetworkError =
@@ -89,8 +108,10 @@ export async function secureFetch(url: string, options: RequestInit = {}, retrie
 }
 
 export const apiFetch = async (url: string, options: RequestInit = {}) => {
+  const isFormData =
+    typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = {
-    'Content-Type': 'application/json',
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers || {}),
   };
 
@@ -141,21 +162,40 @@ export async function getAuthUser(): Promise<AuthUserInfo | null> {
       const refreshed = await refreshSession();
       if (refreshed) {
         response = await secureFetch(`${API_BASE}/api/auth/me`);
+      } else {
+        clearUserCache();
+        return null;
       }
     }
-    if (!response.ok) return loadUserCache();
+    if (!response.ok) {
+      clearUserCache();
+      return null;
+    }
     const json = await response.json();
     if (json.user) {
       saveUserCache(json.user);
       return json.user as AuthUserInfo;
     }
+    clearUserCache();
     return null;
   } catch {
+    // Offline / network failure: fall back to short-lived session cache if present.
     return loadUserCache();
   }
 }
 
+const AUTH_BOOTSTRAP_TIMEOUT_MS = 8000;
+
 export async function checkAuthSession(): Promise<boolean> {
-  const user = await getAuthUser();
-  return user !== null;
+  try {
+    const user = await Promise.race([
+      getAuthUser(),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), AUTH_BOOTSTRAP_TIMEOUT_MS);
+      }),
+    ]);
+    return user !== null;
+  } catch {
+    return false;
+  }
 }

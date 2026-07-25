@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createTranslator } from '../vendor/shared/i18n/resolve';
+import { getBrandI18nParams } from '../vendor/shared/brand/index';
 import {
   DEFAULT_LOCALE,
   isLocale,
@@ -29,7 +30,13 @@ function getCatalog(): Record<Locale, TranslationTree> {
 }
 
 export function getServerTranslation(locale: Locale = DEFAULT_LOCALE): Translator {
-  return createTranslator(locale, getCatalog());
+  const base = createTranslator(locale, getCatalog());
+  const venueParams = getBrandI18nParams(locale);
+  return {
+    locale: base.locale,
+    t: (key, params) => base.t(key, { ...venueParams, ...params }),
+    tp: (key, count, params) => base.tp(key, count, { ...venueParams, ...params }),
+  };
 }
 
 export function resolveRequestLocale(

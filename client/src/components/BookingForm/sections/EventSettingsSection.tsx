@@ -52,7 +52,16 @@ const EventSettingsSection = ({
 
   const slotLabel = (slot: TimeSlot) => t(TIME_SLOT_KEYS[slot]);
 
-  const dateStr = selectedDatesDisplay.map((d) => d.date).join(', ');
+  const formatGregorianDate = (isoDate: string) => {
+    if (!isoDate) return '';
+    const parts = isoDate.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+    return isoDate;
+  };
+
+  const dateStr = selectedDatesDisplay.map((d) => formatGregorianDate(d.date)).join(', ');
   const hebrewDateDisplay = selectedDatesDisplay.map((d) => {
     if (d.hebrewDate) {
       return `${d.hebrewDate} (${formatWeekdayLabel(d.date)})`;
@@ -70,7 +79,13 @@ const EventSettingsSection = ({
             <>
               <div className="col-md-6">
                 <label className="form-label">{t(T.BOOKING.EVENT.FINAL_DATE_GREGORIAN)}</label>
-                <input type="text" name="calendarDateId" value={dateStr} readOnly className="form-control bg-light" />
+                <input
+                  type="text"
+                  name="calendarDateId"
+                  value={dateStr}
+                  readOnly
+                  className="form-control bg-light"
+                />
               </div>
               <div className="col-md-6">
                 <label className="form-label">{t(T.BOOKING.EVENT.FINAL_DATE_HEBREW)}</label>
@@ -134,7 +149,12 @@ const EventSettingsSection = ({
               <div className="col-md-4">
                 <label className="form-label">{t(T.BOOKING.EVENT.MINIMUM_GUEST_COUNT)}</label>
                 <input type="number" name="minimumGuestCount" min="0" value={formData.minimumGuestCount} readOnly className="form-control bg-light" />
-                <div className="form-text maple-hint">{t(T.BOOKING.EVENT.MINIMUM_AUTO_HINT)}</div>
+                {Number(formData.minimumGuestCount || formData.guestCount) > 0 &&
+                  Number(formData.minimumGuestCount || formData.guestCount) < 300 && (
+                  <div className="form-text text-warning fw-semibold" role="status">
+                    {t(T.BOOKING.EVENT.MANAGER_APPROVAL_REQUIRED)}
+                  </div>
+                )}
               </div>
               <div className="col-md-4">
                 <label className="form-label">{t(T.BOOKING.EVENT.OPTIONAL_GUEST_COUNT)}</label>

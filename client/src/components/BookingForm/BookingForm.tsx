@@ -34,7 +34,6 @@ import SignatureCanvas from 'react-signature-canvas';
 import ClientsSection from './sections/ClientsSection';
 import EventSettingsSection from './sections/EventSettingsSection';
 import UpgradesSection from './sections/UpgradesSection';
-import UpgradeTablesPanel from '../Contract/UpgradeTablesPanel';
 import PaymentAndUpgradesSection from './sections/PaymentAndUpgradesSection';
 import ContractModal from './sections/ContractModal';
 import MetaBar from './sections/MetaBar';
@@ -222,7 +221,15 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const isOptionMode = !convertFromOption && (forcedIsOption || location.state?.isOption);
   const calendarEventTypeFilter = location.state?.eventTypeFilter || '';
   const [isOption, setIsOption] = useState(isOptionMode);
-  const defaultEventTypeForForm = calendarEventTypeFilter === DEFAULT_EVENT_TYPE ? DEFAULT_EVENT_TYPE : '';
+  // Option forms default to Wedding; still editable. Closing an event keeps filter-based default.
+  // Option UI must not inherit the calendar's "אירוע אחר" filter — that filter hides Wedding
+  // from the select options and leaves the field looking like the empty placeholder.
+  const metaBarEventTypeFilter = isOptionMode ? '' : calendarEventTypeFilter;
+  const defaultEventTypeForForm = isOptionMode
+    ? DEFAULT_EVENT_TYPE
+    : calendarEventTypeFilter === DEFAULT_EVENT_TYPE
+      ? DEFAULT_EVENT_TYPE
+      : '';
   const [optionDurationHours, setOptionDurationHours] = useState(48);
   const [orderNumber, setOrderNumber] = useState('');
   const [optionDatesSlotWarning, setOptionDatesSlotWarning] = useState('');
@@ -243,7 +250,6 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const [servingStyle, setServingStyle] = useState(DEFAULT_SERVING_STYLE);
   const [kosherType, setKosherType] = useState(DEFAULT_KOSHER_TYPE);
   const [upgrades, setUpgrades] = useState({ ...DEFAULT_UPGRADES });
-  const [addingUpgradeKey, setAddingUpgradeKey] = useState<string | null>(null);
   const [depositMethod, setDepositMethod] = useState('');
   const [checkScanning, setCheckScanning] = useState(false);
   const [contractSigned, setContractSigned] = useState(false);
@@ -286,7 +292,15 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     const restore = window.confirm(t(T.BOOKING.FORM.DRAFT_RESTORE_CONFIRM));
     if (restore) {
-      setFormData((prev) => ({ ...prev, ...(draft.formData as typeof prev) }));
+      const draftEventType = String((draft.formData as { eventType?: string }).eventType || '').trim();
+      setFormData((prev) => ({
+        ...prev,
+        ...(draft.formData as typeof prev),
+        // Keep Wedding default on option drafts that were saved without an event type.
+        eventType:
+          draftEventType ||
+          (isOptionMode ? DEFAULT_EVENT_TYPE : prev.eventType),
+      }));
       setMenuNotesList(draft.menuNotesList);
       setInternalNotesList(draft.internalNotesList);
       setServingStyle(draft.servingStyle);
@@ -304,6 +318,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
     }
     setDraftRestored(true);
   }, [isEditMode, userEmail, draftRestored, isOptionMode]);
+
+  // Hard guarantee: new option forms always show Wedding, even if a draft/filter raced.
+  useEffect(() => {
+    if (isEditMode || !isOptionMode) return;
+    if (formData.eventType) return;
+    setFormData((prev) => (prev.eventType ? prev : { ...prev, eventType: DEFAULT_EVENT_TYPE }));
+  }, [isEditMode, isOptionMode, formData.eventType]);
 
   const buildDraftSnapshot = (): BookingDraftSnapshot => ({
     formData: { ...formData },
@@ -411,22 +432,38 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   }, [isOption, formData.timeOfDay, formData.eventType, selectedDatesDisplay]);
 
   useEffect(() => {
-    if (isEditMode && convertFromOption) return;
+    // Existing bookings already have a code; convert-from-option uses the EVT peek below.
+    if (isEditMode || convertFromOption) return;
+
+    let cancelled = false;
     const dateCount = Math.max(selectedDatesDisplay.length, 1);
     const prefix = isOption ? 'OPT' : 'EVT';
 
     const loadNextCode = async () => {
       try {
-        const res = await apiFetch(`${API_URL}/bookings/next-code?prefix=${prefix}&count=${dateCount}`);
+        const res = await apiFetch(
+          `${API_URL}/bookings/next-code?prefix=${prefix}&count=${dateCount}`,
+        );
         const json = await res.json();
+        if (cancelled) return;
         if (!res.ok || !json.success) return;
-        const codes: string[] = json.data.codes || [];
+        const codes: string[] = Array.isArray(json.data?.codes)
+          ? json.data.codes
+          : json.data?.code
+            ? [json.data.code]
+            : [];
         if (codes.length === 0) return;
-        if (codes.length === 1) setOrderNumber(codes[0]);
-        else setOrderNumber(`${codes[0]} – ${codes[codes.length - 1]}`);
-      } catch {}
+        setOrderNumber(
+          codes.length === 1 ? codes[0] : `${codes[0]} – ${codes[codes.length - 1]}`,
+        );
+      } catch {
+        // Keep empty; MetaBar shows "assigned on save" placeholder.
+      }
     };
     loadNextCode();
+    return () => {
+      cancelled = true;
+    };
   }, [isEditMode, convertFromOption, isOption, selectedDatesDisplay.length]);
 
   useEffect(() => {
@@ -651,30 +688,6 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
   const handleUpgradeChange = (key: keyof typeof upgrades) => {
     if (key === 'baseDesign') return;
     setUpgrades((prev) => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleAddUpgrade = async (key: UpgradeKey) => {
-    setAddingUpgradeKey(key);
-    try {
-      if (editId) {
-        const res = await apiFetch(`${API_URL}/bookings/${editId}/upgrades`, {
-          method: 'PATCH',
-          body: JSON.stringify({ upgradeKey: key }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json.success) {
-          alert(json.message || t(T.BOOKING.ALERTS.UPGRADE_ADD_FAILED));
-          return;
-        }
-        setUpgrades((prev) => ({ ...prev, [key]: true }));
-        if (json.data?.contractText) setContractText(json.data.contractText);
-        if (json.data?.paymentTermsText) setPaymentTermsText(json.data.paymentTermsText);
-        return;
-      }
-      setUpgrades((prev) => ({ ...prev, [key]: true }));
-    } finally {
-      setAddingUpgradeKey(null);
-    }
   };
 
   const processCheckImage = async (imageSrc: string) => {
@@ -1134,7 +1147,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         )}
 
         <form className="card-body" onSubmit={handleSubmit}>
-          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} calendarEventTypeFilter={calendarEventTypeFilter} />
+          <MetaBar formData={formData} handleChange={handleChange} isOption={isOption} orderNumber={orderNumber} optionDurationHours={optionDurationHours} setOptionDurationHours={setOptionDurationHours} selectedDatesDisplay={selectedDatesDisplay} calendarEventTypeFilter={metaBarEventTypeFilter} />
           {convertFromOption && relatedOptions.length > 1 && (
             <FinalizeOptionDatesBar
               relatedOptions={relatedOptions}
@@ -1154,24 +1167,13 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
 
           <div className="row g-3 maple-form-columns">
             <div className="col-lg-4">
-              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} setErrors={setErrors} isWedding={isWedding} isOption={isOption} />
+              <ClientsSection formData={formData} handleChange={handleChange} errors={errors} isWedding={isWedding} isOption={isOption} />
               <UpgradesSection
                 upgrades={upgrades}
                 handleUpgradeChange={handleUpgradeChange}
                 upgradesPricing={upgradesPricing}
                 upgradeDisplayOrder={visibleUpgradeKeys}
                 isHallOnly={isHallOnly}
-              />
-              <UpgradeTablesPanel
-                upgrades={upgrades}
-                onAddUpgrade={handleAddUpgrade}
-                upgradesPricing={upgradesPricing}
-                kosherType={kosherType}
-                guestCount={Number(formData.guestCount) || 0}
-                isHallOnly={isHallOnly}
-                isFoodRelevant={isFoodRelevant}
-                upgradeDisplayOrder={visibleUpgradeKeys}
-                addingKey={addingUpgradeKey}
               />
               {!isOption && (
                 <div className="card border-info mb-3">
@@ -1322,6 +1324,7 @@ const BookingForm = ({ initialDates, isOption: forcedIsOption }: BookingFormProp
         contractText={contractText}
         onContractTextChange={setContractText}
         bookingId={editId}
+        savedSignature={savedSignature}
       />
 
       {isMenuViewOpen && (

@@ -1,31 +1,56 @@
 import Redis from 'ioredis';
 import { logger } from '../utils/logger';
 
-// If REDIS_URL is not set, we'll try to connect to the local docker container by default
-const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
+/**
+ * Redis is optional. Only connect when REDIS_URL is explicitly set.
+ * Local Windows/dev without Redis must not spam reconnect errors on :6379.
+ */
+const redisUrl = (process.env.REDIS_URL || '').trim();
 
-// We create a lazily initialized client so the app doesn't crash if Redis is down
 let redisClient: Redis | null = null;
+let redisGaveUp = false;
 
-try {
-  redisClient = new Redis(redisUrl, {
-    lazyConnect: true, // Connect when the first command is sent
-    retryStrategy(times) {
-      const delay = Math.min(times * 50, 2000);
-      return delay;
-    }
-  });
+if (!redisUrl) {
+  logger.info('Redis disabled — caching skipped (set REDIS_URL to enable)');
+} else {
+  try {
+    let errorLogCount = 0;
 
-  redisClient.on('error', (err) => {
-    logger.error('Redis connection error', { error: err });
-  });
+    redisClient = new Redis(redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      retryStrategy(times) {
+        if (times > 5) {
+          redisGaveUp = true;
+          logger.warn('Redis unavailable — stopped reconnect attempts');
+          return null;
+        }
+        return Math.min(times * 200, 2000);
+      },
+    });
 
-  redisClient.on('connect', () => {
-    logger.info('Connected to Redis server');
-  });
+    redisClient.on('error', (err) => {
+      errorLogCount += 1;
+      // Avoid flooding logs when Redis is down (e.g. local Windows without Docker).
+      if (errorLogCount <= 3 || errorLogCount % 100 === 0) {
+        logger.error('Redis connection error', { error: err, count: errorLogCount });
+      }
+    });
 
-} catch (err) {
-  logger.error('Failed to initialize Redis client', { error: err });
+    redisClient.on('connect', () => {
+      redisGaveUp = false;
+      errorLogCount = 0;
+      logger.info('Connected to Redis server');
+    });
+  } catch (err) {
+    logger.error('Failed to initialize Redis client', { error: err });
+    redisClient = null;
+  }
+}
+
+export function isRedisAvailable(): boolean {
+  return !!redisClient && redisClient.status === 'ready' && !redisGaveUp;
 }
 
 export { redisClient };

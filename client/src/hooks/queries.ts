@@ -228,6 +228,32 @@ export function useKashrutQuery() {
   });
 }
 
+export function useDesignGalleryQuery(options?: {
+  includeInactive?: boolean;
+  category?: string;
+  enabled?: boolean;
+}) {
+  const includeInactive = options?.includeInactive ?? false;
+  const category = options?.category;
+  const enabled = options?.enabled ?? true;
+  return useQuery({
+    queryKey: ['design-gallery', { includeInactive, category }],
+    enabled,
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (includeInactive) params.set('includeInactive', 'true');
+      if (category) params.set('category', category);
+      const qs = params.toString();
+      const res = await apiFetch(
+        `${API_URL}/design-gallery${qs ? `?${qs}` : ''}`,
+      );
+      if (!res.ok) throw new Error(`design-gallery ${res.status}`);
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    },
+  });
+}
+
 export function useEventFormsQuery() {
   return useQuery({
     queryKey: ['event-forms'],

@@ -129,9 +129,12 @@ const CalendarCell = memo(({
         {day.isCurrentMonth && day.candleTime && <span className="candle-time">{day.candleTime}</span>}
         <span className="hebrew-text">{day.isCurrentMonth ? day.hebrewDate : ''}</span>
       </div>
-      
-      <div className="cell-status-text">{day.isCurrentMonth ? (day.reason || '') : ''}</div>
-      <div className="cell-events-container">
+
+      {/* When events exist, prefer showing them over the period label (e.g. בין הזמנים). */}
+      {day.isCurrentMonth && bookingCount === 0 && day.reason && (
+        <div className="cell-status-text">{day.reason}</div>
+      )}
+      <div className={`cell-events-container${bookingCount > 0 ? ' has-events' : ''}`}>
         {sortBookingsForCalendarCell(day.bookings).map((b: any, idx: number) => {
           const baseColor = getSlotColor(b.timeOfDay);
           const isOptionBooking = b.isOption === true;

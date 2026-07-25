@@ -8,7 +8,7 @@ const DRAFT_PREFIX = 'maple-draft:event-form:';
 const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export interface EventFormDraftSnapshot {
-  formData: Record<string, unknown>;
+  formData: object;
   hasHonorTable: boolean | null;
   hasEntertainers: boolean | null;
   notesList: string[];

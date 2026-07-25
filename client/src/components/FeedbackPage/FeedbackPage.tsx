@@ -15,7 +15,9 @@ interface Ratings {
   venue: number;
 }
 
-type PageStatus = 'loading' | 'active' | 'submitted' | 'error';
+type PageStatus = 'loading' | 'active' | 'submitted' | 'already' | 'error';
+
+const ALREADY_SUBMITTED_CODE = 'ALREADY_SUBMITTED';
 
 const StarRating: React.FC<{
   label: string;
@@ -77,6 +79,12 @@ const FeedbackPage: React.FC = () => {
             clientSide: data.clientSide,
           });
           setStatus('active');
+        } else if (
+          response.status === 409
+          || data.code === ALREADY_SUBMITTED_CODE
+        ) {
+          setStatus('already');
+          setErrorMessage(data.message || t(T.FEEDBACK.ALREADY_PARTICIPATED_MESSAGE));
         } else {
           setStatus('error');
           setErrorMessage(data.message || t(T.FEEDBACK.LINK_USED));
@@ -117,6 +125,13 @@ const FeedbackPage: React.FC = () => {
 
       if (response.ok && data.success) {
         setStatus('submitted');
+      } else if (
+        response.status === 409
+        || data.code === ALREADY_SUBMITTED_CODE
+      ) {
+        setStatus('already');
+        setErrorMessage(data.message || t(T.FEEDBACK.ALREADY_PARTICIPATED_MESSAGE));
+        setIsSubmitting(false);
       } else {
         alert(data.message || t(T.FEEDBACK.SAVE_ERROR));
         setIsSubmitting(false);
@@ -135,6 +150,21 @@ const FeedbackPage: React.FC = () => {
           <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
           <h2 className={styles.title}>{t(T.FEEDBACK.LOADING_TITLE)}</h2>
           <p className={styles.subtitle}>{t(T.FEEDBACK.LOADING_SUBTITLE)}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (status === 'already') {
+    return (
+      <div className={styles.container}>
+        <div className={`${styles.card} ${styles.messageBox}`}>
+          <img src="/logo.png" alt={t(T.UI.BRAND_ALT)} className={styles.logo} />
+          <div className={styles.iconBig}>🤍</div>
+          <h2 className={styles.title}>{t(T.FEEDBACK.ALREADY_PARTICIPATED_TITLE)}</h2>
+          <p className={styles.subtitle}>
+            {errorMessage || t(T.FEEDBACK.ALREADY_PARTICIPATED_MESSAGE)}
+          </p>
         </div>
       </div>
     );

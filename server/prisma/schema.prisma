@@ -33,6 +33,7 @@ model Tenant {
   authorizedUsers          AuthorizedUser[]
   scheduledGreetings       ScheduledGreeting[]
   whatsappInboundMessages  WhatsAppInboundMessage[]
+  designGalleryItems       DesignGalleryItem[]
 }
 
 model Booking {
@@ -316,6 +317,27 @@ model ExtraService {
   @@index([tenantId])
 }
 
+/** Catalog of design options (tablecloths, napkins, etc.) with images for the event form gallery. */
+model DesignGalleryItem {
+  id           String   @id @default(uuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  category     String
+  name         String
+  description  String?
+  modelCode    String?
+  imageUrl     String
+  /** Lightweight WebP (or equivalent) for grid display; falls back to imageUrl when null. */
+  thumbnailUrl String?
+  sortOrder    Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, category])
+}
+
 model StaffMember {
   id        String   @id @default(uuid())
   tenantId  String
@@ -327,20 +349,29 @@ model StaffMember {
   @@index([tenantId])
 }
 
+/**
+ * Feedback token + result (hybrid FeedbackToken / FeedbackResult).
+ * - token / isCompleted / completedAt → one-time response link per side
+ * - foodRating / serviceRating / venueRating / comments → quantitative result
+ * bookingId is the event reference (no separate Event table).
+ */
 model Feedback {
   id                String    @id @default(uuid())
   tenantId          String
   tenant            Tenant    @relation(fields: [tenantId], references: [id])
   bookingId         String
+  /** Side A / Side B ('A' | 'B') for dual-sided events */
   clientSide        String
   clientName        String?
   foodRating        Int?
   serviceRating     Int?
+  /** Venue / hall quality (maps to "Cleanliness" category in product language). */
   venueRating       Int?
   averageScore      Float?
   comments          String?
   token             String    @unique
   isCompleted       Boolean   @default(false)
+  completedAt       DateTime?
   lastNotifiedAt    DateTime?
   lastEmailSent     Boolean   @default(false)
   lastWhatsappSent  Boolean   @default(false)

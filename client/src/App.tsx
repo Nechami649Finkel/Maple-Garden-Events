@@ -95,9 +95,13 @@ function App() {
   useEffect(() => {
     if (isDesignRoute) return;
     let cancelled = false;
-    checkAuthSession().then((authenticated) => {
-      if (!cancelled) setIsAuthenticated(authenticated);
-    });
+    checkAuthSession()
+      .then((authenticated) => {
+        if (!cancelled) setIsAuthenticated(authenticated);
+      })
+      .catch(() => {
+        if (!cancelled) setIsAuthenticated(false);
+      });
     return () => {
       cancelled = true;
     };

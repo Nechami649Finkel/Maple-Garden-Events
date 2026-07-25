@@ -10,6 +10,7 @@ import {
   useKashrutQuery,
 } from '../../hooks/queries';
 import { AuthorizedUsers } from './AuthorizedUsers';
+import { DesignGalleryAdmin } from './DesignGalleryAdmin';
 import { LanguageSwitcher } from '../../i18n/LanguageSwitcher';
 import { PageLoader } from '../PageLoader/PageLoader';
 import PaymentTemplatesSettings from './PaymentTemplatesSettings';
@@ -506,6 +507,8 @@ export const SettingsManager = () => {
             </tbody>
           </table>
         </div>
+
+        <DesignGalleryAdmin />
 
         <div className="settings-card">
           <h2>{t(T.SETTINGS.STAFF_TITLE)}</h2>

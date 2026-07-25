@@ -10,11 +10,26 @@ import {
   isLocalClientUrl,
   sendFeedbackLinkForRecord,
 } from '../utils/feedbackHelpers';
+import {
+  detectFeedbackDiscrepancy,
+  getFeedbackDashboardUrl,
+} from '../utils/feedbackAnomaly';
 import { sendManagerFinancialAlertEmail } from '../utils/mailer';
+import { sendManagerFinancialAlert } from '../utils/whatsapp';
+import { getBrandConfig } from '../vendor/shared/brand/index';
 import { paginationMeta, parsePagination } from '../utils/pagination';
 import { logger } from '../utils/logger';
 import { calendarKeyFromDbDate } from '../utils/dateLocal';
 import { emitFeedbackUpdated } from '../utils/realtime';
+import {
+  DEFAULT_LOCALE,
+  getServerTranslation,
+  resolveLocaleFromRequest,
+  T,
+} from '../i18n/getServerTranslation';
+
+const FEEDBACK_ALREADY_SUBMITTED_CODE = 'ALREADY_SUBMITTED';
+const MANAGER_PHONE = process.env.MANAGER_PHONE || '0501234567';
 
 type AdminSide = {
   id: string | null;
@@ -211,6 +226,8 @@ function buildAdminGroup(
 
 export const feedbackController = {
   async verifyToken(req: Request, res: Response) {
+    const locale = resolveLocaleFromRequest(req, DEFAULT_LOCALE);
+    const { t } = getServerTranslation(locale);
     try {
       const token = req.params.token as string;
 
@@ -219,11 +236,18 @@ export const feedbackController = {
       });
 
       if (!feedback) {
-        return res.status(404).json({ success: false, message: 'הקישור אינו חוקי או שפג תוקפו.' });
+        return res.status(404).json({
+          success: false,
+          message: t(T.SERVER.ERRORS.FEEDBACK.INVALID_LINK),
+        });
       }
 
       if (feedback.isCompleted) {
-        return res.status(400).json({ success: false, message: 'תודה! המשוב עבור אירוע זה כבר התקבל.' });
+        return res.status(409).json({
+          success: false,
+          code: FEEDBACK_ALREADY_SUBMITTED_CODE,
+          message: t(T.SERVER.ERRORS.FEEDBACK.ALREADY_SUBMITTED),
+        });
       }
 
       res.status(200).json({
@@ -233,77 +257,162 @@ export const feedbackController = {
       });
     } catch (error) {
       logger.error('Error verifying feedback token', { error });
-      res.status(500).json({ success: false, message: 'שגיאת שרת בבדיקת הקישור.' });
+      res.status(500).json({
+        success: false,
+        message: t(T.SERVER.ERRORS.FEEDBACK.LINK_CHECK_FAILED),
+      });
     }
   },
 
   async submitFeedback(req: Request, res: Response) {
+    const locale = resolveLocaleFromRequest(req, DEFAULT_LOCALE);
+    const { t } = getServerTranslation(locale);
     try {
       const token = req.params.token as string;
       const { foodRating, serviceRating, venueRating, comments } = req.body;
 
-      const existingFeedback = await prisma.feedback.findUnique({
-        where: { token },
-        include: { booking: true },
+      const scores = [foodRating, serviceRating, venueRating].filter(
+        (val): val is number => typeof val === 'number',
+      );
+      const averageScore =
+        scores.length > 0
+          ? Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2))
+          : null;
+
+      const txResult = await prisma.$transaction(async (tx) => {
+        const existing = await tx.feedback.findUnique({
+          where: { token },
+          include: { booking: true },
+        });
+
+        if (!existing) {
+          return { kind: 'not_found' as const };
+        }
+        if (existing.isCompleted) {
+          return { kind: 'already' as const };
+        }
+
+        const claimed = await tx.feedback.updateMany({
+          where: { token, isCompleted: false },
+          data: {
+            foodRating,
+            serviceRating,
+            venueRating,
+            comments,
+            averageScore,
+            isCompleted: true,
+            completedAt: new Date(),
+          },
+        });
+
+        if (claimed.count === 0) {
+          return { kind: 'already' as const };
+        }
+
+        const updated = await tx.feedback.findUniqueOrThrow({ where: { token } });
+        const siblings = await tx.feedback.findMany({
+          where: { bookingId: existing.bookingId },
+        });
+
+        return {
+          kind: 'ok' as const,
+          updated,
+          siblings,
+          bookingId: existing.bookingId,
+          clientName: existing.clientName,
+          clientSide: existing.clientSide,
+        };
       });
 
-      if (!existingFeedback || existingFeedback.isCompleted) {
-        return res.status(400).json({ success: false, message: 'לא ניתן לשמור את המשוב.' });
+      if (txResult.kind === 'not_found') {
+        return res.status(404).json({
+          success: false,
+          message: t(T.SERVER.ERRORS.FEEDBACK.INVALID_LINK),
+        });
       }
 
-      const scores = [foodRating, serviceRating, venueRating].filter((val) => typeof val === 'number');
-      let averageScore: number | null = null;
-
-      if (scores.length > 0) {
-        averageScore = Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
+      if (txResult.kind === 'already') {
+        return res.status(409).json({
+          success: false,
+          code: FEEDBACK_ALREADY_SUBMITTED_CODE,
+          message: t(T.SERVER.ERRORS.FEEDBACK.ALREADY_SUBMITTED),
+        });
       }
 
-      const updatedFeedback = await prisma.feedback.update({
-        where: { token },
-        data: {
-          foodRating,
-          serviceRating,
-          venueRating,
-          comments,
-          averageScore,
-          isCompleted: true,
-        },
-      });
-
-      const siblingFeedbacks = await prisma.feedback.findMany({
-        where: { bookingId: existingFeedback.bookingId },
-      });
+      const { updated, siblings, bookingId, clientName, clientSide } = txResult;
       const combinedAverage = computeCombinedAverage(
-        siblingFeedbacks.map((fb) => (fb.id === updatedFeedback.id ? averageScore : fb.averageScore)),
+        siblings.map((fb) => (fb.id === updated.id ? averageScore : fb.averageScore)),
       );
 
-      if (averageScore && averageScore <= 3) {
-        logger.warn('Low feedback score alert', {
-          averageScore,
-          clientName: updatedFeedback.clientName,
-          combinedAverage,
-        });
-        const managerEmail = process.env.MANAGER_EMAIL;
+      const completedSides = siblings.filter((fb) => fb.isCompleted);
+      const sideA = completedSides.find((fb) => fb.clientSide === 'A');
+      const sideB = completedSides.find((fb) => fb.clientSide === 'B');
+      const bothSidesComplete = Boolean(sideA && sideB);
+
+      if (bothSidesComplete && sideA && sideB) {
+        const anomaly = detectFeedbackDiscrepancy(sideA, sideB);
+        if (anomaly.hasAnomaly) {
+          const dashboardUrl = getFeedbackDashboardUrl(bookingId);
+          const details =
+            `${anomaly.reasons.join('; ')}\n`
+            + `ממוצע משולב: ${combinedAverage ?? '—'}\n`
+            + `לוח משובים: ${dashboardUrl}`;
+          const brand = getBrandConfig();
+          const managerEmail =
+            process.env.MANAGER_EMAIL || brand.messaging.managerAlertEmail;
+          const managerPhone = process.env.MANAGER_PHONE || MANAGER_PHONE;
+
+          logger.warn('Feedback discrepancy / critical low scores', {
+            bookingId,
+            reasons: anomaly.reasons,
+            dashboardUrl,
+          });
+
+          await Promise.allSettled([
+            sendManagerFinancialAlert(
+              managerPhone,
+              'פער/משוב נמוך בין צדדים',
+              clientName || 'לקוח',
+              details,
+              locale,
+            ),
+            managerEmail
+              ? sendManagerFinancialAlertEmail(
+                  managerEmail,
+                  'פער/משוב נמוך בין צדדים',
+                  clientName || 'לקוח',
+                  details,
+                )
+              : Promise.resolve(),
+          ]);
+        }
+      } else if (averageScore != null && averageScore < 3) {
+        // Single-side critical average before the other side responds
+        const managerEmail =
+          process.env.MANAGER_EMAIL || getBrandConfig().messaging.managerAlertEmail;
         if (managerEmail) {
           await sendManagerFinancialAlertEmail(
             managerEmail,
             'משוב נמוך מאירוע',
-            updatedFeedback.clientName || 'לקוח',
-            `צד ${updatedFeedback.clientSide}, ממוצע ${averageScore}. ממוצע משולב לאירוע: ${combinedAverage ?? 'טרם הושלם'}`,
+            clientName || 'לקוח',
+            `צד ${clientSide}, ממוצע ${averageScore}. ממוצע משולב: ${combinedAverage ?? 'טרם הושלם'}`,
           );
         }
       }
 
-      emitFeedbackUpdated({ bookingId: existingFeedback.bookingId });
+      emitFeedbackUpdated({ bookingId });
 
       res.status(200).json({
         success: true,
-        message: 'המשוב נשמר בהצלחה!',
+        message: t(T.SERVER.ERRORS.FEEDBACK.SAVED_SUCCESS),
         combinedAverage,
       });
     } catch (error) {
       logger.error('Error submitting feedback', { error });
-      res.status(500).json({ success: false, message: 'שגיאת שרת בשמירת המשוב.' });
+      res.status(500).json({
+        success: false,
+        message: t(T.SERVER.ERRORS.FEEDBACK.SAVE_FAILED),
+      });
     }
   },
 

@@ -1,0 +1,74 @@
+.viewport {
+  position: fixed;
+  z-index: 13000;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  pointer-events: none;
+  direction: rtl;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+  background: #0f172a;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  animation: toast-in 220ms ease-out;
+}
+
+.success {
+  background: #047857;
+}
+
+.error {
+  background: #b91c1c;
+}
+
+.info {
+  background: #1e293b;
+}
+
+.icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.message {
+  line-height: 1.35;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 768px) {
+  .viewport {
+    left: auto;
+    right: 24px;
+    transform: none;
+  }
+}

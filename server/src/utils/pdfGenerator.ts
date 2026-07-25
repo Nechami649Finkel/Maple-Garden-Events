@@ -590,7 +590,7 @@ function buildEventProductionPdfHtml(
   const producedDate = format(new Date(), 'd.M.yyyy', { locale: dfLocale });
   const notSpecified = t(T.SERVER.COMMON.NOT_SPECIFIED);
 
-  const checkDetails = f.depositCheckDetails as DepositCheckDetails | null | undefined;
+  // Deposit check details are internal-only and must not appear on the client PDF.
   const akumCode = f.akumCode || data.akumApprovalCode;
   const { equipment, designSummary, entertainersSummary } = buildEventFormSummaries(f, t);
   const notesList = parseEventFormNotes(f.notes);
@@ -644,18 +644,9 @@ function buildEventProductionPdfHtml(
   <div class="section">
     <div class="section-title">${esc(t(T.SERVER.PDF.APPROVALS))}</div>
     <table class="data-table">
-      ${row(t(T.SERVER.PDF.DEPOSIT_CHECK), f.depositCheckStatus ? t(T.SERVER.PDF.DEPOSIT_RECEIVED) : t(T.SERVER.PDF.DEPOSIT_PENDING))}
-      ${checkDetails?.checkNumber ? row(t(T.SERVER.PDF.CHECK_NUMBER), esc(checkDetails.checkNumber)) : ''}
-      ${checkDetails?.bank ? row(t(T.SERVER.PDF.BANK), esc(checkDetails.bank)) : ''}
-      ${checkDetails?.branch ? row(t(T.SERVER.PDF.BRANCH), esc(checkDetails.branch)) : ''}
-      ${checkDetails?.account ? row(t(T.SERVER.PDF.ACCOUNT), esc(checkDetails.account)) : ''}
-      ${checkDetails?.payee ? row(t(T.SERVER.PDF.PAYEE), esc(checkDetails.payee)) : ''}
-      ${checkDetails?.amount ? row(t(T.SERVER.PDF.CHECK_AMOUNT), esc(`₪${checkDetails.amount}`)) : ''}
-      ${checkDetails?.date ? row(t(T.SERVER.PDF.CHECK_DATE), esc(checkDetails.date)) : ''}
       ${akumCode ? row(t(T.SERVER.PDF.AKUM_CODE), esc(String(akumCode))) : ''}
       ${row(t(T.SERVER.PDF.KASHRUT), esc(translateKashrut(f.kashrut, t)))}
     </table>
-    ${f.depositCheckUrl ? `<img class="check-img" src="${f.depositCheckUrl}" alt="${esc(t(T.SERVER.PDF.DEPOSIT_CHECK_ALT))}"/>` : ''}
   </div>
 
   ${f.tableLayoutImageUrl ? `

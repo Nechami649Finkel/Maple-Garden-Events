@@ -42,10 +42,11 @@
 }
 
 .calendar-control-bar {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px 16px;
   direction: rtl;
 }
 
@@ -53,7 +54,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-self: start;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .calendar-toolbar-label {
@@ -89,8 +91,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  justify-self: center;
-  grid-column: 2;
+  flex: 0 0 auto;
 }
 
 .inline-date-nav {
@@ -98,6 +99,7 @@
   align-items: center;
   gap: 6px;
   flex-wrap: nowrap;
+  flex-shrink: 0;
   white-space: nowrap;
 }
 
@@ -127,7 +129,9 @@
   font-size: var(--calendar-font-size);
   font-weight: 700;
   color: var(--brand-text);
-  min-width: 3.5ch;
+  min-width: 4.5ch;
+  flex-shrink: 0;
+  white-space: nowrap;
   text-align: center;
 }
 
@@ -363,6 +367,15 @@
     var(--event-pill-height) * var(--calendar-max-events)
     + var(--event-pill-gap) * (var(--calendar-max-events) - 1)
   );
+  position: relative;
+  z-index: 1;
+}
+
+.cell-events-container.has-events {
+  /* Prefer event labels over empty reserved rows when the cell is short. */
+  min-height: var(--event-pill-height);
+  justify-content: flex-start;
+  margin-top: 2px;
 }
 
 .cell-events-container:empty {
@@ -390,7 +403,10 @@
   border-radius: 8px;
   flex-shrink: 0;
   height: var(--event-pill-height);
+  min-height: var(--event-pill-height);
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* =========================================
@@ -693,17 +709,16 @@
   }
 
   .calendar-control-bar {
-    grid-template-columns: 1fr;
     gap: 12px;
   }
 
   .calendar-availability-group {
-    justify-self: stretch;
+    flex: 1 1 100%;
+    justify-content: space-between;
   }
 
   .calendar-inline-nav {
-    justify-self: stretch;
-    grid-column: auto;
+    flex: 1 1 100%;
   }
 
   .inline-date-nav {

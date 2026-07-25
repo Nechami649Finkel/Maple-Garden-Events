@@ -32,6 +32,10 @@ export interface BrandMessaging {
 export interface BrandConfig {
   id: string;
   displayName: string;
+  /** Public Hebrew venue name for contracts / i18n (`{venueName}`). */
+  publicVenueName: string;
+  /** Public English venue name for contracts / i18n (`{venueName}`). */
+  publicVenueNameEn: string;
   shortName: string;
   phone: string;
   supportEmail: string;

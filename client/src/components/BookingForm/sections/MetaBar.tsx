@@ -19,7 +19,17 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
         <label className="form-label">
           {isOption ? t(T.BOOKING.META.ORDER_NUMBER_OPTION) : t(T.BOOKING.META.ORDER_NUMBER_BOOKING)}
         </label>
-        <input type="text" value={orderNumber} readOnly className="form-control bg-light" />
+        <input
+          type="text"
+          value={
+            orderNumber ||
+            (isOption
+              ? t(T.BOOKING.META.ORDER_NUMBER_PENDING_OPTION)
+              : t(T.BOOKING.META.ORDER_NUMBER_PENDING_BOOKING))
+          }
+          readOnly
+          className="form-control bg-light text-dark fw-semibold"
+        />
       </div>
 
       <div className="col">
@@ -55,6 +65,11 @@ const MetaBar = ({ formData, handleChange, isOption, orderNumber, optionDuration
             {isOption ? t(T.BOOKING.META.SELECT_EVENT_TYPE_OPTIONAL) : t(T.BOOKING.META.SELECT_EVENT_TYPE)}
           </option>
           {EVENT_TYPE_VALUES.filter(type => {
+            // Never hide the currently selected value — otherwise the select falls back
+            // to the empty "בחירה" placeholder even when eventType is set (e.g. חתונה).
+            if (type === formData.eventType) return true;
+            // Option forms always offer the full list (incl. Wedding default).
+            if (isOption) return true;
             const isOtherEvent = calendarEventTypeFilter === 'אירוע אחר' || formData.eventType === 'אירוע אחר';
             return !(isOtherEvent && type === 'חתונה');
           }).map(type => (

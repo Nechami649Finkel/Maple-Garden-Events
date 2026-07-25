@@ -520,7 +520,7 @@ const PaymentAndUpgradesSection = ({
 
             <div className="d-flex align-items-center gap-2 flex-wrap mt-2">
 
-              <span className="text-secondary">{t(T.BOOKING.PAYMENT.CUSTOM_TERMS_LABEL)}</span>
+              <span className="text-dark fw-medium">{t(T.BOOKING.PAYMENT.CUSTOM_TERMS_LABEL)}</span>
 
               <button
 

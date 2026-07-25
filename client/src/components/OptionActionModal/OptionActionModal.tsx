@@ -45,7 +45,8 @@ const OptionActionModal = ({ option, onClose, onSuccess }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const money = (value?: number | null) => formatCurrency(Number(value ?? 0), locale);
-  const formatEventType = (value: string) => translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value);
+  const formatEventType = (value?: string) =>
+    translateByValue(t, EVENT_TYPE_KEY_BY_VALUE, value || '');
 
   const eventDateStr = option.eventDate?.date
     ? formatDate(option.eventDate.date, locale)

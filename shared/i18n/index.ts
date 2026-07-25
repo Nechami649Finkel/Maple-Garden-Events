@@ -1,9 +1,16 @@
 import { CATALOG } from './catalog';
 import { createTranslator } from './resolve';
-import type { Locale } from './types';
+import { getBrandI18nParams } from '../brand';
+import type { Locale, Translator } from './types';
 
-export function getTranslator(locale: Locale) {
-  return createTranslator(locale, CATALOG);
+export function getTranslator(locale: Locale): Translator {
+  const base = createTranslator(locale, CATALOG);
+  const venueParams = getBrandI18nParams(locale);
+  return {
+    locale: base.locale,
+    t: (key, params) => base.t(key, { ...venueParams, ...params }),
+    tp: (key, count, params) => base.tp(key, count, { ...venueParams, ...params }),
+  };
 }
 
 export { createTranslator, interpolate, pluralize } from './resolve';
