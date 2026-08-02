@@ -1,0 +1,4 @@
+aws_region        = "il-central-1"
+ami_id            = "ami-xxxxxxxxxxxxxxxxx"   # Ubuntu 24.04 LTS in il-central-1
+key_pair_name     = "maple-staging-key"
+ssh_allowed_cidrs = ["0.0.0.0/0"]            # Restrict to your IP in production
