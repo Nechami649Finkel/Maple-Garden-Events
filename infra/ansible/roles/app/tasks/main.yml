@@ -1,0 +1,55 @@
+---
+- name: Create app directory
+  file:
+    path: /app
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0755"
+
+- name: ECR login
+  shell: |
+    aws ecr get-login-password --region {{ aws_region }} | \
+      docker login --username AWS --password-stdin {{ ecr_registry }}
+  changed_when: false
+
+- name: Pull server image
+  community.docker.docker_image:
+    name: "{{ ecr_registry }}/{{ ecr_repo_server }}:{{ image_tag }}"
+    source: pull
+    force_source: true
+
+- name: Pull proxy image
+  community.docker.docker_image:
+    name: "{{ ecr_registry }}/{{ ecr_repo_proxy }}:{{ image_tag }}"
+    source: pull
+    force_source: true
+
+- name: Deploy docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: /app/docker-compose.yml
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0640"
+
+- name: Deploy .env file for server
+  template:
+    src: server.env.j2
+    dest: /app/server.env
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: "0600"
+
+- name: Start / update containers
+  community.docker.docker_compose_v2:
+    project_src: /app
+    state: present
+    pull: never
+    remove_orphans: true
+
+- name: Remove unused Docker images
+  community.docker.docker_prune:
+    images: true
+    images_filters:
+      dangling: true

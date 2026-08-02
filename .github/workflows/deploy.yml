@@ -1,119 +1,263 @@
-name: Deploy
+name: CI / Deploy
 
 on:
   push:
-    branches: [main, miriam, miryami]
+    branches: [main, CICD]
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: deploy-${{ github.ref_name }}
   cancel-in-progress: true
 
-jobs:
-  ci:
-    uses: ./.github/workflows/ci.yml
-    secrets: inherit
+env:
+  EC2_USER:                       ubuntu
+  ECR_REPO_SERVER:                maple-garden-server-staging
+  ECR_REPO_PROXY:                 maple-garden-proxy-staging
+  VITE_TENANT_NAME:               maple-garden
+  VITE_SENTRY_TRACES_SAMPLE_RATE: "0.1"
 
-  # deploy job is currently disabled to focus on development
-  # deploy:
-  #   needs: ci
-  #   runs-on: ubuntu-latest
-  #   environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
-  #   permissions:
-  #     contents: read
-  #     id-token: write
-  #
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Set deploy target
-  #       id: target
-  #       run: |
-  #         if [ "${{ github.ref_name }}" = "main" ]; then
-  #           echo "env_name=production" >> "$GITHUB_OUTPUT"
-  #           echo "db_secret=DATABASE_URL_PRODUCTION" >> "$GITHUB_OUTPUT"
-  #           echo "service_secret=APP_RUNNER_SERVICE_ARN_PRODUCTION" >> "$GITHUB_OUTPUT"
-  #         else
-  #           echo "env_name=staging" >> "$GITHUB_OUTPUT"
-  #           echo "db_secret=DATABASE_URL_STAGING" >> "$GITHUB_OUTPUT"
-  #           echo "service_secret=APP_RUNNER_SERVICE_ARN_STAGING" >> "$GITHUB_OUTPUT"
-  #         fi
-  #
-  #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: ${{ secrets.AWS_REGION }}
-  #
-  #     - name: Login to Amazon ECR
-  #       id: ecr
-  #       uses: aws-actions/amazon-ecr-login@v2
-  #
-  #     - name: Build and push Docker image
-  #       env:
-  #         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-  #         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         docker build \
-  #           --build-arg VITE_GOOGLE_CLIENT_ID="${{ secrets.VITE_GOOGLE_CLIENT_ID }}" \
-  #           --build-arg VITE_API_URL="" \
-  #           -t "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" \
-  #           -t "$ECR_REGISTRY/$ECR_REPOSITORY:latest" \
-  #           .
-  #         docker push "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-  #         docker push "$ECR_REGISTRY/$ECR_REPOSITORY:latest"
-  #
-  #     - name: Setup Node for Prisma migrate
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '20'
-  #
-  #     - name: Install server dependencies (Prisma only)
-  #       working-directory: server
-  #       env:
-  #         DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_STAGING }}
-  #       run: |
-  #         rm -f .npmrc .npmrc.bak
-  #         export DATABASE_URL="${DATABASE_URL:-postgresql://prisma:prisma@127.0.0.1:5432/prisma}"
-  #         npm ci --ignore-scripts --registry=https://registry.npmjs.org/
-  #         npx prisma generate
-  #
-  #     - name: Run Prisma migrate deploy
-  #       working-directory: server
-  #       env:
-  #         DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL_PRODUCTION || secrets.DATABASE_URL_STAGING }}
-  #       run: npx prisma migrate deploy
-  #
-  #     - name: Deploy to App Runner
-  #       env:
-  #         SERVICE_ARN: ${{ github.ref_name == 'main' && secrets.APP_RUNNER_SERVICE_ARN_PRODUCTION || secrets.APP_RUNNER_SERVICE_ARN_STAGING }}
-  #         ECR_REGISTRY: ${{ steps.ecr.outputs.registry }}
-  #         ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  #         IMAGE_TAG: ${{ github.sha }}
-  #       run: |
-  #         IMAGE_URI="$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-  #         aws apprunner update-service \
-  #           --service-arn "$SERVICE_ARN" \
-  #           --source-configuration "{\"ImageRepository\":{\"ImageIdentifier\":\"$IMAGE_URI\",\"ImageRepositoryType\":\"ECR\"}}"
-  #         aws apprunner start-deployment --service-arn "$SERVICE_ARN"
-  #         echo "Deployed $IMAGE_URI to App Runner"
-  #
-  #     - name: Smoke test health endpoint
-  #       env:
-  #         HEALTH_URL: ${{ github.ref_name == 'main' && secrets.PRODUCTION_HEALTH_URL || secrets.STAGING_HEALTH_URL }}
-  #       run: |
-  #         if [ -z "$HEALTH_URL" ]; then
-  #           echo "HEALTH_URL not configured — skipping smoke test"
-  #           exit 0
-  #         fi
-  #         for i in 1 2 3 4 5 6 7 8 9 10; do
-  #           if curl -sf "$HEALTH_URL/api/health" | grep -q '"status":"ok"'; then
-  #             echo "✅ Health check passed"
-  #             exit 0
-  #           fi
-  #           echo "Waiting for service... ($i/10)"
-  #           sleep 30
-  #         done
-  #         echo "❌ Health check failed after 5 minutes"
-  #         exit 1
+jobs:
+
+  # ─── Stage 1: Server tests ───────────────────────────────────────────────────
+  test-server:
+    name: Server tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: server
+        run: |
+          rm -f .npmrc .npmrc.bak
+          export DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://prisma:prisma@127.0.0.1:5432/prisma' }}"
+          npm ci --ignore-scripts --registry=https://registry.npmjs.org/
+          npx prisma generate
+
+      - name: Copy shared
+        working-directory: server
+        run: npm run copy:shared
+
+      - name: Unit tests
+        working-directory: server
+        run: npx jest --testPathPattern="tests/(?!integration)" --ci --forceExit --verbose
+
+      - name: Contract tests
+        working-directory: server
+        run: |
+          node --require ts-node/register/transpile-only \
+            --test tests/contract-lineItems.test.ts
+
+      - name: Security tests
+        working-directory: server
+        run: npx jest --testPathPattern="tests/security.test.ts" --ci --forceExit --verbose
+
+  # ─── Stage 1: Client lint & typecheck ────────────────────────────────────────
+  lint-client:
+    name: Client lint & typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      - name: Install client dependencies
+        working-directory: client
+        run: npm ci --registry=https://registry.npmjs.org/
+
+      - name: Lint
+        working-directory: client
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: client
+        run: npm run typecheck
+
+  # ─── Stage 1: Docker build check (no push) ───────────────────────────────────
+  docker-build-check:
+    name: Docker build check
+    runs-on: ubuntu-latest
+    needs: [test-server, lint-client]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build server image
+        run: docker build -f server/Dockerfile -t maple-garden-server:ci .
+
+      - name: Build proxy image
+        run: |
+          docker build -f routing/Dockerfile \
+            --build-arg VITE_GOOGLE_CLIENT_ID="" \
+            --build-arg VITE_API_URL="" \
+            --build-arg VITE_SENTRY_DSN="" \
+            --build-arg VITE_SENTRY_TRACES_SAMPLE_RATE="" \
+            --build-arg VITE_TENANT_NAME="" \
+            -t maple-garden-proxy:ci .
+
+  # ─── Stage 1: Build check ─────────────────────────────────────────────────────
+  build-check:
+    name: Build check
+    runs-on: ubuntu-latest
+    needs: [docker-build-check]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            client/package-lock.json
+            server/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          npm ci --prefix client --registry=https://registry.npmjs.org/
+          export DATABASE_URL="${{ secrets.DATABASE_URL || 'postgresql://prisma:prisma@127.0.0.1:5432/prisma' }}"
+          cd server && rm -f .npmrc .npmrc.bak && npm ci --ignore-scripts --registry=https://registry.npmjs.org/ && npx prisma generate
+
+      - name: Build client
+        working-directory: client
+        run: npm run build
+
+      - name: Build server
+        working-directory: server
+        run: npm run build
+
+  # ─── Stage 2: Terraform infra (push only) ────────────────────────────────────
+  infra:
+    name: Infra (apply)
+    if: github.event_name == 'push'
+    needs: [test-server, lint-client, docker-build-check, build-check]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+
+    defaults:
+      run:
+        working-directory: infra/terraform/environments/staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10"
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform plan
+        run: terraform plan -no-color -out=tfplan
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+  # ─── Stage 3: Build Docker images → push to ECR (push only) ─────────────────
+  build:
+    name: Build & push images
+    if: github.event_name == 'push'
+    needs: [infra]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      registry: ${{ steps.ecr.outputs.registry }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & push server
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker build -f server/Dockerfile \
+            -t "$REGISTRY/$ECR_REPO_SERVER:$TAG" \
+            -t "$REGISTRY/$ECR_REPO_SERVER:latest" .
+          docker push "$REGISTRY/$ECR_REPO_SERVER:$TAG"
+          docker push "$REGISTRY/$ECR_REPO_SERVER:latest"
+
+      - name: Build & push proxy
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          TAG: ${{ github.sha }}
+        run: |
+          docker build -f routing/Dockerfile \
+            --build-arg VITE_GOOGLE_CLIENT_ID="${{ secrets.VITE_GOOGLE_CLIENT_ID }}" \
+            --build-arg VITE_API_URL="" \
+            --build-arg VITE_SENTRY_DSN="${{ secrets.VITE_SENTRY_DSN }}" \
+            --build-arg VITE_SENTRY_TRACES_SAMPLE_RATE="$VITE_SENTRY_TRACES_SAMPLE_RATE" \
+            --build-arg VITE_TENANT_NAME="$VITE_TENANT_NAME" \
+            -t "$REGISTRY/$ECR_REPO_PROXY:$TAG" \
+            -t "$REGISTRY/$ECR_REPO_PROXY:latest" .
+          docker push "$REGISTRY/$ECR_REPO_PROXY:$TAG"
+          docker push "$REGISTRY/$ECR_REPO_PROXY:latest"
+
+  # ─── Stage 4: Deploy to EC2 (push only) ──────────────────────────────────────
+  deploy:
+    name: Deploy to EC2
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
+
+            cd /app
+            docker compose up -d --remove-orphans
+            docker image prune -f
+
+      - name: Smoke test
+        run: |
+          sleep 20
+          curl -sf "https://${{ secrets.DOMAIN }}/api/health" \
+            && echo "Smoke test passed" \
+            || (echo "Smoke test failed" && exit 1)

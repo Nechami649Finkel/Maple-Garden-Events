@@ -1,0 +1,46 @@
+services:
+
+  redis:
+    image: redis:7-alpine
+    container_name: maple-redis
+    volumes:
+      - maple-redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - maple-net
+    restart: unless-stopped
+
+  server:
+    image: {{ ecr_registry }}/{{ ecr_repo_server }}:{{ image_tag }}
+    container_name: maple-server
+    env_file: /app/server.env
+    environment:
+      REDIS_URL: redis://redis:6379
+      CLIENT_URL: https://{{ domain }}
+      PORT: "5000"
+    depends_on:
+      - redis
+    networks:
+      - maple-net
+    restart: unless-stopped
+
+  proxy:
+    image: {{ ecr_registry }}/{{ ecr_repo_proxy }}:{{ image_tag }}
+    container_name: maple-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - server
+    networks:
+      - maple-net
+    restart: unless-stopped
+
+networks:
+  maple-net:
+    driver: bridge
+
+volumes:
+  maple-redis-data:

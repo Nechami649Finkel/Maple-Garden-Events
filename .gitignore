@@ -15,3 +15,11 @@ shared/**/*.js
 
 # Design exports (generated locally)
 /design-exports/
+
+.terraform/
+.terraform*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfplan

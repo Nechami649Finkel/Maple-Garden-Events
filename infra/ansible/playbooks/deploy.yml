@@ -1,0 +1,12 @@
+---
+# Deploy new Docker images — run by GitHub Actions on every push to main
+# Usage:
+#   ansible-playbook -i inventory/staging.ini playbooks/deploy.yml
+#   ansible-playbook -i inventory/production.ini playbooks/deploy.yml --ask-vault-pass
+- name: Deploy Maple Garden app
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - app

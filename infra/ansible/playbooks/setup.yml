@@ -1,0 +1,12 @@
+---
+# First-time server setup — run once after terraform apply
+# Usage:
+#   ansible-playbook -i inventory/staging.ini playbooks/setup.yml
+#   ansible-playbook -i inventory/production.ini playbooks/setup.yml --ask-vault-pass
+- name: Setup Maple Garden server
+  hosts: all
+  become: true
+  gather_facts: true
+
+  roles:
+    - docker

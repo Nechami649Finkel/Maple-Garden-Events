@@ -1,0 +1,21 @@
+deploy_user: ubuntu
+aws_region: il-central-1
+image_tag: latest
+domain: maple-garden.co.il
+tenant_name: maple-garden
+sentry_traces_sample_rate: "0.1"
+
+# ECR — fill in after terraform apply
+ecr_registry: ""
+ecr_repo_server: maple-garden-server-production
+ecr_repo_proxy: maple-garden-proxy-production
+s3_bucket: maple-garden-prod-files
+
+# Secrets — encrypt with: ansible-vault encrypt group_vars/production.yml
+database_url: ""
+jwt_secret: ""
+google_client_id: ""
+allowed_emails: ""
+email_user: ""
+email_pass: ""
+sentry_dsn: ""
