@@ -47,7 +47,7 @@ jobs:
 
       - name: Unit tests
         working-directory: server
-        run: npx jest --testPathPattern="tests/(?!integration)" --ci --forceExit --verbose
+        run: npx jest --testPathPatterns="tests/(?!integration)" --ci --forceExit --verbose
 
       - name: Contract tests
         working-directory: server
@@ -57,7 +57,7 @@ jobs:
 
       - name: Security tests
         working-directory: server
-        run: npx jest --testPathPattern="tests/security.test.ts" --ci --forceExit --verbose
+        run: npx jest --testPathPatterns="tests/security.test.ts" --ci --forceExit --verbose
 
   # ─── Stage 1: Client lint & typecheck ────────────────────────────────────────
   lint-client:
