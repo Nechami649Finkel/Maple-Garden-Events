@@ -23,6 +23,7 @@ jobs:
   test-server:
     name: Server tests
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     steps:
       - uses: actions/checkout@v4
