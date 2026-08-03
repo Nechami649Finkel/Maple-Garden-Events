@@ -43,21 +43,32 @@ services:
       - maple-net
     restart: unless-stopped
 
-  # ─── Proxy (nginx + React client) ─────────────────────────────────────────
-  proxy:
+  # ─── Client (React SPA served by nginx) ───────────────────────────────────
+  client:
     build:
       context: .
-      dockerfile: routing/Dockerfile
+      dockerfile: client/Dockerfile
       args:
         VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
         VITE_API_URL: ""
         VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
         VITE_SENTRY_TRACES_SAMPLE_RATE: ${VITE_SENTRY_TRACES_SAMPLE_RATE}
         VITE_TENANT_NAME: ${VITE_TENANT_NAME}
+    container_name: maple-client
+    networks:
+      - maple-net
+    restart: unless-stopped
+
+  # ─── Proxy (nginx reverse proxy) ──────────────────────────────────────────
+  proxy:
+    build:
+      context: .
+      dockerfile: routing/Dockerfile
     container_name: maple-proxy
     ports:
       - "5173:80"
     depends_on:
+      - client
       - server
     networks:
       - maple-net
