@@ -2,7 +2,7 @@ name: Deploy
 
 on:
   push:
-    branches: [main, CICD]
+    branches: [main, staging, CICD]
 
 concurrency:
   group: deploy-${{ github.ref_name }}
@@ -10,8 +10,6 @@ concurrency:
 
 env:
   EC2_USER:                       ubuntu
-  ECR_REPO_SERVER:                maple-garden-server-staging
-  ECR_REPO_PROXY:                 maple-garden-proxy-staging
   VITE_TENANT_NAME:               maple-garden
   VITE_SENTRY_TRACES_SAMPLE_RATE: "0.1"
 
@@ -25,25 +23,29 @@ jobs:
       contents: read
       id-token: write
 
+    env:
+      ECR_REPO_SERVER: ${{ github.ref_name == 'main' && 'maple-garden-server-production' || 'maple-garden-server-staging' }}
+      ECR_REPO_PROXY: ${{ github.ref_name == 'main' && 'maple-garden-proxy-production' || 'maple-garden-proxy-staging' }}
+
     outputs:
-      registry: ${{ steps.ecr.outputs.registry }}
+      registry:        ${{ steps.ecr.outputs.registry }}
+      ecr_repo_server: ${{ steps.vars.outputs.ecr_repo_server }}
+      ecr_repo_proxy:  ${{ steps.vars.outputs.ecr_repo_proxy }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug OIDC token claims
+      - name: Export repo names
+        id: vars
         run: |
-          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=sts.amazonaws.com" | jq -r '.value')
-          echo "--- OIDC token payload ---"
-          echo $TOKEN | cut -d. -f2 | base64 -d 2>/dev/null || echo $TOKEN | cut -d. -f2 | base64 -id 2>/dev/null
-          echo "--------------------------"
+          echo "ecr_repo_server=$ECR_REPO_SERVER" >> $GITHUB_OUTPUT
+          echo "ecr_repo_proxy=$ECR_REPO_PROXY"   >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region:     ${{ secrets.AWS_REGION }}
 
       - name: Login to ECR
         id: ecr
@@ -52,7 +54,7 @@ jobs:
       - name: Build & push server
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
-          TAG: ${{ github.sha }}
+          TAG:      ${{ github.sha }}
         run: |
           docker build -f server/Dockerfile \
             -t "$REGISTRY/$ECR_REPO_SERVER:$TAG" \
@@ -63,7 +65,7 @@ jobs:
       - name: Build & push proxy
         env:
           REGISTRY: ${{ steps.ecr.outputs.registry }}
-          TAG: ${{ github.sha }}
+          TAG:      ${{ github.sha }}
         run: |
           docker build -f routing/Dockerfile \
             --build-arg VITE_GOOGLE_CLIENT_ID="${{ secrets.VITE_GOOGLE_CLIENT_ID }}" \
@@ -81,21 +83,29 @@ jobs:
     name: Deploy to EC2
     needs: build
     runs-on: ubuntu-latest
-    environment: production
+    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+
+    env:
+      ECR_REPO_SERVER: ${{ needs.build.outputs.ecr_repo_server }}
+      ECR_REPO_PROXY:  ${{ needs.build.outputs.ecr_repo_proxy }}
+      EC2_HOST:        ${{ github.ref_name == 'main' && secrets.PROD_EC2_HOST        || secrets.EC2_HOST }}
+      EC2_SSH_KEY:     ${{ github.ref_name == 'main' && secrets.PROD_EC2_SSH_KEY     || secrets.EC2_SSH_KEY }}
+      ECR_REGISTRY:    ${{ github.ref_name == 'main' && secrets.PROD_ECR_REGISTRY    || secrets.ECR_REGISTRY }}
+      DOMAIN:          ${{ github.ref_name == 'main' && secrets.PROD_DOMAIN          || secrets.DOMAIN }}
 
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host:     ${{ env.EC2_HOST }}
           username: ${{ env.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key:      ${{ env.EC2_SSH_KEY }}
           script: |
             aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-              docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+              docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
 
             cd /app
             docker compose up -d --remove-orphans
@@ -104,6 +114,6 @@ jobs:
       - name: Smoke test
         run: |
           sleep 20
-          curl -sf "https://${{ secrets.DOMAIN }}/api/health" \
+          curl -sf "https://$DOMAIN/api/health" \
             && echo "Smoke test passed" \
             || (echo "Smoke test failed" && exit 1)

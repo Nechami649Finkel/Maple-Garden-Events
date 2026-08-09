@@ -11,7 +11,7 @@ ecr_repo_server: maple-garden-server-production
 ecr_repo_proxy: maple-garden-proxy-production
 s3_bucket: maple-garden-prod-files
 
-# Secrets — encrypt with: ansible-vault encrypt group_vars/production.yml
+# Secrets — encrypt with: ansible-vault encrypt inventory/group_vars/production.yml
 database_url: ""
 jwt_secret: ""
 google_client_id: ""

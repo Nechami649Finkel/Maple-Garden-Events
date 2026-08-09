@@ -3,12 +3,20 @@ variable "aws_region" {
   default = "il-central-1"
 }
 
-variable "key_pair_name" {
-  type        = string
-  description = "AWS key pair name for SSH access"
-}
-
 variable "ssh_allowed_cidrs" {
   type        = list(string)
   description = "Restrict SSH to your office/home IP only"
+}
+
+variable "domain" {
+  type        = string
+  description = "Production domain name (e.g. maple-garden.co.il)"
+}
+
+variable "github_org" {
+  type = string
+}
+
+variable "github_repo" {
+  type = string
 }
