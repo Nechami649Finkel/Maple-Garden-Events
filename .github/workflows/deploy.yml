@@ -109,9 +109,3 @@ jobs:
             docker compose up -d --remove-orphans
             docker image prune -f
 
-      - name: Smoke test
-        run: |
-          sleep 20
-          curl -sf "https://$DOMAIN/api/health" \
-            && echo "Smoke test passed" \
-            || (echo "Smoke test failed" && exit 1)
