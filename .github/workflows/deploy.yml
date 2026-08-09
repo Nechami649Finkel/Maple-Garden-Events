@@ -101,8 +101,7 @@ jobs:
           username: ${{ env.EC2_USER }}
           key:      ${{ env.EC2_SSH_KEY }}
           script: |
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-              docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
             docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
             docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
