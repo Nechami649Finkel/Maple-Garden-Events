@@ -45,7 +45,7 @@
   community.docker.docker_compose_v2:
     project_src: /app
     state: present
-    pull: never
+    pull: always
     remove_orphans: true
 
 - name: Remove unused Docker images
