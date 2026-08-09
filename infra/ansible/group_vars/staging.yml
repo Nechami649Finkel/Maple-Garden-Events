@@ -1,7 +1,7 @@
 deploy_user: ubuntu
 aws_region: il-central-1
 image_tag: latest
-domain: "16.164.76.249"
+domain: "16.164.102.207"
 tenant_name: maple-garden
 sentry_traces_sample_rate: "0.1"
 
@@ -10,11 +10,10 @@ ecr_repo_server: maple-garden-server-staging
 ecr_repo_proxy: maple-garden-proxy-staging
 s3_bucket: maple-garden-staging-files
 
-# ⚠️ Fill these in before running deploy playbook
-database_url: ""
-jwt_secret: ""
-google_client_id: ""
-allowed_emails: ""
-email_user: ""
-email_pass: ""
-sentry_dsn: ""
+database_url: "postgresql://neondb_owner:npg_o1qM6ZurYncz@ep-misty-paper-ab99x591-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
+jwt_secret: "058324134420MIRIAM41344"
+google_client_id: "744139582921-lis7jm85r2o6n0o1o1p09ikecidm5p3i.apps.googleusercontent.com"
+allowed_emails: "Miriamm41344@gmail.com,miryamilandman@gmail.com,n.finkel15@gmail.com"
+email_user: "n.finkel15@gmail.com"
+email_pass: "jlrvqinnyvzbopny"
+sentry_dsn: "https://a351f38ca5e967d3a3a2bb15400b02fc@o4511605296660480.ingest.us.sentry.io/4511605313634304"
