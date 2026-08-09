@@ -101,11 +101,10 @@ jobs:
           username: ${{ env.EC2_USER }}
           key:      ${{ env.EC2_SSH_KEY }}
           script: |
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
-
-            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
-            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
-
+            ECR_PASS=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})
+            echo "$ECR_PASS" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
+            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
             cd /app
             docker compose up -d --remove-orphans
             docker image prune -f
