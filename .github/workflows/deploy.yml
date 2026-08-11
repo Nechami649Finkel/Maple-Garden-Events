@@ -106,5 +106,5 @@ jobs:
             docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
             docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
             cd /app
-            docker compose up -d --remove-orphans
+            docker compose up -d --pull always --remove-orphans
             docker image prune -f
