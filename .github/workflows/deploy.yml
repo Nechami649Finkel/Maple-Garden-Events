@@ -31,6 +31,7 @@ jobs:
       registry:        ${{ steps.ecr.outputs.registry }}
       ecr_repo_server: ${{ steps.vars.outputs.ecr_repo_server }}
       ecr_repo_proxy:  ${{ steps.vars.outputs.ecr_repo_proxy }}
+      image_tag:       ${{ github.sha }}
 
     steps:
       - uses: actions/checkout@v4
@@ -88,6 +89,7 @@ jobs:
     env:
       ECR_REPO_SERVER: ${{ needs.build.outputs.ecr_repo_server }}
       ECR_REPO_PROXY:  ${{ needs.build.outputs.ecr_repo_proxy }}
+      IMAGE_TAG:       ${{ needs.build.outputs.image_tag }}
       EC2_HOST:        ${{ github.ref_name == 'main' && secrets.PROD_EC2_HOST        || secrets.EC2_HOST }}
       EC2_SSH_KEY:     ${{ github.ref_name == 'main' && secrets.PROD_EC2_SSH_KEY     || secrets.EC2_SSH_KEY }}
       ECR_REGISTRY:    ${{ github.ref_name == 'main' && secrets.PROD_ECR_REGISTRY    || secrets.ECR_REGISTRY }}
@@ -102,9 +104,27 @@ jobs:
           key:      ${{ env.EC2_SSH_KEY }}
           script: |
             ECR_PASS=$(aws ecr get-login-password --region ${{ secrets.AWS_REGION }})
-            echo "$ECR_PASS" | docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:latest
-            docker pull ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:latest
+            echo "$ECR_PASS" | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+            # Pull the exact commit image
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_SERVER }}:${{ env.IMAGE_TAG }}
+            docker pull ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPO_PROXY }}:${{ env.IMAGE_TAG }}
+
+            # Update docker-compose.yml to use this exact commit tag
             cd /app
-            docker compose up -d --pull always --remove-orphans
+            sudo python3 -c "
+            import yaml
+            tag = '${{ env.IMAGE_TAG }}'
+            with open('docker-compose.yml') as f:
+                c = yaml.safe_load(f)
+            for svc in ['server', 'proxy']:
+                if svc in c['services'] and 'image' in c['services'][svc]:
+                    img = c['services'][svc]['image'].rsplit(':', 1)[0]
+                    c['services'][svc]['image'] = img + ':' + tag
+            with open('docker-compose.yml', 'w') as f:
+                yaml.dump(c, f)
+            print('Image tag updated to: ' + tag)
+            "
+
+            docker compose up -d --remove-orphans
             docker image prune -f
