@@ -18,10 +18,10 @@ const ACCESS_TOKEN_MS = 60 * 60 * 1000;
 const REFRESH_TOKEN_MS = 7 * 24 * 60 * 60 * 1000;
 
 function cookieBaseOptions() {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const secureCookies = process.env.COOKIE_SECURE === 'true';
   return {
-    secure: isProduction,
-    sameSite: (isProduction ? 'strict' : 'lax') as 'strict' | 'lax',
+    secure: secureCookies,
+    sameSite: (secureCookies ? 'strict' : 'lax') as 'strict' | 'lax',
     path: '/',
   };
 }

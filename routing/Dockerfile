@@ -27,10 +27,14 @@ RUN npx vite build
 # Stage 2: nginx serves static files + proxies API
 FROM nginx:stable-alpine
 
-RUN rm -rf /usr/share/nginx/html/*
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
+
 COPY --from=build /app/client/dist /usr/share/nginx/html
-COPY routing/nginx.conf /etc/nginx/conf.d/default.conf
+COPY routing/http.conf.template /etc/nginx/templates/http.conf.template
+COPY routing/ssl.conf.template  /etc/nginx/templates/ssl.conf.template
+COPY routing/entrypoint.sh      /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-EXPOSE 80
+EXPOSE 80 443
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/entrypoint.sh"]

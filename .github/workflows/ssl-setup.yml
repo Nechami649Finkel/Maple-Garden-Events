@@ -1,0 +1,58 @@
+name: Setup SSL Certificate
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to set up SSL for'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  ssl:
+    name: Obtain Let's Encrypt certificate
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    env:
+      EC2_HOST:    ${{ github.event.inputs.environment == 'production' && secrets.PROD_EC2_HOST    || secrets.EC2_HOST }}
+      EC2_SSH_KEY: ${{ github.event.inputs.environment == 'production' && secrets.PROD_EC2_SSH_KEY || secrets.EC2_SSH_KEY }}
+      DOMAIN:      ${{ github.event.inputs.environment == 'production' && secrets.PROD_DOMAIN      || secrets.DOMAIN }}
+
+    steps:
+      - name: Obtain certificate and enable HTTPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ env.EC2_HOST }}
+          username: ubuntu
+          key:      ${{ env.EC2_SSH_KEY }}
+          script: |
+            # Create webroot directory for certbot
+            sudo mkdir -p /var/www/certbot
+
+            # Install certbot if not already installed
+            if ! command -v certbot &> /dev/null; then
+              sudo apt-get update -qq
+              sudo apt-get install -y certbot
+            fi
+
+            # Get the certificate (skips if already exists)
+            sudo certbot certonly \
+              --webroot \
+              --webroot-path /var/www/certbot \
+              --non-interactive \
+              --agree-tos \
+              --email n.finkel15@gmail.com \
+              -d ${{ env.DOMAIN }}
+
+            # Restart proxy — entrypoint.sh detects the cert and switches to HTTPS
+            docker restart maple-proxy
+
+            # Set up weekly auto-renewal
+            (sudo crontab -l 2>/dev/null | grep -v certbot-renew; echo "0 3 * * 1 certbot renew --webroot --webroot-path /var/www/certbot --quiet && docker exec maple-proxy nginx -s reload") | sudo crontab -
+
+            echo "HTTPS is now active on https://${{ env.DOMAIN }}"

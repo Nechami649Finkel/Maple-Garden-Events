@@ -6,6 +6,7 @@
       - curl
       - unzip
       - python3-pip
+      - certbot
     state: present
     update_cache: true
 

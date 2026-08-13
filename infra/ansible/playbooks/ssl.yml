@@ -1,0 +1,50 @@
+---
+# Obtain a Let's Encrypt certificate and enable HTTPS.
+# Run ONCE after the first deploy:
+#   ansible-playbook -i inventory/staging.ini playbooks/ssl.yml
+#   ansible-playbook -i inventory/production.ini playbooks/ssl.yml --ask-vault-pass
+#
+# Prerequisites:
+#   - The app must already be running (proxy container must be up on port 80)
+#   - DNS for {{ domain }} must point to this server's IP
+- name: Obtain SSL certificate and enable HTTPS
+  hosts: all
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Create certbot webroot directory
+      file:
+        path: /var/www/certbot
+        state: directory
+        mode: "0755"
+
+    - name: Obtain certificate with certbot (webroot mode)
+      command: >
+        certbot certonly
+        --webroot
+        --webroot-path /var/www/certbot
+        --non-interactive
+        --agree-tos
+        --email {{ certbot_email }}
+        -d {{ domain }}
+      args:
+        creates: "/etc/letsencrypt/live/{{ domain }}/fullchain.pem"
+
+    - name: Restart proxy container to switch to HTTPS mode
+      community.docker.docker_container:
+        name: maple-proxy
+        state: started
+        restart: true
+
+    - name: Set up weekly certificate auto-renewal
+      cron:
+        name: "certbot-renew"
+        minute: "0"
+        hour: "3"
+        weekday: "1"
+        job: >
+          certbot renew
+          --webroot --webroot-path /var/www/certbot
+          --quiet
+          && docker exec maple-proxy nginx -s reload

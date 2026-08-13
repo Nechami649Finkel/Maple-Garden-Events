@@ -2,6 +2,7 @@ deploy_user: ubuntu
 aws_region: il-central-1
 image_tag: latest
 domain: maple-garden.co.il
+certbot_email: "n.finkel15@gmail.com"
 tenant_name: maple-garden
 sentry_traces_sample_rate: "1.0"
 

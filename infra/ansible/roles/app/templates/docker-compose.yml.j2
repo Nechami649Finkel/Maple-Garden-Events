@@ -30,8 +30,11 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    environment:
+      DOMAIN: "{{ domain }}"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
     depends_on:
       - server
     networks:
